@@ -1,0 +1,53 @@
+name: gbrain-ci
+
+on:
+  pull_request:
+    paths:
+      - "projects/gbrain/app/**"
+      - ".github/workflows/gbrain-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "projects/gbrain/app/**"
+
+concurrency:
+  group: gbrain-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: projects/gbrain/app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: projects/gbrain/app/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:coverage
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Regex scan for common token shapes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || 'HEAD' }}
+        run: |
+          set -euo pipefail
+          # Common secret patterns; extend as needed. Fails on ANY match in the diff.
+          PATTERNS='(AIza[0-9A-Za-z_-]{35}|sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{36}|gho_[A-Za-z0-9]{36}|xox[baprs]-[A-Za-z0-9-]+|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}|-----BEGIN (RSA |EC )?PRIVATE KEY-----)'
+          if git diff "$BASE_SHA" "$HEAD_SHA" -U0 | grep -E "^\+" | grep -E "$PATTERNS"; then
+            echo "::error::Potential secret detected in diff. Rotate the credential and remove it from the branch."
+            exit 1
+          fi
+          echo "No secret patterns detected."
