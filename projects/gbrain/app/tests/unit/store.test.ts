@@ -58,4 +58,58 @@ describe("store.commit", () => {
     expect(call).toBeDefined();
     expect(call!.sha).toBe("oldSha");
   });
+
+  it("rejects commit paths with .. traversal segments", async () => {
+    const { createGithubStore } = await import("../../src/store/github");
+    const store = createGithubStore({ token: "x", owner: "o", repo: "r", branch: "main" });
+    await expect(
+      store.commit({
+        path: "community/archive/../../../secrets.md",
+        content: "x",
+        message: "m"
+      })
+    ).rejects.toThrow(/traversal/);
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+});
+
+describe("store.remove", () => {
+  it("deletes a file under community/archive and returns the commit sha", async () => {
+    mockGet.mockResolvedValueOnce({ data: { sha: "targetSha", type: "file" } });
+    mockDelete.mockResolvedValueOnce({ data: { commit: { sha: "delCommit" } } });
+    const { createGithubStore } = await import("../../src/store/github");
+    const store = createGithubStore({ token: "x", owner: "o", repo: "r", branch: "main" });
+    const sha = await store.remove({
+      path: "community/archive/2026-04/foo.md",
+      message: "forget"
+    });
+    expect(sha).toBe("delCommit");
+    expect(mockDelete).toHaveBeenCalledTimes(1);
+    const call = mockDelete.mock.calls[0]?.[0];
+    expect(call).toBeDefined();
+    expect(call!.path).toBe("community/archive/2026-04/foo.md");
+    expect(call!.sha).toBe("targetSha");
+    expect(call!.committer.name).toBe("gbrain-bot");
+  });
+
+  it("rejects remove paths outside community/archive/", async () => {
+    const { createGithubStore } = await import("../../src/store/github");
+    const store = createGithubStore({ token: "x", owner: "o", repo: "r", branch: "main" });
+    await expect(
+      store.remove({ path: "community/charter/charter.md", message: "m" })
+    ).rejects.toThrow(/community\/archive/);
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it("rejects remove paths with .. traversal segments", async () => {
+    const { createGithubStore } = await import("../../src/store/github");
+    const store = createGithubStore({ token: "x", owner: "o", repo: "r", branch: "main" });
+    await expect(
+      store.remove({
+        path: "community/archive/../../../charter.md",
+        message: "m"
+      })
+    ).rejects.toThrow(/traversal/);
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
 });

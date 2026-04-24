@@ -316,7 +316,7 @@ community/
 | `TELEGRAM_BOT_TOKEN` | Vercel env var (prod + preview) | On suspected leak; quarterly audit |
 | `GEMINI_API_KEY` | Vercel env var | On leak (e.g., accidental paste); quarterly audit. **Current key was pasted in spec chat — rotate before deploy.** |
 | `AI_GATEWAY_API_KEY` | Vercel env var | Quarterly |
-| `GITHUB_BOT_TOKEN` | Vercel env var, fine-grained PAT scoped to this repo's `community/archive/**` | Quarterly; revoke on contributor departure |
+| `GITHUB_BOT_TOKEN` | Vercel env var, fine-grained PAT scoped to this repo (GitHub PATs are repo-level; `community/archive/` sub-path enforcement lives in the bot's `assertAllowedPath`, not in the PAT itself) | Quarterly; revoke on contributor departure |
 
 Guardrails:
 - `.env.example` committed; `.env` gitignored (already in `.gitignore`).
