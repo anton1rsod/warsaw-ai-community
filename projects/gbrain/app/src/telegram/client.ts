@@ -1,7 +1,8 @@
 import { Bot } from "grammy";
+import type { ReactionTypeEmoji } from "@grammyjs/types";
 import { loadConfig } from "../config";
 
-export type ReactionEmoji = "👀" | "👍" | "👎" | "🤔" | "🎉" | "🔥" | "❤";
+export type ReactionEmoji = "👀" | "👍" | "👎" | "🤔" | "🎉" | "🔥" | "❤" | "🧠" | "⏳";
 
 export interface BotClient {
   sendMessage(
@@ -35,7 +36,7 @@ export function createBotClient(cfg = loadConfig()): BotClient {
     },
     async setReaction(chatId, messageId, emoji) {
       await bot.api.setMessageReaction(chatId, messageId, [
-        { type: "emoji", emoji }
+        { type: "emoji", emoji: emoji as ReactionTypeEmoji["emoji"] }
       ]);
     }
   };
