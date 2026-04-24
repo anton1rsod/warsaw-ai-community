@@ -47,4 +47,39 @@ describe("ingest.toMarkdown", () => {
     });
     expect(md).toMatch(/https:\/\/t\.me\/c\/9876543210\//);
   });
+
+  it("keeps chat id unchanged when it doesn't start with 100, and omits thread segment when message_thread_id is absent", () => {
+    const parsed: ParsedMessage = {
+      raw: {
+        message_id: 7,
+        date: NOW.getTime() / 1000,
+        chat: { id: -555, type: "group" },
+        from: { id: 99, first_name: "Alice" },
+        text: "no thread"
+      },
+      tags: new Set(),
+      topicId: 1,
+      topicClass: "casual",
+      authorHandle: "alice",
+      plainText: "no thread",
+      timestamp: NOW
+    };
+    const md = toMarkdown({
+      message: parsed,
+      topicName: "General",
+      chatIdForLink: -555
+    });
+    expect(md).toMatch(/source: https:\/\/t\.me\/c\/555\/7$/m);
+  });
+
+  it("emits frontmatter fields in the spec-mandated order", () => {
+    const md = toMarkdown({
+      message: msg("x"),
+      topicName: "Guides",
+      chatIdForLink: -1001234567890
+    });
+    expect(md).toMatch(
+      /^---\ntopic: .+\ntopic_id: .*\nauthor_handle: .+\nauthor_id: \d+\ntimestamp: .+\nsource: .+\ntags:(?:\n {2}- .+)*\ntopic_class: (?:formal|casual)\n---\n/
+    );
+  });
 });
