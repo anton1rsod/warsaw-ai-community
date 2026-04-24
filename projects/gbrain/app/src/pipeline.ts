@@ -9,6 +9,7 @@ import { evaluate } from "./consent/index";
 import { toMarkdown } from "./ingest/index";
 import { buildSlug } from "./ingest/slug";
 import { loadConfig, type Config } from "./config";
+import { recordNews } from "./digest/news-log";
 
 export interface PipelineDeps {
   cfg?: Config;
@@ -29,6 +30,8 @@ export async function ingestOne(raw: TelegramMessage, deps: PipelineDeps): Promi
   const now = deps.now?.() ?? new Date();
   const topics = buildTopicMap(cfg);
   const parsed = parseMessage({ raw, topics });
+
+  if (parsed.topicId === cfg.topics.newsSignalsId) recordNews(parsed);
 
   const prefs = await deps.prefs.get(raw.from.id);
   const decision = evaluate({ message: parsed, prefs, taggerIsAuthor: true, now });
