@@ -97,14 +97,15 @@ describe("ingestOne integration", () => {
     expect(call).toBeDefined();
     expect(call!.path).toMatch(/^community\/archive\/2026-04\//);
     expect(call!.message).toMatch(/archive:/);
+    expect(call!.content).toContain("topic: News & Signals");
     expect(deps._bot._setReaction).toHaveBeenCalledWith(
       TEST_CFG.telegram.chatId,
       msg.message_id,
-      "🧠"
+      "👀"
     );
   });
 
-  it("formal topic + no tag: defers and sets ⏳ reaction", async () => {
+  it("formal topic + no tag: defers and sets 🤔 reaction", async () => {
     // MSG_NEWS_RAW: thread_id=6 → newsSignalsId (formal), no #kb → defer_48h
     const deps = makeDeps();
 
@@ -115,7 +116,7 @@ describe("ingestOne integration", () => {
     expect(deps._bot._setReaction).toHaveBeenCalledWith(
       TEST_CFG.telegram.chatId,
       MSG_NEWS_RAW.message_id,
-      "⏳"
+      "🤔"
     );
     expect(deps.pending.all()).toHaveLength(1);
   });
@@ -146,7 +147,7 @@ describe("ingestOne integration", () => {
     expect(deps._bot._setReaction).toHaveBeenCalledWith(
       TEST_CFG.telegram.chatId,
       MSG_QA_WITH_KB.message_id,
-      "🧠"
+      "👀"
     );
   });
 });

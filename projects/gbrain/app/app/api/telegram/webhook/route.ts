@@ -8,10 +8,15 @@ import { createInMemoryPendingStore } from "@/pending/index";
 import { handleForget } from "@/commands/forget";
 import { handleOptOut, handleOptIn } from "@/commands/optout";
 import { handleStatus } from "@/commands/status";
+import { handleConfirm } from "@/commands/confirm";
 import { ingestOne } from "@/pipeline";
 import type { TelegramMessage } from "@/types";
 
-// Singletons — acceptable for Phase 1 (serverless cold start each invocation).
+// Next.js route config: ensure every POST runs live on Node, never cached or assigned to Edge.
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+// Singletons — acceptable for Phase 1 (Fluid Compute reuses instances).
 // Phase 2: migrate prefs + pending to Vercel KV.
 const prefs = createInMemoryPreferences();
 const pending = createInMemoryPendingStore();
@@ -19,12 +24,13 @@ const pending = createInMemoryPendingStore();
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const cfg = loadConfig();
 
-  if (cfg.flags.killSwitch) {
-    return NextResponse.json({ ok: false, reason: "kill switch active" }, { status: 503 });
-  }
-
   if (!verifyWebhookSecret(req.headers, cfg.telegram.webhookSecret)) {
     return NextResponse.json({ ok: false, reason: "unauthorized" }, { status: 401 });
+  }
+
+  if (cfg.flags.killSwitch) {
+    // 200 so Telegram stops retrying; flag it to operators via the body.
+    return NextResponse.json({ ok: true, killed: true });
   }
 
   let body: unknown;
@@ -54,21 +60,30 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (text.startsWith("/gbrain-forget")) {
       const result = await handleForget({
         authorId: msg.from.id,
-        isCoreOrganizer: false,
+        isCoreOrganizer: false, // TODO roster integration per ADR-0002
         messageText: text,
         store,
-        ownerOfPath: async () => null
+        // Phase 1 stub: the author of the command is treated as the owner of the path.
+        // Phase 2 should fetch `author_id` from the file's frontmatter via the store
+        // to enforce real ownership across users.
+        ownerOfPath: async () => msg.from.id
       });
+      await bot.sendDirectMessage(
+        msg.from.id,
+        result.ok ? "Removed." : `Cannot remove: ${result.reason}`
+      );
       return NextResponse.json({ ok: result.ok, reason: result.reason });
     }
 
     if (text.startsWith("/gbrain-optout")) {
       const result = await handleOptOut({ authorId: msg.from.id, prefs });
+      await bot.sendDirectMessage(msg.from.id, "You are opted out of GBrain archiving.");
       return NextResponse.json({ ok: result.ok });
     }
 
     if (text.startsWith("/gbrain-optin")) {
       const result = await handleOptIn({ authorId: msg.from.id, prefs });
+      await bot.sendDirectMessage(msg.from.id, "You are opted in to GBrain archiving.");
       return NextResponse.json({ ok: result.ok });
     }
 
@@ -76,6 +91,34 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       const result = await handleStatus({ authorId: msg.from.id, prefs });
       await bot.sendDirectMessage(msg.from.id, result.message);
       return NextResponse.json({ ok: true });
+    }
+
+    const trimmed = text.trim();
+    if (trimmed === "/yes" || trimmed === "/no") {
+      // v0.1 limitation: confirmation matches most recent pending entry for this author
+      // only if the entry id contains the author id. Phase 2 needs an author→entry index
+      // so this path is load-bearing once require_confirm becomes reachable.
+      const authorTag = `${msg.from.id}`;
+      const entries = pending.all().filter((e) => e.id.includes(authorTag));
+      const entry = entries.at(-1);
+      if (entry) {
+        const result = await handleConfirm({
+          decision: trimmed === "/yes" ? "yes" : "no",
+          entryId: entry.id,
+          pending
+        });
+        await bot.sendDirectMessage(
+          msg.from.id,
+          result.ok && result.action === "cancelled"
+            ? "Cancelled."
+            : result.ok
+              ? "Confirmed. Will be archived on next flush."
+              : "That confirmation is no longer pending."
+        );
+        return NextResponse.json({ ok: result.ok, action: result.action });
+      }
+      await bot.sendDirectMessage(msg.from.id, "Nothing to confirm.");
+      return NextResponse.json({ ok: true, reason: "no pending entry" });
     }
 
     // Unrecognised DM — ignore silently.

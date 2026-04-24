@@ -59,7 +59,7 @@ export async function ingestOne(raw: TelegramMessage, deps: PipelineDeps): Promi
 
   if (decision.kind === "allow") {
     await deps.store.commit({ path, content, message: commitMessage });
-    await deps.bot.setReaction(cfg.telegram.chatId, raw.message_id, "🧠");
+    await deps.bot.setReaction(cfg.telegram.chatId, raw.message_id, "👀");
     return { handled: "allow-committed", reason: decision.reason };
   }
 
@@ -71,6 +71,6 @@ export async function ingestOne(raw: TelegramMessage, deps: PipelineDeps): Promi
     commitMessage,
     enqueuedAt: now
   });
-  await deps.bot.setReaction(cfg.telegram.chatId, raw.message_id, "⏳");
+  await deps.bot.setReaction(cfg.telegram.chatId, raw.message_id, "🤔");
   return { handled: "deferred", reason: decision.reason };
 }
