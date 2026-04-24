@@ -202,7 +202,7 @@ Codified in `consent/rules.ts`. Exported as pure function.
 |---|---|
 | message in casual topic + no tags | **deny** |
 | message in casual topic + `#kb` tag + tagger == author | **allow** |
-| message in casual topic + `#kb` tag + tagger != author | **confirm_required** (DM author) |
+| message in casual topic + `#kb` tag + tagger != author | **require_confirm** (DM author) |
 | message in casual topic + `#skip` tag | **deny** (hard) |
 | message in formal topic + no tags | **allow (48h pending window)** |
 | message in formal topic + `#skip` tag | **deny** (hard) |

@@ -7,7 +7,7 @@ export interface EvaluateInput {
   now: Date;
 }
 
-const DEFER_MS = 48 * 60 * 60 * 1000;
+export const DEFER_MS = 48 * 60 * 60 * 1000;
 
 export function evaluate(input: EvaluateInput): ConsentDecision {
   const { message, prefs, taggerIsAuthor, now } = input;

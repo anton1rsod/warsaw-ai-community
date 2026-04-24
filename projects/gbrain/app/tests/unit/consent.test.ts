@@ -45,6 +45,10 @@ describe("consent.evaluate", () => {
       prefs: noPrefs(), taggerIsAuthor: false, now: NOW
     });
     expect(d.kind).toBe("require_confirm");
+    if (d.kind === "require_confirm") {
+      expect(d.confirmFrom).toBe(999);
+      expect(d.reason).toBeTruthy();
+    }
   });
 
   it("denies #skip in casual topic regardless of other tags", () => {
@@ -53,6 +57,7 @@ describe("consent.evaluate", () => {
       prefs: noPrefs(), taggerIsAuthor: true, now: NOW
     });
     expect(d.kind).toBe("deny");
+    if (d.kind === "deny") expect(d.reason).toMatch(/skip/i);
   });
 
   it("defers formal topic + no tags for 48h", () => {
@@ -63,6 +68,7 @@ describe("consent.evaluate", () => {
     expect(d.kind).toBe("defer_48h");
     if (d.kind === "defer_48h") {
       expect(d.deferUntil.getTime() - NOW.getTime()).toBe(48 * 60 * 60 * 1000);
+      expect(d.reason).toMatch(/formal|pre-consent/i);
     }
   });
 
@@ -72,6 +78,7 @@ describe("consent.evaluate", () => {
       prefs: noPrefs(), taggerIsAuthor: true, now: NOW
     });
     expect(d.kind).toBe("allow");
+    if (d.kind === "allow") expect(d.reason).toBeTruthy();
   });
 
   it("denies formal topic + #skip hard", () => {
@@ -105,5 +112,6 @@ describe("consent.evaluate", () => {
       prefs: noPrefs(), taggerIsAuthor: true, now: NOW
     });
     expect(d.kind).toBe("deny");
+    if (d.kind === "deny") expect(d.reason).toMatch(/topic|unknown/i);
   });
 });
