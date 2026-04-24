@@ -4,7 +4,7 @@ Runbooks and how-tos for organizers and active members. Unlike ADRs (decisions) 
 
 ## Current playbooks
 
-- *(none yet — see the "to write" list below)*
+- [GBrain Operations](gbrain-operations.md) — deploy, monitor, intervene, recover.
 
 ## To write
 
@@ -16,6 +16,5 @@ Priority order:
 4. **Writing an ADR** — how and when to propose, review, accept.
 5. **Running an event-driven burst** — when to trigger, folder setup, outcomes write-up.
 6. **Monthly metrics review** — what to look at, where to record.
-7. **GBrain operations** (post-v1) — how to handle ingestion requests, removal requests, broken answers.
 
 Playbooks should live in this folder as standalone markdown. Keep them short and actionable — numbered steps, not prose.
