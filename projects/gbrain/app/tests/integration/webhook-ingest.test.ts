@@ -83,7 +83,7 @@ beforeEach(() => {
 });
 
 describe("ingestOne integration", () => {
-  it("formal topic + #kb: commits immediately and sets 🧠 reaction", async () => {
+  it("formal topic + #kb: commits immediately and sets 👀 reaction", async () => {
     // MSG_NEWS_RAW: thread_id=6 → newsSignalsId (formal), no #kb tag in text
     // We need a formal + #kb message — add #kb to the news message text
     const msg = { ...MSG_NEWS_RAW, text: MSG_NEWS_RAW.text + " #kb" };
