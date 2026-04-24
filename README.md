@@ -28,6 +28,7 @@
 | [`community/brand/brand.md`](community/brand/brand.md) | Name, voice, visual identity |
 | [`projects/_template/`](projects/_template/) | Copy this to start a new project |
 | [`projects/gbrain/`](projects/gbrain/) | First sub-project: Telegram knowledge base |
+| [`persona-builder/`](persona-builder/) | Persona-creation skill + community guide (EN/UK) — peer-evaluation infrastructure |
 | [`docs/specs/`](docs/specs/) | Design specs (program + projects) |
 | [`docs/decisions/`](docs/decisions/) | ADRs — numbered decision records |
 | [`docs/playbooks/`](docs/playbooks/) | Runbooks for organizers |
