@@ -70,4 +70,22 @@ describe("selectRecent", () => {
     // chat.id = -1001234567890 → abs → 1001234567890 → replace /^100/ → 1234567890
     expect(result.at(0)?.source).toBe("https://t.me/c/1234567890/2/42");
   });
+
+  it("omits thread segment from source URL when message_thread_id is absent", () => {
+    const raw = { ...BASE_RAW };
+    const { message_thread_id, ...rawNoThread } = raw;
+    void message_thread_id;
+    const msg: ParsedMessage = {
+      raw: { ...rawNoThread, message_id: 77, date: 0 },
+      tags: new Set(),
+      topicId: 1,
+      topicClass: "casual",
+      authorHandle: "alice",
+      plainText: "no thread",
+      timestamp: new Date("2026-04-24T10:00:00Z")
+    };
+    const result = selectRecent([msg], NOW);
+    // No double-slash: expect /.../77 not /.../.../77
+    expect(result.at(0)?.source).toBe("https://t.me/c/1234567890/77");
+  });
 });
