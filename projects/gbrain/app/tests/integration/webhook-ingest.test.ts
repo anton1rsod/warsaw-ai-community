@@ -28,7 +28,8 @@ const TEST_CFG: Config = {
   },
   digest: { timezone: "Europe/Warsaw", hourLocal: 9 },
   flags: { killSwitch: false, digestEnabled: true },
-  cron: { secret: "cron-sec" }
+  cron: { secret: "cron-sec" },
+  archive: { namespace: "" }
 };
 
 function makeBot(): BotClient & {
@@ -51,28 +52,45 @@ function makeStore(): GithubStore & { _commit: ReturnType<typeof vi.fn> } {
   return {
     commit: _commit,
     remove: vi.fn().mockResolvedValue("sha-del"),
+    readJson: vi.fn().mockResolvedValue(null),
+    listDir: vi.fn().mockResolvedValue([]),
     _commit
+  };
+}
+
+function makeNewsLog(): {
+  record: ReturnType<typeof vi.fn>;
+  snapshot: ReturnType<typeof vi.fn>;
+} {
+  return {
+    record: vi.fn().mockResolvedValue(undefined),
+    snapshot: vi.fn().mockResolvedValue([])
   };
 }
 
 function makeDeps(overrides: Partial<PipelineDeps> = {}): PipelineDeps & {
   _bot: ReturnType<typeof makeBot>;
   _store: ReturnType<typeof makeStore>;
+  _newsLog: ReturnType<typeof makeNewsLog>;
 } {
   const _bot = makeBot();
   const _store = makeStore();
+  const _newsLog = makeNewsLog();
   const deps: PipelineDeps & {
     _bot: ReturnType<typeof makeBot>;
     _store: ReturnType<typeof makeStore>;
+    _newsLog: ReturnType<typeof makeNewsLog>;
   } = {
     cfg: TEST_CFG,
     bot: _bot,
     store: _store,
     prefs: createInMemoryPreferences(),
     pending: createInMemoryPendingStore(),
+    newsLog: _newsLog,
     now: () => new Date("2026-04-24T12:00:00Z"),
     _bot,
     _store,
+    _newsLog,
     ...overrides
   };
   return deps;
@@ -149,5 +167,29 @@ describe("ingestOne integration", () => {
       MSG_QA_WITH_KB.message_id,
       "👀"
     );
+  });
+
+  it("inserts ARCHIVE_NAMESPACE into the archive path when configured", async () => {
+    const cfg: Config = { ...TEST_CFG, archive: { namespace: "_staging" } };
+    const deps = makeDeps({ cfg });
+    const msg = { ...MSG_NEWS_RAW, text: MSG_NEWS_RAW.text + " #kb" };
+
+    const outcome = await ingestOne(msg, deps);
+
+    expect(outcome.handled).toBe("allow-committed");
+    const call = deps._store._commit.mock.calls[0]?.[0];
+    expect(call).toBeDefined();
+    expect(call!.path).toMatch(/^community\/archive\/_staging\/2026-04\//);
+  });
+
+  it("namespace also applies to deferred archive paths", async () => {
+    const cfg: Config = { ...TEST_CFG, archive: { namespace: "_staging" } };
+    const deps = makeDeps({ cfg });
+
+    await ingestOne(MSG_NEWS_RAW, deps);
+
+    const queued = deps.pending.all();
+    expect(queued).toHaveLength(1);
+    expect(queued[0]!.messagePath).toMatch(/^community\/archive\/_staging\/2026-04\//);
   });
 });

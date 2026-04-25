@@ -28,7 +28,12 @@ const schema = z.object({
   GBRAIN_KILL_SWITCH: z.enum(["true", "false"]).default("false"),
   DIGEST_ENABLED: z.enum(["true", "false"]).default("true"),
 
-  CRON_SECRET: z.string().min(4)
+  CRON_SECRET: z.string().min(4),
+
+  ARCHIVE_NAMESPACE: z
+    .string()
+    .regex(/^[a-z0-9_-]*$/, "ARCHIVE_NAMESPACE must match [a-z0-9_-]*")
+    .default("")
 });
 
 export interface Config {
@@ -48,6 +53,7 @@ export interface Config {
   digest: { timezone: string; hourLocal: number };
   flags: { killSwitch: boolean; digestEnabled: boolean };
   cron: { secret: string };
+  archive: { namespace: string };
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -85,6 +91,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       killSwitch: e.GBRAIN_KILL_SWITCH === "true",
       digestEnabled: e.DIGEST_ENABLED === "true"
     },
-    cron: { secret: e.CRON_SECRET }
+    cron: { secret: e.CRON_SECRET },
+    archive: { namespace: e.ARCHIVE_NAMESPACE }
   };
 }

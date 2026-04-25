@@ -3,13 +3,13 @@ import type { BotClient } from "./telegram/client";
 import type { GithubStore } from "./store/index";
 import type { PreferencesStore } from "./consent/preferences";
 import type { PendingStore } from "./pending/index";
+import type { NewsLogStore } from "./digest/news-log";
 import { buildTopicMap } from "./topics";
 import { parseMessage } from "./ingest/parse";
 import { evaluate } from "./consent/index";
 import { toMarkdown } from "./ingest/index";
 import { buildSlug } from "./ingest/slug";
 import { loadConfig, type Config } from "./config";
-import { recordNews } from "./digest/news-log";
 
 export interface PipelineDeps {
   cfg?: Config;
@@ -17,6 +17,7 @@ export interface PipelineDeps {
   store: GithubStore;
   prefs: PreferencesStore;
   pending: PendingStore;
+  newsLog: NewsLogStore;
   now?: () => Date;
 }
 
@@ -31,7 +32,7 @@ export async function ingestOne(raw: TelegramMessage, deps: PipelineDeps): Promi
   const topics = buildTopicMap(cfg);
   const parsed = parseMessage({ raw, topics });
 
-  if (parsed.topicId === cfg.topics.newsSignalsId) recordNews(parsed);
+  if (parsed.topicId === cfg.topics.newsSignalsId) await deps.newsLog.record(parsed);
 
   const prefs = await deps.prefs.get(raw.from.id);
   const decision = evaluate({ message: parsed, prefs, taggerIsAuthor: true, now });
@@ -56,7 +57,8 @@ export async function ingestOne(raw: TelegramMessage, deps: PipelineDeps): Promi
     messageId: raw.message_id
   });
   const month = parsed.timestamp.toISOString().slice(0, 7); // "YYYY-MM"
-  const path = `community/archive/${month}/${slug}.md`;
+  const namespacePart = cfg.archive.namespace ? `${cfg.archive.namespace}/` : "";
+  const path = `community/archive/${namespacePart}${month}/${slug}.md`;
   const content = toMarkdown({ message: parsed, topicName, chatIdForLink: cfg.telegram.chatId });
   const commitMessage = `archive: ${topicName} — ${parsed.authorHandle} — ${parsed.timestamp.toISOString()}`;
 

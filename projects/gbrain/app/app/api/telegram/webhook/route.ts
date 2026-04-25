@@ -3,6 +3,7 @@ import { loadConfig } from "@/config";
 import { verifyWebhookSecret } from "@/telegram/verify";
 import { createBotClient } from "@/telegram/client";
 import { createGithubStore } from "@/store/index";
+import { createNewsLogStore } from "@/digest/news-log";
 import { createInMemoryPreferences } from "@/consent/preferences";
 import { createInMemoryPendingStore } from "@/pending/index";
 import { handleForget } from "@/commands/forget";
@@ -131,6 +132,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: true, reason: "wrong chat" });
   }
 
-  const outcome = await ingestOne(msg, { cfg, bot, store, prefs, pending });
+  const newsLog = createNewsLogStore({ github: store, namespace: cfg.archive.namespace });
+  const outcome = await ingestOne(msg, { cfg, bot, store, prefs, pending, newsLog });
   return NextResponse.json({ ok: true, handled: outcome.handled, reason: outcome.reason });
 }

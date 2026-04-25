@@ -20,7 +20,8 @@ function makeCfg(overrides: Partial<Config["topics"]> = {}): Config {
     },
     digest: { timezone: "Europe/Warsaw", hourLocal: 9 },
     flags: { killSwitch: false, digestEnabled: true },
-    cron: { secret: "c" }
+    cron: { secret: "c" },
+    archive: { namespace: "" }
   };
 }
 

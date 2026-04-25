@@ -49,4 +49,45 @@ describe("config.loadConfig()", () => {
     const { loadConfig } = await import("../../src/config");
     expect(loadConfig().flags.killSwitch).toBe(true);
   });
+
+  describe("ARCHIVE_NAMESPACE", () => {
+    function setRequiredEnv(): void {
+      process.env.TELEGRAM_BOT_TOKEN = "1234567890:ab";
+      process.env.TELEGRAM_WEBHOOK_SECRET = "sec4";
+      process.env.AI_GATEWAY_API_KEY = "gkey";
+      process.env.GITHUB_BOT_TOKEN = "ghp_abc123";
+      process.env.GITHUB_REPO_OWNER = "warsaw-ai";
+      process.env.GITHUB_REPO_NAME = "community";
+      process.env.CHAT_ID = "-1001";
+      process.env.TOPIC_NEWS_ID = "1";
+      process.env.CRON_SECRET = "csec";
+    }
+
+    it("defaults to empty string when not set", async () => {
+      setRequiredEnv();
+      const { loadConfig } = await import("../../src/config");
+      expect(loadConfig().archive.namespace).toBe("");
+    });
+
+    it("accepts a kebab-or-underscore identifier", async () => {
+      setRequiredEnv();
+      process.env.ARCHIVE_NAMESPACE = "_staging";
+      const { loadConfig } = await import("../../src/config");
+      expect(loadConfig().archive.namespace).toBe("_staging");
+    });
+
+    it("rejects namespace containing slashes (path-traversal guard)", async () => {
+      setRequiredEnv();
+      process.env.ARCHIVE_NAMESPACE = "foo/bar";
+      const { loadConfig } = await import("../../src/config");
+      expect(() => loadConfig()).toThrow(/ARCHIVE_NAMESPACE/);
+    });
+
+    it("rejects namespace containing dots (no '..' or hidden segments)", async () => {
+      setRequiredEnv();
+      process.env.ARCHIVE_NAMESPACE = "..";
+      const { loadConfig } = await import("../../src/config");
+      expect(() => loadConfig()).toThrow(/ARCHIVE_NAMESPACE/);
+    });
+  });
 });

@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadConfig } from "@/config";
 import { runDigest } from "@/digest/index";
-import { snapshotNews, clearNews } from "@/digest/news-log";
+import { createNewsLogStore } from "@/digest/news-log";
 import { createBotClient } from "@/telegram/client";
 import { createGithubStore } from "@/store/index";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
 export async function GET(req: NextRequest) {
   const cfg = loadConfig();
@@ -20,23 +22,29 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
-  const messages = snapshotNews();
+  const store = createGithubStore(cfg.github);
+  const newsLog = createNewsLogStore({ github: store, namespace: cfg.archive.namespace });
   const now = new Date();
+  const since = new Date(now.getTime() - TWENTY_FOUR_HOURS_MS);
+  const messages = await newsLog.snapshot({ since, until: now });
   const result = await runDigest({ messages, now });
 
   const bot = createBotClient(cfg);
-  await bot.sendMessage(cfg.telegram.chatId, cfg.topics.newsSignalsId, result.markdown, "Markdown");
+  await bot.sendMessage(
+    cfg.telegram.chatId,
+    cfg.topics.newsSignalsId,
+    result.markdown,
+    "Markdown"
+  );
 
-  // Archive the digest itself
-  const store = createGithubStore(cfg.github);
+  // Archive the digest itself (uses same namespace so staging digests stay isolated).
+  const namespacePart = cfg.archive.namespace ? `${cfg.archive.namespace}/` : "";
   const day = now.toISOString().slice(0, 10);
   await store.commit({
-    path: `community/archive/digests/${day}.md`,
+    path: `community/archive/${namespacePart}digests/${day}.md`,
     content: result.markdown,
     message: `digest: ${day} — ${result.itemCount} items`
   });
-
-  clearNews();
 
   return NextResponse.json({
     ok: true,

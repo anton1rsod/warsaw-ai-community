@@ -113,3 +113,79 @@ describe("store.remove", () => {
     expect(mockDelete).not.toHaveBeenCalled();
   });
 });
+
+describe("store.readJson", () => {
+  it("returns the parsed JSON value when the file exists", async () => {
+    const content = Buffer.from('{"hello":"world"}', "utf8").toString("base64");
+    mockGet.mockResolvedValueOnce({
+      data: { content, encoding: "base64", type: "file", sha: "s" }
+    });
+    const { createGithubStore } = await import("../../src/store/github");
+    const store = createGithubStore({ token: "x", owner: "o", repo: "r", branch: "main" });
+
+    const result = await store.readJson<{ hello: string }>(
+      "community/archive/_news-log/2026-04-24/test.json"
+    );
+
+    expect(result).toEqual({ hello: "world" });
+  });
+
+  it("returns null on 404", async () => {
+    mockGet.mockRejectedValueOnce({ status: 404 });
+    const { createGithubStore } = await import("../../src/store/github");
+    const store = createGithubStore({ token: "x", owner: "o", repo: "r", branch: "main" });
+
+    const result = await store.readJson("community/archive/_news-log/missing.json");
+
+    expect(result).toBeNull();
+  });
+
+  it("propagates non-404 errors", async () => {
+    mockGet.mockRejectedValueOnce({ status: 500, message: "boom" });
+    const { createGithubStore } = await import("../../src/store/github");
+    const store = createGithubStore({ token: "x", owner: "o", repo: "r", branch: "main" });
+
+    await expect(store.readJson("community/archive/_news-log/x.json")).rejects.toMatchObject({
+      status: 500
+    });
+  });
+});
+
+describe("store.listDir", () => {
+  it("returns the directory entries when the path exists", async () => {
+    mockGet.mockResolvedValueOnce({
+      data: [
+        {
+          name: "a.json",
+          path: "community/archive/_news-log/2026-04-24/a.json",
+          type: "file",
+          sha: "1"
+        },
+        {
+          name: "b.json",
+          path: "community/archive/_news-log/2026-04-24/b.json",
+          type: "file",
+          sha: "2"
+        }
+      ]
+    });
+    const { createGithubStore } = await import("../../src/store/github");
+    const store = createGithubStore({ token: "x", owner: "o", repo: "r", branch: "main" });
+
+    const result = await store.listDir("community/archive/_news-log/2026-04-24");
+
+    expect(result).toHaveLength(2);
+    expect(result[0]!.name).toBe("a.json");
+    expect(result[0]!.type).toBe("file");
+  });
+
+  it("returns empty array on 404", async () => {
+    mockGet.mockRejectedValueOnce({ status: 404 });
+    const { createGithubStore } = await import("../../src/store/github");
+    const store = createGithubStore({ token: "x", owner: "o", repo: "r", branch: "main" });
+
+    const result = await store.listDir("community/archive/_news-log/2026-04-30");
+
+    expect(result).toEqual([]);
+  });
+});
