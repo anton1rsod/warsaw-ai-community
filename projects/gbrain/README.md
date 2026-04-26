@@ -26,6 +26,10 @@ Right now, community knowledge lives in Telegram scroll-back. It's lossy, unsear
 
 See [`spec.md`](spec.md) for full design.
 
+## Versioning
+
+SemVer. `0.1.x` = pre-launch rehearsal. `0.2.x` = first real-channel soft launch + observation. `0.3.0+` = Phase 1 success gates met. `1.0.0` is reserved for a deliberate production-grade declaration. See [`CHANGELOG.md`](CHANGELOG.md) for the full version table and release log.
+
 ## Next step
 
 Founder reviews [`spec.md`](spec.md). On approval, `writing-plans` produces [`plan.md`](plan.md).
