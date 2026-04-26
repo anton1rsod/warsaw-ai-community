@@ -84,15 +84,18 @@ Community knowledge lives in Telegram scrollback — lossy, unsearchable at scal
 │    - store/         (git commit)     │
 └──────┬───────────────────────┬───────┘
        │                       │
-       │ Gemini via             │ git push
-       │ Vercel AI Gateway      │ (auto-commit to community/archive/)
+       │ Gemini direct          │ git push
+       │ (@ai-sdk/google,       │ (auto-commit to community/archive/)
+       │  since 0.1.1)          │
        ▼                       ▼
 ┌──────────────────┐   ┌──────────────────────┐
 │ Gemini API       │   │ This git repo         │
-│ (flash / pro)    │   │ community/archive/... │
-│ (fail-over:      │   │ (canonical storage)   │
-│  Claude/OpenAI)  │   └──────────────────────┘
+│ (gemini-2.5-     │   │ community/archive/... │
+│  flash)          │   │ (canonical storage)   │
+│                  │   └──────────────────────┘
 └──────────────────┘
+(Vercel AI Gateway is no longer in the path; see §16 + §20. Gateway re-entry
+is a Phase 2 / 0.3.0+ option if multi-provider fail-over becomes important.)
 ```
 
 **Phase 2 adds:**
@@ -108,7 +111,7 @@ Community knowledge lives in Telegram scrollback — lossy, unsearchable at scal
 | `ingest/` | Turn a Telegram message into a deterministic markdown file with frontmatter (author, timestamp, topic, source_link) | Yes — `(message) → markdown_string` |
 | `store/` | Commit markdown to the repo using a bot identity. Branch protection bypass is limited to `community/archive/**` | Yes — mock git, assert paths and commit messages |
 | `digest/` | Select N recent News & Signals messages, call LLM, render digest markdown, post to Telegram | Yes — mock LLM + Telegram, assert prompt shape + output shape |
-| `ai/` | Thin client around Vercel AI Gateway. Handles model routing (`provider/model` strings), timeout, retry, cost tagging | Yes — mock gateway, assert params |
+| `ai/` | Thin client around `@ai-sdk/google` (since 0.1.1). Handles model selection (`gemini-2.5-flash` etc.), timeout, retry, cost tagging | Yes — mock the provider factory, assert model id + params |
 | `telegram/` | Wrap bot SDK. Handle webhook parsing, message sending, DM confirmations, `/gbrain-*` commands | Yes — standard webhook testing |
 | `commands/` | Slash command handlers (`/gbrain-forget`, `/gbrain-optout`, `/gbrain-status`) | Yes — command → action mapping |
 
@@ -329,13 +332,13 @@ Detailed protocol in **ADR-0006** (to be written alongside this spec).
 
 ## 16. Observability
 
-- **Vercel AI Gateway dashboard** — per-request cost, latency, token usage, model routing.
-- **Vercel logs** — function invocations, errors.
+- **Google AI Studio dashboard** (since 0.1.1) — per-request token usage and cost. Was Vercel AI Gateway dashboard until 0.1.0; switched in 0.1.1 because Gateway requires a credit card on file even for free credits.
+- **Vercel logs** — function invocations, errors. `console.error("[gbrain.digest] ...")` writes here.
 - **Custom metric events** (via Vercel log drain → future observability tool):
   - `gbrain.ingest.allowed` / `gbrain.ingest.denied` / `gbrain.ingest.pending`
-  - `gbrain.digest.run` with outcome (success / degraded / failed)
+  - `gbrain.digest.run` with outcome (success / degraded / failed) — `runDigest()` returns `degraded:true` on AI failure (see §19 rollback).
   - `gbrain.forget.requested`
-  - `gbrain.cost.daily` (summed from gateway)
+  - `gbrain.cost.daily` (summed from Google AI Studio when log drain lands; manual check via dashboard until then)
 - Weekly internal report (manual in v0.1) posted to **Announcements** when it exists, or to core-organizer DM until then.
 
 ## 17. Testing strategy
@@ -371,8 +374,8 @@ CI on every PR (GitHub Actions) — no merge without green tests.
 | Risk | Severity | Mitigation |
 |---|---|---|
 | Member posts PII (phone, address) and it hits the archive | High | `#skip` tag prominently documented; `/gbrain-forget` always works; moderation scan of auto-committed content weekly |
-| Cost spike from runaway digest or ingestion | Medium | Daily cost alarm via Vercel AI Gateway; `GBRAIN_KILL_SWITCH` env var |
-| Gemini provider outage | Low | Hybrid gateway fails over to Claude / OpenAI automatically |
+| Cost spike from runaway digest or ingestion | Medium | Google AI Studio dashboard for daily token totals; `GBRAIN_KILL_SWITCH` env var; `DIGEST_ENABLED=false` to feature-flag off |
+| Gemini provider outage | **Medium (was Low until 0.1.1)** | Direct Gemini call (no Gateway fail-over). `runDigest()` returns degraded — cron commits a tombstone digest, skips Telegram post. Outage = no digest that day. Multi-provider fail-over is a Phase 2 / 0.3.0+ candidate to revisit. |
 | Consent rule bug (e.g., archives a `#skip`-tagged message) | High | Rules engine is pure-function, heavily tested; each failure = P0 incident + ADR |
 | Bot token leaked (token in git, accidental screenshot) | Critical | Env-var-only policy; pre-commit secret scan; immediate rotation protocol (ADR-0006) |
 | Member perceives bot as "watching everything" and leaves | Medium | Transparent onboarding doc; clear commands (`/gbrain-status`) showing exactly what's ingested |
