@@ -19,6 +19,13 @@ GBrain stays in `0.x` indefinitely. The major version `1.0.0` is reserved — An
 
 ---
 
+## [Unreleased] — 2026-04-26 — extension brainstorm prep
+
+### Added
+- spec.md prologue `## At a glance — 90-day vision` with 5-surface end-state, 30/60/90 day plan, non-goals, and indispensability criteria. Sourced from [`docs/specs/2026-04-26-gbrain-extension-questionnaire.md`](../../docs/specs/2026-04-26-gbrain-extension-questionnaire.md) §1.3.
+- Filtered per-topic news feed added to the 90-day vision as a fifth member-facing surface (extension of existing daily digest, not replacement).
+- Version-line mapping committed: 0.2.0 = real-channel launch (day 30), 0.3.x = onboarding + meeting continuity (day 60), 0.4.x = personalization (day 90). 1.0.0 stays reserved for production-grade declaration.
+
 ## [0.1.1] - 2026-04-26 — rehearsal complete + Phase D cleanup + Gemini direct
 
 ### Fixed
