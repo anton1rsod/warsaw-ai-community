@@ -16,6 +16,8 @@ export interface RunDigestResult {
   model: string;
   usage: { inputTokens: number; outputTokens: number };
   degraded?: boolean;
+  /** TEMP DIAGNOSTIC — surfacing AI error during 0.1.1 C5 rehearsal. Revert. */
+  diagnostic?: string;
 }
 
 export async function runDigest(input: RunDigestInput): Promise<RunDigestResult> {
@@ -42,12 +44,17 @@ export async function runDigest(input: RunDigestInput): Promise<RunDigestResult>
     };
   } catch (e: unknown) {
     console.error("[gbrain.digest] summarise threw — degrading:", e);
+    const errMsg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
     return {
       markdown: renderDegradedDigest({ date: input.now, itemCount: items.length }),
       itemCount: items.length,
       model,
       usage: { inputTokens: 0, outputTokens: 0 },
-      degraded: true
+      degraded: true,
+      // TEMP DIAGNOSTIC — revert this field before tagging 0.1.1.
+      // Surfacing the error name+message (not stack) lets us identify which AI
+      // failure mode hit during C5 rehearsal without adding a debug endpoint.
+      diagnostic: errMsg
     };
   }
 }

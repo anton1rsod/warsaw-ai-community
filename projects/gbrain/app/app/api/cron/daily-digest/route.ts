@@ -57,6 +57,8 @@ export async function GET(req: NextRequest) {
     degraded: result.degraded ?? false,
     itemCount: result.itemCount,
     usage: result.usage,
-    model: result.model
+    model: result.model,
+    // TEMP DIAGNOSTIC — present only when degraded; revert before tagging 0.1.1.
+    diagnostic: result.diagnostic
   });
 }
