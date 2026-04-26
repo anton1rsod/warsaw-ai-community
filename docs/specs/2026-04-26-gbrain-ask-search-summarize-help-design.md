@@ -1,6 +1,7 @@
 # GBrain — `/ask` + `/search` + `/summarize` + `/help` bundle (design)
 
-**Status:** Draft v1 — awaiting founder review
+**Status:** **SUPERSEDED** by [`2026-04-26-gbrain-ask-search-help-design.md`](./2026-04-26-gbrain-ask-search-help-design.md) — v2 drops `/summarize` (infeasible under Telegram Bot API) and fixes 7 BLOCKING + 6 HIGH + 14 MEDIUM findings from the spec review (architect / security / typescript). v1 is preserved as the original brainstorm output for the decision trail.
+**Original status:** Draft v1 — awaiting founder review
 **Date:** 2026-04-26
 **Author:** Brainstorming session (Anton + Claude) following [`2026-04-26-gbrain-extension-questionnaire.md`](./2026-04-26-gbrain-extension-questionnaire.md) and [`2026-04-26-gbrain-session-4-closeout.md`](./2026-04-26-gbrain-session-4-closeout.md).
 **Project:** `projects/gbrain/`
