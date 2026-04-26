@@ -19,7 +19,7 @@ GBrain stays in `0.x` indefinitely. The major version `1.0.0` is reserved — An
 
 ---
 
-## [0.1.1] - Unreleased — rehearsal complete + Phase D cleanup + Gemini direct
+## [0.1.1] - 2026-04-26 — rehearsal complete + Phase D cleanup + Gemini direct
 
 ### Fixed
 - `parse.ts`: treat undefined `message_thread_id` as General topic when `TOPIC_GENERAL_ID` is configured (commits `b78f454`, `630c557`). Without this, `#kb` posts in General were denied as "unknown topic".
