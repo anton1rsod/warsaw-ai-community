@@ -29,7 +29,8 @@ const TEST_CFG: Config = {
   digest: { timezone: "Europe/Warsaw", hourLocal: 9 },
   flags: { killSwitch: false, digestEnabled: true },
   cron: { secret: "cron-sec" },
-  archive: { namespace: "" }
+  archive: { namespace: "" },
+  links: { pinnedMsgUrlByTopic: {}, charterUrl: "" }
 };
 
 function makeBot(): BotClient & {

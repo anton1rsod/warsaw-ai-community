@@ -35,7 +35,10 @@ const schema = z.object({
   ARCHIVE_NAMESPACE: z
     .string()
     .regex(/^[a-z0-9_-]*$/, "ARCHIVE_NAMESPACE must match [a-z0-9_-]*")
-    .default("")
+    .default(""),
+
+  PINNED_MSG_URL_BY_TOPIC: z.string().optional(),
+  CHARTER_URL: z.string().url().optional()
 });
 
 export interface Config {
@@ -56,6 +59,10 @@ export interface Config {
   flags: { killSwitch: boolean; digestEnabled: boolean };
   cron: { secret: string };
   archive: { namespace: string };
+  links: {
+    pinnedMsgUrlByTopic: Record<string, string>;
+    charterUrl: string;
+  };
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -94,6 +101,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       digestEnabled: e.DIGEST_ENABLED === "true"
     },
     cron: { secret: e.CRON_SECRET },
-    archive: { namespace: e.ARCHIVE_NAMESPACE }
+    archive: { namespace: e.ARCHIVE_NAMESPACE },
+    links: {
+      pinnedMsgUrlByTopic: e.PINNED_MSG_URL_BY_TOPIC
+        ? (JSON.parse(e.PINNED_MSG_URL_BY_TOPIC) as Record<string, string>)
+        : {},
+      charterUrl:
+        e.CHARTER_URL ??
+        `https://github.com/${e.GITHUB_REPO_OWNER}/${e.GITHUB_REPO_NAME}/blob/${e.GITHUB_DEFAULT_BRANCH}/community/charter/charter.md`
+    }
   };
 }
