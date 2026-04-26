@@ -40,6 +40,10 @@ GBrain stays in `0.x` indefinitely. The major version `1.0.0` is reserved — An
 ### Internal
 - Aligned `app/package.json` version (`0.0.1` → `0.1.0`) with the existing `gbrain-v0.1.0` git tag and `[0.1.0]` CHANGELOG entry to remove the three-source-of-truth drift.
 - Adopted explicit versioning policy (this CHANGELOG header).
+- Fixed Vercel project `rootDirectory` to `projects/gbrain/app` (was `null`). All git-push auto-deploys had been ERROR-ing with `ENOENT package.json` because the build was running from repo root. Now auto-deploys and API-triggered deploys both succeed without per-call `projectSettings.rootDirectory` overrides.
+
+### Carries to Phase E
+- `TELEGRAM_BOT_TOKEN` rotation — deferred to the real-channel launch session (current token still works; rotation paired with the move to the real channel).
 
 ## [0.1.0] - 2026-04-24 — Phase 1 scaffold
 - Scaffold Next.js project at `projects/gbrain/app/`.
