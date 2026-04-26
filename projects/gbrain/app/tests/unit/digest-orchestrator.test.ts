@@ -56,4 +56,21 @@ describe("runDigest", () => {
     expect(result.markdown).toContain("GPT-5");
     expect(mockSummarise).toHaveBeenCalledOnce();
   });
+
+  // C6a (rehearsal): graceful degrade when AI Gateway exhausts all providers.
+  // Spec §20 lists Gemini outage as Low risk because Vercel AI Gateway fails over,
+  // but if Gemini + Claude + OpenAI all fail (or AI_GATEWAY_API_KEY is invalid),
+  // the SDK throws. runDigest must surface a degraded result, not a 500.
+  it("returns a degraded result when summarise throws (AI provider down)", async () => {
+    mockSummarise.mockRejectedValueOnce(new Error("AI Gateway: all providers unavailable"));
+    const { runDigest } = await import("../../src/digest/index");
+    const msgs = [makeMsg(1, new Date("2026-04-24T10:00:00Z"))];
+    const result = await runDigest({ messages: msgs, now: NOW });
+    expect(result.degraded).toBe(true);
+    expect(result.itemCount).toBe(1); // we still saw 1 message in the window
+    expect(result.usage.inputTokens).toBe(0); // didn't successfully consume tokens
+    expect(result.usage.outputTokens).toBe(0);
+    expect(result.markdown).toMatch(/digest unavailable/i);
+    expect(mockSummarise).toHaveBeenCalledOnce();
+  });
 });

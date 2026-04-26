@@ -29,25 +29,32 @@ export async function GET(req: NextRequest) {
   const messages = await newsLog.snapshot({ since, until: now });
   const result = await runDigest({ messages, now });
 
-  const bot = createBotClient(cfg);
-  await bot.sendMessage(
-    cfg.telegram.chatId,
-    cfg.topics.newsSignalsId,
-    result.markdown,
-    "Markdown"
-  );
+  // On AI fail-over exhaustion, runDigest returns a degraded result (degraded=true).
+  // Skip the Telegram post in that case — operators see the failure in Vercel logs and
+  // tomorrow's run includes today's messages. Avoids "digest unavailable" spam if AI
+  // is down for many days. Still archive a tombstone for audit.
+  if (!result.degraded) {
+    const bot = createBotClient(cfg);
+    await bot.sendMessage(
+      cfg.telegram.chatId,
+      cfg.topics.newsSignalsId,
+      result.markdown,
+      "Markdown"
+    );
+  }
 
-  // Archive the digest itself (uses same namespace so staging digests stay isolated).
+  // Archive the digest (or degraded tombstone) — uses same namespace so staging stays isolated.
   const namespacePart = cfg.archive.namespace ? `${cfg.archive.namespace}/` : "";
   const day = now.toISOString().slice(0, 10);
   await store.commit({
     path: `community/archive/${namespacePart}digests/${day}.md`,
     content: result.markdown,
-    message: `digest: ${day} — ${result.itemCount} items`
+    message: `digest: ${day} — ${result.itemCount} items${result.degraded ? " (degraded)" : ""}`
   });
 
   return NextResponse.json({
-    ok: true,
+    ok: !result.degraded,
+    degraded: result.degraded ?? false,
     itemCount: result.itemCount,
     usage: result.usage,
     model: result.model
