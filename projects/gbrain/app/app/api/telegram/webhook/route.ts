@@ -67,7 +67,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         // Phase 1 stub: the author of the command is treated as the owner of the path.
         // Phase 2 should fetch `author_id` from the file's frontmatter via the store
         // to enforce real ownership across users.
-        ownerOfPath: async () => msg.from.id
+        ownerOfPath: async () => msg.from.id,
+        archiveNamespace: cfg.archive.namespace
       });
       await bot.sendDirectMessage(
         msg.from.id,
