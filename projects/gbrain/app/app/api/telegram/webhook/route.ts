@@ -137,8 +137,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const outcome = await ingestOne(msg, { cfg, bot, store, prefs, pending, newsLog });
     return NextResponse.json({ ok: true, handled: outcome.handled, reason: outcome.reason });
   } catch (e: unknown) {
-    const err = e instanceof Error ? { message: e.message, stack: e.stack, name: e.name } : { raw: String(e) };
-    // Return 200 so Telegram stops retrying; surface the error in the body for diagnosis.
-    return NextResponse.json({ ok: false, reason: "ingest-threw", error: err }, { status: 200 });
+    // Log full error to Vercel logs (stderr); never echo internals back over the wire.
+    console.error("[gbrain.webhook] ingestOne threw:", e);
+    // Return 200 so Telegram stops retrying. Body intentionally generic.
+    return NextResponse.json({ ok: false, reason: "ingest-threw" }, { status: 200 });
   }
 }
