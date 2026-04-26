@@ -1,10 +1,42 @@
 # GBrain — Design Spec
 
 **Status:** Draft v1 — awaiting founder review
-**Date:** 2026-04-24
+**Date:** 2026-04-24 (prologue updated 2026-04-26)
 **Author:** Anton Safronov (via brainstorming session with Claude)
 **Project:** `projects/gbrain/`
 **Parent program:** [Warsaw AI Community](../../docs/specs/2026-04-24-warsaw-ai-community-program-design.md)
+
+---
+
+## At a glance — 90-day vision
+
+> *Added 2026-04-26 from [the extension questionnaire](../../docs/specs/2026-04-26-gbrain-extension-questionnaire.md) §1.3. This is community-facing language; the architectural details are in §6+ below.*
+
+GBrain ideally is a **community brain that lives inside Telegram** (where conversation already happens) and exposes the community's own accumulated knowledge as a conversational surface.
+
+**Core promise to a member:** *"Anything the community has explicitly preserved, you can ask GBrain about. It answers in plain language and cites the source messages."*
+
+**Five surfaces members see by day 90:**
+
+1. **Q&A** in DM or topic — `/ask <question>` returns a grounded answer with archive citations.
+2. **Onboarding** — interactive `/onboard` flow for new members, powered by the archive.
+3. **Meeting continuity** — answers "what was discussed?", "what's next?", "cadence?" from meeting notes.
+4. **Filtered news feed** — per-topic subscription, Gemini-filtered curated stream (extension of existing daily digest).
+5. **Daily news digest** — keeps running; assistant becomes the way to interrogate its contents.
+
+### 30 / 60 / 90 day plan
+
+| Window | Theme | Ships | Success signal |
+|---|---|---|---|
+| **Days 0–30** | Foundation + real-channel rollout | `/ask` MVP grounded in archive markdown with citations; **0.2.0** soft launch on Warsaw AI Community Telegram; bot-token rotation as launch hygiene | ≥3 organic `/ask` invocations from non-Anton members; consent flow validated on real channel |
+| **Days 31–60** | Onboarding + meeting continuity | Interactive `/onboard`; meeting notes ingested; topic-scoped `/ask --topic=<name>` | ≥5 distinct members ask real questions; ≥1 new member completes `/onboard` |
+| **Days 61–90** | Personalization + compounding | Filtered per-topic news feed; per-topic digests; per-member "what did I miss?" DM | ≥3 active news-feed subscribers; ≥10 distinct `/ask` users cumulative |
+
+**Non-goals for these 90 days:** public-facing surfaces (blog/newsletter/iCal), auto-moderation actions, commercial features, multi-community fork distribution.
+
+**Indispensable by day 90 means:** ≥5 members got useful cited answers from `/ask`; ≥1 onboarded member reports the flow felt structured; meeting context is no longer something Anton re-explains in chat; ≥3 members get personalized news they wouldn't have seen otherwise.
+
+> The version-line mapping: 0.2.0 = real-channel launch (day 30), 0.3.x = onboarding + meeting (day 60), 0.4.x = personalization (day 90). 1.0.0 stays reserved for production-grade declaration after day 90.
 
 ---
 
