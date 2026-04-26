@@ -1,11 +1,12 @@
 # GBrain — `/ask` + `/search` + `/help` bundle (design v2)
 
-**Status:** Draft v1 — awaiting founder review
+**Status:** Draft v2.1 — awaiting founder review
 **Date:** 2026-04-26
 **Author:** Brainstorming session (Anton + Claude) following [`2026-04-26-gbrain-extension-questionnaire.md`](./2026-04-26-gbrain-extension-questionnaire.md) and [`2026-04-26-gbrain-session-4-closeout.md`](./2026-04-26-gbrain-session-4-closeout.md).
 **Project:** `projects/gbrain/`
 **Parent spec:** [`projects/gbrain/spec.md`](../../projects/gbrain/spec.md)
 **Supersedes:** [`2026-04-26-gbrain-ask-search-summarize-help-design.md`](./2026-04-26-gbrain-ask-search-summarize-help-design.md) — v1 included `/summarize`, which was demonstrated infeasible under Telegram Bot API constraints (no recursive `reply_to_message`, no `getMessage` by id). v2 drops `/summarize` from 0.1.2 scope and defers it to a separate 0.1.3 spec with ADR-0010. v2 also fixes 7 BLOCKING + 6 HIGH + 14 MEDIUM findings from the spec review (architect / security / typescript-reviewer).
+**v2.1 patch:** focused TS-review on v2 caught (a) Next.js `outputFileTracingIncludes` requirement for the deploy-bundle copy (without it, runtime `readFileSync` throws ENOENT — production-broken), (b) undefined `RateLimits` type reference in `CommandSpec` (compile error), (c) `pnpm dev` lifecycle claim wrong (does not run `prebuild`; needs `predev`). Also folded in two MEDIUM citation-regex robustness improvements (`i` flag, `\s*` before `\/>`). Sections §3.7, §5, §6.1 patched in place.
 **Version-line target:** `gbrain-v0.1.2` (potentially extending into `v0.1.3`); **NOT** the real-channel `0.2.0` launch.
 
 ---
@@ -354,19 +355,37 @@ The Vercel project's `rootDirectory` is `projects/gbrain/app/` (per session-4 cl
 
 **Mechanism:**
 
-- A `prebuild` step in `projects/gbrain/app/package.json`:
+- Scripts in `projects/gbrain/app/package.json`:
   ```json
   "scripts": {
-    "prebuild": "tsx scripts/copy-index.ts",
+    "copy-index": "tsx scripts/copy-index.ts",
+    "predev": "pnpm copy-index",
+    "prebuild": "pnpm copy-index",
+    "dev": "next dev",
     "build": "next build"
   }
   ```
+  Both `predev` and `prebuild` are needed: npm/pnpm only fires `pre<scriptname>` before that **exact** script — `prebuild` does NOT fire before `dev`. The `predev` hook ensures local dev matches production path resolution.
 - `scripts/copy-index.ts` walks up to repo root (`../../..`), reads `community/archive/_index/index.json` and `manifest.json`, validates both with their Zod schemas, writes them to `projects/gbrain/app/data/_index/index.json` and `manifest.json`.
 - `data/_index/` is added to `.gitignore` in `projects/gbrain/app/.gitignore` (it's a build artifact, not source).
-- Next.js includes the `data/` directory in the function bundle (it's under the deploy root).
-- At runtime, the function reads `path.join(process.cwd(), 'data/_index/index.json')`.
+- **Next.js function bundle inclusion (required, not automatic).** Next.js's output file tracing follows the `import`/`require` graph, **not** `readFileSync` calls. Without explicit configuration, the function bundle will not contain `data/_index/index.json` and the runtime `readFileSync` will throw `ENOENT`. The fix lives in `projects/gbrain/app/next.config.mjs`:
+  ```js
+  const nextConfig = {
+    // ... existing config ...
+    experimental: {
+      outputFileTracingIncludes: {
+        '/api/telegram/webhook': ['./data/_index/**']
+      }
+    }
+  };
+  export default nextConfig;
+  ```
+  This tells Next.js to bundle every file matching the glob into the listed route's serverless bundle. The route key matches the file system route at `app/api/telegram/webhook/route.ts`. **This config change is mandatory** — the implementation plan must verify the deployed bundle contains the index file before the §1 day-30 gate can pass.
+- At runtime, the function reads `path.join(process.cwd(), 'data/_index/index.json')`. In Vercel's Node.js Lambda runtime, `process.cwd()` is `/var/task`, and the bundled file lives at `/var/task/data/_index/index.json`.
 
-**Local dev:** `pnpm dev` runs `prebuild` first; developers see the same path resolution as production. CI runs `pnpm build` which triggers `prebuild` automatically.
+**Local dev:** the `predev` script auto-runs `copy-index` before `next dev`. Developers see the same path resolution as production without an explicit setup step. CI runs `pnpm build` which triggers `prebuild` automatically.
+
+**Verification step in implementation:** the implementation plan adds a smoke test that hits a `/api/debug/index-presence` endpoint (gated, time-boxed, reverted before tag — the same pattern used in session 4 for diagnosing 0.1.0 deployment issues) returning `manifest.built_at` to confirm the bundle includes the file in production.
 
 **Why not a symlink:** Vercel's build resolves symlinks, but symlinks pointing outside the deploy root may not be followed under all deploy modes; explicit copy is the most predictable path.
 
@@ -674,11 +693,17 @@ export interface CommandHandlerInput {
 
 export type CommandHandler = (input: CommandHandlerInput) => Promise<NextResponse>;
 
+// Inline literal union (chosen over `keyof RateLimits` indirection — keeps
+// the type definition self-contained and makes the registry compile without
+// importing from rate-limit/. The rate-limit module's bucket type extends
+// this union, not the other way around).
+export type RateLimitKey = "ask" | "search";
+
 export interface CommandSpec {
   description: string;       // for /help short list
   detail: string;            // for /help <command>
-  surfaces: ("topic" | "dm")[];
-  rateLimitKey?: keyof RateLimits;
+  surfaces: readonly ("topic" | "dm")[];
+  rateLimitKey?: RateLimitKey;
 }
 
 export const COMMAND_REGISTRY = {
@@ -790,7 +815,13 @@ CITATION FORMAT:
 Now answer the question. Use only excerpt content. Cite with <citation id="N"/>.
 ```
 
-**Citation parsing:** the answer-parser scans for `<citation id="N"/>` tags (regex `/<citation\s+id="(\d+)"\/>/g`). Each `id` is checked against the in-context excerpt id range; dangling refs are replaced with `(citation pruned)` in the rendered output.
+**Citation parsing:** the answer-parser scans for `<citation id="N"/>` tags using the regex `/<citation\s+id="(\d+)"\s*\/>/gi`. Notes:
+- The `i` flag accepts `<CITATION>` variants (defensive against model capitalization drift; the prompt instructs lowercase but enforcement is belt-and-braces).
+- The `\s*` before `\/>` accepts the common model-output variant `<citation id="1" />` with a space before the self-close.
+- Single-quoted `id='1'` is **not** matched — the prompt mandates double quotes; non-conforming output is treated as malformed.
+- Unquoted `id=1` is **not** matched — same reasoning.
+
+Each parsed `id` is checked against the in-context excerpt id range; dangling refs are replaced with `(citation pruned)` in the rendered output. Malformed/unmatched tags are left as literal text in the answer (rare, and self-evidently wrong to a human reader — preferable to silent deletion).
 
 **Why XML, not `[N]`:** archive content frequently contains `[1]` or `[2]` (e.g., "see paper [3]"). Numeric brackets in prose are ambiguous as structural markers. XML tags are unambiguous, the model handles them well, and the parser is trivially regex-based.
 
