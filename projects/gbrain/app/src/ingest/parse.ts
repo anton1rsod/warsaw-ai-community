@@ -16,7 +16,17 @@ export function parseMessage(input: ParseInput): ParsedMessage {
     if (tag) tags.add(tag.toLowerCase());
   }
 
-  const topicId = input.raw.message_thread_id ?? null;
+  // Telegram forums omit `message_thread_id` for the General topic. Treat that as the
+  // configured General topic when the topic map has one (sentinel id, e.g. 0).
+  let topicId = input.raw.message_thread_id ?? null;
+  if (topicId === null) {
+    for (const t of input.topics.values()) {
+      if (t.name === "General") {
+        topicId = t.id;
+        break;
+      }
+    }
+  }
   const topicInfo = topicId !== null ? input.topics.get(topicId) : undefined;
   const topicClass: TopicClass = topicInfo?.class ?? "casual";
 
