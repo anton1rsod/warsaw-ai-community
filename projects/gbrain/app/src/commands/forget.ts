@@ -49,24 +49,26 @@ export async function handleForget(input: ForgetInput): Promise<CommandResult> {
   if (!input.isCoreOrganizer && ownerId !== input.authorId) {
     return { ok: false, reason: "not your content; ask a core organizer" };
   }
-  await input.store.remove({
-    path,
-    message: `forget: ${path} — requested by ${input.authorId}`
-  });
-
-  // Spec §10: commit a removal record (hash only, no content).
+  // Spec §10: commit a removal record (hash + author + timestamp). Tombstone
+  // first, then remove — if the second step fails after the first succeeds,
+  // the file remains and the operator can complete removal manually using the
+  // tombstone as the audit handle. Reverse order would risk "file gone with
+  // no audit trail" on partial failure (GDPR-uncomfortable).
   const now = input.now ?? new Date();
   const day = isoDay(now);
   const recordPath = tombstonePath(input.archiveNamespace, day);
   const entry = tombstoneEntry(path, input.authorId, now);
-  // Keep tombstone idempotent across multiple removals on the same day by
-  // appending. We don't read first (avoids extra GitHub round-trip) — `commit`
-  // overwrites; that's acceptable in v0.1.1 since same-day duplicate forgets
-  // are rare. Phase 2 should append-on-merge.
+  // Tombstone is overwritten on same-day duplicate forgets; acceptable in
+  // v0.1.1 (rare). Phase 2 should append-on-merge.
   await input.store.commit({
     path: recordPath,
     content: `# Removed records — ${day}\n\n${entry}\n`,
     message: `forget-tombstone: ${day} — requested by ${input.authorId}`
+  });
+
+  await input.store.remove({
+    path,
+    message: `forget: ${path} — requested by ${input.authorId}`
   });
 
   return { ok: true };

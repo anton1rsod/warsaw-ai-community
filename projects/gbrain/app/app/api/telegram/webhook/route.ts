@@ -57,8 +57,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const bot = createBotClient(cfg);
   const store = createGithubStore(cfg.github);
 
+  // Match a command at the start of the message text, requiring that the next
+  // character is end-of-string or whitespace — so "/gbrain-forget" matches but
+  // "/gbrain-forgetx" does not. Without this guard, "/gbrain-forgetx <stuff>"
+  // would dispatch to handleForget and surface a confusing reason instead of
+  // the standard "unrecognised dm command" path.
+  function isCommand(input: string, cmd: string): boolean {
+    if (!input.startsWith(cmd)) return false;
+    if (input.length === cmd.length) return true;
+    const next = input.charAt(cmd.length);
+    return next === " " || next === "\t" || next === "\n";
+  }
+
   if (isDM) {
-    if (text.startsWith("/gbrain-forget")) {
+    if (isCommand(text, "/gbrain-forget")) {
       const result = await handleForget({
         authorId: msg.from.id,
         isCoreOrganizer: false, // TODO roster integration per ADR-0002
@@ -77,19 +89,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ ok: result.ok, reason: result.reason });
     }
 
-    if (text.startsWith("/gbrain-optout")) {
+    if (isCommand(text, "/gbrain-optout")) {
       const result = await handleOptOut({ authorId: msg.from.id, prefs });
       await bot.sendDirectMessage(msg.from.id, "You are opted out of GBrain archiving.");
       return NextResponse.json({ ok: result.ok });
     }
 
-    if (text.startsWith("/gbrain-optin")) {
+    if (isCommand(text, "/gbrain-optin")) {
       const result = await handleOptIn({ authorId: msg.from.id, prefs });
       await bot.sendDirectMessage(msg.from.id, "You are opted in to GBrain archiving.");
       return NextResponse.json({ ok: result.ok });
     }
 
-    if (text.startsWith("/gbrain-status")) {
+    if (isCommand(text, "/gbrain-status")) {
       const result = await handleStatus({ authorId: msg.from.id, prefs });
       await bot.sendDirectMessage(msg.from.id, result.message);
       return NextResponse.json({ ok: true });

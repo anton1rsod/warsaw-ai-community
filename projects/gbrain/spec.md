@@ -222,7 +222,7 @@ Codified in `consent/rules.ts`. Exported as pure function.
 ### `/gbrain-forget` (post-commit removal)
 
 - Any member can DM the bot `/gbrain-forget <message-link>` for their own content.
-- Bot removes the markdown file and commits a removal record (`community/archive/_removed/YYYY-MM-DD.md` with hash only, no content).
+- Bot commits a removal record first (`community/archive/<namespace>/_removed/YYYY-MM-DD.md`), then removes the markdown file. The tombstone records the SHA-256 of the original archive path, the requester's Telegram user id, and an ISO timestamp — no original content. Tombstone-first ordering means a partial failure leaves the file present and a clear audit handle, never the reverse.
 - Core organizers can forget any content (for moderation cases).
 
 ## 11. Phase 1 — what ships

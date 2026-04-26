@@ -1,4 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
+
+// gateway.ts validates GEMINI_API_KEY lazily via getGoogle() before calling
+// the @ai-sdk/google factory. The factory itself is then exercised with the
+// real provider (its output is consumed by `generateText`, which IS mocked).
+// Set a stub key so getGoogle() doesn't throw.
+process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "test-only-not-a-real-key";
+
 import { runDigest } from "../../src/digest/index";
 import type { ParsedMessage } from "../../src/types";
 

@@ -1,10 +1,17 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { handleForget } from "../../src/commands/forget";
 
 const fakeStore = {
   commit: vi.fn(async () => "sha1"),
   remove: vi.fn(async () => "sha2")
 };
+
+beforeEach(() => {
+  // Reset shared mock between tests so call-count assertions don't see
+  // residual invocations from earlier tests.
+  fakeStore.commit.mockClear();
+  fakeStore.remove.mockClear();
+});
 
 describe("handleForget", () => {
   it("parses archive path from a valid archive URL and calls remove()", async () => {

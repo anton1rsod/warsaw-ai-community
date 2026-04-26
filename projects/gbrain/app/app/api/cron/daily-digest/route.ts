@@ -13,13 +13,15 @@ const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 export async function GET(req: NextRequest) {
   const cfg = loadConfig();
 
-  if (cfg.flags.killSwitch || !cfg.flags.digestEnabled) {
-    return NextResponse.json({ ok: true, skipped: "disabled" });
-  }
-
+  // Auth before any branch — don't reveal deployment state (e.g. kill-switched)
+  // to unauthenticated callers. Webhook route uses the same order.
   const auth = req.headers.get("authorization") ?? "";
   if (auth !== `Bearer ${cfg.cron.secret}`) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+
+  if (cfg.flags.killSwitch || !cfg.flags.digestEnabled) {
+    return NextResponse.json({ ok: true, skipped: "disabled" });
   }
 
   const store = createGithubStore(cfg.github);

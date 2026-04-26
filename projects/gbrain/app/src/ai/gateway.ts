@@ -10,9 +10,22 @@ import type { AiResult } from "../types";
 // Trade-off: loses gateway-side multi-provider fail-over (Gemini → Claude →
 // OpenAI). Gemini outages now degrade the digest (graceful — see runDigest).
 // Re-evaluate at 0.3.0+ if fail-over becomes operationally important.
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY ?? ""
-});
+//
+// Provider is constructed lazily so missing GEMINI_API_KEY surfaces as a clear
+// startup error from the first summarise() call rather than as a silent empty
+// header that becomes a confusing 401 from Gemini. Module-load construction
+// with `?? ""` would not throw here even though loadConfig() would catch it
+// later — better to fail fast at the boundary that actually needs the key.
+let cachedProvider: ReturnType<typeof createGoogleGenerativeAI> | null = null;
+function getGoogle(): ReturnType<typeof createGoogleGenerativeAI> {
+  if (cachedProvider) return cachedProvider;
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is required but not set");
+  }
+  cachedProvider = createGoogleGenerativeAI({ apiKey });
+  return cachedProvider;
+}
 
 export interface SummariseInput {
   model: string; // e.g. "gemini-2.5-flash" (direct Google Generative AI)
@@ -23,7 +36,7 @@ export interface SummariseInput {
 
 export async function summarise(input: SummariseInput): Promise<AiResult> {
   const res = await generateText({
-    model: google(input.model),
+    model: getGoogle()(input.model),
     prompt: input.prompt,
     maxOutputTokens: input.maxOutputTokens ?? 1500,
     temperature: input.temperature ?? 0.3

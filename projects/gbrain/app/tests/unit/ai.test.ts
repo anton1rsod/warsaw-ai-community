@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+// gateway.ts validates GEMINI_API_KEY lazily via getGoogle(); set a stub before
+// any import of the module under test.
+process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "test-only-not-a-real-key";
+
 const mockGenerateText = vi.fn();
 vi.mock("ai", () => ({ generateText: (...args: unknown[]) => mockGenerateText(...args) }));
 
