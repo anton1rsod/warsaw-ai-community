@@ -7,6 +7,9 @@
     "node": ">=24"
   },
   "scripts": {
+    "copy-index": "tsx scripts/copy-index.ts",
+    "predev": "pnpm copy-index",
+    "prebuild": "pnpm copy-index",
     "dev": "next dev --port 3005",
     "build": "next build",
     "start": "next start",
