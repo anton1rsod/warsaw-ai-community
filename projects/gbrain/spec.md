@@ -92,48 +92,113 @@ Community knowledge lives in Telegram scrollback — lossy, unsearchable at scal
 ## 6. Architecture overview (Phase 1)
 
 ```
-┌──────────────────────────────┐
-│   Telegram (Warsaw AI Chat)   │
-│                                │
-│  Members tag / post messages   │
-└───────┬────────────────────┬──┘
-        │                    │
-  webhook (HTTPS)      webhook (HTTPS)
-        │                    │
-        ▼                    ▼
-┌─────────────────────────────────────┐
-│   Vercel (Next.js App Router)        │
-│                                       │
-│   /api/telegram/webhook              │◄───── Bot webhook entrypoint
-│   /api/cron/daily-digest  (Cron)     │◄───── Scheduled 1×/day
-│                                       │
-│   Shared modules:                     │
-│    - consent/       (rules engine)   │
-│    - ingest/        (msg → markdown) │
-│    - digest/        (LLM summariser) │
-│    - telegram/      (bot SDK wrap)   │
-│    - ai/            (Gateway client) │
-│    - store/         (git commit)     │
-└──────┬───────────────────────┬───────┘
-       │                       │
-       │ Gemini direct          │ git push
-       │ (@ai-sdk/google,       │ (auto-commit to community/archive/)
-       │  since 0.1.1)          │
-       ▼                       ▼
-┌──────────────────┐   ┌──────────────────────┐
-│ Gemini API       │   │ This git repo         │
-│ (gemini-2.5-     │   │ community/archive/... │
-│  flash)          │   │ (canonical storage)   │
-│                  │   └──────────────────────┘
-└──────────────────┘
-(Vercel AI Gateway is no longer in the path; see §16 + §20. Gateway re-entry
-is a Phase 2 / 0.3.0+ option if multi-provider fail-over becomes important.)
+┌──────────────────────────────────────────────────────────────────────────┐
+│  Telegram (Warsaw AI Comm. — staging during 0.1.x; real channel = 0.2.0) │
+│                                                                            │
+│   member commands:                       member content (existing flow):   │
+│   /ask  /search  /help                    #kb-tagged messages              │
+└──────┬─────────────────────────────────────────────────────────┬─────────┘
+       │ webhook (HTTPS, TELEGRAM_WEBHOOK_SECRET)                 │ webhook
+       ▼                                                          ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  Vercel — projects/gbrain/app/   (Next.js App Router, runtime: nodejs)    │
+│                                                                            │
+│   /api/telegram/webhook  (existing — extended)                             │
+│       ├─ existing: ingest → consent → store.commit (markdown)             │
+│       │                                                                    │
+│       └─ NEW dispatch path (after webhook auth, before consent):           │
+│           ├─ rate-limit check (per-user, in-memory ring buffer)            │
+│           ├─ commands/ask.ts        ── reads cachedIndex,                  │
+│           │                            queries Gemini, formats citations   │
+│           ├─ commands/search.ts     ── reads cachedIndex,                  │
+│           │                            returns top-K snippets only         │
+│           └─ commands/help.ts       ── static command registry render      │
+│                                                                            │
+│   /api/cron/daily-digest  (existing — unchanged)                           │
+│                                                                            │
+│   Shared modules (existing — extended):                                    │
+│     - consent/      (rules engine — UNCHANGED)                             │
+│     - ingest/       (msg → markdown — UNCHANGED)                           │
+│     - digest/       (LLM summariser — prompt moves to prompts/)            │
+│     - telegram/     (bot SDK wrap — UNCHANGED)                             │
+│     - ai/           (Gemini client — extended for embeddings)              │
+│     - store/        (git commit — UNCHANGED for archive,                   │
+│                                  not used by /ask/search)                  │
+│                                                                            │
+│   NEW shared modules:                                                      │
+│     - retrieval/    (chunk loader, cosine top-K, citation formatter,       │
+│                      module-level cachedIndex singleton)                   │
+│     - prompts/      (centralised prompt templates with injection guards)   │
+│     - help/         (typed command registry + pinned-msg generator)        │
+│     - rate-limit/   (per-user request counters)                            │
+│                                                                            │
+│   Deploy bundle includes:                                                  │
+│     - projects/gbrain/app/data/_index/index.json    ← copied at prebuild   │
+│     - projects/gbrain/app/data/_index/manifest.json ← copied at prebuild   │
+│       from community/archive/_index/  (see §3.7)                           │
+└──────┬───────────────────────────────────────────────────┬───────────────┘
+       │ Gemini direct                                     │ filesystem read
+       │ (@ai-sdk/google):                                  │  (cold-start once
+       │   - gemini-2.5-flash for /ask answer               │   into module
+       │   - gemini-embedding-001 for query embedding       │   singleton)
+       ▼                                                    ▼
+┌──────────────────┐                     ┌──────────────────────────────────┐
+│ Gemini API       │                     │ projects/gbrain/app/data/_index/  │
+│                  │                     │   index.json   (chunks+vectors)   │
+│                  │                     │   manifest.json (build metadata)  │
+└──────────────────┘                     └──────────────┬───────────────────┘
+                                                        ▲
+                                                        │ next.config.js prebuild
+                                                        │ script copies from
+                                                        │ community/archive/_index/
+                                                        │
+                                  ┌─────────────────────┴──────────────────┐
+                                  │ community/archive/_index/               │
+                                  │   index.json   (canonical artifact)     │
+                                  │   manifest.json                         │
+                                  │   README.md    (regen contract)         │
+                                  └─────────────┬──────────────────────────┘
+                                                │ committed by gbrain-index-bot
+                                                │ (distinct identity from
+                                                │  gbrain-bot, separate PAT)
+                                                ▲
+┌─────────────────────────────────────────────────────────────────────────┐
+│  GitHub Actions  ── .github/workflows/build-index.yml                    │
+│                                                                           │
+│  Trigger: push to community/archive/**  (path-filtered to exclude        │
+│           community/archive/_index/** to prevent recursion;              │
+│           community/archive/_removed/** to honour /gbrain-forget)        │
+│                                                                           │
+│  Steps:                                                                   │
+│   1. checkout (fetch-depth: 0)                                            │
+│   2. install deps (pnpm in projects/gbrain/app/)                          │
+│   3. run scripts/build-index.ts                                           │
+│        ├─ walk community/archive/**/*.md  (exclude _index/, _removed/)   │
+│        ├─ chunk each file (~480 tok target with 50-tok overlap;          │
+│        │                   tokenizer: 4 chars ≈ 1 token approximation)   │
+│        ├─ hash each chunk; load prior index if present                   │
+│        ├─ for new/changed chunks: embed via gemini-embedding-001         │
+│        │   • retry 3× with exponential backoff on transient errors      │
+│        │   • mark embed_failed:true in manifest, continue, don't fail    │
+│        ├─ assertAllowedPath() PRE-WRITE on every output path             │
+│        ├─ merge new+unchanged chunks into a single index                 │
+│        └─ write _index/index.json + _index/manifest.json                 │
+│   4. commit + push as gbrain-index-bot (only if index changed)           │
+│                                                                           │
+│  Vercel auto-deploys on the resulting commit. Redundant deploys are      │
+│  accepted (dropped the brittle $VERCEL_GIT_PREVIOUS_SHA filter; revisit  │
+│  if pain materializes — see §9.1).                                       │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Phase 2 adds:**
-- `/api/telegram/ask` — Q&A handler.
-- **Neon Postgres + pgvector** (via Vercel Marketplace) — derived index, rebuildable from markdown.
-- **Indexer job** (Vercel Cron or on-commit GitHub Action) that syncs markdown → embeddings.
+### Three lifecycle paths in the diagram
+
+1. **Ingest path (unchanged from 0.1.1):** member tags `#kb` → webhook → consent → `store.commit` → push to `main` as `gbrain-bot`.
+2. **Index path (new):** archive push (excluding `_index/`, `_removed/`) triggers Action → embed deltas → commit `_index/` as `gbrain-index-bot` (distinct PAT). Vercel re-deploys; `prebuild` script copies into `app/data/_index/`.
+3. **Query path (new):** member runs `/ask` or `/search` → webhook auth → rate-limit check → command handler → reads from `cachedIndex` singleton (loaded once at module init) → for `/ask`, embed query + cosine top-K + Gemini-generate with citations → reply in Telegram.
+
+(Vercel AI Gateway is no longer in the path; see §16 + §20. Gateway re-entry
+is a Phase 2 / 0.3.0+ option if multi-provider fail-over becomes important.)
 
 ## 7. Components & responsibilities
 
@@ -284,11 +349,7 @@ Codified in `consent/rules.ts`. Exported as pure function.
 
 ## 12. Phase 2 — scope preview (not committed)
 
-- `/ask <question>` handler. Returns streamed Telegram message with answer + citations (file + line link).
-- Neon Postgres + pgvector via Vercel Marketplace.
-- Indexer cron job: markdown → chunks → embeddings → DB.
-- Embedding model: Gemini `text-embedding-004` or equivalent through Gateway.
-- RAG prompt template with citation-enforcing constraints.
+Phase 2 is now scoped to migration triggers — see `docs/specs/2026-04-26-gbrain-ask-search-help-design.md` §3.5 + §9.1. Triggers: archive crosses ~10k chunks; `/ask` quality plateau; multi-tenancy emerges; real-time write contention. None expected within 90 days. Migration target: Postgres + pgvector via Vercel Marketplace. ADR-0008 captures the deferral rationale.
 
 ## 13. Phase 3 — acknowledged backlog
 
@@ -352,6 +413,9 @@ community/
 | `GEMINI_API_KEY` | Vercel env var | On leak (e.g., accidental paste); quarterly audit. **Current key was pasted in spec chat — rotate before deploy.** |
 | `AI_GATEWAY_API_KEY` | Vercel env var | Quarterly |
 | `GITHUB_BOT_TOKEN` | Vercel env var, fine-grained PAT scoped to this repo (GitHub PATs are repo-level; `community/archive/` sub-path enforcement lives in the bot's `assertAllowedPath`, not in the PAT itself) | Quarterly; revoke on contributor departure |
+| `GBRAIN_BOT_INDEX_PAT` | GitHub Actions secret only (NOT Vercel env) | Quarterly + on suspected exposure or contributor departure |
+
+Note: `GBRAIN_BOT_INDEX_PAT` is a fine-grained PAT, repo-level scope, distinct identity (`gbrain-index-bot`), separate from `GITHUB_BOT_TOKEN`. Path-level enforcement of `community/archive/_index/**` lives in `assertAllowedPath` (called pre-write in `scripts/build-index.ts`).
 
 Guardrails:
 - `.env.example` committed; `.env` gitignored (already in `.gitignore`).
@@ -413,11 +477,40 @@ CI on every PR (GitHub Actions) — no merge without green tests.
 | Member perceives bot as "watching everything" and leaves | Medium | Transparent onboarding doc; clear commands (`/gbrain-status`) showing exactly what's ingested |
 | Github auto-commits flood PRs / clutter history | Low | Bot commits stay on `main` via a restricted path; we can move to a separate branch/repo in Phase 2 if needed |
 | GDPR data-subject request arrives | Medium | Playbook documents removal workflow; `community/archive/_removed/` is the cleanup index |
+| **Citation hallucination** — Gemini emits `<citation id="3"/>` when only ids 1 and 2 are in context | High | Citation validator at output-parse time replaces unsourced markers with `(citation pruned)`; safety tests assert this. |
+| **Citation faithfulness** — model cites correctly but mis-summarizes the cited content; member posts factually incorrect `#kb` content and GBrain authoritatively cites it | High | Citation validator alone cannot detect this. Mitigation is transparency: footer disclaimer in `/ask` reply (§4.1) + `/help ask` caveat (§4.3). Technical solution out of scope at this scale. |
+| **Prompt injection — user question** | High | Question-side injection-guard preamble; safety test corpus Category A. |
+| **Prompt injection — archive-content poisoning** | High | Archive-side injection-guard preamble; XML structural delimiters; safety test corpus Category B. |
+| **`/gbrain-forget` propagation window** — forgotten content in deployed `index.json` until next Vercel deploy cycle (~5 min) | Medium (Phase E) | SLA documented (<5 min); flagged for Phase E review against GDPR Article 17. ADR-0006 update notes the window. |
+| **Single user exhausts daily Gemini quota via `/ask` spam** | High | Per-user rate limiting in `rate-limit/`: 10 `/ask`/hour + 30 `/search`/hour; over-limit responses skip Gemini calls. |
+| **Index drift (markdown changed but index stale)** | Medium | `manifest.source_files_hash` mismatch detection at module init (offline check); request-time check for `manifest.embedding_model` + `schema_version`. Cron-based hourly verification optional in 0.1.3. |
+| **Compromised `gbrain-index-bot` PAT** | Medium | Distinct PAT from `GITHUB_BOT_TOKEN` (compromise of one doesn't compromise the other); rotation on schedule + on suspected exposure. ADR-0006 update lists the new secret. |
+| **Per-chunk embedding API failure** under heavy ingestion | Low–Medium | Action's incremental rebuild retries 3× then marks `embed_failed`, continues, surfaces in job summary. |
+| **Action queue depth grows under archive bursts** | Low | `cancel-in-progress: false` preserves states; backfills run via `workflow_dispatch` one-shot, not per-commit. |
+| **GitHub Action runtime > 60s gate** | Low | Stay under 60s on projected scale; Action concurrency throttling + Postgres migration trigger if archive grows past projection. |
+| **Index file size > Vercel function bundle limit** (~50MB current; pre-`prebuild` copy adds 10MB to bundle) | Low (Medium at ~10k chunks) | Migration trigger same as the Postgres-deferred upgrade trigger. Alternative: switch `prebuild` to write to Vercel Blob instead of bundle. |
+| **Charter / consent rule changes invalidate archived content retrospectively** | Low | `/gbrain-forget` per-item escape; bulk re-evaluation is an organizer playbook update. |
+| **`/search` snippet exposure beyond GitHub visibility expectations** | Low | Footer note clarifies snippets come from public archive; consistent with §4.1 item 8 of questionnaire. |
+| **Compromised `gbrain-index-bot` commits poisoned `index.json`** | Low | `manifest.source_files_hash` validates the index's claimed source set; runtime mismatch triggers "unavailable." Defense-in-depth: PAT separation reduces blast radius. |
+| **Cold-start index load adds ~200ms latency** | Low | Module singleton: cold-start cost paid once per warm container, ~50–200ms; warm requests pay 0ms. Documented in §3.8. |
 
 **Open questions:**
 - Default digest time (proposal: 09:00 Europe/Warsaw).
 - Whether digest posts to **News & Signals** (intuitive) or to its own "Announcements" topic (requires adding topic — deferred).
 - Handling edits: if a member edits a message after it's archived, do we re-archive the edit? (v0.1: no; edits require re-tagging.)
+
+**Open questions (0.1.2 ask-bundle):**
+
+| # | Question | Default if not resolved |
+|---|---|---|
+| OQ-1 | Cosine similarity threshold below which `/ask` says "I don't have anything"? | **Calibrated at rehearsal gate §1 #6.** No hardcoded default; the threshold is *the output* of the calibration step, not a tuning knob to be revisited later. |
+| OQ-2 | Should `/ask` history be stored anywhere? | **No.** Member-question content is not stored. Only aggregate counters: `gbrain.ask.count.daily` (no per-user attribution). |
+| OQ-3 | Does `/ask` output stream to Telegram or land as one message? | **One message.** Streaming over Telegram is awkward; single-message reply is cleaner UX. |
+| OQ-4 | What's `K` (top-K chunks) for `/ask`? `/search`? | `/ask`: **K=5**. `/search`: **K=10**. |
+| OQ-5 | Is the embedding model `gemini-embedding-001` locked, or do we accept newer snapshots? | Lock to `gemini-embedding-001` exactly; manifest captures it; future model upgrade is an explicit migration with full re-build. |
+| OQ-6 | (resolved by ADR-0010) `/summarize` Strategy A vs Strategy B. | Deferred to 0.1.3. ADR-0010 captures the decision. Not load-bearing for this spec. |
+| OQ-7 | Tokenizer for "~480 tokens": stay with `4 chars ≈ 1 token` approximation, or migrate to Google's `countTokens()` SDK call? | Default **`4 chars ≈ 1 token`** for v1; revisit if retrieval quality plateaus and chunk-boundary alignment is suspected. |
+| OQ-8 | Distributed (KV-backed) rate limit, or in-memory per-region? | In-memory per-region for v1 (acceptable for staging + 0.1.x). Distributed in 0.2.x if a single bursty cross-region attacker appears in real-channel telemetry. |
 
 ## 21. Decisions log (ADR cross-references)
 
