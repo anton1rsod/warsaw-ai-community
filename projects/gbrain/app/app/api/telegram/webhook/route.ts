@@ -133,6 +133,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const newsLog = createNewsLogStore({ github: store, namespace: cfg.archive.namespace });
-  const outcome = await ingestOne(msg, { cfg, bot, store, prefs, pending, newsLog });
-  return NextResponse.json({ ok: true, handled: outcome.handled, reason: outcome.reason });
+  try {
+    const outcome = await ingestOne(msg, { cfg, bot, store, prefs, pending, newsLog });
+    return NextResponse.json({ ok: true, handled: outcome.handled, reason: outcome.reason });
+  } catch (e: unknown) {
+    const err = e instanceof Error ? { message: e.message, stack: e.stack, name: e.name } : { raw: String(e) };
+    // Return 200 so Telegram stops retrying; surface the error in the body for diagnosis.
+    return NextResponse.json({ ok: false, reason: "ingest-threw", error: err }, { status: 200 });
+  }
 }
