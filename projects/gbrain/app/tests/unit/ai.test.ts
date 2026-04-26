@@ -3,29 +3,41 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockGenerateText = vi.fn();
 vi.mock("ai", () => ({ generateText: (...args: unknown[]) => mockGenerateText(...args) }));
 
-beforeEach(() => mockGenerateText.mockReset());
+// 0.1.1: provider switched from Vercel AI Gateway (string-routed model id) to
+// direct @ai-sdk/google. We mock the provider factory so the test asserts on
+// the model-id string we pass through, not the provider object.
+const mockProvider = vi.fn((id: string) => ({ __provider: "google", modelId: id }));
+vi.mock("@ai-sdk/google", () => ({
+  createGoogleGenerativeAI: () => mockProvider
+}));
+
+beforeEach(() => {
+  mockGenerateText.mockReset();
+  mockProvider.mockClear();
+});
 
 describe("ai.summarise", () => {
-  it("calls generateText with the requested model and prompt, returns text + usage", async () => {
+  it("invokes the Google provider with the requested model id and forwards usage", async () => {
     mockGenerateText.mockResolvedValueOnce({
       text: "summary",
       usage: { inputTokens: 120, outputTokens: 60 }
     });
     const { summarise } = await import("../../src/ai/index");
     const result = await summarise({
-      model: "google/gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       prompt: "hi",
       maxOutputTokens: 500
     });
     expect(result.text).toBe("summary");
     expect(result.usage.inputTokens).toBe(120);
     expect(result.usage.outputTokens).toBe(60);
-    expect(result.model).toBe("google/gemini-2.0-flash");
+    expect(result.model).toBe("gemini-2.5-flash");
+    expect(mockProvider).toHaveBeenCalledWith("gemini-2.5-flash");
     const arg = mockGenerateText.mock.calls[0]?.[0] as
-      | { model: string; prompt: string; maxOutputTokens: number }
+      | { model: { modelId: string }; prompt: string; maxOutputTokens: number }
       | undefined;
     expect(arg).toBeDefined();
-    expect(arg!.model).toBe("google/gemini-2.0-flash");
+    expect(arg!.model.modelId).toBe("gemini-2.5-flash");
     expect(arg!.prompt).toBe("hi");
     expect(arg!.maxOutputTokens).toBe(500);
   });

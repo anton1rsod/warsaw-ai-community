@@ -20,7 +20,9 @@ export interface RunDigestResult {
 
 export async function runDigest(input: RunDigestInput): Promise<RunDigestResult> {
   const items = selectRecent(input.messages, input.now);
-  const model = input.model ?? "google/gemini-2.0-flash";
+  // 0.1.1: direct Gemini (no AI Gateway prefix). gemini-2.5-flash is the
+  // current cheap-fast model as of 2026-04.
+  const model = input.model ?? "gemini-2.5-flash";
 
   if (items.length === 0) {
     return {

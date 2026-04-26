@@ -19,7 +19,7 @@ describe("config.loadConfig()", () => {
   it("returns a typed config when all required vars are present", async () => {
     process.env.TELEGRAM_BOT_TOKEN = "1234567890:ab";
     process.env.TELEGRAM_WEBHOOK_SECRET = "s3cret";
-    process.env.AI_GATEWAY_API_KEY = "gw_key";
+    process.env.GEMINI_API_KEY = "gem_key";
     process.env.GITHUB_BOT_TOKEN = "ghp_abc123";
     process.env.GITHUB_REPO_OWNER = "warsaw-ai";
     process.env.GITHUB_REPO_NAME = "community";
@@ -38,7 +38,7 @@ describe("config.loadConfig()", () => {
   it("treats GBRAIN_KILL_SWITCH=true as killed", async () => {
     process.env.TELEGRAM_BOT_TOKEN = "1234567890:ab";
     process.env.TELEGRAM_WEBHOOK_SECRET = "sec4";
-    process.env.AI_GATEWAY_API_KEY = "gkey";
+    process.env.GEMINI_API_KEY = "gkey";
     process.env.GITHUB_BOT_TOKEN = "ghp_abc123";
     process.env.GITHUB_REPO_OWNER = "warsaw-ai";
     process.env.GITHUB_REPO_NAME = "community";
@@ -54,7 +54,7 @@ describe("config.loadConfig()", () => {
     function setRequiredEnv(): void {
       process.env.TELEGRAM_BOT_TOKEN = "1234567890:ab";
       process.env.TELEGRAM_WEBHOOK_SECRET = "sec4";
-      process.env.AI_GATEWAY_API_KEY = "gkey";
+      process.env.GEMINI_API_KEY = "gkey";
       process.env.GITHUB_BOT_TOKEN = "ghp_abc123";
       process.env.GITHUB_REPO_OWNER = "warsaw-ai";
       process.env.GITHUB_REPO_NAME = "community";

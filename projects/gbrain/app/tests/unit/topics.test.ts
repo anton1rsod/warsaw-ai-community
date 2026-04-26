@@ -5,7 +5,7 @@ import type { Config } from "../../src/config";
 function makeCfg(overrides: Partial<Config["topics"]> = {}): Config {
   return {
     telegram: { token: "t", webhookSecret: "w", chatId: -1 },
-    ai: { gatewayKey: "k", geminiKey: undefined },
+    ai: { gatewayKey: undefined, geminiKey: "k" },
     github: { token: "g", owner: "o", repo: "r", branch: "main" },
     topics: {
       generalId: undefined,

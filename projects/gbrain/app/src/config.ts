@@ -4,8 +4,10 @@ const schema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().min(10),
   TELEGRAM_WEBHOOK_SECRET: z.string().min(4),
 
-  AI_GATEWAY_API_KEY: z.string().min(4),
-  GEMINI_API_KEY: z.string().optional(),
+  // 0.1.1: AI Gateway no longer required (we call Gemini directly via
+  // @ai-sdk/google). Left optional for easy rollback; remove in a later release.
+  AI_GATEWAY_API_KEY: z.string().min(4).optional(),
+  GEMINI_API_KEY: z.string().min(4),
 
   GITHUB_BOT_TOKEN: z.string().min(8),
   GITHUB_REPO_OWNER: z.string().min(1),
@@ -38,7 +40,7 @@ const schema = z.object({
 
 export interface Config {
   telegram: { token: string; webhookSecret: string; chatId: number };
-  ai: { gatewayKey: string; geminiKey: string | undefined };
+  ai: { gatewayKey: string | undefined; geminiKey: string };
   github: { token: string; owner: string; repo: string; branch: string };
   topics: {
     generalId: number | undefined;

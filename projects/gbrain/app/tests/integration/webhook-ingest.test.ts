@@ -14,7 +14,7 @@ import type { Config } from "../../src/config";
 
 const TEST_CFG: Config = {
   telegram: { token: "tok", webhookSecret: "sec", chatId: -1001234567890 },
-  ai: { gatewayKey: "gw", geminiKey: undefined },
+  ai: { gatewayKey: undefined, geminiKey: "gw" },
   github: { token: "gh", owner: "o", repo: "r", branch: "main" },
   topics: {
     generalId: 1,
