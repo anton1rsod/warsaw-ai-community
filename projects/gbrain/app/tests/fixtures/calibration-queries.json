@@ -1,0 +1,12 @@
+{
+  "positive": [
+    {"query": "when does the community meet?", "expected_chunk_pattern": "Tuesday|18:00|meetup"},
+    {"query": "what's Jurek building?", "expected_chunk_pattern": "fine-tuning|Polish-language|LoRA"},
+    {"query": "what was in the daily digest?", "expected_chunk_pattern": "Anthropic|DeepSeek|Polish AI Strategy"}
+  ],
+  "negative": [
+    {"query": "what's the weather in Tokyo?"},
+    {"query": "best pizza in Warsaw"},
+    {"query": "what is the meaning of life"}
+  ]
+}
