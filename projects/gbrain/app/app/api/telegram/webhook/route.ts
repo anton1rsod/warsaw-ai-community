@@ -11,6 +11,8 @@ import { handleOptOut, handleOptIn } from "@/commands/optout";
 import { handleStatus } from "@/commands/status";
 import { handleConfirm } from "@/commands/confirm";
 import { ingestOne } from "@/pipeline";
+import { parseMessage } from "@/ingest/parse";
+import { buildTopicMap } from "@/topics";
 import type { TelegramMessage } from "@/types";
 
 // Next.js route config: ensure every POST runs live on Node, never cached or assigned to Edge.
@@ -67,6 +69,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (input.length === cmd.length) return true;
     const next = input.charAt(cmd.length);
     return next === " " || next === "\t" || next === "\n";
+  }
+
+  // Public commands work in both DM and supergroup-topic surfaces (spec §4).
+  // Construct ParsedMessage once and dispatch before the DM/supergroup split.
+  const parsed = parseMessage({ raw: msg, topics: buildTopicMap(cfg) });
+
+  if (isCommand(text, "/help")) {
+    const { handleHelp } = await import("@/commands/help");
+    return handleHelp({ parsed, config: cfg, bot });
   }
 
   if (isDM) {
