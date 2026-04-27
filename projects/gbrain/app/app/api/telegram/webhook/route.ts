@@ -85,6 +85,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return handleSearch({ parsed, config: cfg, bot });
   }
 
+  if (isCommand(text, "/ask")) {
+    const { handleAsk } = await import("@/commands/ask");
+    return handleAsk({ parsed, config: cfg, bot });
+  }
+
   if (isDM) {
     if (isCommand(text, "/gbrain-forget")) {
       const result = await handleForget({
