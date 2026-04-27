@@ -89,7 +89,7 @@ export async function buildIndex(opts: BuildOpts): Promise<void> {
       const prior = IndexFileSchema.parse(JSON.parse(readFileSync(indexFile, "utf8")));
       priorByKey = new Map(prior.map((e) => [`${e.source_path}:${e.chunk_hash}`, e]));
     } catch (e) {
-      console.warn("[build-index] prior index unparseable; full rebuild");
+      console.warn("[build-index] prior index unparseable; full rebuild:", e instanceof Error ? e.message : String(e));
     }
   }
 

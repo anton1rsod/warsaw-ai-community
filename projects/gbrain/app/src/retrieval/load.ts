@@ -2,9 +2,6 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { IndexFileSchema, ManifestSchema, type IndexEntry, type Manifest } from "./schema";
 
-const EXPECTED_EMBEDDING_MODEL = "gemini-embedding-001";
-const EXPECTED_SCHEMA_VERSION = 1;
-
 export interface LoadedIndex {
   entries: IndexEntry[];
   manifest: Manifest;
@@ -32,12 +29,6 @@ export function getIndex(): LoadedIndex | IndexUnavailable {
     const manifestRaw = JSON.parse(readFileSync(path.join(dataDir, "manifest.json"), "utf8"));
     const entries = IndexFileSchema.parse(indexRaw);
     const manifest = ManifestSchema.parse(manifestRaw);
-    if (manifest.embedding_model !== EXPECTED_EMBEDDING_MODEL) {
-      throw new Error(`embedding model mismatch: expected ${EXPECTED_EMBEDDING_MODEL}, got ${manifest.embedding_model}`);
-    }
-    if (manifest.schema_version !== EXPECTED_SCHEMA_VERSION) {
-      throw new Error(`schema version mismatch: expected ${EXPECTED_SCHEMA_VERSION}, got ${manifest.schema_version}`);
-    }
     cachedIndex = { entries, manifest };
     return cachedIndex;
   } catch (error: unknown) {
@@ -48,8 +39,3 @@ export function getIndex(): LoadedIndex | IndexUnavailable {
   }
 }
 
-export function _resetForTests(): void {
-  cachedIndex = null;
-  loadFailed = false;
-  loadFailReason = null;
-}

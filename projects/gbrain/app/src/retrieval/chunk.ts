@@ -43,7 +43,6 @@ export function chunkMarkdown(source: string): Chunk[] {
     }
     if (end >= body.length) break;
     pos = end - OVERLAP_CHARS;
-    if (pos <= 0) pos = end;
   }
   return chunks;
 }

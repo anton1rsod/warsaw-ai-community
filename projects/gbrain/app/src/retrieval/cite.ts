@@ -1,5 +1,3 @@
-const CITATION_RE = /<citation\s+id="(\d+)"\s*\/>/gi;
-
 /**
  * Validates citation markers in `text` against the in-context excerpt
  * id range [1..maxId]. Out-of-range or zero ids are replaced with the
@@ -8,7 +6,8 @@ const CITATION_RE = /<citation\s+id="(\d+)"\s*\/>/gi;
  * Per spec §6.1 — defense against citation hallucination.
  */
 export function validateAndPruneCitations(text: string, maxId: number): string {
-  return text.replace(CITATION_RE, (match, idStr: string) => {
+  const citationRe = /<citation\s+id="(\d+)"\s*\/>/gi;
+  return text.replace(citationRe, (match, idStr: string) => {
     const id = Number.parseInt(idStr, 10);
     if (id >= 1 && id <= maxId) return match;
     return "(citation pruned)";
