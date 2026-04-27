@@ -1,4 +1,4 @@
-import type { DigestItem } from "./select";
+import type { DigestItem } from "../digest/select";
 
 function isoDay(d: Date): string {
   return d.toISOString().slice(0, 10);

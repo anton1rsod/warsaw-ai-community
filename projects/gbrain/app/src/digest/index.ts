@@ -1,7 +1,7 @@
 import type { ParsedMessage } from "../types";
 import { summarise } from "../ai/index";
 import { selectRecent } from "./select";
-import { buildDigestPrompt } from "./prompt";
+import { buildDigestPrompt } from "../prompts/digest";
 import { renderDegradedDigest, renderDigest } from "./render";
 
 export interface RunDigestInput {
@@ -55,5 +55,5 @@ export async function runDigest(input: RunDigestInput): Promise<RunDigestResult>
 }
 
 export { selectRecent } from "./select";
-export { buildDigestPrompt } from "./prompt";
+export { buildDigestPrompt } from "../prompts/digest";
 export { renderDigest } from "./render";

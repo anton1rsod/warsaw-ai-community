@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildDigestPrompt } from "../../src/digest/prompt";
+import { buildDigestPrompt } from "../../src/prompts/digest";
 
 describe("buildDigestPrompt", () => {
   it("embeds every message with author + source link, excludes skipped ones", () => {
