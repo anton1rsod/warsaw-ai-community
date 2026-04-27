@@ -1,11 +1,17 @@
 #!/usr/bin/env tsx
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { chunkMarkdown } from "../src/retrieval/chunk";
 import { IndexFileSchema, type IndexEntry, type Manifest } from "../src/retrieval/schema";
 import { embed } from "../src/ai/gateway";
 import { buildGitHubBlobLink } from "../src/retrieval/cite";
+
+export function resolveCliRepoRoot(scriptUrl: string): string {
+  const scriptDir = path.dirname(fileURLToPath(scriptUrl));
+  return path.resolve(scriptDir, "..", "..", "..", "..");
+}
 
 const MAX_RETRIES = 3;
 const BACKOFF_MS = [1000, 2000, 4000];
@@ -177,7 +183,7 @@ export async function buildIndex(opts: BuildOpts): Promise<void> {
 }
 
 if (import.meta.url === `file://${process.argv[1] ?? ""}`) {
-  const repoRoot = path.resolve(new URL(import.meta.url).pathname, "..", "..", "..", "..");
+  const repoRoot = resolveCliRepoRoot(import.meta.url);
   buildIndex({ repoRoot, workflowRunId: process.env.GITHUB_RUN_ID ?? "local" })
     .catch((e) => { console.error(e); process.exit(1); });
 }
