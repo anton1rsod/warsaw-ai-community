@@ -1,4 +1,4 @@
-import { generateText } from "ai";
+import { generateText, embed as aiEmbed } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { AiResult } from "../types";
 
@@ -49,4 +49,43 @@ export async function summarise(input: SummariseInput): Promise<AiResult> {
     },
     model: input.model
   };
+}
+
+export interface AnswerInput {
+  prompt: string;
+  maxOutputTokens?: number;
+  temperature?: number;
+}
+
+/**
+ * Generation call tuned for /ask: more deterministic citation behavior than
+ * the digest's summarise(). Per spec §4.1.
+ */
+export async function answer(input: AnswerInput): Promise<AiResult> {
+  const res = await generateText({
+    model: getGoogle()("gemini-2.5-flash"),
+    prompt: input.prompt,
+    maxOutputTokens: input.maxOutputTokens ?? 600,
+    temperature: input.temperature ?? 0.2
+  });
+  return {
+    text: res.text,
+    usage: {
+      inputTokens: res.usage?.inputTokens ?? 0,
+      outputTokens: res.usage?.outputTokens ?? 0
+    },
+    model: "gemini-2.5-flash"
+  };
+}
+
+/**
+ * Embed a query via gemini-embedding-001. 768-dim output.
+ * Per spec §3.1.
+ */
+export async function embed(text: string): Promise<number[]> {
+  const result = await aiEmbed({
+    model: getGoogle().embedding("gemini-embedding-001"),
+    value: text
+  });
+  return result.embedding;
 }
