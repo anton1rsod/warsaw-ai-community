@@ -10,6 +10,12 @@
  * Format: `YYYY-Www` (e.g. `2026-W18`, `2026-W01`).
  */
 
+/**
+ * Single source of truth for the `YYYY-Www` token shape. Used by parseWeek
+ * and re-exported so action-layer Zod schemas match without drift.
+ */
+export const WEEK_REGEX = /^\d{4}-W\d{2}$/;
+
 export interface ParsedWeek {
   year: number;
   week: number;
@@ -51,10 +57,10 @@ export function currentWeek(): string {
  * pass.
  */
 export function parseWeek(s: string): ParsedWeek | null {
-  const m = s.match(/^(\d{4})-W(\d{2})$/);
-  if (!m || !m[1] || !m[2]) return null;
-  const year = Number.parseInt(m[1], 10);
-  const week = Number.parseInt(m[2], 10);
+  const m = s.match(WEEK_REGEX);
+  if (!m) return null;
+  const year = Number.parseInt(s.slice(0, 4), 10);
+  const week = Number.parseInt(s.slice(6), 10);
   if (week < 1 || week > 53) return null;
   return { year, week };
 }

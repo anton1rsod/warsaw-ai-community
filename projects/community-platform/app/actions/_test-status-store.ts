@@ -48,10 +48,23 @@ function pathFor(week: string, slug: string): string {
   return `community/status/${week}/${slug}.md`;
 }
 
-async function slugForSession(): Promise<string | null> {
+/**
+ * Distinguishes the two failure modes the production resolveAuthor surfaces.
+ * Without this split, a Playwright test that submits an action without
+ * loginAs would get back not_a_member rather than not_authenticated and
+ * fail-pass on the wrong assertion.
+ */
+async function resolveAuthState(): Promise<
+  | { ok: true; slug: string }
+  | { ok: false; error: "not_authenticated" | "not_a_member" }
+> {
   const session = await auth();
-  if (!session?.githubHandle) return null;
-  return findMemberByHandle(session.githubHandle)?.slug ?? null;
+  if (!session?.githubHandle) {
+    return { ok: false, error: "not_authenticated" };
+  }
+  const member = findMemberByHandle(session.githubHandle);
+  if (!member) return { ok: false, error: "not_a_member" };
+  return { ok: true, slug: member.slug };
 }
 
 export type MockResult =
@@ -60,10 +73,13 @@ export type MockResult =
 
 export const mockStatusActions = {
   async post(input: { week: string; body: string }): Promise<MockResult> {
-    const slug = await slugForSession();
-    if (!slug) return { ok: false, error: "not_a_member" };
+    const auth = await resolveAuthState();
+    if (!auth.ok) return { ok: false, error: auth.error };
     const sha = nextSha();
-    shared().store.set(pathFor(input.week, slug), { body: input.body, sha });
+    shared().store.set(pathFor(input.week, auth.slug), {
+      body: input.body,
+      sha,
+    });
     return { ok: true, sha };
   },
   async edit(input: {
@@ -71,12 +87,15 @@ export const mockStatusActions = {
     body: string;
     sha: string;
   }): Promise<MockResult> {
-    const slug = await slugForSession();
-    if (!slug) return { ok: false, error: "not_a_member" };
-    const key = pathFor(input.week, slug);
+    const auth = await resolveAuthState();
+    if (!auth.ok) return { ok: false, error: auth.error };
+    const key = pathFor(input.week, auth.slug);
     const s = shared();
     const existing = s.store.get(key);
-    if (existing && existing.sha !== input.sha) {
+    // Production: GitHub returns 404 when there's no file to update.
+    // Mirror that here so SHA-conflict semantics match end-to-end.
+    if (!existing) return { ok: false, error: "not_found" };
+    if (existing.sha !== input.sha) {
       return { ok: false, error: "sha_conflict" };
     }
     const sha = nextSha();
@@ -87,9 +106,9 @@ export const mockStatusActions = {
     week: string;
     sha: string;
   }): Promise<MockResult> {
-    const slug = await slugForSession();
-    if (!slug) return { ok: false, error: "not_a_member" };
-    const key = pathFor(input.week, slug);
+    const auth = await resolveAuthState();
+    if (!auth.ok) return { ok: false, error: auth.error };
+    const key = pathFor(input.week, auth.slug);
     const s = shared();
     const existing = s.store.get(key);
     if (!existing) return { ok: false, error: "not_found" };

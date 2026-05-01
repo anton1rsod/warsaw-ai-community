@@ -7,15 +7,16 @@ import { findMemberByHandle } from "@/lib/content-snapshot";
 // itself enforces NODE_ENV !== "production" and returns 404 in prod, so this
 // public-path entry is safe defense-in-depth even though prod traffic that
 // reaches the route still gets 404'd.
-const PUBLIC_PATHS = new Set<string>([
-  "/login",
-  "/no-access",
-  "/api/test-auth",
-  // Dev/test-only mock-store reset (gated on NEXT_PUBLIC_E2E_MODE +
-  // NODE_ENV !== production inside the route itself). Public so Playwright
-  // beforeEach can call it before loginAs.
-  "/api/test-reset-status",
-]);
+// /api/test-auth and /api/test-reset-status are dev-only public paths.
+// In production they're omitted entirely so an accidental
+// NEXT_PUBLIC_E2E_MODE=1 deploy can't unauthenticate them — the proxy
+// would redirect any caller to /login, and the route itself would
+// return 404. Defense-in-depth.
+const PUBLIC_PATHS = new Set<string>(
+  process.env.NODE_ENV === "production"
+    ? ["/login", "/no-access"]
+    : ["/login", "/no-access", "/api/test-auth", "/api/test-reset-status"],
+);
 // Any new public-route entry point (e.g. /.well-known/security.txt,
 // /robots.txt, /sitemap.xml) must be added here or it will be auth-gated.
 const PUBLIC_PREFIXES = [

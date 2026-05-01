@@ -5,9 +5,11 @@ import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { findMemberByHandle } from "@/lib/content-snapshot";
 import { createGitHubApp, GitHubAppError } from "@/lib/github-app";
+import { WEEK_REGEX, parseWeek } from "@/lib/week";
 import {
   isE2EMode,
   mockStatusActions,
+  type MockResult,
 } from "@/app/actions/_test-status-store";
 
 export type StatusActionError =
@@ -23,7 +25,13 @@ export type StatusActionResult =
   | { ok: true; sha: string }
   | { ok: false; error: StatusActionError };
 
-const WeekSchema = z.string().regex(/^\d{4}-W\d{2}$/);
+const WeekSchema = z
+  .string()
+  .regex(WEEK_REGEX)
+  // `parseWeek` enforces 1..53 (matches ISO 8601). The bare regex would
+  // accept W00 / W54 / W99 and create writes at directory paths that no
+  // reader will ever surface — refine to the same range.
+  .refine((s) => parseWeek(s) !== null, "Invalid ISO week number");
 const PostSchema = z.object({
   week: WeekSchema,
   body: z.string().min(1).max(4000),
@@ -65,16 +73,24 @@ function pathFor(week: string, slug: string): string {
 }
 
 function fileBody(handle: string, week: string, body: string): string {
+  // Frontmatter uses `updated_at` (not `posted_at`) because both post and
+  // edit emit the current timestamp — `posted_at` would be misleading once
+  // an entry is edited. Phase 7 contributions counter reads commit-level
+  // dates from git log, not this field, so renaming is safe.
   return [
     "---",
     `week: ${week}`,
     `author: ${handle}`,
-    `posted_at: ${new Date().toISOString()}`,
+    `updated_at: ${new Date().toISOString()}`,
     "---",
     "",
     body,
     "",
   ].join("\n");
+}
+
+function isProductionRuntime(): boolean {
+  return process.env.NODE_ENV === "production";
 }
 
 function mapWriteError(err: unknown): StatusActionError {
@@ -83,20 +99,15 @@ function mapWriteError(err: unknown): StatusActionError {
 }
 
 /**
- * Translates the mock store's `MockResult` shape (with `error: string`)
- * into the strict `StatusActionResult` union. The mock only emits the
- * subset {not_a_member, sha_conflict, not_found, invalid_input}; the cast
- * is safe because the test surface is closed-set.
+ * Translates the mock store's discriminated `MockResult` into the strict
+ * `StatusActionResult` union. The mock only emits a closed set of error
+ * strings (not_authenticated, not_a_member, sha_conflict, not_found) so
+ * the cast to `StatusActionError` is sound.
  */
-function fromMock(result: {
-  ok: boolean;
-  sha?: string;
-  error?: string;
-}): StatusActionResult {
-  if (result.ok && typeof result.sha === "string") {
-    return { ok: true, sha: result.sha };
-  }
-  return { ok: false, error: (result.error ?? "unknown") as StatusActionError };
+function fromMock(result: MockResult): StatusActionResult {
+  return result.ok
+    ? { ok: true, sha: result.sha }
+    : { ok: false, error: result.error as StatusActionError };
 }
 
 export async function postStatus(input: {
@@ -106,7 +117,9 @@ export async function postStatus(input: {
   const parsed = PostSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid_input" };
 
-  if (isE2EMode()) return fromMock(await mockStatusActions.post(parsed.data));
+  if (!isProductionRuntime() && isE2EMode()) {
+    return fromMock(await mockStatusActions.post(parsed.data));
+  }
 
   const author = await resolveAuthor();
   if ("error" in author) return { ok: false, error: author.error };
@@ -131,7 +144,9 @@ export async function editStatus(input: {
   const parsed = EditSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid_input" };
 
-  if (isE2EMode()) return fromMock(await mockStatusActions.edit(parsed.data));
+  if (!isProductionRuntime() && isE2EMode()) {
+    return fromMock(await mockStatusActions.edit(parsed.data));
+  }
 
   const author = await resolveAuthor();
   if ("error" in author) return { ok: false, error: author.error };
@@ -158,7 +173,9 @@ export async function deleteStatus(input: {
   const parsed = DeleteSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid_input" };
 
-  if (isE2EMode()) return fromMock(await mockStatusActions.remove(parsed.data));
+  if (!isProductionRuntime() && isE2EMode()) {
+    return fromMock(await mockStatusActions.remove(parsed.data));
+  }
 
   const author = await resolveAuthor();
   if ("error" in author) return { ok: false, error: author.error };

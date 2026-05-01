@@ -138,9 +138,12 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
                   html={o.html}
                   className="prose prose-neutral mt-2 max-w-none text-sm dark:prose-invert"
                 />
-                <div className="mt-2 text-xs text-neutral-500">
+                <time
+                  dateTime={o.lastModified}
+                  className="mt-2 block text-xs text-neutral-500"
+                >
                   {o.lastModified}
-                </div>
+                </time>
               </li>
             ))}
           </ul>

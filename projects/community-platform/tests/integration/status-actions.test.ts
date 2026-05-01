@@ -74,7 +74,7 @@ describe("status actions", () => {
       expect(path).toBe("community/status/2026-W18/anton-safronov.md");
       expect(content).toContain("week: 2026-W18");
       expect(content).toContain("author: anton1rsod");
-      expect(content).toContain("posted_at:");
+      expect(content).toContain("updated_at:");
       expect(content).toContain("Hello");
       expect(options).toMatchObject({
         message: expect.stringContaining("status"),
@@ -224,6 +224,42 @@ describe("status actions", () => {
       mockClient.deleteFile.mockRejectedValueOnce(new Error("network"));
       const result = await deleteStatus({ week: "2026-W18", sha: "abc" });
       expect(result).toEqual({ ok: false, error: "unknown" });
+    });
+  });
+
+  describe("E2E mock mode (NEXT_PUBLIC_E2E_MODE=1)", () => {
+    beforeEach(() => {
+      vi.stubEnv("NEXT_PUBLIC_E2E_MODE", "1");
+    });
+
+    it("postStatus delegates to the mock store and bypasses the writer", async () => {
+      const result = await postStatus({ week: "2026-W18", body: "Hi" });
+      expect(result.ok).toBe(true);
+      // The real writer must not be called in E2E mode.
+      expect(mockClient.writeFile).not.toHaveBeenCalled();
+    });
+
+    it("editStatus delegates to the mock store", async () => {
+      const post = await postStatus({ week: "2026-W18", body: "v1" });
+      expect(post.ok).toBe(true);
+      const edit = await editStatus({
+        week: "2026-W18",
+        body: "v2",
+        sha: post.ok ? post.sha : "",
+      });
+      expect(edit.ok).toBe(true);
+      expect(mockClient.writeFile).not.toHaveBeenCalled();
+    });
+
+    it("deleteStatus delegates to the mock store", async () => {
+      const post = await postStatus({ week: "2026-W18", body: "x" });
+      expect(post.ok).toBe(true);
+      const del = await deleteStatus({
+        week: "2026-W18",
+        sha: post.ok ? post.sha : "",
+      });
+      expect(del.ok).toBe(true);
+      expect(mockClient.deleteFile).not.toHaveBeenCalled();
     });
   });
 });
