@@ -177,11 +177,39 @@ Last green commit (pending closeout): this entry's commit. Last code-only green:
 - §9.14 Phase 3 — `lib/meetings.ts` regex fixes: `parseAttendees` `\z` → `$(?![\s\S])`; `readMeeting` separate `SLUG_RE` for bare slugs.
 - §9.15 Phase 3 — snapshot script throws on `readProject`/`readDecision` null instead of casting (the plan's `as` casts hid the null branch and would emit a `null` entry typed as non-null into the JSON snapshot).
 
-### Pending — Phase 4 onward
+### Phase 4 — GitHub App writer (complete, 2026-05-01)
+
+Last green commit (pending closeout): this entry's commit. Last code-only green: `5e07373`.
+
+**1 implementation task shipped (Task 4.2) + 1 batched reviewer-fix commit, 167 unit + integration tests pass, 100/100/100/100 coverage on `lib/github-app.ts` (spec §8 strict-list).**
+
+- **Task 4.1 [H]** — Anton creates `warsaw-ai-bot` GitHub App + PEM + sets `GITHUB_APP_ID` / `_PRIVATE_KEY` / `_INSTALLATION_ID` on Vercel preview. **Pending Anton's manual step**; the wrapper integration tests use a self-generated PEM at `tests/fixtures/test-app.private-key.pem` (signs JWTs that GitHub would reject — no matching App ID — and grants no real privileges, per plan amendment §9.3). The `scripts/smoke-github-app.ts` real-API verification is gated on Anton's manual step.
+- **Task 4.2** (commit `7e1ee81`) — `lib/github-app.ts` Octokit + auth-app wrapper. `createGitHubApp(config)` returns `{ readFile, writeFile, deleteFile }`. `GitHubAppError` taxonomy: `sha_conflict` (409) / `not_found` (404) / `forbidden` (401, 403) / `unknown`. SHA-based optimistic locking maps 409 → `kind: 'sha_conflict'` for Phase 5 status edits. Author / committer default to `warsaw-ai-bot@users.noreply.github.com`. MSW-based integration coverage (12 tests) + `mapError` unit coverage via synthetic inputs (10 tests). Adds `@octokit/rest@^21`, `@octokit/auth-app@^7`, `msw@^2`. `pretest:coverage` snapshot runs unaffected.
+- **Reviewer fixes** (commit `5e07373`) — typescript-reviewer + code-reviewer + security-reviewer HIGH/MEDIUM addressed:
+  - HIGH `lib/github-app.ts` `readFile`: distinguish directory (Array → null), symlink/submodule (non-file `type` → throw `unknown`), and >1MB `encoding=none` (→ throw `unknown` with size hint). Avoids silent null-on-non-file traps that Phase 5/6 callers could not diagnose.
+  - HIGH `lib/github-app.ts` `mapError`: 401 → `forbidden` (token expiry mapped same as missing-scope for v0.1; future callers can split off an `unauthorized` kind without breaking existing handlers).
+  - MEDIUM `lib/github-app.ts` `sanitizeCause`: strips `Authorization` header from the Octokit error before attaching as `cause`. Prevents installation token (`ghs_xxx`, 1h TTL, `contents:write`) from leaking via `console.error` or structured loggers.
+  - MEDIUM `scripts/smoke-github-app.ts`: print char count + SHA only (never README content); exit 1 with clear message if README empty.
+  - HIGH `eslint.config.js`: `no-console` error-level rule on production paths; allow `console.error` / `console.warn` (proxy.ts uses these for cookie / JWT decode signals so on-call has something to grep). `scripts/**` override allows `console.log` for CLI tools.
+  - 8 additional tests for the new code paths (readFile non-file types, encoding=none, deleteFile 403/500, mapError 401, sanitizeCause edge cases).
+
+**Phase 4 closeout green check (this commit):**
+- `pnpm install --frozen-lockfile` — clean
+- `pnpm lint` — 0 errors / 0 warnings (with new `no-console` rule)
+- `pnpm typecheck` — clean
+- `pnpm test:coverage` — 17 files, 167 tests pass. **`lib/github-app.ts` 100% lines / 100% branches / 100% functions / 100% statements** (spec §8 strict-list). Phase 1-3 strict-list modules retain 100% (`lib/{auth,classification,content-snapshot,env,markdown,rbac}.ts` + `proxy.ts` + `app/components/{PersonaPanel,SafeHtml}.tsx`). Overall: 84.10% lines / 91.66% branches (above 80% gate).
+- `pnpm build` — 13 routes (no new pages this phase) + `ƒ Proxy (Middleware)`. `lib/github-app.ts` is server-only; `scripts/smoke-github-app.ts` is excluded from build.
+- `pnpm e2e` — not required for Phase 4 per execution-plan §4.2 (only phases 1, 2, 3, 5, 6, 8 ship E2E coverage).
+
+**Plan amendments applied during this phase (§9.3 in `execution-plan.md`):**
+- §9.3 Phase 4 — test PEM committed to `tests/fixtures/test-app.private-key.pem`. Existing `.gitignore` exception (`!tests/fixtures/**/*.pem`) covers it. The key signs JWTs GitHub would reject (no matching App ID); MSW intercepts every test network call. No new amendments needed (all reviewer-fix changes are implementation bugs captured in commit messages, not architectural deviations).
+
+**Outstanding (Anton-blocked, parallel to Phases 5-6):**
+- Task 4.1 [H]: create `warsaw-ai-bot` GitHub App, install on `warsaw-ai-community` repo, set 3 env vars on Vercel preview. After env vars are real, run `pnpm tsx scripts/smoke-github-app.ts` to verify auth end-to-end. Phase 5's `/this-week` page and Phase 6's `/consent` page need this to work in preview.
+- Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
+
+### Pending — Phase 5 onward
 - Apply plan amendments at execution time (still relevant):
   - §9.2 Task 9.2 — `export const revalidate = 60;` on `/admin/health` (Phase 9).
-  - §9.3 Task 4.2 — keep test PEM in repo with documented caveats (Phase 4).
-- Phases 4 + 5 + 6 (GitHub App writer + Status updates + Consent flow) bundled into Chat 4 per execution-plan §10.2 (15 tasks, ~3 days estimated — the longest single chat).
-- Phase 4 includes the [H] Anton blocker: Task 4.1 (create `warsaw-ai-bot` GitHub App + PEM + 3 env vars).
-- Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
+- Phases 5 + 6 (Status updates + Consent flow) remain in this chat per execution-plan §10.2.
 - Tailwind typography plugin not installed; `prose` classes render as plain HTML for now (visual-only, no functional impact).
