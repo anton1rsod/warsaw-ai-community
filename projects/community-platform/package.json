@@ -13,7 +13,13 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
-    "e2e:install": "playwright install --with-deps"
+    "e2e:install": "playwright install --with-deps",
+    "prepare": "cd ../.. && git config core.hooksPath projects/community-platform/.husky || true"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "pnpm exec eslint --fix"
+    ]
   },
   "dependencies": {
     "next": "15.0.4",
@@ -27,6 +33,8 @@
     "@types/react-dom": "19.0.2",
     "eslint": "^9.39.4",
     "eslint-config-next": "15.0.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
     "typescript": "5.7.2",
     "typescript-eslint": "^8.59.1"
   }
