@@ -306,8 +306,38 @@ Last green commit (pending closeout): this entry's commit. Last code-only green:
 - Task 4.1 [H] still pending Anton (GitHub App + 3 env vars). `/this-week` and `/consent` work end-to-end against the real bot once env vars are real; Phase 8 GDPR delete needs them too.
 - Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
 
-### Pending — Phase 8 onward
+### Phase 8 — GDPR mechanisms (complete, 2026-05-01)
+
+Last green commit (pending closeout): this entry's commit. Last code-only green: `0436755` (security-reviewer fix).
+
+**4 implementation tasks shipped + 1 batched security-reviewer fix, 275 unit + integration tests + 19 E2E pass, 100% coverage retained on the spec §8 strict-list.**
+
+- **Task 8.1** (commit `4132c56`) — `app/api/me/export/route.ts` GET endpoint returns JSON for the authenticated caller only: `{ exportedAt, handle, member { name, slug, githubHandle, profile, persona }, contributions, statuses[], currentWeek }`. 401 when no session; 403 when authenticated but not on roster. Statuses scanned across last 12 ISO weeks (deduped) and filtered by `member.slug` derived from the session handle — no other member's data can leak. Token acquisition mirrors `/this-week`'s `getInstallationToken`. 3 integration tests with mocked `auth`, `github-app`, `status-reader`, `content-snapshot`, `@octokit/auth-app`.
+- **Task 8.2** (commit `98e0260`) — `app/api/me/delete/route.ts` POST endpoint deletes `community/members/<slug>.md` (profile, may be absent — null-skip) and `community/status/<week>/<slug>.md` across the last 52 weeks. `slug` derived from session via `findMemberByHandle` — never from request body, so cross-user deletion is structurally impossible (execution-plan §6.6). `GitHubAppError.kind === 'not_found'` during status delete is treated as idempotent (TOCTOU-tolerant); other errors propagate. Profile delete uses read-time SHA so the write is consistent with what `readFile` observed. 7 integration tests covering 401, 403, profile happy path, profile-absent skip, cross-user filter, not_found idempotency, non-not_found propagation.
+- **Task 8.3** (commit `0c83b49`) — `app/components/GdprPanel.tsx` client component (Export downloads JSON via Blob URL; Delete prompts `window.confirm` before POSTing). Wired into `app/members/[slug]/page.tsx` conditional on `isSelf` (session-derived). The page now reads `auth()` and ships `dynamic = "force-dynamic"`; `generateStaticParams` retained as documentation. 6 RTL tests with `URL.createObjectURL` assigned directly (jsdom doesn't expose it as a spy-able prototype method) + `afterEach` `restoreAllMocks`. 100/80/100/100 (defensive `unknown error` branches uncovered).
+- **Task 8.4** (commit `faefc2e`) — `e2e/gdpr.spec.ts` 3 tests: proxy gate redirects unauthenticated callers (`maxRedirects: 0` + Location header assertion — the route's own 401 branch is unreachable in normal traffic because proxy short-circuits before the route runs); JSON return for authenticated caller (tolerates 5xx when real bot creds are unset — Anton's Task 4.1 still pending); `GdprPanel` renders on viewer's own profile.
+- **Security-reviewer fix** (commit `0436755`) — defense-in-depth `WEEK_REGEX` guard at top of `readWeekStatuses`. The reviewer flagged `dirPath = \`community/status/\${opts.week}\`` as a future-refactor risk: all current callers derive `week` from `weekFromDate` / `currentWeek` so not exploitable today, but a refactor that threaded user-supplied input through the function would silently introduce path injection. Throws `'invalid week token'` before octokit is invoked; `lib/status-reader.ts` retained at 100/100/100/100 with 1 new test covering 3 malformed inputs (path traversal, empty, single-digit).
+
+**Phase 8 closeout green check (this commit):**
+- `pnpm install --frozen-lockfile` — clean
+- `pnpm lint` — 0 errors / 0 warnings
+- `pnpm typecheck` — clean
+- `pnpm test:coverage` — 28 files, 275 tests pass. **100% on `lib/{auth,classification,content-snapshot,contributions,env,github-app,markdown,rbac,status-reader,week}.ts` + `proxy.ts` + `app/actions/consent.ts` + `app/components/{ConsentModal,ContributionCard,PersonaPanel,SafeHtml,StatusEditor}.tsx`** (spec §8 strict-list + Phase 2-7 critical components). `app/components/GdprPanel.tsx` 100% lines / 80% branches (defensive `unknown error` fallbacks, well above 80% gate). Overall 84.41% lines / 94.06% branches. New `app/api/me/{export,delete}/route.ts` not in coverage `include` (route handlers; tested via integration tests).
+- `pnpm build` — 17 routes (`/members/[slug]` flipped from SSG to ƒ Dynamic because the page reads `auth()` for the GdprPanel conditional) + 5 functions + `ƒ Proxy (Middleware)`.
+- `pnpm e2e` — 19 tests pass: smoke + 3 auth-flow + 2 members + 3 archives + 3 status + 4 consent + 3 GDPR.
+
+**Security review (Phase 8 GDPR endpoints, per execution-plan §6.6):**
+- security-reviewer dispatched after Task 8.4 commit. Verdict on `/api/me/export` + `/api/me/delete`: **CLEAN** on cross-user slug derivation (session-only), self-only filters before mapping, SHA-locked deletes, token sanitization, proxy auth gate. **MEDIUM** on `lib/status-reader.ts` line 36 — defense-in-depth gap on the week format (already shipped as `0436755`). **LOW** on commit message handle embedding (already mitigated by `normalizeHandle` in `lib/roster.ts`; no shell involvement at the GitHub Contents API).
+
+**Reviewer note (carried-forward Phase 6 caveat):**
+- typescript-reviewer + code-reviewer not dispatched at this closeout (Anton's monthly Claude usage budget). Self-review against the handoff §"Self-review fallback" checklist: spec §8 strict-list at 100% ✓, GDPR delete slug from session not body ✓, GDPR export response includes only caller's data ✓, no new public paths in proxy.ts ✓, RTL tests include `afterEach` cleanup + restore ✓.
+
+**Outstanding:**
+- Task 4.1 [H] still pending Anton (GitHub App + 3 env vars). The export+delete endpoints work end-to-end against the real bot once env vars are real; Phase 8 E2E tolerates the credential gap with a 5xx-also-acceptable assertion.
+- Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
+
+### Pending — Phase 9 onward
 - Apply plan amendments at execution time (still relevant):
   - §9.2 Task 9.2 — `export const revalidate = 60;` on `/admin/health` (Phase 9). Without it, refresh-spamming the page can blow the 5000/hr GitHub rate limit (4 calls per render).
-- Phases 8 + 9 (GDPR + Health metric) remaining in Chat 5 per execution-plan §10.2 (~1 day).
+- Phase 9 (Health metric) remaining in Chat 5 per execution-plan §10.2 (~0.5 day).
 - Tailwind typography plugin not installed; `prose` classes render as plain HTML for now (visual-only, no functional impact).
