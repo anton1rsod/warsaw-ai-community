@@ -245,10 +245,40 @@ Last green commit (pending closeout): this entry's commit. Last code-only green:
 - Task 4.1 [H] still pending Anton (GitHub App + 3 env vars). `/this-week` works against the real bot once env vars are real; the smoke script (`pnpm tsx scripts/smoke-github-app.ts`) verifies end-to-end.
 - Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
 
-### Pending — Phase 6 onward
+### Phase 6 — Membership consent flow (complete, 2026-05-01)
+
+Last green commit (pending closeout): this entry's commit. Last code-only green: `3862ace` + the e2e accept test added in the closeout commit.
+
+**4 implementation tasks shipped, 242 unit + integration tests + 16 E2E pass, 100% coverage on `proxy.ts` (spec §8 strict-list).**
+
+- **Task 6.1** (commit `a9fa889`) — `app/actions/consent.ts` — `acceptConsent` (idempotent — skips writeFile when profile exists), `hasConsent(handle)` (false without API call for non-roster), `acceptConsentAndSetCookie` (sets `waic-consented` on success). E2E mock branch via `mockConsentStore` on `globalThis` per amendment §9.17 (Next 16's `"use server"` module split). 12 integration tests; 100/100/100/100 coverage on `consent.ts`.
+- **Task 6.2** (commit `871b4f9`) — `ConsentModal` (aria-modal + labelledby + disabled prop forwards to both buttons during pending) + `/consent` page (server component redirect chain: unauth → /login, non-roster → /no-access, hasConsent → /home; `dynamic = "force-dynamic"` because `hasConsent`'s value can change between requests) + `ConsentClient` (useTransition wraps action; Accept routes to /home or /login on failure; Cancel calls `signOut({ callbackUrl: "/login" })`). `lib/consent-cookie.ts` exposes `CONSENT_COOKIE` (lives in `lib/` because `"use server"` modules can only export async functions). 5 RTL unit tests; 100/100/100/100 on `ConsentModal.tsx`.
+- **Task 6.3** (commit `76d3027`) — `proxy.ts` consent gate. `/consent` added to `PUBLIC_PATHS`. After member check, redirects to `/consent` when `waic-consented` cookie is missing. Auth gate runs before consent gate so unauthenticated → `/login` not `/consent`. `/api/test-auth` route extended with optional `consented` field (defaults to `true` so existing E2E specs keep landing on their target pages; consent-flow tests opt out with `consented: false`). 21 unit tests on `proxy.ts` (4 new for the consent gate + 1 for the production NODE_ENV branch via `vi.stubEnv`).
+- **Task 6.4** (commit `3862ace` + closeout commit) — `e2e/consent.spec.ts` 4 tests: first-time member sees modal, returning member skips, cancel lands on /login, **accept records consent and persists on next /home visit**. `loginAs(page, handle, { consented })` extended; `/api/test-reset-consent` reset endpoint mirrors `/api/test-reset-status`; `/api/test-reset-consent` added to dev-only `PUBLIC_PATHS`.
+
+**Phase 6 closeout green check (this commit):**
+- `pnpm install --frozen-lockfile` — clean
+- `pnpm lint` — 0 errors / 0 warnings
+- `pnpm typecheck` — clean
+- `pnpm test:coverage` — 23 files, 242 tests pass. **100% on `lib/{auth,classification,content-snapshot,env,github-app,markdown,rbac,status-reader,week}.ts` + `proxy.ts` + `app/actions/consent.ts` + `app/components/{ConsentModal,PersonaPanel,SafeHtml,StatusEditor}.tsx`** (spec §8 strict-list + Phase 2-6 critical components). `app/actions/status.ts` 100% lines / 97.56% branches; `lib/governance.ts` 100% / 94.28% branches; filesystem readers above 80% gate. Overall 86.7% lines / 93.28% branches.
+- `pnpm build` — 16 routes (5 static + 8 SSG + `/this-week` + `/consent` ƒ Dynamic) + 4 functions (`/api/auth/[...nextauth]`, `/api/test-auth`, `/api/test-reset-status`, `/api/test-reset-consent`) + `ƒ Proxy (Middleware)`.
+- `pnpm e2e` — 16 tests pass: smoke + 3 auth-flow + 2 members + 3 archives + 3 status + 4 consent.
+
+**Plan amendments referenced (existing):**
+- §9.7 + §9.9 — `proxy.ts` (NOT `middleware.ts`) with manual `decode()`. Consent gate folded into the existing pattern. ✓
+- §9.13 — E2E auth helper uses `page.request.post()` so cookies propagate. `loginAs(page, handle, { consented })` extends the helper. ✓
+- §9.17 — globalThis-backed mock store. `mockConsentStore` follows the same pattern. ✓
+- §9.18 — proxy conditionally admits dev-only public paths under NODE_ENV. `/api/test-reset-consent` added under the same gate. ✓
+
+**Reviewer note:**
+- typescript-reviewer + code-reviewer agents were dispatched at closeout but both hit the org's monthly Claude usage limit before completing. Self-review pass instead: cookie name single source of truth ✓, auth precedes consent in proxy ✓, hasConsent skips GitHub for non-roster ✓, accept action is idempotent ✓. Added a 4th E2E test exercising the Accept happy path (the original 3 only covered redirect / skip / cancel — the Accept-then-/home flow was a gap).
+
+**Outstanding:**
+- Task 4.1 [H] still pending Anton (GitHub App + 3 env vars). `/this-week` and `/consent` work end-to-end against the real bot once env vars are real. The smoke script (`pnpm tsx scripts/smoke-github-app.ts`) verifies the full credential chain.
+- Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
+
+### Pending — Phase 7 onward
 - Apply plan amendments at execution time (still relevant):
-  - §9.2 Task 9.2 — `export const revalidate = 60;` on `/admin/health` (Phase 9).
-  - §9.7 + §9.9 — Phase 6 Task 6.3 modifies `proxy.ts` (NOT `middleware.ts`); fold consent gate into the existing manual-decode flow.
-  - §9.13 — Phase 6 E2E uses `loginAs(page, handle, { consented })` with `page.request.post`.
-- Phase 6 (Consent flow) remains in this chat.
+  - §9.2 Task 9.2 — `export const revalidate = 60;` on `/admin/health` (Phase 9). Without it, refresh-spamming the page can blow the 5000/hr GitHub rate limit (4 calls per render).
+- Phases 7 + 8 + 9 (Contributions counter + GDPR + Health metric) bundled into Chat 5 per execution-plan §10.2 (13 tasks, ~2 days).
 - Tailwind typography plugin not installed; `prose` classes render as plain HTML for now (visual-only, no functional impact).

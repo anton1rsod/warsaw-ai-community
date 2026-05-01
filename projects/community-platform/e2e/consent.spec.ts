@@ -60,4 +60,17 @@ test.describe("consent flow", () => {
     await page.getByRole("button", { name: /cancel/i }).click();
     await expect(page).toHaveURL(/\/login$/);
   });
+
+  test("accept records consent, redirects to /home, and persists on next /home visit", async ({
+    page,
+  }) => {
+    await loginAs(page, "anton1rsod", { consented: false });
+    await page.goto("/consent");
+    await page.getByRole("button", { name: /accept/i }).click();
+    await page.waitForURL(/\/home$/);
+    // Reload /home: the cookie + mock-store record should keep the
+    // member through the consent gate without bouncing back to /consent.
+    await page.goto("/home");
+    await expect(page).toHaveURL(/\/home$/);
+  });
 });
