@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   findDecisionBySlug,
+  findMeetingBySlug,
   findMemberByHandle,
   findMemberBySlug,
   findProjectBySlug,
   isAdmin,
   isCommunityManager,
   listDecisionsFromSnapshot,
+  listMeetingsFromSnapshot,
   listMembers,
   listProjectDetails,
   snapshot,
@@ -184,5 +186,41 @@ describe("findDecisionBySlug", () => {
 
   it("returns undefined for an unknown slug", () => {
     expect(findDecisionBySlug("9999-no-such-decision")).toBeUndefined();
+  });
+});
+
+describe("listMeetingsFromSnapshot", () => {
+  it("returns the full meetings array from the snapshot", () => {
+    const meetings = listMeetingsFromSnapshot();
+    expect(Array.isArray(meetings)).toBe(true);
+    expect(meetings.length).toBe(snapshot.meetings.length);
+  });
+
+  it("each meeting has slug, date, title, body, and attendees fields", () => {
+    for (const m of listMeetingsFromSnapshot()) {
+      expect(typeof m.slug).toBe("string");
+      expect(typeof m.date).toBe("string");
+      expect(typeof m.title).toBe("string");
+      expect(typeof m.body).toBe("string");
+      expect(Array.isArray(m.attendees)).toBe(true);
+    }
+  });
+});
+
+describe("findMeetingBySlug", () => {
+  it("returns undefined for a non-existent slug", () => {
+    expect(findMeetingBySlug("9999-99-99")).toBeUndefined();
+  });
+
+  it("finds an existing meeting when meetings are present", () => {
+    const meetings = listMeetingsFromSnapshot();
+    if (meetings.length > 0) {
+      const first = meetings[0];
+      if (first !== undefined) {
+        const found = findMeetingBySlug(first.slug);
+        expect(found).not.toBeUndefined();
+        expect(found?.slug).toBe(first.slug);
+      }
+    }
   });
 });

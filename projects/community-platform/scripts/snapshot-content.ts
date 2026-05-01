@@ -5,6 +5,7 @@ import { readGovernance } from "@/lib/governance";
 import { readRoster, readMemberProfile, readMemberPersona } from "@/lib/roster";
 import { listProjects, readProject, type ProjectDetail } from "@/lib/projects";
 import { listDecisions, readDecision, type Decision } from "@/lib/decisions";
+import { listMeetings, type Meeting } from "@/lib/meetings";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");
@@ -21,12 +22,13 @@ async function main(): Promise<void> {
     "community/governance/community-managers.md",
   );
 
-  const [roster, governance, projectSummaries, decisionSummaries] =
+  const [roster, governance, projectSummaries, decisionSummaries, meetings] =
     await Promise.all([
       readRoster(rosterPath),
       readGovernance({ adminsPath, cmsPath }),
       listProjects(REPO_ROOT),
       listDecisions(REPO_ROOT),
+      listMeetings(REPO_ROOT) as Promise<Meeting[]>,
     ]);
 
   const [members, projects, decisions] = await Promise.all([
@@ -60,6 +62,7 @@ async function main(): Promise<void> {
     },
     projects,
     decisions,
+    meetings,
   };
 
   await mkdir(path.dirname(OUTPUT), { recursive: true });
@@ -72,7 +75,8 @@ async function main(): Promise<void> {
       `  admins: ${governance.admins.length}\n` +
       `  CMs: ${governance.communityManagers.length}\n` +
       `  projects: ${projects.length}\n` +
-      `  decisions: ${decisions.length}`,
+      `  decisions: ${decisions.length}\n` +
+      `  meetings: ${meetings.length}`,
   );
 }
 
