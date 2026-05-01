@@ -112,9 +112,12 @@ Last green commit (pending closeout): this entry's commit. Last code-only green:
 - §9.10 Phase 1 — Vercel project Root Directory must be `projects/community-platform` (currently null after repo migration; Anton fixes in dashboard)
 - §9.11 Phase 1 — short alias `warsaw-ai-platform.vercel.app` claimed for the project
 
-**Outstanding human work (parallel to Phase 2):**
-- §9.10 — Anton sets `rootDirectory` in Vercel dashboard so git-push auto-deploys succeed.
-- Task 1.4 [H] — Anton creates GitHub OAuth App + force-overwrites preview Client ID + Secret in Vercel env. Re-aliases `warsaw-ai-platform.vercel.app` to a fresh successful preview deployment to validate the live OAuth round-trip end-to-end.
+**Phase 1 live-validation update (2026-05-01, post-closeout commits):**
+- §9.10 Vercel Root Directory fix landed. Anton set `rootDirectory: "projects/community-platform"` in dashboard. Verified via `vercel pull` + empty-commit `2e0ddab` triggered a successful auto-deploy in 30s (previous attempts failed in 2-3s with "No Next.js version detected").
+- Task 1.4 GitHub OAuth App created. Callback URL: `https://warsaw-ai-platform.vercel.app/api/auth/callback/github`. Client ID + Secret force-overwritten on Vercel preview env. NEXTAUTH_URL discovered as empty (Vercel sensitive-env interaction); reset to `https://warsaw-ai-platform.vercel.app` via `vercel env add ... --value ... --no-sensitive --yes`. Redeploy `qknxzwpbn` aliased to `warsaw-ai-platform.vercel.app`.
+- **Live OAuth round-trip validated end-to-end on preview**: `@anton1rsod` signs in with GitHub → callback → `/home` with role label "admin". Phase 1 acceptance loop closed.
+
+**Outstanding (parallel to Phase 2):**
 - Roster `github_handle` backfill for the other 18 members (`*(TBD)*` placeholders) — non-founder logins require this. Tracked outside Phase 1 acceptance.
 
 ### Pending — Phase 2 onward
