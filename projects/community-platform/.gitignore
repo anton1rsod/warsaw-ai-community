@@ -12,3 +12,4 @@ test-results/
 !tests/fixtures/**/*.pem
 next-env.d.ts
 *.tsbuildinfo
+.vercel
