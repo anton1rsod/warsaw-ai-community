@@ -78,6 +78,45 @@ describe("github-app", () => {
     expect(await app.readFile("some/dir")).toBeNull();
   });
 
+  it("readFile throws unknown when path is a non-file content type (symlink/submodule)", async () => {
+    server.use(
+      tokenHandler(),
+      http.get(`${CONTENTS_BASE}/link.md`, () =>
+        HttpResponse.json({
+          type: "symlink",
+          path: "link.md",
+          sha: "s1",
+          target: "elsewhere.md",
+        }),
+      ),
+    );
+    const app = createGitHubApp(config);
+    await expect(app.readFile("link.md")).rejects.toMatchObject({
+      kind: "unknown",
+      message: expect.stringContaining("symlink"),
+    });
+  });
+
+  it("readFile throws unknown when encoding is not base64 (>1MB file)", async () => {
+    server.use(
+      tokenHandler(),
+      http.get(`${CONTENTS_BASE}/large.md`, () =>
+        HttpResponse.json({
+          type: "file",
+          path: "large.md",
+          sha: "abc",
+          content: "",
+          encoding: "none",
+        }),
+      ),
+    );
+    const app = createGitHubApp(config);
+    await expect(app.readFile("large.md")).rejects.toMatchObject({
+      kind: "unknown",
+      message: expect.stringContaining("unsupported encoding"),
+    });
+  });
+
   it("readFile returns null on 404", async () => {
     server.use(
       tokenHandler(),
@@ -237,5 +276,33 @@ describe("github-app", () => {
     await expect(
       app.deleteFile("missing.md", { sha: "abc", message: "delete" }),
     ).rejects.toMatchObject({ kind: "not_found" });
+  });
+
+  it("deleteFile maps 403 to GitHubAppError(forbidden)", async () => {
+    server.use(
+      tokenHandler(),
+      http.delete(`${CONTENTS_BASE}/x.md`, () =>
+        new HttpResponse(JSON.stringify({ message: "forbidden" }), {
+          status: 403,
+        }),
+      ),
+    );
+    const app = createGitHubApp(config);
+    await expect(
+      app.deleteFile("x.md", { sha: "abc", message: "delete" }),
+    ).rejects.toMatchObject({ kind: "forbidden" });
+  });
+
+  it("deleteFile maps unknown HTTP error to GitHubAppError(unknown)", async () => {
+    server.use(
+      tokenHandler(),
+      http.delete(`${CONTENTS_BASE}/x.md`, () =>
+        new HttpResponse(JSON.stringify({ message: "boom" }), { status: 500 }),
+      ),
+    );
+    const app = createGitHubApp(config);
+    await expect(
+      app.deleteFile("x.md", { sha: "abc", message: "delete" }),
+    ).rejects.toMatchObject({ kind: "unknown" });
   });
 });

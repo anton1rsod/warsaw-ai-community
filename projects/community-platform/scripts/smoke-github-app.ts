@@ -30,8 +30,15 @@ async function main(): Promise<void> {
     console.error("[smoke] README.md not found at repo root.");
     process.exit(1);
   }
-  const firstLine = result.content.split("\n")[0] ?? "";
-  console.log("[smoke] First line:", firstLine);
+  // Print char count + SHA only (NOT the actual content). The SHA is a
+  // content hash so it cannot leak secrets. Never print README content
+  // because a future ops change could put a token / internal URL at the
+  // top of the file and CI/log capture would surface it.
+  if (result.content.length === 0) {
+    console.error("[smoke] FAILED: README.md fetched but empty body.");
+    process.exit(1);
+  }
+  console.log("[smoke] README.md chars:", result.content.length);
   console.log("[smoke] SHA:", result.sha);
   console.log("[smoke] OK");
 }

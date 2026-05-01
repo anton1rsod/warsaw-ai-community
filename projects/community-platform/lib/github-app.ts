@@ -78,16 +78,37 @@ export function createGitHubApp(config: GitHubAppConfig): GitHubAppClient {
         path: filePath,
         ref: config.branch,
       });
-      if (Array.isArray(data) || data.type !== "file") return null;
+      // Directory listing: getContent returns an array. Treated as null
+      // because callers ask for a specific file.
+      if (Array.isArray(data)) return null;
+      // Symlink / submodule / other non-file content type at the path is
+      // a silent-failure trap if mapped to null — Phase 5/6 callers would
+      // not be able to distinguish "file missing" from "wrong content
+      // type." Surface it explicitly.
+      if (data.type !== "file") {
+        throw new GitHubAppError(
+          "unknown",
+          `expected file at ${filePath} but got content type "${data.type}"`,
+        );
+      }
+      // GitHub returns `encoding: "none"` for files >1 MB (content omitted,
+      // caller would need to use the Blob API instead). The `as
+      // BufferEncoding` cast would silently throw "Unknown encoding: none"
+      // inside Buffer.from — surface the size limitation explicitly.
+      if (data.encoding !== "base64") {
+        throw new GitHubAppError(
+          "unknown",
+          `unsupported encoding "${data.encoding}" for ${filePath} ` +
+            `(file may exceed the 1 MB Contents API limit)`,
+        );
+      }
       return {
-        content: Buffer.from(
-          data.content,
-          data.encoding as BufferEncoding,
-        ).toString("utf8"),
+        content: Buffer.from(data.content, "base64").toString("utf8"),
         sha: data.sha,
         path: data.path,
       };
     } catch (err: unknown) {
+      if (err instanceof GitHubAppError) throw err;
       const mapped = mapError(err);
       if (mapped.kind === "not_found") return null;
       throw mapped;
@@ -157,9 +178,35 @@ export function createGitHubApp(config: GitHubAppConfig): GitHubAppClient {
 }
 
 /**
+ * Strips request headers from the Octokit error before attaching it as
+ * `cause`. Octokit's RequestError carries the request object including
+ * `headers.authorization`, which during installation auth holds a short-lived
+ * `ghs_xxx` installation token (1h TTL, contents:write on the configured
+ * repo). Without stripping, any caller that does `console.error(err)` or
+ * forwards `err.cause` to a structured logger would capture the token.
+ */
+function sanitizeCause(err: unknown): unknown {
+  if (err === null || err === undefined || typeof err !== "object") return err;
+  const e = err as Record<string, unknown>;
+  const reqRaw = e.request;
+  if (!reqRaw || typeof reqRaw !== "object") return err;
+  const req = reqRaw as Record<string, unknown>;
+  const headers = req.headers;
+  if (!headers || typeof headers !== "object") return err;
+  const safeHeaders = { ...(headers as Record<string, unknown>) };
+  delete safeHeaders.authorization;
+  return { ...e, request: { ...req, headers: safeHeaders } };
+}
+
+/**
  * Maps an Octokit / fetch error to a GitHubAppError. Exported so unit tests
  * can exercise every status branch (including the ones the public wrapper
  * methods don't reach in normal Octokit operation, e.g., non-Error rejections).
+ *
+ * 401 is mapped to `forbidden` because v0.1 callers don't need to distinguish
+ * "expired token" from "missing scope" — both surface as "bot can't perform
+ * this op." If a future caller needs the distinction, add an `unauthorized`
+ * kind without breaking existing handlers.
  */
 export function mapError(err: unknown): GitHubAppError {
   const message =
@@ -173,14 +220,16 @@ export function mapError(err: unknown): GitHubAppError {
       ? (err as { status: unknown }).status
       : undefined;
   const status = typeof rawStatus === "number" ? rawStatus : undefined;
+  const safeCause = sanitizeCause(err);
   switch (status) {
     case 404:
-      return new GitHubAppError("not_found", message, err);
+      return new GitHubAppError("not_found", message, safeCause);
     case 409:
-      return new GitHubAppError("sha_conflict", message, err);
+      return new GitHubAppError("sha_conflict", message, safeCause);
+    case 401:
     case 403:
-      return new GitHubAppError("forbidden", message, err);
+      return new GitHubAppError("forbidden", message, safeCause);
     default:
-      return new GitHubAppError("unknown", message, err);
+      return new GitHubAppError("unknown", message, safeCause);
   }
 }
