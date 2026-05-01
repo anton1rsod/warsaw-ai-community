@@ -22,8 +22,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Project scaffold: `README.md`, `spec.md` (stub), `plan.md` (stub), this changelog.
 - Locked inputs in `spec.md` §0: four-role access model, gamification in scope, OSS-first, Telegram-complementary posture.
 - Cross-links to sister projects (`persona-builder/`, `projects/gbrain/`) and program governance.
+- **`spec.md` §1–§10 written** via `superpowers:brainstorming` cycle (founder + AI collaborator).
+  - Lite slice locked: identity + memory spine + one write surface (status updates).
+  - Stack: Next.js 15 + Vercel + GitHub OAuth (JWT sessions) + GitHub App `warsaw-ai-bot`.
+  - Storage: 100% git for v0.1; classification rule documented for v0.2+ DB return.
+  - Long-term commitments captured in §10 (storage trajectory, federation horizon, OSS/commercial separation, gamification phasing, health metric).
 
 ### Pending
-- `superpowers:brainstorming` session to fill `spec.md`.
-- Founder review of resulting spec.
+- Founder review of `spec.md`.
 - `superpowers:writing-plans` session to fill `plan.md`.
+- Pre-launch tasks (per `spec.md` §9 risk 3):
+  - PR adding `github_handle` field to every roster entry.
+  - Create `community/governance/admins.md` and `community/governance/community-managers.md`.
+  - Add `## Attendees` format to `community/meetings/weekly/_template.md`.

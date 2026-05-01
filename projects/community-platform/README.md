@@ -2,26 +2,26 @@
 
 > Member-facing platform with gamification, role-based access (admin / community manager / member / guest), and a structured engagement layer that complements Telegram.
 
-**Status:** Proposed — pending brainstorm
+**Status:** Spec approved — pending implementation plan
 **Lead:** Anton Safronov
 **Started:** 2026-05-01
 **Telegram thread:** TBD (Builds & Pitches)
 
 ---
 
-## Heads-up to AI collaborators
+## What
 
-> **Do not write spec content yet.** The spec is intentionally a stub. The next session is a [`superpowers:brainstorming`](https://github.com/) cycle that will fill `spec.md`. Until that happens, this folder only captures the **shape** of the project, not its design.
->
-> See [`spec.md`](spec.md) §0 for the inputs already locked by the founder.
-
----
-
-## What (sketch — to be refined in brainstorm)
-
-A community platform that surfaces what Telegram cannot: structured member profiles, persistent project state, gamified contribution loops, and tiered access for the four operating roles in the community.
+The Warsaw AI Community platform — a member-shaped read of the community's git-resident structure (members, projects, decisions, meetings, personas), plus one minimal write surface ("what I'm working on this week") that drives discoverability without competing with Telegram for conversation.
 
 The platform is **complementary** to Telegram — Telegram remains the conversational surface, the platform becomes the **structural** surface (who you are, what you've shipped, where you stand).
+
+**v0.1 design highlights** (full spec in [`spec.md`](spec.md)):
+
+- Lite slice: identity + memory spine + one write surface.
+- Stack: Next.js 15 + Vercel + GitHub OAuth (JWT sessions) + GitHub App `warsaw-ai-bot` for git writes.
+- Storage: 100% git for v0.1; classification rule documented for v0.2+ when DB-shaped data returns.
+- Four-role RBAC wired in code; admin/CM-distinct UI capabilities deferred to v0.2+.
+- Gamification at v0.1 is observation-only: a git-derived contributions counter on each profile. Badges, kudos, streaks, quests are v0.2+.
 
 ## Why
 
@@ -44,30 +44,30 @@ Four access roles, locked **before** brainstorm so that role boundaries shape th
 
 ## Locked design parameters
 
-These four parameters are **inputs** to the brainstorm, not outputs:
+Originally locked **before** the brainstorm; preserved as `spec.md` §0:
 
 - **Four-role access model** above (locked).
-- **Gamification is in scope for v0.1.** Mechanic shape (points / badges / streaks / quests / leaderboards / reputation) is open.
+- **Gamification is in scope for v0.1.** v0.1 mechanic: observation-only contributions counter. Mechanic phasing detailed in `spec.md` §10.
 - **Telegram-complementary, not replacing.** Telegram identity is the source of truth for membership.
 - **OSS-first.** MIT-licensed, lives in this repo. (Per [ADR-0001](../../docs/decisions/0001-oss-first-licensing.md).)
 
-Everything else — runtime, storage, UI surface, hosting, member journey, gamification mechanic — is open until brainstorm.
+## Phases
 
-## Phases (placeholder — to be sized in brainstorm)
-
-- **v0.1** — Identity + roles + minimal gamification. Foundational.
-- **v0.2** — Project / contribution tracking (cross-link to GBrain archive + sub-projects).
-- **v0.3+** — TBD.
+- **v0.1 (current)** — Lite slice: auth + member directory + profile pages + project / decision / meeting readers + status updates + git-derived contributions counter. See `spec.md` §2.
+- **v0.2** — Kudos / peer endorsements / milestone badges / Telegram bridge. First DB introduction (per `spec.md` §10 storage trajectory).
+- **v0.3** — Streaks / search / public-guest read view (commercial-readiness surface).
+- **v0.4+** — Quests, real-time presence, governance integration.
 
 ## Next step
 
-1. Open a fresh chat and run `superpowers:brainstorming` against [`spec.md`](spec.md) §0 inputs.
-2. On founder approval of the spec, run `superpowers:writing-plans` to produce [`plan.md`](plan.md).
-3. Implementation follows the stack defined in [`docs/playbooks/ai-collaborator-stack.md`](../../docs/playbooks/ai-collaborator-stack.md).
+1. Founder reviews [`spec.md`](spec.md).
+2. On founder approval, run `superpowers:writing-plans` to produce [`plan.md`](plan.md).
+3. Pre-launch tasks (per `spec.md` §9 risk 3): roster `github_handle` PR, governance files, attendees-list format.
+4. Implementation follows the stack defined in [`docs/playbooks/ai-collaborator-stack.md`](../../docs/playbooks/ai-collaborator-stack.md).
 
 ## Links
 
-- Spec: [`spec.md`](spec.md) *(stub — pending brainstorm)*
+- Spec: [`spec.md`](spec.md)
 - Plan: [`plan.md`](plan.md) *(follows spec approval)*
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 - Stack guide: [`docs/playbooks/ai-collaborator-stack.md`](../../docs/playbooks/ai-collaborator-stack.md)
