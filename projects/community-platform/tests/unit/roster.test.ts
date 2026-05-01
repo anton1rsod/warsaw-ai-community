@@ -1,13 +1,19 @@
 import { describe, expect, it } from "vitest";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { readRoster, lookupMemberByHandle } from "@/lib/roster";
+import {
+  readRoster,
+  lookupMemberByHandle,
+  readMemberProfile,
+  readMemberPersona,
+} from "@/lib/roster";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.resolve(
   __dirname,
   "../fixtures/repo/community/members/roster.md",
 );
+const REPO_ROOT = path.resolve(__dirname, "../fixtures/repo");
 
 describe("readRoster", () => {
   it("parses members across multiple tables, skipping *(TBD)* rows and empty handles", async () => {
@@ -81,5 +87,30 @@ describe("lookupMemberByHandle", () => {
   it("returns undefined for empty handle", async () => {
     const roster = await readRoster(FIXTURE);
     expect(lookupMemberByHandle(roster, "")).toBeUndefined();
+  });
+});
+
+describe("readMemberProfile", () => {
+  it("returns body and frontmatter when file exists", async () => {
+    const profile = await readMemberProfile(REPO_ROOT, "anton-safronov");
+    expect(profile?.body).toContain("Founder");
+    expect(profile?.data.consented_at).toBe("2026-05-01T10:00:00Z");
+  });
+
+  it("returns null when file is absent", async () => {
+    expect(await readMemberProfile(REPO_ROOT, "ghost")).toBeNull();
+  });
+});
+
+describe("readMemberPersona", () => {
+  it("returns persona truncated to first H2", async () => {
+    const persona = await readMemberPersona(REPO_ROOT, "anton-safronov");
+    expect(persona).toContain("# Anton Safronov");
+    expect(persona).toContain("PM-minded");
+    expect(persona).not.toContain("## Skills");
+  });
+
+  it("returns null when persona dir absent", async () => {
+    expect(await readMemberPersona(REPO_ROOT, "ghost")).toBeNull();
   });
 });

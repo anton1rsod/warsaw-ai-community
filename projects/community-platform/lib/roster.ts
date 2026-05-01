@@ -1,4 +1,6 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
+import path from "node:path";
+import { parseMarkdown, truncateToFirstH2 } from "@/lib/markdown";
 
 export interface RosterMember {
   name: string;
@@ -144,4 +146,50 @@ export function lookupMemberByHandle(
   const normalized = normalizeHandle(handle);
   if (!normalized) return undefined;
   return roster.find((m) => m.githubHandle === normalized);
+}
+
+export interface MemberProfile {
+  data: Record<string, unknown>;
+  body: string;
+}
+
+function isENOENT(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code: string }).code === "ENOENT"
+  );
+}
+
+export async function readMemberProfile(
+  repoRoot: string,
+  slug: string,
+): Promise<MemberProfile | null> {
+  const filePath = path.join(repoRoot, "community/members", `${slug}.md`);
+  try {
+    const content = await readFile(filePath, "utf8");
+    return parseMarkdown(content);
+  } catch (err: unknown) {
+    if (isENOENT(err)) return null;
+    throw err;
+  }
+}
+
+export async function readMemberPersona(
+  repoRoot: string,
+  slug: string,
+): Promise<string | null> {
+  const dir = path.join(repoRoot, "persona-builder/personas", slug);
+  try {
+    const files = await readdir(dir);
+    const md = files.find((f) => f.endsWith(".md"));
+    if (!md) return null;
+    const content = await readFile(path.join(dir, md), "utf8");
+    const { body } = parseMarkdown(content);
+    return truncateToFirstH2(body);
+  } catch (err: unknown) {
+    if (isENOENT(err)) return null;
+    throw err;
+  }
 }
