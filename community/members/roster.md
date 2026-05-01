@@ -7,19 +7,19 @@ Opt-in public roster. Members listed here have consented to public visibility in
 
 ## Core organizers
 
-| Name | Role | Telegram | Focus |
-|---|---|---|---|
-| Anton Safronov | Founder / BDFL | @antonsafronov (TBD) | Direction, gbrain lead |
-| *(TBD)* | Core organizer | | |
-| *(TBD)* | Core organizer | | |
+| Name | GitHub | Role | Telegram | Focus |
+|---|---|---|---|---|
+| Anton Safronov | @anton1rsod | Founder / BDFL | @antonsafronov (TBD) | Direction, gbrain lead |
+| *(TBD)* | | Core organizer | | |
+| *(TBD)* | | Core organizer | | |
 
 ## Members (opt-in)
 
-*Members can add themselves via PR. Include: name or handle, optional link (GitHub/LinkedIn), optional focus area.*
+*Members can add themselves via PR. Include: name, GitHub handle (required for community-platform sign-in), optional link (LinkedIn etc.), optional focus area.*
 
-| Name / handle | Link | Focus |
-|---|---|---|
-| | | |
+| Name | GitHub | Link | Focus |
+|---|---|---|---|
+| | | | |
 
 ## Notes
 
