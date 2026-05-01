@@ -61,6 +61,15 @@ Last green commit: pending closeout (this entry's commit).
 - `pnpm build` — 4 routes, all static
 - `pnpm e2e` — 1 pass (home page renders)
 
+**Repo migration (post-closeout, 2026-05-01):**
+- Created new private repo: https://github.com/anton1rsod/warsaw-ai-community (umbrella name; replaces the legacy `warsaw-ai-community-gbrain` repo whose name no longer reflects its monorepo scope).
+- All commits + tags (`gbrain-v0.1.0`, `gbrain-v0.1.1`) pushed.
+- Vercel project `anton-9351s-projects/warsaw-ai-community-platform` reconnected to new repo URL.
+- Vercel env `GITHUB_REPO_NAME` updated from `warsaw-ai-community-gbrain` → `warsaw-ai-community` (production + preview-on-warsaw-org-and-stack-guide).
+- Re-deploy verified Ready: `dpl_3hXeCEef8eSUvmZm9MTm4q6HpKp5`.
+- Old repo `anton1rsod/warsaw-ai-community-gbrain` left untouched on GitHub (decision deferred — likely archive after v0.1.0 ship).
+- Repo will flip to public at v0.1.0 ship per spec §0.5 (OSS-first / no public marketing pre-v0.1) + ADR-0001 (MIT licensing).
+
 ### Pending — Phase 1 onward
 - Apply plan amendments at execution time:
   - §9.1 Task 1.1 — header-aware roster parser (skip `*(TBD)*` rows).

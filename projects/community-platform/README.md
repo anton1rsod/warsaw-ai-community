@@ -68,8 +68,9 @@ Originally locked **before** the brainstorm; preserved as `spec.md` §0:
 
 ## Deployments
 
-- **Preview:** https://warsaw-ai-community-platform-anton-9351-anton-9351s-projects.vercel.app (alias) / https://warsaw-ai-community-platform-gam0f92n3-anton-9351s-projects.vercel.app (deployment) — *gated by Vercel Deployment Protection (preview-only); roster-only NextAuth gate added in Phase 1.*
+- **Preview:** https://warsaw-ai-community-platform-anton-9351-anton-9351s-projects.vercel.app (stable alias; auto-points to latest deploy) — *gated by Vercel Deployment Protection; roster-only NextAuth gate added in Phase 1.*
 - **Production:** _(set after Phase 10)_
+- **Repo:** https://github.com/anton1rsod/warsaw-ai-community (private until v0.1.0 ship; flips to public per spec §0.5 + ADR-0001).
 
 ## Links
 
