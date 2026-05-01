@@ -208,8 +208,47 @@ Last green commit (pending closeout): this entry's commit. Last code-only green:
 - Task 4.1 [H]: create `warsaw-ai-bot` GitHub App, install on `warsaw-ai-community` repo, set 3 env vars on Vercel preview. After env vars are real, run `pnpm tsx scripts/smoke-github-app.ts` to verify auth end-to-end. Phase 5's `/this-week` page and Phase 6's `/consent` page need this to work in preview.
 - Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
 
-### Pending — Phase 5 onward
+### Phase 5 — Status updates (complete, 2026-05-01)
+
+Last green commit (pending closeout): this entry's commit. Last code-only green: `75ce520`.
+
+**6 implementation tasks shipped + 1 batched reviewer-fix commit, 221 unit + integration tests + 12 E2E pass, 100% coverage on `lib/week.ts` (spec §8 strict-list).**
+
+- **Task 5.1** (commit `9c7c07f`) — `lib/week.ts` ISO 8601 helpers. Thursday-shift algorithm; year-cross + W53 boundary tests; `WEEK_REGEX` exported as the canonical token shape so Zod schemas don't drift. 16 unit tests; 100/100/100/100.
+- **Task 5.2** (commit `2232990`) — `lib/status-reader.ts` runtime read via GitHub Contents API + commits API per file (parallel). Returns `[]` on 404 / on path-resolves-to-file (defensive); skips non-md entries; encoding=none (>1 MB) entries skipped; non-404 errors propagate. 6 MSW integration tests; 100/100/100/100.
+- **Task 5.3** (commit `139db9f`) — `app/actions/status.ts` `postStatus` / `editStatus` / `deleteStatus`. Zod validation with `WEEK_REGEX` + `parseWeek`-refined week range (1..53); discriminated `StatusActionResult` union; `resolveAuthor` ensures member can only modify their own status; SHA-based optimistic locking maps `GitHubAppError.kind` → typed action errors. Frontmatter format: `week` / `author` / `updated_at`. 21 integration tests with mocked github-app + auth + content-snapshot; 100% lines / 97.56% branches (production NODE_ENV branch unreachable from the test runner).
+- **Task 5.4** (commit `2cc5b54`) — `app/components/StatusEditor.tsx` client component with optimistic UI. Post / Update / Delete buttons; sha_conflict surfaces "Someone else updated this — refresh to see the latest."; `useTransition` for pending state. 10 RTL unit tests; 100/100/100/100.
+- **Task 5.5** (commit `6ad9133`) — `/this-week` page (server component). Fetches installation token via `createAppAuth` (renamed locally to `ghAppAuth` to avoid shadowing imported `lib/auth`); reads current ISO week's statuses; splits self vs others; strips frontmatter via `parseMarkdown`; passes `postStatus` / `editStatus` / `deleteStatus` actions to `StatusEditor`. **`dynamic = "force-dynamic"`** for v0.1 (deferring 60s ISR per amendment §9.16; bot commit + propagation + cache + SHA-conflict timing risks captured in execution-plan §6.3 are easier to verify operationally without ISR). `<time dateTime={...}>` for lastModified rendering.
+- **Task 5.6** (commit `be4822b`) — E2E status flow. `app/actions/_test-status-store.ts` in-memory mock on `globalThis` (required because Next 16's `"use server"` files bundle into a separate module graph from server components / route handlers; without `globalThis`, action writes and page reads land in different module instances). Mock gated on `NEXT_PUBLIC_E2E_MODE=1` + production NODE_ENV guard. `playwright.config.ts` sets the flag in `webServer.command`. `/api/test-reset-status` route handler (dev/E2E-only; in PUBLIC_PATHS only when NODE_ENV !== production). `e2e/status.spec.ts` 3 tests (post / edit / delete) with `describe.configure({ mode: "serial" })` + `beforeEach` reset+login. Uses `getByRole("status").toContainText()` for message assertions (getByText was strict-matching multiple elements).
+- **Reviewer fixes** (commit `75ce520`) — typescript-reviewer + code-reviewer HIGH/MEDIUM addressed:
+  - HIGH `app/actions/status.ts`: `WeekSchema` refined via `parseWeek` so W00/W54/W99 are rejected by Zod (the bare regex accepted them; writes would land at directory paths no reader surfaces).
+  - HIGH `app/actions/_test-status-store.ts` `mockStatusActions.edit`: returns `not_found` when key absent (production semantics: GitHub returns 404 for SHA-bearing writes to missing files); without this the E2E happy path could exercise a success branch production never reaches.
+  - HIGH `app/actions/_test-status-store.ts` `resolveAuthState`: distinguishes `not_authenticated` vs `not_a_member`. Without the split an unauthenticated Playwright call would return `not_a_member` and any guard test would pass for the wrong reason.
+  - HIGH `app/actions/status.ts`: frontmatter field renamed `posted_at` → `updated_at` because both post and edit emit the current timestamp; `posted_at` would be misleading once an entry is edited. Phase 7 contributions counter reads git log dates, not this field, so renaming is safe.
+  - MEDIUM `app/actions/status.ts`: production NODE_ENV guard wraps each `isE2EMode` branch as defense-in-depth.
+  - MEDIUM `proxy.ts`: `/api/test-auth` + `/api/test-reset-status` removed from `PUBLIC_PATHS` when NODE_ENV === production. If `NEXT_PUBLIC_E2E_MODE` leaks to prod, proxy still redirects unauthenticated callers to /login and the route returns 404.
+  - MEDIUM `lib/week.ts`: `WEEK_REGEX` exported as a single source of truth.
+  - MEDIUM `app/this-week/page.tsx`: `<time dateTime>` for `lastModified` rendering.
+
+**Phase 5 closeout green check (this commit):**
+- `pnpm install --frozen-lockfile` — clean
+- `pnpm lint` — 0 errors / 0 warnings
+- `pnpm typecheck` — clean
+- `pnpm test:coverage` — 21 files, 221 tests pass. **100% on `lib/{auth,classification,content-snapshot,env,github-app,markdown,rbac,status-reader,week}.ts` + `proxy.ts` + `app/components/{PersonaPanel,SafeHtml,StatusEditor}.tsx`** (spec §8 strict-list + Phase 2-5 critical components). `app/actions/status.ts` 100% lines / 97.56% branches; `lib/governance.ts` 100% / 94.28% branches; `lib/{decisions,meetings,projects,roster}.ts` above 80% / 84% gate (defensive guards). Overall 87.28% lines / 93.59% branches. `scripts/{snapshot-content,smoke-github-app}.ts` at 0% (CLI tools); `app/actions/_test-status-store.ts` excluded from coverage (E2E-only).
+- `pnpm build` — 14 routes (5 static + 8 SSG + `/this-week` ƒ Dynamic) + 3 functions (`/api/auth/[...nextauth]`, `/api/test-auth`, `/api/test-reset-status`) + `ƒ Proxy (Middleware)`.
+- `pnpm e2e` — 12 tests pass: smoke + 3 auth-flow + 2 members + 3 archives + 3 status.
+
+**Plan amendment applied during this phase (§9.16 in `execution-plan.md`):**
+- §9.16 Phase 5 — `/this-week` ships with `dynamic = "force-dynamic"` instead of plan's `revalidate = 60`. Reason: ISR + bot commit propagation + 60s cache + SHA-conflict resolution interact in subtle ways (per execution-plan §6.3); a later iteration can re-introduce caching once the timing is operationally understood. Also: the E2E mock store leaks across cache windows in dev, which the dynamic path avoids.
+
+**Outstanding:**
+- Task 4.1 [H] still pending Anton (GitHub App + 3 env vars). `/this-week` works against the real bot once env vars are real; the smoke script (`pnpm tsx scripts/smoke-github-app.ts`) verifies end-to-end.
+- Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
+
+### Pending — Phase 6 onward
 - Apply plan amendments at execution time (still relevant):
   - §9.2 Task 9.2 — `export const revalidate = 60;` on `/admin/health` (Phase 9).
-- Phases 5 + 6 (Status updates + Consent flow) remain in this chat per execution-plan §10.2.
+  - §9.7 + §9.9 — Phase 6 Task 6.3 modifies `proxy.ts` (NOT `middleware.ts`); fold consent gate into the existing manual-decode flow.
+  - §9.13 — Phase 6 E2E uses `loginAs(page, handle, { consented })` with `page.request.post`.
+- Phase 6 (Consent flow) remains in this chat.
 - Tailwind typography plugin not installed; `prose` classes render as plain HTML for now (visual-only, no functional impact).
