@@ -70,11 +70,55 @@ Last green commit: pending closeout (this entry's commit).
 - Old repo `anton1rsod/warsaw-ai-community-gbrain` left untouched on GitHub (decision deferred — likely archive after v0.1.0 ship).
 - Repo will flip to public at v0.1.0 ship per spec §0.5 (OSS-first / no public marketing pre-v0.1) + ADR-0001 (MIT licensing).
 
-### Pending — Phase 1 onward
-- Apply plan amendments at execution time:
-  - §9.1 Task 1.1 — header-aware roster parser (skip `*(TBD)*` rows).
+### Phase 1 — Auth + RBAC (complete, 2026-05-01)
+
+Last green commit (pending closeout): this entry's commit. Last code-only green: `5b03e4b` (review fixes).
+
+**13 tasks shipped, 75 unit tests + 4 E2E green, 100% coverage on the spec §8 strict-list modules.**
+
+- **Task 1.1** (commit `226ec27`) — `lib/roster.ts` header-aware parser per §9.1 amendment. Detects GitHub column by `/^github$/i` per table; multi-table-aware; skips `*(TBD)*` rows + empty/TBD handles. Mirrors actual `community/members/roster.md` two-table layout in fixture. 10 unit tests.
+- **Task 1.2** (commit `955ca3d`) — `lib/governance.ts` reads `admins.md` + `community-managers.md`. Set-backed `isAdmin` / `isCommunityManager` predicates. 8 unit tests.
+- **Task 1.3** (commit `e749660`) — `lib/rbac.ts` resolves admin / community_manager / member / guest. Admin-must-be-on-roster invariant. 14 unit tests; 100% coverage.
+- **Task 1.4 [H]** — Anton creates GitHub OAuth App + sets `GITHUB_OAUTH_CLIENT_ID` / `_SECRET` on Vercel preview. **Pending Anton's manual step at closeout time**; OAuth callback URL is `https://warsaw-ai-platform.vercel.app/api/auth/callback/github` (short alias claimed in §9.11).
+- **Task 1.5** (commit `9ea1ee1`) — `lib/auth.ts` NextAuth config. **Bumped to `next-auth@5.0.0-beta.31`** per amendment §9.8. JWT session strategy; `session.maxAge` from env; jwt callback writes lowercase `githubHandle` from GitHub `profile.login`; session callback exposes it to client via Module augmentation. Vitest config required `server.deps.inline: ["next-auth", "@auth/core"]`. 9 unit tests; 100% coverage.
+- **Task 1.6** (commit `adb4ef4`) — NextAuth catch-all route at `app/api/auth/[...nextauth]/route.ts` re-exports `handlers` from `lib/auth.ts`.
+- **Task 1.7** (commit `c0993bf`) — `/login` page. Server Component (env access) + Client Component (`LoginForm.tsx` with CSRF dance). **Client-side form POST to `/api/auth/signin/github`** instead of broken `signIn` server action per amendment §9.8 (Issue #13388).
+- **Task 1.8** (commit `5132ec0`) — `/no-access` page for non-roster users; server-action `signOut` (signOut is unaffected by #13388).
+- **Task 1.9** (commit `a31d3b3`) — Build-time content snapshot. `scripts/snapshot-content.ts` reads roster + governance from monorepo root, writes `lib/__generated__/content-snapshot.json`. `lib/content-snapshot.ts` wraps it with synchronous helpers (`snapshot`, `isAdmin`, `isCommunityManager`, `findMemberByHandle`). pnpm pre-hooks (`predev`, `prebuild`, `prelint`, `pretypecheck`, `pretest`, `pretest:coverage`, `pree2e`) auto-run snapshot. Generated dir gitignored. 12 unit tests.
+- **Task 1.10** (commit `d59906d`) — Auth proxy middleware. **`proxy.ts`, not `middleware.ts`**, per amendment §9.7 (Next 16 deprecated middleware filename). 14 unit tests; 100% coverage per spec §8.
+- **Task 1.11** (commit `56a49c5`) — `/home` shell page (server-rendered with `auth()` for session); root `/` now redirects to `/home`. Smoke E2E updated: unauthenticated visit to `/` follows redirect chain to `/login`.
+- **Task 1.12** (commit `961b507`) — E2E auth flow + dev-only `/api/test-auth` route. Three paths covered: unauthenticated → `/login`, non-roster → `/no-access`, roster member (`anton1rsod`, also founder/admin) → `/home`. The test-auth route encodes a NextAuth-compatible JWT cookie via `next-auth/jwt` `encode()` with matching salt; hard-gated to `NODE_ENV !== "production"`. **Proxy refactored to use manual JWT `decode()`** instead of `auth()` helper (which only works in RSC / Route Handlers) per amendment §9.9.
+- **Reviewer fixes** (commit `5b03e4b`) — typescript-reviewer + code-reviewer HIGH/MEDIUM addressed:
+  - `proxy.ts`: `console.error` for decode failures + JWT-shape-drift signal (cookie-name-drift visibility); `/.well-known` added to `PUBLIC_PREFIXES`.
+  - `lib/content-snapshot.ts`: Set-backed `isAdmin` / `isCommunityManager` for O(1) lookups (matching governance.ts).
+  - `LoginForm.tsx`: validate CSRF response shape before reading `csrfToken`.
+  - `lib/auth.ts`: drop superfluous session-callback cast (Session augmentation makes direct property assignment compile cleanly).
+  - `app/api/test-auth/route.ts`: comment on `secure: false` localhost intent.
+
+**Phase 1 closeout green check (this commit):**
+- `pnpm install --frozen-lockfile` — clean
+- `pnpm lint` — 0 errors / 0 warnings
+- `pnpm typecheck` — clean
+- `pnpm test:coverage` — 9 test files, 75 tests pass. Coverage: 86.86% all files; **100% on `lib/{auth,rbac,classification,content-snapshot,env,governance,roster}.ts` + `proxy.ts`** (governance.ts and roster.ts have unreachable defensive `??` branches at 94% and 84% respectively — structurally unreachable with valid markdown). `scripts/snapshot-content.ts` at 0% (CLI tool; transitively tested via consumers).
+- `pnpm build` — 5 routes (`/`, `/home`, `/login`, `/no-access`, `/api/auth/[...nextauth]`, `/api/test-auth`) + `ƒ Proxy (Middleware)` detected by Next 16
+- `pnpm e2e` — 4 tests pass: smoke + 3 auth-flow
+
+**Plan amendments applied during this phase (§9.5–§9.11 in `execution-plan.md`):**
+- §9.5 Phase 0 closeout — `next 15.0.4 → 16.2.4` bump (Vercel rejected at 15.0.4 per CVE-2025-66478)
+- §9.6 Phase 0 closeout — preview env vars scoped per-branch
+- §9.7 Phase 1 — `proxy.ts` (Next 16 canonical) replaces `middleware.ts`
+- §9.8 Phase 1 — `next-auth@5.0.0-beta.31` (bumped from plan's beta.25); client-side form POST sign-in (Issue #13388 workaround)
+- §9.9 Phase 1 — proxy uses manual `decode()` from `next-auth/jwt`, not `auth()` helper
+- §9.10 Phase 1 — Vercel project Root Directory must be `projects/community-platform` (currently null after repo migration; Anton fixes in dashboard)
+- §9.11 Phase 1 — short alias `warsaw-ai-platform.vercel.app` claimed for the project
+
+**Outstanding human work (parallel to Phase 2):**
+- §9.10 — Anton sets `rootDirectory` in Vercel dashboard so git-push auto-deploys succeed.
+- Task 1.4 [H] — Anton creates GitHub OAuth App + force-overwrites preview Client ID + Secret in Vercel env. Re-aliases `warsaw-ai-platform.vercel.app` to a fresh successful preview deployment to validate the live OAuth round-trip end-to-end.
+- Roster `github_handle` backfill for the other 18 members (`*(TBD)*` placeholders) — non-founder logins require this. Tracked outside Phase 1 acceptance.
+
+### Pending — Phase 2 onward
+- Apply plan amendments at execution time (still relevant):
   - §9.2 Task 9.2 — `export const revalidate = 60;` on `/admin/health`.
   - §9.3 Task 4.2 — keep test PEM in repo with documented caveats.
-  - **§9.5 (NEW)** Plan pinned `next 15.0.4`; superseded to `next 16.2.4` per commit `528f24c`. Phase 1 NextAuth v5 beta selection should target a beta release that's been tested against Next 16 — verify before Task 1.5.
-  - **§9.6 (NEW)** Preview env vars are scoped to branch `warsaw-org-and-stack-guide`. To deploy preview from any other branch in Phase 1+, either re-add env vars for that branch or omit the branch when adding (requires bypassing Vercel Claude Code plugin's `git_branch_required` intercept).
-- Roster `github_handle` backfill for the other 18 members (Phase 1 prerequisite for non-founder logins).
+- Phase 2 (`/members` directory + profile pages with sanitized markdown rendering) and Phase 3 (`/projects`, `/decisions`, `/meetings` readers) are bundled into Chat 3 per execution-plan §10.2 (16 tasks, ~2 days estimated).

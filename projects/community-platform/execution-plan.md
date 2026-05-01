@@ -232,6 +232,27 @@ Spec §HANDOFF 7.4 documents the trade-off. If a CI security scanner blocks the 
 **§9.4 Task 0.13 — update README + CHANGELOG to reflect committed plan + minimal pre-launch.**
 Already done as a separate `chore` commit accompanying this execution-plan. The Phase 0 closeout in execution can verify these are accurate; no code change needed.
 
+**§9.5 Phase 0 closeout — Next.js 15.0.4 → 16.2.4 bump.**
+Plan pinned `next 15.0.4`. Vercel rejected at 15.0.4 due to CVE-2025-66478. Phase 0 closeout bumped to `next 16.2.4` + `react 19.2.0` + `eslint-config-next 16.2.4` (commit `528f24c`). Side effects: `next.config.ts` `experimental.typedRoutes` → top-level `typedRoutes`; `tsconfig.json` `jsx: preserve` → `react-jsx`; `package.json` `lint` script: `next lint` → `eslint .` (next lint removed in 16). Phase 1 onward must verify NextAuth v5 beta selection against Next 16 (see §9.8).
+
+**§9.6 Phase 0 closeout — preview env scoped to branch.**
+Phase 0 set 13 Vercel env vars on production + preview-scoped to branch `warsaw-org-and-stack-guide`. To deploy preview from any other branch in Phase 1+, either re-add env vars for that branch (`pnpm dlx vercel env add NAME preview <branch>`) or omit the branch when adding (Vercel Claude Code plugin intercepts the "all preview branches" path with `git_branch_required` action; workarounds: pass branch explicitly or use the dashboard).
+
+**§9.7 Phase 1 (Anton-approved 2026-05-01) — `proxy.ts` instead of `middleware.ts`.**
+Plan said `middleware.ts`; Next 16.2.4 deprecated middleware in favor of `proxy.ts`. Per Next 16 upgrade docs: `mv middleware.ts proxy.ts` + rename function from `middleware()` to `proxy()`. `proxy` runs Node.js runtime (no edge support); fine for our use case. Phase 1 Task 1.10 implementation uses `proxy.ts`. Build output shows `ƒ Proxy (Middleware)` confirming Next 16 detection.
+
+**§9.8 Phase 1 (Anton-approved 2026-05-01) — `next-auth@5.0.0-beta.31` + client-side form POST sign-in.**
+Plan pinned `5.0.0-beta.25` (Q3 2025, Next 15 era). Latest is `5.0.0-beta.31`. Issue [#13388](https://github.com/nextauthjs/next-auth/issues/13388) confirmed `signIn` server action breaks on Next 16 + beta.30 with "Configuration error". Phase 1 Task 1.5 pinned `5.0.0-beta.31`; Task 1.7 uses client-side form POST to `/api/auth/signin/github` (with CSRF token fetched from `/api/auth/csrf`) instead of the broken `signIn` server action. `signOut` is unaffected and still uses the server-action pattern in `/no-access` and `/home`. Vitest config required `server.deps.inline: ["next-auth", "@auth/core"]` to make ESM resolution work in tests.
+
+**§9.9 Phase 1 (in-execution discovery 2026-05-01) — proxy uses manual JWT decode, not `auth()` helper.**
+Plan's Task 1.10 used `await auth()` inside the middleware function. In Auth.js v5, `auth()` called bare only works inside Server Components / Route Handlers — in middleware/proxy contexts the idiomatic patterns are either the `auth(handler)` wrapper or explicit `decode()` from `next-auth/jwt`. Phase 1 implementation uses explicit decode for testability (the wrapper API is harder to unit-test) + readability (gating logic stays in the proxy file, not in callbacks). The proxy reads `req.cookies.get(SECURE_COOKIE_NAME ?? COOKIE_NAME)`, decodes with `salt` matching the cookie name, and validates the JWT payload's `githubHandle` field. Cookie-name drift surfaces via `console.error` on decode failures so a future beta bump that renames the cookie produces a grep-able log line instead of a silent auth outage.
+
+**§9.10 Phase 1 (Anton-approved 2026-05-01) — Vercel project Root Directory must be `projects/community-platform`.**
+The 2026-05-01 repo migration to `anton1rsod/warsaw-ai-community` reset the Vercel project's `rootDirectory` to `null`. The repo is a docs-first monorepo — there's no `package.json` or `pnpm-workspace.yaml` at the repo root. With `rootDirectory: null`, Vercel runs `pnpm install --frozen-lockfile` from the repo root → "Already up-to-date" no-op → "Could not identify Next.js version" → build error. Manual `vercel deploy` from inside `projects/community-platform/` works because the CLI uses cwd. Git-push auto-deploys fail because they respect the project setting. Anton sets `rootDirectory` in Vercel dashboard (Settings → General → Root Directory) to `projects/community-platform`, then triggers a redeploy.
+
+**§9.11 Phase 1 (in-execution 2026-05-01) — short Vercel alias `warsaw-ai-platform.vercel.app`.**
+Default Vercel deployment URLs concatenate `<project>-<deploy-hash>-<team-slug>.vercel.app` (~70 chars). Anton authorized claiming the short alias `warsaw-ai-platform.vercel.app` for the project (precedent: `warsawaicommunitygbrain.vercel.app` on the gbrain project). Phase 1 Task 1.4 OAuth callback registration uses this alias: `https://warsaw-ai-platform.vercel.app/api/auth/callback/github`. The alias currently points to deploy `m9ueagcjx`; after Anton fixes Root Directory (§9.10) and redeploys, re-alias to the new tip.
+
 ---
 
 ## 10. Multi-chat session division (the question Anton raised)
