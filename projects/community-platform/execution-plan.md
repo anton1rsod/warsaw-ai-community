@@ -253,6 +253,12 @@ The 2026-05-01 repo migration to `anton1rsod/warsaw-ai-community` reset the Verc
 **§9.11 Phase 1 (in-execution 2026-05-01) — short Vercel alias `warsaw-ai-platform.vercel.app`.**
 Default Vercel deployment URLs concatenate `<project>-<deploy-hash>-<team-slug>.vercel.app` (~70 chars). Anton authorized claiming the short alias `warsaw-ai-platform.vercel.app` for the project (precedent: `warsawaicommunitygbrain.vercel.app` on the gbrain project). Phase 1 Task 1.4 OAuth callback registration uses this alias: `https://warsaw-ai-platform.vercel.app/api/auth/callback/github`. The alias currently points to deploy `m9ueagcjx`; after Anton fixes Root Directory (§9.10) and redeploys, re-alias to the new tip.
 
+**§9.12 Phase 2 (in-execution 2026-05-01) — `vitest.config.ts` merge preserves `server.deps.inline`.**
+The plan's Task 2.3 Step 2 (L2814-2837) replaces `vitest.config.ts` wholesale. That snippet drops Phase-1's `server.deps.inline: ["next-auth", "@auth/core"]` (added in Task 1.5 to make Auth.js v5 ESM resolve under vitest); without it, `tests/unit/auth.test.ts` fails at module load. Phase 2 implementation merges instead of replaces: keeps `server.deps.inline`, adds `environmentMatchGlobs` (jsdom for `.tsx`) + `setupFiles` (jest-dom matchers), and **scopes coverage `include` to `app/components/**/*.tsx`** (not the plan's broader `app/**/*.{ts,tsx}` — that would pull in uncovered server-component page files and drop overall coverage below the 80% gate).
+
+**§9.13 Phase 2 (in-execution 2026-05-01) — E2E auth-via-test-auth must use `page.request.post()`.**
+The plan's Task 2.7 + 3.7 templates use `test.beforeEach(async ({ request }) => { await request.post("/api/test-auth", ...) })`. The standalone `request` fixture maintains its own cookie jar; cookies set there do NOT propagate to subsequent `page.goto()` calls — the page lands unauthenticated and gets redirected to `/login`. Phase 1's `e2e/auth.spec.ts` already encoded the correct pattern in a `loginAs(page, handle)` helper using `page.request.post(...)` with an inline comment explaining the constraint. Phase 2 mirrors the helper inline; Phase 3 archive E2E will too.
+
 ---
 
 ## 10. Multi-chat session division (the question Anton raised)

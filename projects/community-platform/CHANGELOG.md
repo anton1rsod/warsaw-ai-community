@@ -120,8 +120,36 @@ Last green commit (pending closeout): this entry's commit. Last code-only green:
 **Outstanding (parallel to Phase 2):**
 - Roster `github_handle` backfill for the other 18 members (`*(TBD)*` placeholders) — non-founder logins require this. Tracked outside Phase 1 acceptance.
 
-### Pending — Phase 2 onward
+### Phase 2 — Member directory + profiles (complete, 2026-05-01)
+
+Last green commit (pending closeout): this entry's commit. Last code-only green: `b215eab`.
+
+**7 implementation tasks shipped, 96 unit tests + 6 E2E green, 100% coverage on the markdown sanitization gate and SafeHtml/PersonaPanel components.**
+
+- **Task 2.1** (commit `d88c3a2`) — `lib/markdown.ts` parser via gray-matter + sanitized renderer (unified pipeline: `remark-parse` → `remark-gfm` → `remark-rehype{allowDangerousHtml:false}` → `rehype-sanitize{defaultSchema}` → `rehype-stringify`) + `truncateToFirstH2`. Output is safe-by-construction; downstream rendering reads pre-sanitized strings. 8 unit tests; 100% coverage.
+- **Task 2.2** (commit `2c21e12`) — `readMemberProfile` + `readMemberPersona` helpers in `lib/roster.ts`; snapshot script extended to embed profile + persona per member; `lib/content-snapshot.ts` exposes `MemberWithProfile`, `findMemberBySlug`, `listMembers`. +17 tests; `lib/content-snapshot.ts` 100% coverage maintained.
+- **Task 2.3** (commit `af56dea`) — `app/components/SafeHtml.tsx` centralizes sanitized HTML insertion (single audit-bounded React HTML-insertion site — the `react/no-danger` surface). Vitest config gains `environmentMatchGlobs` (jsdom for `.tsx` tests) + `setupFiles` (jest-dom matchers); coverage `include` adds `app/components/**/*.tsx`. **Vitest config preserves Phase-1's `server.deps.inline: ["next-auth", "@auth/core"]`** (the plan's drop-in replacement omitted it and would have broken auth tests). 2 unit tests; 100% coverage.
+- **Task 2.4** (commit `47445ea`) — `PersonaPanel` component (uses `SafeHtml`; renders fallback section on null persona). 2 unit tests; 100% coverage.
+- **Task 2.5** (commit `35dc709`) — `/members` directory page (server component listing roster from snapshot).
+- **Task 2.6** (commit `42e1f08`) — `/members/[slug]` profile page with `generateStaticParams`; renders profile via `SafeHtml` + `PersonaPanel`; profile-fallback when no `community/members/<slug>.md`.
+- **Task 2.7** (commit `b215eab`) — E2E `e2e/members.spec.ts` covers directory + profile navigation + persona panel visibility. **Plan's `test.beforeEach({ request })` pattern fixed to use `page.request.post()`** via a local `loginAs(page, handle)` helper (matching Phase 1's auth.spec.ts pattern); standalone `request` fixture cookies don't transfer to `page`.
+
+**Phase 2 closeout green check (this commit):**
+- `pnpm install --frozen-lockfile` — clean
+- `pnpm lint` — 0 errors / 0 warnings
+- `pnpm typecheck` — clean
+- `pnpm test:coverage` — 12 files, 96 tests pass. Coverage: 86.8% all files; **100% on `lib/{auth,classification,content-snapshot,env,markdown,rbac}.ts` + `proxy.ts` + `app/components/{PersonaPanel,SafeHtml}.tsx`**. `governance.ts` 94.28% branches (Phase-1 unreachable defensive branches); `roster.ts` 81.39% branches / 96.42% lines (Task 2.2 added defensive ENOENT/non-Error paths — both above the 80% gate). `scripts/snapshot-content.ts` at 0% (CLI tool; transitively tested via consumers, same as Phase 1).
+- `pnpm build` — 7 routes (`/`, `/home`, `/login`, `/members`, `/members/[slug]` SSG → `/members/anton-safronov`, `/no-access`, `/_not-found`) + 2 functions (`/api/auth/[...nextauth]`, `/api/test-auth`) + `ƒ Proxy (Middleware)`.
+- `pnpm e2e` — 6 tests pass: smoke + 3 auth-flow + 2 members.
+
+**Plan amendments applied during this phase (§9.12 + §9.13 in `execution-plan.md`):**
+- §9.12 Phase 2 — `vitest.config.ts` merge preserves Phase-1 `server.deps.inline`; coverage `include` scoped to `app/components/**/*.tsx` (not full `app/**` — would dilute overall coverage from uncovered server-component pages).
+- §9.13 Phase 2 — E2E auth-via-test-auth must use `page.request.post()` (cookies on standalone `request` fixture don't reach `page`).
+
+### Pending — Phase 3 onward
 - Apply plan amendments at execution time (still relevant):
-  - §9.2 Task 9.2 — `export const revalidate = 60;` on `/admin/health`.
-  - §9.3 Task 4.2 — keep test PEM in repo with documented caveats.
-- Phase 2 (`/members` directory + profile pages with sanitized markdown rendering) and Phase 3 (`/projects`, `/decisions`, `/meetings` readers) are bundled into Chat 3 per execution-plan §10.2 (16 tasks, ~2 days estimated).
+  - §9.2 Task 9.2 — `export const revalidate = 60;` on `/admin/health` (Phase 9).
+  - §9.3 Task 4.2 — keep test PEM in repo with documented caveats (Phase 4).
+- Phase 3 (`/projects`, `/decisions`, `/meetings` readers) is the second half of Chat 3 (8 tasks).
+- Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
+- Tailwind typography plugin not installed; `prose` classes render as plain HTML for now (visual-only, no functional impact).
