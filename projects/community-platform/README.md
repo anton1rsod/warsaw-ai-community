@@ -66,6 +66,11 @@ Originally locked **before** the brainstorm; preserved as `spec.md` §0:
 4. **Begin Phase 0 implementation** per [`execution-plan.md`](execution-plan.md) §11 (Kickoff procedure). First subagent dispatch: Task 0.4 (Next.js 15 init).
 5. Implementation follows the stack defined in [`docs/playbooks/ai-collaborator-stack.md`](../../docs/playbooks/ai-collaborator-stack.md).
 
+## Deployments
+
+- **Preview:** https://warsaw-ai-community-platform-anton-9351-anton-9351s-projects.vercel.app (alias) / https://warsaw-ai-community-platform-gam0f92n3-anton-9351s-projects.vercel.app (deployment) — *gated by Vercel Deployment Protection (preview-only); roster-only NextAuth gate added in Phase 1.*
+- **Production:** _(set after Phase 10)_
+
 ## Links
 
 - Spec: [`spec.md`](spec.md)
