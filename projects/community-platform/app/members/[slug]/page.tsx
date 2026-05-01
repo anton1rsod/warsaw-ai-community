@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { findMemberBySlug, listMembers } from "@/lib/content-snapshot";
+import {
+  findMemberBySlug,
+  getContributions,
+  listMembers,
+} from "@/lib/content-snapshot";
 import { renderMarkdownToHtml } from "@/lib/markdown";
+import { ContributionCard } from "@/app/components/ContributionCard";
 import { PersonaPanel } from "@/app/components/PersonaPanel";
 import { SafeHtml } from "@/app/components/SafeHtml";
 
@@ -22,6 +27,7 @@ export default async function MemberPage({
     ? await renderMarkdownToHtml(member.profile.body)
     : null;
   const personaHtml = member.persona ? await renderMarkdownToHtml(member.persona) : null;
+  const contributions = getContributions(member.githubHandle);
 
   return (
     <main className="mx-auto max-w-3xl p-8">
@@ -34,6 +40,10 @@ export default async function MemberPage({
           @{member.githubHandle}
         </a>
       </p>
+
+      <div className="mt-6">
+        <ContributionCard contributions={contributions} />
+      </div>
 
       {profileHtml ? (
         <section className="mt-6">
