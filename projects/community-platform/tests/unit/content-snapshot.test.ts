@@ -5,6 +5,7 @@ import {
   findMemberByHandle,
   findMemberBySlug,
   findProjectBySlug,
+  getContributions,
   isAdmin,
   isCommunityManager,
   listDecisionsFromSnapshot,
@@ -222,5 +223,42 @@ describe("findMeetingBySlug", () => {
         expect(found?.slug).toBe(first.slug);
       }
     }
+  });
+});
+
+describe("getContributions", () => {
+  it("returns zeros for an empty handle", () => {
+    expect(getContributions("")).toEqual({
+      projectCommits: 0,
+      adrsFiled: 0,
+      meetingsAttended: 0,
+      statusPosts: 0,
+    });
+  });
+
+  it("returns zeros for a handle with no recorded contributions", () => {
+    expect(getContributions("definitely-not-a-real-handle")).toEqual({
+      projectCommits: 0,
+      adrsFiled: 0,
+      meetingsAttended: 0,
+      statusPosts: 0,
+    });
+  });
+
+  it("returns a Contributions object with numeric fields when found", () => {
+    // The founder is in the roster, so the build script writes a row.
+    const c = getContributions("anton1rsod");
+    expect(typeof c.projectCommits).toBe("number");
+    expect(typeof c.adrsFiled).toBe("number");
+    expect(typeof c.meetingsAttended).toBe("number");
+    expect(typeof c.statusPosts).toBe("number");
+  });
+
+  it("normalizes input handle (case + leading @) before lookup", () => {
+    const a = getContributions("anton1rsod");
+    const b = getContributions("ANTON1RSOD");
+    const c = getContributions("@anton1rsod");
+    expect(a).toEqual(b);
+    expect(b).toEqual(c);
   });
 });

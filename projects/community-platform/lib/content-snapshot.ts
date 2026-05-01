@@ -2,7 +2,9 @@ import type { RosterMember, MemberProfile } from "@/lib/roster";
 import type { ProjectDetail } from "@/lib/projects";
 import type { Decision } from "@/lib/decisions";
 import type { Meeting } from "@/lib/meetings";
+import type { Contributions } from "@/lib/contributions";
 import snapshotJson from "@/lib/__generated__/content-snapshot.json";
+import contributionsJson from "@/lib/__generated__/contributions.json";
 
 export interface MemberWithProfile extends RosterMember {
   profile: MemberProfile | null;
@@ -81,4 +83,19 @@ export function listMeetingsFromSnapshot(): readonly Meeting[] {
 
 export function findMeetingBySlug(slug: string): Meeting | undefined {
   return snapshot.meetings.find((m) => m.slug === slug);
+}
+
+const contributionsByHandle: Record<string, Contributions> =
+  contributionsJson as Record<string, Contributions>;
+
+const ZERO_CONTRIBUTIONS: Contributions = {
+  projectCommits: 0,
+  adrsFiled: 0,
+  meetingsAttended: 0,
+  statusPosts: 0,
+};
+
+export function getContributions(handle: string): Contributions {
+  if (!handle) return ZERO_CONTRIBUTIONS;
+  return contributionsByHandle[normalize(handle)] ?? ZERO_CONTRIBUTIONS;
 }
