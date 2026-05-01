@@ -89,6 +89,14 @@ describe("proxy", () => {
     expect(mocks.decodeFn).not.toHaveBeenCalled();
   });
 
+  it("passes through /api/test-reset-status (dev/E2E mock-store reset)", async () => {
+    const { default: proxy } = await import("@/proxy");
+    const req = makeReq("/api/test-reset-status");
+    const res = await proxy(req as never);
+    expect(res.headers.get("location")).toBeNull();
+    expect(mocks.decodeFn).not.toHaveBeenCalled();
+  });
+
   it("passes through /api/auth/* (public prefix)", async () => {
     const { default: proxy } = await import("@/proxy");
     const req = makeReq("/api/auth/callback/github");

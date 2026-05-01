@@ -4,7 +4,10 @@ import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { findMemberByHandle } from "@/lib/content-snapshot";
 import { currentWeek } from "@/lib/week";
-import { readWeekStatuses } from "@/lib/status-reader";
+import {
+  readWeekStatuses,
+  type StatusUpdate,
+} from "@/lib/status-reader";
 import { parseMarkdown, renderMarkdownToHtml } from "@/lib/markdown";
 import { SafeHtml } from "@/app/components/SafeHtml";
 import { StatusEditor } from "@/app/components/StatusEditor";
@@ -13,8 +16,38 @@ import {
   editStatus,
   postStatus,
 } from "@/app/actions/status";
+import {
+  isE2EMode,
+  mockStatusActions,
+} from "@/app/actions/_test-status-store";
 
-export const revalidate = 60;
+// Dynamic rendering for v0.1 — every request triggers a fresh fetch.
+// Phase 5 ships without ISR because the bot commit + GitHub propagation +
+// 60s cache + SHA-conflict resolution stack is hard to reason about for
+// a solo founder build. A later iteration can re-introduce
+// `revalidate = 60` once the timing risks (execution-plan §6.3) are
+// understood operationally.
+export const dynamic = "force-dynamic";
+
+async function fetchStatuses(week: string): Promise<StatusUpdate[]> {
+  if (isE2EMode()) {
+    // E2E read path: in-memory store seeded by the actions in this same
+    // process. lastModified is filled in lazily so the sort path stays
+    // identical to production.
+    const now = new Date().toISOString();
+    return mockStatusActions
+      .list(week)
+      .map((s) => ({ ...s, lastModified: now }));
+  }
+  const token = await getInstallationToken();
+  return readWeekStatuses({
+    week,
+    owner: env.GITHUB_REPO_OWNER,
+    repo: env.GITHUB_REPO_NAME,
+    branch: env.GITHUB_REPO_BRANCH,
+    token,
+  });
+}
 
 async function getInstallationToken(): Promise<string> {
   // Distinct local identifier so it doesn't shadow the imported lib/auth.
@@ -33,14 +66,7 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
   const handle = session?.githubHandle ?? "";
   const member = handle ? findMemberByHandle(handle) : undefined;
 
-  const token = await getInstallationToken();
-  const statuses = await readWeekStatuses({
-    week,
-    owner: env.GITHUB_REPO_OWNER,
-    repo: env.GITHUB_REPO_NAME,
-    branch: env.GITHUB_REPO_BRANCH,
-    token,
-  });
+  const statuses = await fetchStatuses(week);
 
   const mySlug = member?.slug;
   const my = mySlug

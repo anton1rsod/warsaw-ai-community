@@ -5,6 +5,10 @@ import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { findMemberByHandle } from "@/lib/content-snapshot";
 import { createGitHubApp, GitHubAppError } from "@/lib/github-app";
+import {
+  isE2EMode,
+  mockStatusActions,
+} from "@/app/actions/_test-status-store";
 
 export type StatusActionError =
   | "not_authenticated"
@@ -78,12 +82,31 @@ function mapWriteError(err: unknown): StatusActionError {
   return "unknown";
 }
 
+/**
+ * Translates the mock store's `MockResult` shape (with `error: string`)
+ * into the strict `StatusActionResult` union. The mock only emits the
+ * subset {not_a_member, sha_conflict, not_found, invalid_input}; the cast
+ * is safe because the test surface is closed-set.
+ */
+function fromMock(result: {
+  ok: boolean;
+  sha?: string;
+  error?: string;
+}): StatusActionResult {
+  if (result.ok && typeof result.sha === "string") {
+    return { ok: true, sha: result.sha };
+  }
+  return { ok: false, error: (result.error ?? "unknown") as StatusActionError };
+}
+
 export async function postStatus(input: {
   week: string;
   body: string;
 }): Promise<StatusActionResult> {
   const parsed = PostSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid_input" };
+
+  if (isE2EMode()) return fromMock(await mockStatusActions.post(parsed.data));
 
   const author = await resolveAuthor();
   if ("error" in author) return { ok: false, error: author.error };
@@ -107,6 +130,8 @@ export async function editStatus(input: {
 }): Promise<StatusActionResult> {
   const parsed = EditSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid_input" };
+
+  if (isE2EMode()) return fromMock(await mockStatusActions.edit(parsed.data));
 
   const author = await resolveAuthor();
   if ("error" in author) return { ok: false, error: author.error };
@@ -132,6 +157,8 @@ export async function deleteStatus(input: {
 }): Promise<StatusActionResult> {
   const parsed = DeleteSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid_input" };
+
+  if (isE2EMode()) return fromMock(await mockStatusActions.remove(parsed.data));
 
   const author = await resolveAuthor();
   if ("error" in author) return { ok: false, error: author.error };

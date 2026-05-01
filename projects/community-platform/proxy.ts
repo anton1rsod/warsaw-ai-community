@@ -11,6 +11,10 @@ const PUBLIC_PATHS = new Set<string>([
   "/login",
   "/no-access",
   "/api/test-auth",
+  // Dev/test-only mock-store reset (gated on NEXT_PUBLIC_E2E_MODE +
+  // NODE_ENV !== production inside the route itself). Public so Playwright
+  // beforeEach can call it before loginAs.
+  "/api/test-reset-status",
 ]);
 // Any new public-route entry point (e.g. /.well-known/security.txt,
 // /robots.txt, /sitemap.xml) must be added here or it will be auth-gated.

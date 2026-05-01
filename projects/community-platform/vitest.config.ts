@@ -22,7 +22,13 @@ export default defineConfig({
         "scripts/**/*.ts",
         "proxy.ts",
       ],
-      exclude: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}", "app/api/test-auth/**"],
+      exclude: [
+        "**/*.test.{ts,tsx}",
+        "**/*.spec.{ts,tsx}",
+        "app/api/test-auth/**",
+        // E2E-only mock store; exercised by Playwright, not Vitest.
+        "app/actions/_test-status-store.ts",
+      ],
       thresholds: { lines: 80, branches: 80, functions: 80, statements: 80 },
     },
     setupFiles: ["./tests/setup.ts"],
