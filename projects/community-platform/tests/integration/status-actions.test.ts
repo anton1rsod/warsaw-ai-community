@@ -84,7 +84,7 @@ describe("status actions", () => {
     });
 
     it("rejects when not signed in", async () => {
-      vi.mocked(auth).mockResolvedValueOnce(null);
+      vi.mocked(auth).mockResolvedValueOnce(null as never);
       const result = await postStatus({ week: "2026-W18", body: "x" });
       expect(result).toEqual({ ok: false, error: "not_authenticated" });
     });
@@ -160,7 +160,7 @@ describe("status actions", () => {
     });
 
     it("rejects when not signed in", async () => {
-      vi.mocked(auth).mockResolvedValueOnce(null);
+      vi.mocked(auth).mockResolvedValueOnce(null as never);
       const result = await editStatus({
         week: "2026-W18",
         body: "x",
@@ -202,7 +202,7 @@ describe("status actions", () => {
     });
 
     it("rejects when not signed in", async () => {
-      vi.mocked(auth).mockResolvedValueOnce(null);
+      vi.mocked(auth).mockResolvedValueOnce(null as never);
       const result = await deleteStatus({ week: "2026-W18", sha: "abc" });
       expect(result).toEqual({ ok: false, error: "not_authenticated" });
     });
