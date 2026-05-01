@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { auth } from "@/lib/auth";
 import {
   findMemberBySlug,
   getContributions,
@@ -7,12 +8,18 @@ import {
 } from "@/lib/content-snapshot";
 import { renderMarkdownToHtml } from "@/lib/markdown";
 import { ContributionCard } from "@/app/components/ContributionCard";
+import { GdprPanel } from "@/app/components/GdprPanel";
 import { PersonaPanel } from "@/app/components/PersonaPanel";
 import { SafeHtml } from "@/app/components/SafeHtml";
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   return listMembers().map((m) => ({ slug: m.slug }));
 }
+
+// generateStaticParams precomputes the slug list, but we still call auth()
+// inside the page for the self-only GdprPanel — Next.js falls back to dynamic
+// rendering when a server component reads the session.
+export const dynamic = "force-dynamic";
 
 export default async function MemberPage({
   params,
@@ -28,6 +35,8 @@ export default async function MemberPage({
     : null;
   const personaHtml = member.persona ? await renderMarkdownToHtml(member.persona) : null;
   const contributions = getContributions(member.githubHandle);
+  const session = await auth();
+  const isSelf = session?.githubHandle === member.githubHandle;
 
   return (
     <main className="mx-auto max-w-3xl p-8">
@@ -63,6 +72,12 @@ export default async function MemberPage({
       <div className="mt-6">
         <PersonaPanel html={personaHtml} slug={member.slug} />
       </div>
+
+      {isSelf ? (
+        <div className="mt-6">
+          <GdprPanel />
+        </div>
+      ) : null}
     </main>
   );
 }
