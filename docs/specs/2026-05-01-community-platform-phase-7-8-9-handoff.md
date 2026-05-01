@@ -9,30 +9,39 @@ Community Platform v0.1 — Chat 5: Phases 7 + 8 + 9 (Contributions + GDPR + Hea
 State
 ================================================================
 
-Branch: warsaw-org-and-stack-guide. Last green: pending Phase 6 closeout
-commit (the one that lands "docs(community-platform): close Phase 6"
-on top of 3862ace). Read commit at the start of this chat to confirm.
+Branch: warsaw-org-and-stack-guide. Last green commit: 2d3b6be
+("docs(community-platform): close Phase 6"). Confirm with `git log -1`
+before starting.
 
-Phases 0–6 shipped end-to-end:
+Phases 0–6 shipped end-to-end (242 unit + integration tests + 16 E2E
+all green; 100% coverage on the spec §8 strict-list):
 - Phase 0: bootstrap (Next 16 + pnpm + Vitest + Playwright + Tailwind +
   classification + env contract + Vercel link).
 - Phase 1: NextAuth v5 (beta.31) + RBAC + content snapshot + proxy.ts
-  + /home / /login / /no-access; OAuth round-trip validated live.
+  + /home / /login / /no-access; OAuth round-trip validated live on
+  https://warsaw-ai-platform.vercel.app.
 - Phase 2: members directory + profile pages + sanitized markdown
   pipeline (lib/markdown.ts → SafeHtml) + PersonaPanel.
 - Phase 3: /projects, /decisions, /meetings readers (snapshot extended).
-- Phase 4: lib/github-app.ts wrapper (Octokit + auth-app, MSW tests,
-  100% coverage, GitHubAppError taxonomy with sha_conflict /
-  not_found / forbidden / unknown). Anton's [H] Task 4.1 (GitHub App
-  warsaw-ai-bot creation) still pending; smoke script awaits real env.
+- Phase 4: lib/github-app.ts wrapper (Octokit + auth-app, MSW + unit
+  tests, 100/100/100/100 coverage; GitHubAppError taxonomy:
+  sha_conflict / not_found / forbidden / unknown; sanitizeCause strips
+  Authorization header before attaching as cause). Test PEM at
+  tests/fixtures/test-app.private-key.pem (gitignored exception).
+  Anton's [H] Task 4.1 (warsaw-ai-bot App + 3 env vars) STILL PENDING;
+  scripts/smoke-github-app.ts awaits real credentials.
 - Phase 5: lib/week.ts + lib/status-reader.ts + app/actions/status.ts
-  + StatusEditor + /this-week page + E2E mock store (NEXT_PUBLIC_E2E_MODE
-  on globalThis). dynamic = "force-dynamic" instead of revalidate = 60
-  per amendment §9.16.
+  + StatusEditor + /this-week page + E2E mock store. mockStatusActions
+  on globalThis (NEXT_PUBLIC_E2E_MODE + NODE_ENV != production gates).
+  /this-week ships `dynamic = "force-dynamic"` instead of
+  revalidate = 60 per amendment §9.16. Frontmatter uses `updated_at`
+  not `posted_at`.
 - Phase 6: app/actions/consent.ts (acceptConsent / hasConsent /
   acceptConsentAndSetCookie) + ConsentModal + /consent page +
   proxy.ts consent gate. waic-consented cookie + community/members/
-  <slug>.md as durable record.
+  <slug>.md as durable record. CONSENT_COOKIE constant lives in
+  lib/consent-cookie.ts because "use server" modules can only export
+  async functions.
 
 CLAUDE.md + project memory + execution-plan §9 already encode every
 locked decision and the 18 plan amendments accumulated. Don't re-litigate.
@@ -41,6 +50,17 @@ This chat owns: 13 tasks across 3 phases, ~2 days
 - Phase 7 (Contributions counter): 7.1, 7.2, 7.3, 7.4, 7.5
 - Phase 8 (GDPR mechanisms): 8.1, 8.2, 8.3, 8.4, 8.5
 - Phase 9 (Health metric): 9.1, 9.2, 9.3
+
+Outstanding (Anton-blocked, parallel to this chat):
+- **Task 4.1 [H]**: warsaw-ai-bot GitHub App + PEM + 3 env vars on
+  Vercel preview (GITHUB_APP_ID / _PRIVATE_KEY / _INSTALLATION_ID).
+  Phase 4-6 work in CI / E2E with the test PEM but NOT against real
+  GitHub on preview. Phase 8 GDPR delete needs real bot creds for the
+  preview-side smoke test. If still pending at Phase 8 closeout, ask
+  Anton before merging.
+- Roster `github_handle` backfill for the other 18 members (carries
+  from Phase 1). Won't block Phase 7-9 acceptance but blocks v0.1
+  ship.
 
 ================================================================
 Read in order (do NOT re-read what's already loaded)
@@ -83,6 +103,10 @@ Token discipline (carries from Chat 4)
   feedback_push_commits).
 - Three closeouts in this chat (Phase 7 / 8 / 9); Phase 7 needs E2E,
   Phase 8 needs E2E, Phase 9 doesn't.
+- **Reviewer-agent caveat:** Phase 6 closeout dispatched typescript-
+  reviewer + code-reviewer; both hit Anton's org monthly Claude usage
+  limit before completing. Have a self-review checklist ready
+  (see "Self-review fallback" below) in case the same happens here.
 
 ================================================================
 Constraints (locked from prior chats — do not re-litigate)
@@ -179,6 +203,38 @@ Risk register (per execution-plan §6)
 - §6.7 Task 9.2 /admin/health rate limit: 4 GitHub API calls per
   render. revalidate = 60 (per §9.2) keeps it within 5000/hr quota
   even under refresh-spam.
+
+================================================================
+Self-review fallback (use if reviewer agents are unavailable)
+================================================================
+
+For each phase closeout, audit these surfaces yourself before
+committing the closeout:
+
+- Spec §8 strict-list coverage: lib/contributions.ts (Phase 7) and
+  lib/health-metric.ts (Phase 9) MUST hit 100% on all 4 metrics.
+  If branches < 100%, export the helper functions and add unit tests
+  for synthetic inputs (mirrors the github-app.ts mapError pattern).
+- Subprocess exec (Task 7.2): grep the build script for execFileSync
+  and verify NO user input is passed to git. All args must be string
+  literals or build-time constants. No shell:true, no spawn, no exec.
+- GDPR delete (Task 8.2): trace the slug source. Must come from the
+  authenticated session via findMemberByHandle, not from the request
+  body. A request-body slug would let one user delete another.
+- GDPR export (Task 8.1): verify the response only includes the
+  caller's own data (status files matching session-derived slug,
+  their profile file, contribution counter). No roster.md content,
+  no other members' status updates, no admin-only data.
+- Cookie + middleware drift: every new public path goes in
+  proxy.ts PUBLIC_PATHS conditionally on NODE_ENV (per §9.18). Don't
+  let dev-only test routes leak into production PUBLIC_PATHS.
+- /admin/health: confirm `export const revalidate = 60;` at top of
+  app/admin/health/page.tsx (per §9.2). Without it, refresh-spam
+  blows the rate limit.
+- Test setup leaks: when adding new RTL test files, include
+  `afterEach(cleanup)` (the StatusEditor + ConsentModal tests showed
+  the leak pattern — without cleanup, multiple renders accumulate
+  across tests and selectors return stale matches).
 
 ================================================================
 Done means
