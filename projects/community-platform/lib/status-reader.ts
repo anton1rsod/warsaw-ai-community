@@ -1,4 +1,5 @@
 import { Octokit } from "@octokit/rest";
+import { WEEK_REGEX } from "@/lib/week";
 
 export interface StatusUpdate {
   slug: string;
@@ -32,6 +33,16 @@ export interface ReadWeekStatusesOpts {
 export async function readWeekStatuses(
   opts: ReadWeekStatusesOpts,
 ): Promise<StatusUpdate[]> {
+  // Defense-in-depth: assert the week token matches the canonical shape
+  // before it's interpolated into a GitHub Contents API path. All current
+  // callers derive `week` from `weekFromDate`/`currentWeek`, but this
+  // guard prevents a future refactor that threads user-supplied input
+  // here from silently introducing a path injection surface.
+  if (!WEEK_REGEX.test(opts.week)) {
+    throw new Error(
+      `readWeekStatuses: invalid week token (expected YYYY-Wnn): ${JSON.stringify(opts.week)}`,
+    );
+  }
   const octokit = new Octokit({ auth: opts.token });
   const dirPath = `community/status/${opts.week}`;
 

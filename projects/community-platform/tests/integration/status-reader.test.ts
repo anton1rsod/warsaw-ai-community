@@ -216,4 +216,18 @@ describe("status-reader", () => {
     });
     expect(statuses).toEqual([]);
   });
+
+  it("rejects malformed week tokens before any GitHub API call", async () => {
+    // Defense-in-depth guard: the WEEK_REGEX assertion runs before octokit
+    // is invoked, so unhandled-request mode never fires.
+    await expect(
+      readWeekStatuses({ ...baseOpts, week: "../etc/passwd" }),
+    ).rejects.toThrow(/invalid week token/);
+    await expect(
+      readWeekStatuses({ ...baseOpts, week: "" }),
+    ).rejects.toThrow(/invalid week token/);
+    await expect(
+      readWeekStatuses({ ...baseOpts, week: "2026-W1" }),
+    ).rejects.toThrow(/invalid week token/);
+  });
 });
