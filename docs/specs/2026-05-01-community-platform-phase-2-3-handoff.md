@@ -17,8 +17,9 @@ Community Platform v0.1 — Chat 3: Phases 2 + 3 (Read surface)
 State coming in
 ================================================================
 
-Last green commit: <PHASE-1-CLOSEOUT-SHA> (docs(community-platform):
-close Phase 1 — CHANGELOG + execution-plan amendments + Chat 3 handoff)
+Last green commit: ff36070 (docs(community-platform): close Phase 1 —
+CHANGELOG + execution-plan amendments + Chat 3 handoff)
+Last code-only green: 5b03e4b (review fixes)
 Branch: warsaw-org-and-stack-guide
 
 Phase 1 complete — 75 unit tests + 4 E2E green; 100% coverage on the
