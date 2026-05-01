@@ -10,3 +10,5 @@ test-results/
 .env.*.local
 *.pem
 !tests/fixtures/**/*.pem
+next-env.d.ts
+*.tsbuildinfo
