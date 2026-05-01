@@ -45,6 +45,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   res.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",
+    // localhost dev (HTTP) only — `secure: true` would prevent the cookie
+    // from being set over plain HTTP. The NODE_ENV gate above prevents this
+    // route from running in any production/preview environment.
     secure: false,
     path: "/",
   });

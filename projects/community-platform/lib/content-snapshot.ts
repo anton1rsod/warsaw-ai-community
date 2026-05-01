@@ -10,7 +10,19 @@ export interface ContentSnapshot {
   };
 }
 
+// `as ContentSnapshot` widens the JSON literal types (e.g. an empty
+// communityManagers array would otherwise be inferred as `never[]`,
+// breaking forward-compatible consumers). If the snapshot script's output
+// drifts from this interface, downstream consumers will type-error at the
+// boundary instead of here, but the snapshot generator itself is typed via
+// readRoster + readGovernance, so shape drift surfaces in scripts/.
 export const snapshot: ContentSnapshot = snapshotJson as ContentSnapshot;
+
+// Build Set-backed predicates at module init so isAdmin / isCommunityManager
+// match lib/governance.ts's O(1) lookup contract. JSON deserializes
+// readonly string[] arrays which would otherwise force Array.includes (O(n)).
+const adminSet = new Set<string>(snapshot.governance.admins);
+const cmSet = new Set<string>(snapshot.governance.communityManagers);
 
 function normalize(handle: string): string {
   return handle.replace(/^@/, "").toLowerCase().trim();
@@ -18,12 +30,12 @@ function normalize(handle: string): string {
 
 export function isAdmin(handle: string): boolean {
   if (!handle) return false;
-  return snapshot.governance.admins.includes(normalize(handle));
+  return adminSet.has(normalize(handle));
 }
 
 export function isCommunityManager(handle: string): boolean {
   if (!handle) return false;
-  return snapshot.governance.communityManagers.includes(normalize(handle));
+  return cmSet.has(normalize(handle));
 }
 
 export function findMemberByHandle(

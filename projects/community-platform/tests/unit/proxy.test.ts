@@ -130,8 +130,19 @@ describe("proxy", () => {
     expect(mocks.decodeFn).not.toHaveBeenCalled();
   });
 
-  it("redirects to /login when decode throws (malformed/tampered JWT)", async () => {
+  it("redirects to /login when decode throws an Error (malformed/tampered JWT)", async () => {
     mocks.decodeFn.mockRejectedValue(new Error("malformed"));
+    const { default: proxy } = await import("@/proxy");
+    const req = makeReq("/home", { cookieValue: "garbage" });
+    const res = await proxy(req as never);
+    expect(res.headers.get("location")).toMatch(/\/login$/);
+  });
+
+  it("redirects to /login when decode rejects with a non-Error value", async () => {
+    // Defensive coverage for the `err instanceof Error ? err.message : String(err)`
+    // branch in proxy.ts catch — a non-Error throw (string, object, etc.)
+    // should still result in a /login redirect, not an unhandled exception.
+    mocks.decodeFn.mockRejectedValue("string-not-an-Error");
     const { default: proxy } = await import("@/proxy");
     const req = makeReq("/home", { cookieValue: "garbage" });
     const res = await proxy(req as never);

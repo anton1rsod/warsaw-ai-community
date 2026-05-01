@@ -28,9 +28,11 @@ export const authConfig = {
       return token;
     },
     async session({ session, token }) {
+      // The Session.githubHandle augmentation below makes this a typed property.
+      // If you need to drop the augmentation, this assignment will fail to
+      // compile — that's the intended signal, not a regression.
       if (typeof token.githubHandle === "string") {
-        (session as typeof session & { githubHandle: string }).githubHandle =
-          token.githubHandle;
+        session.githubHandle = token.githubHandle;
       }
       return session;
     },

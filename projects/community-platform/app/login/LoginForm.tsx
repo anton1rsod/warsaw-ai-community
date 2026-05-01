@@ -8,12 +8,20 @@ export function LoginForm(): React.JSX.Element {
   useEffect(() => {
     let cancelled = false;
     fetch("/api/auth/csrf")
-      .then((r) => r.json())
-      .then((d: { csrfToken: string }) => {
-        if (!cancelled) setCsrfToken(d.csrfToken);
+      .then((r) => {
+        if (!r.ok) throw new Error(`csrf endpoint ${r.status}`);
+        return r.json() as Promise<unknown>;
+      })
+      .then((d: unknown) => {
+        if (cancelled) return;
+        const token = (d as { csrfToken?: unknown }).csrfToken;
+        if (typeof token === "string" && token.length > 0) {
+          setCsrfToken(token);
+        }
       })
       .catch(() => {
-        // CSRF endpoint unreachable — leave token empty so the button stays disabled.
+        // CSRF endpoint unreachable or non-200 — leave token empty so the
+        // submit button stays disabled rather than POSTing a bad token.
       });
     return () => {
       cancelled = true;

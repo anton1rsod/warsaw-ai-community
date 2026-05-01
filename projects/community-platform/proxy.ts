@@ -12,7 +12,14 @@ const PUBLIC_PATHS = new Set<string>([
   "/no-access",
   "/api/test-auth",
 ]);
-const PUBLIC_PREFIXES = ["/api/auth", "/_next", "/favicon"] as const;
+// Any new public-route entry point (e.g. /.well-known/security.txt,
+// /robots.txt, /sitemap.xml) must be added here or it will be auth-gated.
+const PUBLIC_PREFIXES = [
+  "/api/auth",
+  "/_next",
+  "/favicon",
+  "/.well-known",
+] as const;
 
 const COOKIE_NAME = "authjs.session-token";
 const SECURE_COOKIE_NAME = "__Secure-authjs.session-token";
@@ -53,8 +60,21 @@ async function getHandleFromRequest(
     ) {
       return (decoded as { githubHandle: string }).githubHandle;
     }
+    // Cookie present and decode succeeded, but no githubHandle: schema drift
+    // signal worth surfacing so a beta bump that changes JWT payload shape
+    // doesn't cause a silent invisible auth outage.
+    console.error(
+      "[proxy] session JWT decoded but missing githubHandle — schema drift?",
+    );
     return null;
-  } catch {
+  } catch (err) {
+    // Decode failure: malformed, tampered, expired, secret rotation, OR cookie
+    // name change in next-auth that left a stale-named cookie unparseable.
+    // Single line of signal so the on-call has something to grep.
+    console.error(
+      "[proxy] JWT decode failed:",
+      err instanceof Error ? err.message : String(err),
+    );
     return null;
   }
 }
