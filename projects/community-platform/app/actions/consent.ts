@@ -5,22 +5,13 @@ import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { findMemberByHandle } from "@/lib/content-snapshot";
 import { createGitHubApp } from "@/lib/github-app";
+import { CONSENT_COOKIE } from "@/lib/consent-cookie";
 import { mockConsentStore } from "@/app/actions/_test-consent-store";
 
-export type ConsentError =
-  | "not_authenticated"
-  | "not_a_member"
-  | "unknown";
-
-export type ConsentResult = { ok: true } | { ok: false; error: ConsentError };
-
-/**
- * Cookie name is locked per execution-plan §6.4 risk mitigation: the
- * proxy-side check uses this exact name, so any drift here would either
- * trap consented users in a /consent redirect loop or let unconsented
- * users into /home. Don't rename without updating proxy.ts together.
- */
-export const CONSENT_COOKIE = "waic-consented";
+// `"use server"` modules can only export async functions — keep types
+// inline (not exported) and import the cookie name from lib/.
+type ConsentError = "not_authenticated" | "not_a_member" | "unknown";
+type ConsentResult = { ok: true } | { ok: false; error: ConsentError };
 
 function client(): ReturnType<typeof createGitHubApp> {
   return createGitHubApp({
