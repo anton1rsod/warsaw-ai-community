@@ -5,6 +5,7 @@ export default defineConfig({
   resolve: { alias: { "@": path.resolve(__dirname, ".") } },
   test: {
     environment: "node",
+    server: { deps: { inline: ["next-auth", "@auth/core"] } },
     include: ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.ts"],
     exclude: ["node_modules", ".next", "e2e", "tests/fixtures"],
     coverage: {
