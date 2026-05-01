@@ -1,21 +1,27 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { decode } from "next-auth/jwt";
 import { findMemberByHandle } from "@/lib/content-snapshot";
+import { CONSENT_COOKIE } from "@/lib/consent-cookie";
 
-// /api/test-auth is a dev-only session-forging route used by Playwright E2E.
-// It MUST bypass the auth gate so unauthenticated tests can call it. The route
-// itself enforces NODE_ENV !== "production" and returns 404 in prod, so this
-// public-path entry is safe defense-in-depth even though prod traffic that
-// reaches the route still gets 404'd.
-// /api/test-auth and /api/test-reset-status are dev-only public paths.
-// In production they're omitted entirely so an accidental
+// `/consent` is reachable while not yet consented (that's the whole
+// point — first-time roster members hit this page to opt in). Every
+// other route is gated behind {auth, roster, consent}.
+//
+// `/api/test-auth` and `/api/test-reset-status` are dev-only public
+// paths. In production they're omitted entirely so an accidental
 // NEXT_PUBLIC_E2E_MODE=1 deploy can't unauthenticate them — the proxy
-// would redirect any caller to /login, and the route itself would
-// return 404. Defense-in-depth.
+// redirects any caller to /login, and the route itself returns 404.
+// Defense-in-depth.
 const PUBLIC_PATHS = new Set<string>(
   process.env.NODE_ENV === "production"
-    ? ["/login", "/no-access"]
-    : ["/login", "/no-access", "/api/test-auth", "/api/test-reset-status"],
+    ? ["/login", "/no-access", "/consent"]
+    : [
+        "/login",
+        "/no-access",
+        "/consent",
+        "/api/test-auth",
+        "/api/test-reset-status",
+      ],
 );
 // Any new public-route entry point (e.g. /.well-known/security.txt,
 // /robots.txt, /sitemap.xml) must be added here or it will be auth-gated.
@@ -103,6 +109,16 @@ export default async function proxy(
   const member = findMemberByHandle(handle);
   if (!member) {
     return NextResponse.redirect(new URL("/no-access", req.url));
+  }
+
+  // Consent gate: roster members who haven't yet accepted the platform
+  // terms (or whose cookie has been cleared) bounce to /consent. The
+  // /consent page itself short-circuits to /home if the bot already
+  // wrote their profile (cookie was the only thing missing); otherwise
+  // it shows the modal.
+  const consented = req.cookies.get(CONSENT_COOKIE)?.value === "1";
+  if (!consented) {
+    return NextResponse.redirect(new URL("/consent", req.url));
   }
 
   return NextResponse.next();

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { encode } from "next-auth/jwt";
 import { env } from "@/lib/env";
+import { CONSENT_COOKIE } from "@/lib/consent-cookie";
 
 const COOKIE_NAME = "authjs.session-token";
 
@@ -34,6 +35,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (handle.length === 0) {
     return new NextResponse("handle required", { status: 400 });
   }
+  // Optional: set the consent cookie so the test bypasses the consent
+  // gate. Defaults to true so existing E2E specs (auth / members /
+  // archives / status) keep landing on /home or their target page;
+  // tests that exercise the consent flow itself opt out by passing
+  // `consented: false`.
+  const consented =
+    (body as { consented?: unknown }).consented !== false;
 
   const token = await encode({
     token: { githubHandle: handle.toLowerCase() },
@@ -41,7 +49,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     salt: COOKIE_NAME,
   });
 
-  const res = NextResponse.json({ ok: true, handle: handle.toLowerCase() });
+  const res = NextResponse.json({
+    ok: true,
+    handle: handle.toLowerCase(),
+    consented,
+  });
   res.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",
@@ -51,5 +63,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     secure: false,
     path: "/",
   });
+  if (consented) {
+    res.cookies.set(CONSENT_COOKIE, "1", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+      path: "/",
+    });
+  }
   return res;
 }

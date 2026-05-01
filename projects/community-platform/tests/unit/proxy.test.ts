@@ -29,11 +29,21 @@ interface FakeReq {
 
 function makeReq(
   pathname: string,
-  opts: { cookieValue?: string; cookieName?: string } = {},
+  opts: {
+    cookieValue?: string;
+    cookieName?: string;
+    consented?: boolean;
+  } = {},
 ): FakeReq {
   const cookies: Record<string, string> = {};
   if (opts.cookieValue) {
     cookies[opts.cookieName ?? "authjs.session-token"] = opts.cookieValue;
+  }
+  // Default to consented = true for the existing tests; the tests that
+  // exercise the consent gate explicitly opt out by passing
+  // `consented: false`.
+  if (opts.consented !== false) {
+    cookies["waic-consented"] = "1";
   }
   return {
     url: `http://localhost:3000${pathname}`,
@@ -220,5 +230,67 @@ describe("proxy", () => {
     expect(config.matcher).toEqual([
       "/((?!_next/static|_next/image|favicon.ico).*)",
     ]);
+  });
+
+  describe("consent gate", () => {
+    beforeEach(() => {
+      mocks.decodeFn.mockResolvedValue({ githubHandle: "anton1rsod" });
+      mocks.findMemberByHandleFn.mockReturnValue({
+        name: "Anton Safronov",
+        githubHandle: "anton1rsod",
+        slug: "anton-safronov",
+      });
+    });
+
+    it("redirects authenticated roster member to /consent when consent cookie missing", async () => {
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/home", {
+        cookieValue: "valid.jwt",
+        consented: false,
+      });
+      const res = await proxy(req as never);
+      expect(res.headers.get("location")).toMatch(/\/consent$/);
+    });
+
+    it("admits roster member with consent cookie", async () => {
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/home", {
+        cookieValue: "valid.jwt",
+        consented: true,
+      });
+      const res = await proxy(req as never);
+      expect(res.headers.get("location")).toBeNull();
+    });
+
+    it("passes through /consent without auth (it's the entry point)", async () => {
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/consent");
+      const res = await proxy(req as never);
+      expect(res.headers.get("location")).toBeNull();
+      expect(mocks.decodeFn).not.toHaveBeenCalled();
+    });
+
+    it("redirects unauthenticated /home visit to /login (not /consent)", async () => {
+      // Auth check must precede consent check — an unauthenticated
+      // user shouldn't see the consent page first.
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/home", { consented: false });
+      const res = await proxy(req as never);
+      expect(res.headers.get("location")).toMatch(/\/login$/);
+    });
+  });
+
+  describe("PUBLIC_PATHS shape under NODE_ENV", () => {
+    it("omits dev-only test routes from PUBLIC_PATHS in production builds", async () => {
+      vi.stubEnv("NODE_ENV", "production");
+      vi.resetModules();
+      const { default: proxy } = await import("@/proxy");
+      // /api/test-auth is dev-only — in production the proxy redirects
+      // to /login (and the route handler returns 404 anyway).
+      const req = makeReq("/api/test-auth");
+      const res = await proxy(req as never);
+      expect(res.headers.get("location")).toMatch(/\/login$/);
+      vi.unstubAllEnvs();
+    });
   });
 });
