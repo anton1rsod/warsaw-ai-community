@@ -1,5 +1,6 @@
 import type { RosterMember, MemberProfile } from "@/lib/roster";
 import type { ProjectDetail } from "@/lib/projects";
+import type { Decision } from "@/lib/decisions";
 import snapshotJson from "@/lib/__generated__/content-snapshot.json";
 
 export interface MemberWithProfile extends RosterMember {
@@ -15,6 +16,7 @@ export interface ContentSnapshot {
     communityManagers: readonly string[];
   };
   projects: readonly ProjectDetail[];
+  decisions: readonly Decision[];
 }
 
 export const snapshot: ContentSnapshot = snapshotJson as ContentSnapshot;
@@ -55,4 +57,12 @@ export function listProjectDetails(): readonly ProjectDetail[] {
 
 export function findProjectBySlug(slug: string): ProjectDetail | undefined {
   return snapshot.projects.find((p) => p.slug === slug);
+}
+
+export function listDecisionsFromSnapshot(): readonly Decision[] {
+  return snapshot.decisions;
+}
+
+export function findDecisionBySlug(slug: string): Decision | undefined {
+  return snapshot.decisions.find((d) => d.slug === slug);
 }

@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { readGovernance } from "@/lib/governance";
 import { readRoster, readMemberProfile, readMemberPersona } from "@/lib/roster";
 import { listProjects, readProject, type ProjectDetail } from "@/lib/projects";
+import { listDecisions, readDecision, type Decision } from "@/lib/decisions";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");
@@ -20,13 +21,15 @@ async function main(): Promise<void> {
     "community/governance/community-managers.md",
   );
 
-  const [roster, governance, projectSummaries] = await Promise.all([
-    readRoster(rosterPath),
-    readGovernance({ adminsPath, cmsPath }),
-    listProjects(REPO_ROOT),
-  ]);
+  const [roster, governance, projectSummaries, decisionSummaries] =
+    await Promise.all([
+      readRoster(rosterPath),
+      readGovernance({ adminsPath, cmsPath }),
+      listProjects(REPO_ROOT),
+      listDecisions(REPO_ROOT),
+    ]);
 
-  const [members, projects] = await Promise.all([
+  const [members, projects, decisions] = await Promise.all([
     Promise.all(
       roster.map(async (m) => {
         const [profile, persona] = await Promise.all([
@@ -37,7 +40,14 @@ async function main(): Promise<void> {
       }),
     ),
     Promise.all(
-      projectSummaries.map((p) => readProject(REPO_ROOT, p.slug) as Promise<ProjectDetail>),
+      projectSummaries.map(
+        (p) => readProject(REPO_ROOT, p.slug) as Promise<ProjectDetail>,
+      ),
+    ),
+    Promise.all(
+      decisionSummaries.map(
+        async (d) => (await readDecision(REPO_ROOT, d.slug)) as Decision,
+      ),
     ),
   ]);
 
@@ -49,6 +59,7 @@ async function main(): Promise<void> {
       communityManagers: governance.communityManagers,
     },
     projects,
+    decisions,
   };
 
   await mkdir(path.dirname(OUTPUT), { recursive: true });
@@ -60,7 +71,8 @@ async function main(): Promise<void> {
       `  members: ${members.length} (${members.filter((m) => m.profile !== null).length} with profile)\n` +
       `  admins: ${governance.admins.length}\n` +
       `  CMs: ${governance.communityManagers.length}\n` +
-      `  projects: ${projects.length}`,
+      `  projects: ${projects.length}\n` +
+      `  decisions: ${decisions.length}`,
   );
 }
 

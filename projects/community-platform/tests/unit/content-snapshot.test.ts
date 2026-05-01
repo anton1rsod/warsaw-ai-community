@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  findDecisionBySlug,
   findMemberByHandle,
   findMemberBySlug,
   findProjectBySlug,
   isAdmin,
   isCommunityManager,
+  listDecisionsFromSnapshot,
   listMembers,
   listProjectDetails,
   snapshot,
@@ -147,5 +149,40 @@ describe("findProjectBySlug", () => {
 
   it("returns undefined for an unknown slug", () => {
     expect(findProjectBySlug("no-such-project")).toBeUndefined();
+  });
+});
+
+describe("listDecisionsFromSnapshot", () => {
+  it("returns the full decisions array from the snapshot", () => {
+    const decisions = listDecisionsFromSnapshot();
+    expect(Array.isArray(decisions)).toBe(true);
+    expect(decisions.length).toBe(snapshot.decisions.length);
+  });
+
+  it("each decision has number, slug, title, and body fields", () => {
+    for (const d of listDecisionsFromSnapshot()) {
+      expect(typeof d.number).toBe("number");
+      expect(typeof d.slug).toBe("string");
+      expect(typeof d.title).toBe("string");
+      expect(typeof d.body).toBe("string");
+    }
+  });
+});
+
+describe("findDecisionBySlug", () => {
+  it("finds an existing decision by slug", () => {
+    const decisions = listDecisionsFromSnapshot();
+    if (decisions.length > 0) {
+      const first = decisions[0];
+      if (first !== undefined) {
+        const found = findDecisionBySlug(first.slug);
+        expect(found).not.toBeUndefined();
+        expect(found?.slug).toBe(first.slug);
+      }
+    }
+  });
+
+  it("returns undefined for an unknown slug", () => {
+    expect(findDecisionBySlug("9999-no-such-decision")).toBeUndefined();
   });
 });
