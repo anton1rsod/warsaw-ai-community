@@ -146,10 +146,42 @@ Last green commit (pending closeout): this entry's commit. Last code-only green:
 - §9.12 Phase 2 — `vitest.config.ts` merge preserves Phase-1 `server.deps.inline`; coverage `include` scoped to `app/components/**/*.tsx` (not full `app/**` — would dilute overall coverage from uncovered server-component pages).
 - §9.13 Phase 2 — E2E auth-via-test-auth must use `page.request.post()` (cookies on standalone `request` fixture don't reach `page`).
 
-### Pending — Phase 3 onward
+### Phase 3 — Document readers (complete, 2026-05-01)
+
+Last green commit (pending closeout): this entry's commit. Last code-only green: `b4475f0`.
+
+**8 implementation tasks shipped + 1 batched reviewer-fix commit, 137 unit tests + 9 E2E green, 100% coverage on the spec §8 strict-list.**
+
+- **Task 3.1** (commit `1a386fb`) — `lib/projects.ts` reads `projects/<slug>/{README,spec,plan,CHANGELOG}.md` (all optional); `listProjects` excludes `_template`-prefixed and dotted dirs; `readProject` rejects path traversal. Snapshot extended with `projects: readonly ProjectDetail[]` + `listProjectDetails` + `findProjectBySlug`. +22 tests; `lib/projects.ts` at 94.52% (defensive non-ENOENT throws unreachable without fs mocking).
+- **Task 3.2** (commit `44a3a76`) — `/projects` index + `/projects/[slug]` detail page with `generateStaticParams`; renders README/spec/plan/CHANGELOG sections via `SafeHtml`. Build SSG'd `/projects/community-platform` (self-reference) + `/projects/gbrain`.
+- **Task 3.3** (commit `d2244e7`) — `lib/decisions.ts` reads `docs/decisions/NNNN-*.md`; extracts `**Status:**` and `**Date:**` from body. Snapshot extended with `decisions` + helpers. +20 tests; 11 production ADRs in built snapshot.
+- **Task 3.4** (commit `e29bb29`) — `/decisions` index + `/decisions/[slug]` detail; SSG'd 11 ADR pages.
+- **Task 3.5** (commit `6c4b1a1`) — `lib/meetings.ts` reads `community/meetings/weekly/YYYY-MM-DD.md`; `parseAttendees` extracts `## Attendees` section bullets, ignoring HTML-comment placeholders. **Plan's regex used invalid `\z` anchor** — replaced with JS-valid `$(?![\s\S])` end-of-string assertion. **Plan also reused `FILE_RE` (with `.md$`) on bare slug in `readMeeting`** — added separate `SLUG_RE`. +14 tests; `lib/meetings.ts` at 97.53%; production weekly dir is empty (`_template.md` and `README.md` skipped) so snapshot reports 0 meetings until Anton publishes notes.
+- **Task 3.6** (commit `66f9878`) — `/meetings` index (with empty-state copy) + `/meetings/[slug]` detail.
+- **Task 3.7** (commit `06fd62e`) — E2E `e2e/archives.spec.ts` covers `/projects` listing, `/decisions` listing + ADR open, `/meetings` heading visibility (empty-state tolerant). Uses `loginAs(page, "anton1rsod")` per §9.13.
+- **Reviewer fixes** (commit `b4475f0`) — `typescript-reviewer` + `code-reviewer` HIGH/MEDIUM addressed:
+  - HIGH `lib/content-snapshot.ts`: Set-backed `isAdmin` / `isCommunityManager` restored (Task 2.2 lost the O(1) contract during wholesale replacement; auth path runs per protected request).
+  - HIGH `scripts/snapshot-content.ts`: 3 `as` casts that hid `null` branches from `readProject` / `readDecision` replaced with explicit null-throws (`Error("[snapshot] readX returned null for slug \"…\" — listX/readX contract violation")`).
+  - MEDIUM `lib/decisions.ts` + `lib/meetings.ts`: bare `catch {}` replaced with isENOENT-rethrow (non-ENOENT errors now surface as 500s rather than silently 404ing).
+  - MEDIUM `lib/roster.ts`: path-traversal guards on `readMemberProfile` + `readMemberPersona`; deterministic `.md` pick in persona reader (sort first; `readdir` order isn't guaranteed alphabetical across filesystems).
+
+**Phase 3 closeout green check (this commit):**
+- `pnpm install --frozen-lockfile` — clean
+- `pnpm lint` — 0 errors / 0 warnings
+- `pnpm typecheck` — clean
+- `pnpm test:coverage` — 15 files, 137 tests pass. Coverage: 85.47% all files; **100% on `lib/{auth,classification,content-snapshot,env,markdown,rbac}.ts` + `proxy.ts` + `app/components/{PersonaPanel,SafeHtml}.tsx`** (spec §8 strict-list + Phase 2-3 critical components). Filesystem readers above 80% gate: `lib/decisions.ts` 93.44% / 66.66% branches (defensive guards unreachable), `lib/meetings.ts` 97.53% / 89.65% branches, `lib/projects.ts` 94.52% / 88.88% branches, `lib/roster.ts` 96.55% / 84.31% branches. `governance.ts` 94.28% branches. `scripts/snapshot-content.ts` at 0% (CLI tool, transitively tested via consumers).
+- `pnpm build` — 13 routes (5 static + 8 SSG): `/`, `/_not-found`, `/home`, `/login`, `/no-access`, `/members` (+ `/members/anton-safronov`), `/projects` (+ `/projects/community-platform`, `/projects/gbrain`), `/decisions` (+ 11 ADR pages), `/meetings` (0 detail paths until notes ship) + 2 functions (`/api/auth/[...nextauth]`, `/api/test-auth`) + `ƒ Proxy (Middleware)`.
+- `pnpm e2e` — 9 tests pass: smoke + 3 auth-flow + 2 members + 3 archives.
+
+**Plan amendments applied during this phase (§9.14 + §9.15 in `execution-plan.md`):**
+- §9.14 Phase 3 — `lib/meetings.ts` regex fixes: `parseAttendees` `\z` → `$(?![\s\S])`; `readMeeting` separate `SLUG_RE` for bare slugs.
+- §9.15 Phase 3 — snapshot script throws on `readProject`/`readDecision` null instead of casting (the plan's `as` casts hid the null branch and would emit a `null` entry typed as non-null into the JSON snapshot).
+
+### Pending — Phase 4 onward
 - Apply plan amendments at execution time (still relevant):
   - §9.2 Task 9.2 — `export const revalidate = 60;` on `/admin/health` (Phase 9).
   - §9.3 Task 4.2 — keep test PEM in repo with documented caveats (Phase 4).
-- Phase 3 (`/projects`, `/decisions`, `/meetings` readers) is the second half of Chat 3 (8 tasks).
+- Phases 4 + 5 + 6 (GitHub App writer + Status updates + Consent flow) bundled into Chat 4 per execution-plan §10.2 (15 tasks, ~3 days estimated — the longest single chat).
+- Phase 4 includes the [H] Anton blocker: Task 4.1 (create `warsaw-ai-bot` GitHub App + PEM + 3 env vars).
 - Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
 - Tailwind typography plugin not installed; `prose` classes render as plain HTML for now (visual-only, no functional impact).
