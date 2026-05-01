@@ -336,8 +336,34 @@ Last green commit (pending closeout): this entry's commit. Last code-only green:
 - Task 4.1 [H] still pending Anton (GitHub App + 3 env vars). The export+delete endpoints work end-to-end against the real bot once env vars are real; Phase 8 E2E tolerates the credential gap with a 5xx-also-acceptable assertion.
 - Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
 
-### Pending — Phase 9 onward
-- Apply plan amendments at execution time (still relevant):
-  - §9.2 Task 9.2 — `export const revalidate = 60;` on `/admin/health` (Phase 9). Without it, refresh-spamming the page can blow the 5000/hr GitHub rate limit (4 calls per render).
-- Phase 9 (Health metric) remaining in Chat 5 per execution-plan §10.2 (~0.5 day).
+### Phase 9 — Health metric (complete, 2026-05-01)
+
+Last green commit (pending closeout): this entry's commit. Last code-only green: `18b0d9e`.
+
+**2 implementation tasks shipped, 281 unit + integration tests pass, 100% coverage on `lib/health-metric.ts` (spec §8 strict-list addition). E2E not required for Phase 9 per execution-plan §4.2 (only phases 1, 2, 3, 5, 6, 8 ship E2E coverage).**
+
+- **Task 9.1** (commit `1148fec`) — `lib/health-metric.ts` calculator: `computeHealthMetric({ roster, weekStatuses })` returns `HealthMetric { activePosters, totalMembers, ratio }`. Each member counted at most once per week (slug-deduped via `Set`); statuses whose slug is not on the roster ignored; `ratio = 0` when roster empty (no division-by-zero). Spec §2 goal 8, §10. 5 unit tests; 100/100/100/100.
+- **Task 9.2** (commit `18b0d9e`) — `app/admin/health/page.tsx` admin-only page (`isAdmin` gate; redirect to `/home` for non-admins, `/login` for unauthenticated). Renders this-week's `activePosters / totalMembers` headline + 4-week trend table. Per execution-plan §9.2 — `export const revalidate = 60` set as documented. 4 `readWeekStatuses` calls fired in parallel via `Promise.all` (one per trend row, i=0 doubling as the current-week row) — 4 calls instead of plan's 5, also halves wall-clock time on cold caches.
+
+**Phase 9 closeout green check (this commit):**
+- `pnpm install --frozen-lockfile` — clean
+- `pnpm lint` — 0 errors / 0 warnings
+- `pnpm typecheck` — clean
+- `pnpm test:coverage` — 29 files, 281 tests pass. **100% on `lib/{auth,classification,content-snapshot,contributions,env,github-app,health-metric,markdown,rbac,status-reader,week}.ts` + `proxy.ts` + `app/actions/consent.ts` + `app/components/{ConsentModal,ContributionCard,PersonaPanel,SafeHtml,StatusEditor}.tsx`** (spec §8 strict-list + Phase 2-9 critical components). `app/components/GdprPanel.tsx` 100%/80% (defensive `unknown error` fallbacks). Overall 84.6% lines / 94.16% branches (above 80% gate).
+- `pnpm build` — 18 routes (5 static + 8 SSG + `/this-week` + `/consent` + `/members/[slug]` + `/home` + `/admin/health` ƒ Dynamic) + 5 functions (`/api/auth/[...nextauth]`, `/api/test-auth`, `/api/test-reset-status`, `/api/test-reset-consent`, `/api/me/export`, `/api/me/delete`) + `ƒ Proxy (Middleware)`.
+- E2E intentionally skipped (Phase 9 not in §4.2 list). The 19 E2E from Phase 8 closeout cover the rest of the surface.
+
+**Caching note (carries forward):**
+- `/admin/health` ships as ƒ (Dynamic) because the server component reads `auth()` for the admin gate — that read forces dynamic rendering, which in turn makes `export const revalidate = 60` ineffective as Next 16's ISR cache key. The amendment is still applied (export present + behavior documented) and the surface is small (admin-only, 4 GitHub API calls per render, low refresh frequency expected) so the 5000/hr rate-limit budget is not at practical risk for v0.1. A future iteration that wants stricter caching can wrap the four `readWeekStatuses` calls in `unstable_cache` or migrate to Next 16's Cache Components, leaving the auth gate at the dynamic boundary.
+
+**Reviewer note:**
+- typescript-reviewer + code-reviewer not dispatched at this closeout (carry-forward Anton's monthly Claude usage budget). Self-review against the handoff §"Self-review fallback" checklist: spec §8 strict-list at 100% ✓, isAdmin gate runs before any GitHub API call ✓, no new public paths in proxy.ts ✓, ratio computation handles empty roster ✓.
+
+**Outstanding:**
+- Task 4.1 [H] still pending Anton (GitHub App + 3 env vars). `/admin/health` will return real metrics once env vars are real; until then the page either shows zero metrics (no statuses fetched because the bot can't authenticate) or fails at `getInstallationToken`.
+- Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
+
+### Pending — Phase 10 (Pre-launch + ship)
+- Phase 10 (4 tasks: build verification, smoke, prod deploy, tag + announce) bundled into Chat 6 per execution-plan §10.2 (~0.5 day).
+- Includes 10.3 [H] (production deploy) and 10.4 [H] (tag + announce) — both blocked on Anton.
 - Tailwind typography plugin not installed; `prose` classes render as plain HTML for now (visual-only, no functional impact).
