@@ -2,7 +2,7 @@
 
 > Member-facing platform with gamification, role-based access (admin / community manager / member / guest), and a structured engagement layer that complements Telegram.
 
-**Status:** Spec approved — pending implementation plan
+**Status:** Spec + plan + minimal pre-launch landed — Phase 0 implementation pending
 **Lead:** Anton Safronov
 **Started:** 2026-05-01
 **Telegram thread:** TBD (Builds & Pitches)
@@ -60,15 +60,18 @@ Originally locked **before** the brainstorm; preserved as `spec.md` §0:
 
 ## Next step
 
-1. Founder reviews [`spec.md`](spec.md).
-2. On founder approval, run `superpowers:writing-plans` to produce [`plan.md`](plan.md).
-3. Pre-launch tasks (per `spec.md` §9 risk 3): roster `github_handle` PR, governance files, attendees-list format.
-4. Implementation follows the stack defined in [`docs/playbooks/ai-collaborator-stack.md`](../../docs/playbooks/ai-collaborator-stack.md).
+1. ~~Founder reviews [`spec.md`](spec.md).~~ Done 2026-05-01 (commit `97ccea2`).
+2. ~~Run `superpowers:writing-plans` to produce [`plan.md`](plan.md).~~ Done 2026-05-01 (commit `6f72f5c`, 74 tasks across 11 phases).
+3. ~~Pre-launch tasks (per `spec.md` §9 risk 3).~~ Done minimally 2026-05-01 (commit `a736b38`): admins.md and community-managers.md created, founder added to roster with `@anton1rsod` handle. Task 0.3 (meeting attendees format) deferred to Phase 7 prep.
+4. **Begin Phase 0 implementation** per [`execution-plan.md`](execution-plan.md) §11 (Kickoff procedure). First subagent dispatch: Task 0.4 (Next.js 15 init).
+5. Implementation follows the stack defined in [`docs/playbooks/ai-collaborator-stack.md`](../../docs/playbooks/ai-collaborator-stack.md).
 
 ## Links
 
 - Spec: [`spec.md`](spec.md)
-- Plan: [`plan.md`](plan.md) *(follows spec approval)*
+- Plan: [`plan.md`](plan.md)
+- Handoff (cold-pickup reference): [`HANDOFF.md`](HANDOFF.md)
+- Execution playbook: [`execution-plan.md`](execution-plan.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 - Stack guide: [`docs/playbooks/ai-collaborator-stack.md`](../../docs/playbooks/ai-collaborator-stack.md)
 - Sister project (identity feed-in): [`persona-builder/`](../../persona-builder/)
