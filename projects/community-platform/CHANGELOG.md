@@ -277,8 +277,37 @@ Last green commit (pending closeout): this entry's commit. Last code-only green:
 - Task 4.1 [H] still pending Anton (GitHub App + 3 env vars). `/this-week` and `/consent` work end-to-end against the real bot once env vars are real. The smoke script (`pnpm tsx scripts/smoke-github-app.ts`) verifies the full credential chain.
 - Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
 
-### Pending — Phase 7 onward
+### Phase 7 — Contributions counter (complete, 2026-05-01)
+
+Last green commit (pending closeout): this entry's commit. Last code-only green: `c850ec8`.
+
+**4 implementation tasks shipped + security-reviewer signoff, 259 unit + integration tests + 16 E2E pass, 100% coverage on `lib/contributions.ts` (spec §8 strict-list addition).**
+
+- **Task 7.1** (commit `d3c4aa8`) — `lib/contributions.ts` calculator: `computeContributions({ commits, meetings, roster })` returns per-handle `{ projectCommits, adrsFiled, meetingsAttended, statusPosts }`. Bot commits (`warsaw-ai-bot`, `warsaw-ai-bot[bot]`) excluded; non-roster authors dropped; author casing normalized to lowercase before lookup. ADR / status path matching via anchored regex literals. 10 unit tests; 100/100/100/100 coverage.
+- **Task 7.2** (commit `825c6da`) — `scripts/build-contributions.ts` parses git log via `execFileSync('git', ['log', '--pretty=format:COMMIT|%H|%ae|%aI', '--name-only'])` — no shell, all args hardcoded constants, cwd is build-time `REPO_ROOT`. Email→handle mapping is best-effort (GitHub noreply pattern + local-part heuristic); junk handles drop because non-roster authors are ignored downstream. Output written to gitignored `lib/__generated__/contributions.json`. `package.json` `precontributions: pnpm snapshot` chains; all `pre*` hooks now invoke `pnpm contributions` (which transitively runs snapshot). `lib/content-snapshot.ts` exposes `getContributions(handle)` with case-insensitive normalization + `ZERO_CONTRIBUTIONS` fallback. 4 new content-snapshot tests; both `lib/contributions.ts` and `lib/content-snapshot.ts` retain 100% coverage.
+- **Task 7.3** (commit `b7773a1`) — `app/components/ContributionCard.tsx`: 4-cell grid (project commits, ADRs filed, meetings attended, status posts) with `tabular-nums` digits; dark-mode borders. 3 RTL tests with `afterEach(cleanup)`; 100/100/100/100.
+- **Task 7.4** (commit `c850ec8`) — `<ContributionCard>` wired into `app/members/[slug]/page.tsx` between the handle line and profile section. Card renders unconditionally (zeros for members with no signals).
+
+**Phase 7 closeout green check (this commit):**
+- `pnpm install --frozen-lockfile` — clean
+- `pnpm lint` — 0 errors / 0 warnings
+- `pnpm typecheck` — clean
+- `pnpm test:coverage` — 25 files, 259 tests pass. **100% on `lib/{auth,classification,content-snapshot,contributions,env,github-app,markdown,rbac,status-reader,week}.ts` + `proxy.ts` + `app/actions/consent.ts` + `app/components/{ConsentModal,ContributionCard,PersonaPanel,SafeHtml,StatusEditor}.tsx`** (spec §8 strict-list + Phase 2-7 critical components). `app/actions/status.ts` 100% lines / 97.56% branches; `lib/governance.ts` 100% / 94.28% branches; filesystem readers above 80% gate. Overall 83.74% lines / 94.37% branches. `scripts/build-contributions.ts` at 0% (CLI tool, transitively tested via consumers — same convention as `snapshot-content.ts` and `smoke-github-app.ts`).
+- `pnpm build` — 16 routes (5 static + 8 SSG + `/this-week` + `/consent` ƒ Dynamic) + 4 functions + `ƒ Proxy (Middleware)`.
+- `pnpm e2e` — 16 tests pass: smoke + 3 auth-flow + 2 members + 3 archives + 3 status + 4 consent. (First run hit 3 dev-mode cold-start timing flakes — `members.spec.ts:22`, `status.spec.ts:36`, `consent.spec.ts:52`. All passed on `--retries=2`. No regression.)
+
+**Security review (Task 7.2 execFileSync surface, per execution-plan §6.5):**
+- security-reviewer dispatched after Task 7.2 commit. Verdict: **CLEAN** across subprocess invocation (no shell, hardcoded args, build-time cwd), git-log output parsing (file paths never used for fs ops, only regex-tested), email→handle mapping (anchored regexes — no ReDoS, empty/malformed inputs drop at the `result[author]` lookup in `lib/contributions.ts`), JSON output handling (Record<string, Contributions> with numeric fields only — no injection vector). `.gitignore` `lib/__generated__/` correctly excludes the generated JSON.
+
+**Reviewer note (carried-forward Phase 6 caveat):**
+- typescript-reviewer + code-reviewer not dispatched at this closeout to preserve Anton's monthly Claude usage budget (Phase 6 closeout exhausted both before completing). Self-review against the handoff §"Self-review fallback" checklist: spec §8 strict-list at 100% ✓, subprocess exec hardcoded-args-only ✓, RTL tests include `afterEach(cleanup)` ✓, no new public paths in proxy.ts ✓.
+
+**Outstanding:**
+- Task 4.1 [H] still pending Anton (GitHub App + 3 env vars). `/this-week` and `/consent` work end-to-end against the real bot once env vars are real; Phase 8 GDPR delete needs them too.
+- Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
+
+### Pending — Phase 8 onward
 - Apply plan amendments at execution time (still relevant):
   - §9.2 Task 9.2 — `export const revalidate = 60;` on `/admin/health` (Phase 9). Without it, refresh-spamming the page can blow the 5000/hr GitHub rate limit (4 calls per render).
-- Phases 7 + 8 + 9 (Contributions counter + GDPR + Health metric) bundled into Chat 5 per execution-plan §10.2 (13 tasks, ~2 days).
+- Phases 8 + 9 (GDPR + Health metric) remaining in Chat 5 per execution-plan §10.2 (~1 day).
 - Tailwind typography plugin not installed; `prose` classes render as plain HTML for now (visual-only, no functional impact).
