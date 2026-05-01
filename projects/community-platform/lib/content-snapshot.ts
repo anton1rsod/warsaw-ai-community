@@ -1,4 +1,5 @@
 import type { RosterMember, MemberProfile } from "@/lib/roster";
+import type { ProjectDetail } from "@/lib/projects";
 import snapshotJson from "@/lib/__generated__/content-snapshot.json";
 
 export interface MemberWithProfile extends RosterMember {
@@ -13,6 +14,7 @@ export interface ContentSnapshot {
     admins: readonly string[];
     communityManagers: readonly string[];
   };
+  projects: readonly ProjectDetail[];
 }
 
 export const snapshot: ContentSnapshot = snapshotJson as ContentSnapshot;
@@ -45,4 +47,12 @@ export function findMemberBySlug(slug: string): MemberWithProfile | undefined {
 
 export function listMembers(): readonly MemberWithProfile[] {
   return snapshot.members;
+}
+
+export function listProjectDetails(): readonly ProjectDetail[] {
+  return snapshot.projects;
+}
+
+export function findProjectBySlug(slug: string): ProjectDetail | undefined {
+  return snapshot.projects.find((p) => p.slug === slug);
 }

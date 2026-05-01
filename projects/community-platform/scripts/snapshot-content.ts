@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readGovernance } from "@/lib/governance";
 import { readRoster, readMemberProfile, readMemberPersona } from "@/lib/roster";
+import { listProjects, readProject, type ProjectDetail } from "@/lib/projects";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");
@@ -19,20 +20,26 @@ async function main(): Promise<void> {
     "community/governance/community-managers.md",
   );
 
-  const [roster, governance] = await Promise.all([
+  const [roster, governance, projectSummaries] = await Promise.all([
     readRoster(rosterPath),
     readGovernance({ adminsPath, cmsPath }),
+    listProjects(REPO_ROOT),
   ]);
 
-  const members = await Promise.all(
-    roster.map(async (m) => {
-      const [profile, persona] = await Promise.all([
-        readMemberProfile(REPO_ROOT, m.slug),
-        readMemberPersona(REPO_ROOT, m.slug),
-      ]);
-      return { ...m, profile, persona };
-    }),
-  );
+  const [members, projects] = await Promise.all([
+    Promise.all(
+      roster.map(async (m) => {
+        const [profile, persona] = await Promise.all([
+          readMemberProfile(REPO_ROOT, m.slug),
+          readMemberPersona(REPO_ROOT, m.slug),
+        ]);
+        return { ...m, profile, persona };
+      }),
+    ),
+    Promise.all(
+      projectSummaries.map((p) => readProject(REPO_ROOT, p.slug) as Promise<ProjectDetail>),
+    ),
+  ]);
 
   const snapshot = {
     generatedAt: new Date().toISOString(),
@@ -41,6 +48,7 @@ async function main(): Promise<void> {
       admins: governance.admins,
       communityManagers: governance.communityManagers,
     },
+    projects,
   };
 
   await mkdir(path.dirname(OUTPUT), { recursive: true });
@@ -51,7 +59,8 @@ async function main(): Promise<void> {
     `[snapshot] wrote ${path.relative(REPO_ROOT, OUTPUT)}\n` +
       `  members: ${members.length} (${members.filter((m) => m.profile !== null).length} with profile)\n` +
       `  admins: ${governance.admins.length}\n` +
-      `  CMs: ${governance.communityManagers.length}`,
+      `  CMs: ${governance.communityManagers.length}\n` +
+      `  projects: ${projects.length}`,
   );
 }
 

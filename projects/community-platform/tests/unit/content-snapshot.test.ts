@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   findMemberByHandle,
   findMemberBySlug,
+  findProjectBySlug,
   isAdmin,
   isCommunityManager,
   listMembers,
+  listProjectDetails,
   snapshot,
 } from "@/lib/content-snapshot";
 
@@ -113,5 +115,37 @@ describe("listMembers", () => {
       expect("profile" in m).toBe(true);
       expect("persona" in m).toBe(true);
     }
+  });
+});
+
+describe("listProjectDetails", () => {
+  it("returns the full projects array from the snapshot", () => {
+    const projects = listProjectDetails();
+    expect(Array.isArray(projects)).toBe(true);
+    expect(projects.length).toBe(snapshot.projects.length);
+  });
+
+  it("each project has slug, title, and optional markdown fields", () => {
+    for (const p of listProjectDetails()) {
+      expect(typeof p.slug).toBe("string");
+      expect(typeof p.title).toBe("string");
+      expect(p.readme === null || typeof p.readme === "string").toBe(true);
+      expect(p.spec === null || typeof p.spec === "string").toBe(true);
+      expect(p.plan === null || typeof p.plan === "string").toBe(true);
+      expect(p.changelog === null || typeof p.changelog === "string").toBe(true);
+    }
+  });
+});
+
+describe("findProjectBySlug", () => {
+  it("finds an existing project by slug", () => {
+    const project = findProjectBySlug("community-platform");
+    expect(project).not.toBeUndefined();
+    expect(project?.slug).toBe("community-platform");
+    expect(typeof project?.title).toBe("string");
+  });
+
+  it("returns undefined for an unknown slug", () => {
+    expect(findProjectBySlug("no-such-project")).toBeUndefined();
   });
 });
