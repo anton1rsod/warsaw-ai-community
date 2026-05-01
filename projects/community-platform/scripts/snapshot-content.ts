@@ -3,9 +3,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readGovernance } from "@/lib/governance";
 import { readRoster, readMemberProfile, readMemberPersona } from "@/lib/roster";
-import { listProjects, readProject, type ProjectDetail } from "@/lib/projects";
-import { listDecisions, readDecision, type Decision } from "@/lib/decisions";
-import { listMeetings, type Meeting } from "@/lib/meetings";
+import { listProjects, readProject } from "@/lib/projects";
+import { listDecisions, readDecision } from "@/lib/decisions";
+import { listMeetings } from "@/lib/meetings";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");
@@ -28,7 +28,7 @@ async function main(): Promise<void> {
       readGovernance({ adminsPath, cmsPath }),
       listProjects(REPO_ROOT),
       listDecisions(REPO_ROOT),
-      listMeetings(REPO_ROOT) as Promise<Meeting[]>,
+      listMeetings(REPO_ROOT),
     ]);
 
   const [members, projects, decisions] = await Promise.all([
@@ -42,14 +42,26 @@ async function main(): Promise<void> {
       }),
     ),
     Promise.all(
-      projectSummaries.map(
-        (p) => readProject(REPO_ROOT, p.slug) as Promise<ProjectDetail>,
-      ),
+      projectSummaries.map(async (p) => {
+        const proj = await readProject(REPO_ROOT, p.slug);
+        if (!proj) {
+          throw new Error(
+            `[snapshot] readProject returned null for slug "${p.slug}" — listProjects/readProject contract violation`,
+          );
+        }
+        return proj;
+      }),
     ),
     Promise.all(
-      decisionSummaries.map(
-        async (d) => (await readDecision(REPO_ROOT, d.slug)) as Decision,
-      ),
+      decisionSummaries.map(async (d) => {
+        const dec = await readDecision(REPO_ROOT, d.slug);
+        if (!dec) {
+          throw new Error(
+            `[snapshot] readDecision returned null for slug "${d.slug}" — listDecisions/readDecision contract violation`,
+          );
+        }
+        return dec;
+      }),
     ),
   ]);
 

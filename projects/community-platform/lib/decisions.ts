@@ -15,6 +15,15 @@ export interface Decision extends DecisionSummary {
 
 const FILE_RE = /^(\d{4})-(.+)\.md$/;
 
+function isENOENT(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code: string }).code === "ENOENT"
+  );
+}
+
 function extractMeta(
   body: string,
 ): { title: string; date?: string; status?: string } {
@@ -66,7 +75,8 @@ export async function readDecision(
     if (!m || !m[1]) return null;
     const meta = extractMeta(body);
     return { number: Number.parseInt(m[1], 10), slug, body, ...meta };
-  } catch {
-    return null;
+  } catch (err: unknown) {
+    if (isENOENT(err)) return null;
+    throw err;
   }
 }

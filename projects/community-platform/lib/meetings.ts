@@ -12,6 +12,15 @@ export interface Meeting {
 const FILE_RE = /^(\d{4}-\d{2}-\d{2})\.md$/;
 const SLUG_RE = /^(\d{4}-\d{2}-\d{2})$/;
 
+function isENOENT(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code: string }).code === "ENOENT"
+  );
+}
+
 function extractTitle(body: string, fallback: string): string {
   return body.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? fallback;
 }
@@ -89,7 +98,8 @@ export async function readMeeting(
       body,
       attendees: parseAttendees(body),
     };
-  } catch {
-    return null;
+  } catch (err: unknown) {
+    if (isENOENT(err)) return null;
+    throw err;
   }
 }

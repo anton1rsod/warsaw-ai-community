@@ -100,6 +100,12 @@ describe("readMemberProfile", () => {
   it("returns null when file is absent", async () => {
     expect(await readMemberProfile(REPO_ROOT, "ghost")).toBeNull();
   });
+
+  it("rejects path traversal", async () => {
+    expect(await readMemberProfile(REPO_ROOT, "../etc")).toBeNull();
+    expect(await readMemberProfile(REPO_ROOT, "foo/bar")).toBeNull();
+    expect(await readMemberProfile(REPO_ROOT, "foo\\bar")).toBeNull();
+  });
 });
 
 describe("readMemberPersona", () => {
@@ -112,5 +118,11 @@ describe("readMemberPersona", () => {
 
   it("returns null when persona dir absent", async () => {
     expect(await readMemberPersona(REPO_ROOT, "ghost")).toBeNull();
+  });
+
+  it("rejects path traversal", async () => {
+    expect(await readMemberPersona(REPO_ROOT, "../persona")).toBeNull();
+    expect(await readMemberPersona(REPO_ROOT, "foo/bar")).toBeNull();
+    expect(await readMemberPersona(REPO_ROOT, "foo\\bar")).toBeNull();
   });
 });

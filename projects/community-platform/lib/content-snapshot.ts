@@ -27,14 +27,20 @@ function normalize(handle: string): string {
   return handle.replace(/^@/, "").toLowerCase().trim();
 }
 
+// Set-backed for O(1) lookups (auth path; called per protected request).
+const adminSet = new Set<string>(snapshot.governance.admins.map(normalize));
+const cmSet = new Set<string>(
+  snapshot.governance.communityManagers.map(normalize),
+);
+
 export function isAdmin(handle: string): boolean {
   if (!handle) return false;
-  return snapshot.governance.admins.includes(normalize(handle));
+  return adminSet.has(normalize(handle));
 }
 
 export function isCommunityManager(handle: string): boolean {
   if (!handle) return false;
-  return snapshot.governance.communityManagers.includes(normalize(handle));
+  return cmSet.has(normalize(handle));
 }
 
 export function findMemberByHandle(

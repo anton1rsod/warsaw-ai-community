@@ -166,6 +166,8 @@ export async function readMemberProfile(
   repoRoot: string,
   slug: string,
 ): Promise<MemberProfile | null> {
+  if (slug.includes("..") || slug.includes("/") || slug.includes("\\"))
+    return null;
   const filePath = path.join(repoRoot, "community/members", `${slug}.md`);
   try {
     const content = await readFile(filePath, "utf8");
@@ -180,10 +182,14 @@ export async function readMemberPersona(
   repoRoot: string,
   slug: string,
 ): Promise<string | null> {
+  if (slug.includes("..") || slug.includes("/") || slug.includes("\\"))
+    return null;
   const dir = path.join(repoRoot, "persona-builder/personas", slug);
   try {
     const files = await readdir(dir);
-    const md = files.find((f) => f.endsWith(".md"));
+    // Sort for deterministic pick when a persona dir contains multiple .md files
+    // (readdir order is not guaranteed alphabetical across filesystems).
+    const md = files.filter((f) => f.endsWith(".md")).sort()[0];
     if (!md) return null;
     const content = await readFile(path.join(dir, md), "utf8");
     const { body } = parseMarkdown(content);
