@@ -12,10 +12,7 @@ describe("computeHealthMetric", () => {
   it("computes weekly active posters / total members", () => {
     const result = computeHealthMetric({
       roster,
-      weekStatuses: [
-        { slug: "a", body: "x", sha: "1", lastModified: "x" },
-        { slug: "b", body: "x", sha: "2", lastModified: "x" },
-      ],
+      weekStatuses: [{ slug: "a" }, { slug: "b" }],
     });
     expect(result.activePosters).toBe(2);
     expect(result.totalMembers).toBe(4);
@@ -31,10 +28,7 @@ describe("computeHealthMetric", () => {
   it("counts each posting member once even with duplicate slugs", () => {
     const result = computeHealthMetric({
       roster,
-      weekStatuses: [
-        { slug: "a", body: "draft", sha: "1", lastModified: "x" },
-        { slug: "a", body: "edited", sha: "2", lastModified: "y" },
-      ],
+      weekStatuses: [{ slug: "a" }, { slug: "a" }],
     });
     expect(result.activePosters).toBe(1);
   });
@@ -42,10 +36,7 @@ describe("computeHealthMetric", () => {
   it("ignores statuses whose slug is not on the roster", () => {
     const result = computeHealthMetric({
       roster,
-      weekStatuses: [
-        { slug: "stranger", body: "x", sha: "1", lastModified: "x" },
-        { slug: "a", body: "x", sha: "2", lastModified: "y" },
-      ],
+      weekStatuses: [{ slug: "stranger" }, { slug: "a" }],
     });
     expect(result.activePosters).toBe(1);
     expect(result.ratio).toBe(0.25);
@@ -54,7 +45,7 @@ describe("computeHealthMetric", () => {
   it("returns 0 ratio for an empty roster (no division by zero)", () => {
     const result = computeHealthMetric({
       roster: [],
-      weekStatuses: [{ slug: "a", body: "x", sha: "1", lastModified: "x" }],
+      weekStatuses: [{ slug: "a" }],
     });
     expect(result.activePosters).toBe(0);
     expect(result.totalMembers).toBe(0);
