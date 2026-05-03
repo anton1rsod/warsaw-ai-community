@@ -2,16 +2,17 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-03 (v0.1.1 spec drafted; plan-writing next)
+**Last updated**: 2026-05-03 (v0.1.1 plan written; implementation next)
 
 ## Snapshot
 
 ```yaml
 last_green: b26a8c2                # fix: tolerate missing .git in build-contributions.ts
 last_code_only_green: b26a8c2      # same; release commit is doc-only
-phase: "v0.1.1 spec drafted; plan-writing next"   # chat 7 (2026-05-03) produced spec §11
+phase: "v0.1.1 plan written; implementation next"   # chat 8 (2026-05-03) produced plan
 spec_sha: 740be8e                   # spec §11 + final-pass hardening fixes
-branch: phase-10-followups          # spec lives here until PR merges
+plan_sha: 2201dd9                   # v0.1.1-plan.md (37 tasks across 3 phases)
+branch: phase-10-followups          # plan lives here until v0.1.1 release PR merges
 tests: "294 unit/integration + 19 E2E"  # v0.1.0 baseline; v0.1.1 will add ~85 + 7
 overall_coverage: "84.73% lines / 93.7% branches  (gate: 80%)"
 amendments_applied: "§9.2, §9.5–§9.18"
@@ -74,7 +75,9 @@ production_runtime: "2026-05-03 — full credential chain operational under real
 
 ## Next chat
 
-**Chat 8 — v0.1.1 invitation feature plan-writing.** Handoff doc + paste-ready prompt: [`docs/specs/2026-05-03-community-platform-v0-1-1-plan-writing-handoff.md`](../../docs/specs/2026-05-03-community-platform-v0-1-1-plan-writing-handoff.md). Mode: `superpowers:writing-plans` skill. Input: `spec.md §11` (SHA `740be8e`). Output: TDD-structured implementation plan + chat-9 brief for the implementation chat.
+**Chat 9 — v0.1.1 invitation feature implementation.** Handoff doc + paste-ready prompt: [`docs/specs/2026-05-03-community-platform-v0-1-1-implementation-handoff.md`](../../docs/specs/2026-05-03-community-platform-v0-1-1-implementation-handoff.md). Mode: `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans`. Input: `v0.1.1-plan.md` (SHA `2201dd9`) + spec §11 (SHA `740be8e`). 37 tasks across 3 phases. Phase 11.1 first.
+
+**Chat 8 (DONE):** v0.1.1 plan-writing via `superpowers:writing-plans`. Produced [`v0.1.1-plan.md`](v0.1.1-plan.md) at SHA `2201dd9` — 5858 lines, 37 tasks, 191 checkboxes, all 13 hardenings mapped to specific test files via `describe("H<n>:")` prefix.
 
 **Chat 7 (DONE):** v0.1.1 invitation feature brainstorm via `superpowers:brainstorming`. Produced spec §11 (lines 457-1071, ~617 lines) at SHA `740be8e`. All Q1-Q7 decisions locked; 13 hardenings (H1-H13) numbered for testable contract.
 
