@@ -1,0 +1,49 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`appendMember — adds row to 5-col Members table (snapshot) > appends a row with all fields populated 1`] = `
+"# Member Roster
+
+**Count:** 1
+
+## Core organizers
+
+| Name | GitHub | Role | Telegram | Focus |
+|---|---|---|---|---|
+| Anton Safronov | @anton1rsod | Founder / BDFL | @antonsafronov | Direction |
+
+## Members (opt-in)
+
+| Name | GitHub | Telegram | Link | Focus |
+|---|---|---|---|---|
+| Mark Spasonov | @markspas |  | https://example.com | RevOps |
+| New Member | @newmember | @newmember | https://newmember.example | Frontend |
+
+## Notes
+
+- N/A
+"
+`;
+
+exports[`appendMember — adds row to 5-col Members table (snapshot) > appends a row with optional link + focus empty 1`] = `
+"# Member Roster
+
+**Count:** 1
+
+## Core organizers
+
+| Name | GitHub | Role | Telegram | Focus |
+|---|---|---|---|---|
+| Anton Safronov | @anton1rsod | Founder / BDFL | @antonsafronov | Direction |
+
+## Members (opt-in)
+
+| Name | GitHub | Telegram | Link | Focus |
+|---|---|---|---|---|
+| Mark Spasonov | @markspas |  | https://example.com | RevOps |
+| Minimal Member | @minimal | @minimal |  |  |
+
+## Notes
+
+- N/A
+"
+`;

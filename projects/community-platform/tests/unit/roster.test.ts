@@ -6,6 +6,7 @@ import {
   lookupMemberByHandle,
   readMemberProfile,
   readMemberPersona,
+  appendMember,
 } from "@/lib/roster";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -124,5 +125,84 @@ describe("readMemberPersona", () => {
     expect(await readMemberPersona(REPO_ROOT, "../persona")).toBeNull();
     expect(await readMemberPersona(REPO_ROOT, "foo/bar")).toBeNull();
     expect(await readMemberPersona(REPO_ROOT, "foo\\bar")).toBeNull();
+  });
+});
+
+const ROSTER_BEFORE_MIGRATION = `# Member Roster
+
+**Count:** 1
+
+## Core organizers
+
+| Name | GitHub | Role | Telegram | Focus |
+|---|---|---|---|---|
+| Anton Safronov | @anton1rsod | Founder / BDFL | @antonsafronov | Direction |
+
+## Members (opt-in)
+
+| Name | GitHub | Telegram | Link | Focus |
+|---|---|---|---|---|
+| Mark Spasonov | @markspas |  | https://example.com | RevOps |
+
+## Notes
+
+- N/A
+`;
+
+describe("appendMember — adds row to 5-col Members table (snapshot)", () => {
+  it("appends a row with all fields populated", () => {
+    const out = appendMember(ROSTER_BEFORE_MIGRATION, {
+      name: "New Member",
+      githubHandle: "newmember",
+      telegram: "@newmember",
+      link: "https://newmember.example",
+      focus: "Frontend",
+    });
+    expect(out).toMatchSnapshot();
+  });
+  it("appends a row with optional link + focus empty", () => {
+    const out = appendMember(ROSTER_BEFORE_MIGRATION, {
+      name: "Minimal Member",
+      githubHandle: "minimal",
+      telegram: "@minimal",
+      link: "",
+      focus: "",
+    });
+    expect(out).toMatchSnapshot();
+  });
+  it("escapes pipes in name + focus", () => {
+    const out = appendMember(ROSTER_BEFORE_MIGRATION, {
+      name: "Anton | Founder",
+      githubHandle: "anton1rsod",
+      telegram: "@antonsafronov",
+      link: "",
+      focus: "AI | infra",
+    });
+    expect(out).toContain("Anton &#124; Founder");
+    expect(out).toContain("AI &#124; infra");
+  });
+  it("inserts the row INSIDE the Members table (not after the file)", () => {
+    const out = appendMember(ROSTER_BEFORE_MIGRATION, {
+      name: "Inserted",
+      githubHandle: "inserted",
+      telegram: "@inserted",
+      link: "",
+      focus: "",
+    });
+    const insertPos = out.indexOf("Inserted");
+    const notesPos = out.indexOf("## Notes");
+    expect(insertPos).toBeLessThan(notesPos);
+    expect(insertPos).toBeGreaterThan(0);
+  });
+  it("throws when the Members table is absent", () => {
+    expect(() =>
+      appendMember("# No table here\n", {
+        name: "x",
+        githubHandle: "x",
+        telegram: "@xxxxx",
+        link: "",
+        focus: "",
+      }),
+    ).toThrow(/members table not found/i);
   });
 });

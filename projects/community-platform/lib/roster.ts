@@ -183,3 +183,71 @@ export async function readMemberPersona(
     throw err;
   }
 }
+
+export interface AppendMemberInput {
+  readonly name: string;
+  readonly githubHandle: string; // no leading @
+  readonly telegram: string; // includes @, or empty
+  readonly link: string; // empty allowed
+  readonly focus: string; // empty allowed
+}
+
+const MEMBERS_HEADING = "## Members (opt-in)";
+
+function escapeMdCell(s: string): string {
+  return s.replaceAll("|", "&#124;");
+}
+
+/**
+ * Append a row to the Members (opt-in) table.
+ *
+ * Strategy: locate the "## Members (opt-in)" heading, then find the
+ * NEXT non-table line (or end-of-file) — insert the new row directly
+ * before it so trailing prose (`## Notes`) is preserved.
+ *
+ * Output schema (5 columns):
+ *   | Name | GitHub | Telegram | Link | Focus |
+ *
+ * Pipes in name + focus are escaped to `&#124;`. Other fields don't
+ * accept user-supplied newlines (rejected by RedeemFormSchema H10) or
+ * pipes (telegram regex prevents; gh handle is `[a-zA-Z0-9-]+`; link
+ * is URL-validated).
+ */
+export function appendMember(
+  rosterMd: string,
+  input: AppendMemberInput,
+): string {
+  const lines = rosterMd.split("\n");
+  const headingIdx = lines.findIndex((l) => l.trim() === MEMBERS_HEADING);
+  if (headingIdx === -1) {
+    throw new Error(
+      `Members table not found: heading "${MEMBERS_HEADING}" missing`,
+    );
+  }
+
+  // Find the table inside this section: header row + separator + body.
+  // Insert position = first non-table line after the body (or EOF).
+  let insertIdx = -1;
+  let inTable = false;
+  for (let i = headingIdx + 1; i < lines.length; i++) {
+    const t = (lines[i] ?? "").trim();
+    if (t.startsWith("|")) {
+      inTable = true;
+      continue;
+    }
+    if (inTable) {
+      insertIdx = i;
+      break;
+    }
+  }
+  if (insertIdx === -1) {
+    insertIdx = lines.length;
+  }
+
+  const row =
+    `| ${escapeMdCell(input.name)} | @${input.githubHandle} ` +
+    `| ${input.telegram} | ${input.link} | ${escapeMdCell(input.focus)} |`;
+
+  const out = [...lines.slice(0, insertIdx), row, ...lines.slice(insertIdx)];
+  return out.join("\n");
+}
