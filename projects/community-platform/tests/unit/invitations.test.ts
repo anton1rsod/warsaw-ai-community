@@ -819,4 +819,334 @@ describe("H13: redeemInvitation — retry-once on 409", () => {
     expect(result.ok).toBe(false);
     expect(client.commitMultipleFiles).toHaveBeenCalledTimes(2);
   });
+
+  it("aborts on retry when re-read ledger now contains the JTI (replayed-after-409)", async () => {
+    const client = makeMockClient();
+    const ledgerWithJti =
+      EMPTY_LEDGER +
+      `| 11111111-2222-4333-8444-555555555555 | redeemed | 2026-05-01T10:00:00.000Z | @anton1rsod |  | 2026-05-01T10:30:00.000Z | @racer |  |\n`;
+    let ledgerReadCount = 0;
+    client.readFile.mockImplementation(async (path: string) => {
+      if (path.endsWith("invitations.md")) {
+        ledgerReadCount += 1;
+        // First read (pre-commit) returns empty so initial JTI check passes;
+        // second read (retry path) returns a ledger with the JTI present.
+        const content = ledgerReadCount === 1 ? EMPTY_LEDGER : ledgerWithJti;
+        return { content, sha: "x", path };
+      }
+      if (path.endsWith("roster.md"))
+        return { content: RI_ROSTER_BEFORE, sha: "x", path };
+      if (path.endsWith("git-email-aliases.md"))
+        return { content: RI_ALIASES_BEFORE, sha: "x", path };
+      return null;
+    });
+    client.commitMultipleFiles.mockImplementation(async () => {
+      const e = new Error("sha conflict") as Error & { kind: string };
+      e.kind = "sha_conflict";
+      throw e;
+    });
+
+    const result = await redeemInvitation({
+      payload: happyTokenPayload,
+      redeemerHandle: "newmember",
+      form: {
+        display_name: "New",
+        telegram: "@newmember",
+        git_email_alias: "new@member.com",
+        consent_accepted: true as const,
+      },
+      client,
+      now: () => new Date(),
+    });
+    expect(result.ok).toBe(false);
+    // First commit attempt (sha_conflict) happened, but the retry was
+    // short-circuited by the replay check — no second commit.
+    expect(client.commitMultipleFiles).toHaveBeenCalledTimes(1);
+    // Re-read of the ledger happened at least twice: once at start, once on retry.
+    expect(ledgerReadCount).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("redeemInvitation — defensive error paths", () => {
+  it("returns { ok: false } when ledger readFile returns null", async () => {
+    const client = makeMockClient();
+    client.readFile.mockImplementation(async () => null);
+
+    const result = await redeemInvitation({
+      payload: happyTokenPayload,
+      redeemerHandle: "newmember",
+      form: {
+        display_name: "New",
+        telegram: "@newmember",
+        git_email_alias: "new@member.com",
+        consent_accepted: true as const,
+      },
+      client,
+      now: () => new Date(),
+    });
+    expect(result.ok).toBe(false);
+    expect(client.commitMultipleFiles).not.toHaveBeenCalled();
+  });
+
+  it("returns { ok: false } when nextAvailableSlug exceeds the 9-suffix cap", async () => {
+    const client = makeMockClient();
+    // display_name "Foo" → slug "foo". Make foo.md, foo-2.md, ..., foo-9.md
+    // all exist (return non-null) so nextAvailableSlug throws.
+    client.readFile.mockImplementation(async (path: string) => {
+      if (path.endsWith("invitations.md"))
+        return { content: EMPTY_LEDGER, sha: "x", path };
+      // Member-profile probe: every "foo*" path returns non-null to force
+      // the slug helper past its -9 cap.
+      const fileName = path.split("/").pop() ?? "";
+      if (/^foo(-[2-9])?\.md$/.test(fileName)) {
+        return { content: "existing profile", sha: "x", path };
+      }
+      // Roster + aliases would normally read here, but slug failure short-circuits.
+      return null;
+    });
+    // Use a payload WITHOUT hint_telegram to also exercise the
+    // `(payload.hint_telegram ? ... : "")` empty-branch in the commit message
+    // builder (line 496). Even though we never reach commit here on slug
+    // failure, including this case keeps the suite faithful to that branch.
+    const noHintPayload: InvitePayload = {
+      jti: "11111111-2222-4333-8444-555555555555",
+      iss: "anton1rsod",
+      exp: Math.floor(Date.now() / 1000) + 7 * 86400,
+    };
+
+    const result = await redeemInvitation({
+      payload: noHintPayload,
+      redeemerHandle: "newmember",
+      form: {
+        display_name: "Foo",
+        telegram: "@newmember",
+        git_email_alias: "new@member.com",
+        consent_accepted: true as const,
+      },
+      client,
+      now: () => new Date(),
+    });
+    expect(result.ok).toBe(false);
+    expect(client.commitMultipleFiles).not.toHaveBeenCalled();
+  });
+
+  it("returns { ok: false } when roster readFile returns null", async () => {
+    const client = makeMockClient();
+    client.readFile.mockImplementation(async (path: string) => {
+      if (path.endsWith("invitations.md"))
+        return { content: EMPTY_LEDGER, sha: "x", path };
+      // Slug probe (member profile) misses → resolves to base slug.
+      // Roster missing → defensive bail.
+      if (path.endsWith("roster.md")) return null;
+      if (path.endsWith("git-email-aliases.md"))
+        return { content: RI_ALIASES_BEFORE, sha: "x", path };
+      return null;
+    });
+
+    const result = await redeemInvitation({
+      payload: happyTokenPayload,
+      redeemerHandle: "newmember",
+      form: {
+        display_name: "New Member",
+        telegram: "@newmember",
+        git_email_alias: "new@member.com",
+        consent_accepted: true as const,
+      },
+      client,
+      now: () => new Date(),
+    });
+    expect(result.ok).toBe(false);
+    expect(client.commitMultipleFiles).not.toHaveBeenCalled();
+  });
+
+  it("returns { ok: false } when aliases readFile returns null", async () => {
+    const client = makeMockClient();
+    client.readFile.mockImplementation(async (path: string) => {
+      if (path.endsWith("invitations.md"))
+        return { content: EMPTY_LEDGER, sha: "x", path };
+      if (path.endsWith("roster.md"))
+        return { content: RI_ROSTER_BEFORE, sha: "x", path };
+      if (path.endsWith("git-email-aliases.md")) return null;
+      return null;
+    });
+
+    const result = await redeemInvitation({
+      payload: happyTokenPayload,
+      redeemerHandle: "newmember",
+      form: {
+        display_name: "New Member",
+        telegram: "@newmember",
+        git_email_alias: "new@member.com",
+        consent_accepted: true as const,
+      },
+      client,
+      now: () => new Date(),
+    });
+    expect(result.ok).toBe(false);
+    expect(client.commitMultipleFiles).not.toHaveBeenCalled();
+  });
+
+  it("returns { ok: false } when appendAlias throws (duplicate-email bail)", async () => {
+    const client = makeMockClient();
+    client.readFile.mockImplementation(async (path: string) => {
+      if (path.endsWith("invitations.md"))
+        return { content: EMPTY_LEDGER, sha: "x", path };
+      if (path.endsWith("roster.md"))
+        return { content: RI_ROSTER_BEFORE, sha: "x", path };
+      if (path.endsWith("git-email-aliases.md"))
+        return { content: RI_ALIASES_BEFORE, sha: "x", path };
+      return null;
+    });
+
+    // RI_ALIASES_BEFORE already has anton@rsod.solutions; pass it again.
+    const result = await redeemInvitation({
+      payload: happyTokenPayload,
+      redeemerHandle: "newmember",
+      form: {
+        display_name: "New Member",
+        telegram: "@newmember",
+        git_email_alias: "anton@rsod.solutions",
+        consent_accepted: true as const,
+      },
+      client,
+      now: () => new Date(),
+    });
+    expect(result.ok).toBe(false);
+    expect(client.commitMultipleFiles).not.toHaveBeenCalled();
+  });
+
+  it("commits successfully with no hint_telegram (covers `hint_telegram ?? \"\"` + commit-message ternary empty branches)", async () => {
+    const client = makeMockClient();
+    client.readFile.mockImplementation(async (path: string) => {
+      if (path.endsWith("invitations.md"))
+        return { content: EMPTY_LEDGER, sha: "x", path };
+      if (path.endsWith("roster.md"))
+        return { content: RI_ROSTER_BEFORE, sha: "x", path };
+      if (path.endsWith("git-email-aliases.md"))
+        return { content: RI_ALIASES_BEFORE, sha: "x", path };
+      return null;
+    });
+    client.commitMultipleFiles.mockResolvedValue({ commitSha: "newCommitSha" });
+
+    const noHintPayload: InvitePayload = {
+      jti: "11111111-2222-4333-8444-555555555555",
+      iss: "anton1rsod",
+      exp: Math.floor(Date.now() / 1000) + 7 * 86400,
+    };
+
+    const result = await redeemInvitation({
+      payload: noHintPayload,
+      redeemerHandle: "newmember",
+      form: {
+        display_name: "New Member",
+        telegram: "@newmember",
+        git_email_alias: "new@member.com",
+        consent_accepted: true as const,
+      },
+      client,
+      now: () => new Date("2026-05-01T11:00:00.000Z"),
+    });
+
+    expect(result.ok).toBe(true);
+    const args = client.commitMultipleFiles.mock.calls[0]?.[0] as {
+      message: string;
+    };
+    expect(args.message).not.toContain("Invitation-Hint-Telegram");
+  });
+
+  it("returns { ok: false } when first commit fails with a non-conflict error (covers `: invalid` + `: 500` ternary branches)", async () => {
+    const client = makeMockClient();
+    client.readFile.mockImplementation(async (path: string) => {
+      if (path.endsWith("invitations.md"))
+        return { content: EMPTY_LEDGER, sha: "x", path };
+      if (path.endsWith("roster.md"))
+        return { content: RI_ROSTER_BEFORE, sha: "x", path };
+      if (path.endsWith("git-email-aliases.md"))
+        return { content: RI_ALIASES_BEFORE, sha: "x", path };
+      return null;
+    });
+    // Non-sha_conflict error → bail immediately, no retry.
+    client.commitMultipleFiles.mockImplementation(async () => {
+      throw new Error("network failure (no kind)");
+    });
+
+    const result = await redeemInvitation({
+      payload: happyTokenPayload,
+      redeemerHandle: "newmember",
+      form: {
+        display_name: "New Member",
+        telegram: "@newmember",
+        git_email_alias: "new@member.com",
+        consent_accepted: true as const,
+      },
+      client,
+      now: () => new Date(),
+    });
+    expect(result.ok).toBe(false);
+    expect(client.commitMultipleFiles).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("parseInvitationsLedger — defensive parser branches", () => {
+  it("ignores rows that aren't inside the table body (lines before header)", () => {
+    const content = `# Invitations Ledger
+
+| Some other table | Foo |
+|---|---|
+| nope | nope |
+
+## Section
+
+| JTI | Status | Issued At | Issued By | Hint Telegram | Redeemed At | Redeemed By | Notes |
+|---|---|---|---|---|---|---|---|
+`;
+    expect(parseInvitationsLedger(content)).toEqual([]);
+  });
+
+  it("skips malformed rows with fewer than 8 columns", () => {
+    const content =
+      EMPTY_LEDGER +
+      "| jti-only | redeemed | 2026-01-01 |\n";
+    expect(parseInvitationsLedger(content)).toEqual([]);
+  });
+
+  it("skips rows whose status is neither redeemed nor revoked", () => {
+    const content =
+      EMPTY_LEDGER +
+      `| 11111111-2222-4333-8444-555555555555 | pending | 2026-05-01 | @anton |  |  |  |  |\n`;
+    expect(parseInvitationsLedger(content)).toEqual([]);
+  });
+});
+
+describe("appendRedemptionRow / appendRevocationRow — ledger-without-trailing-newline branch", () => {
+  it("appendRedemptionRow inserts a leading newline when the input lacks one", () => {
+    const trimmedLedger = EMPTY_LEDGER.replace(/\n+$/, "");
+    expect(trimmedLedger.endsWith("\n")).toBe(false);
+    const out = appendRedemptionRow(trimmedLedger, {
+      jti: "11111111-2222-4333-8444-555555555555",
+      issuedAt: "2026-05-01T10:00:00.000Z",
+      issuedBy: "@anton1rsod",
+      hintTelegram: "",
+      redeemedAt: "2026-05-01T10:30:00.000Z",
+      redeemedBy: "@newmember",
+    });
+    // The orchestrator's contract is "exactly one newline between body and row".
+    expect(out.startsWith(trimmedLedger + "\n")).toBe(true);
+    expect(out.endsWith("|\n")).toBe(true);
+  });
+
+  it("appendRevocationRow inserts a leading newline when the input lacks one", () => {
+    const trimmedLedger = EMPTY_LEDGER.replace(/\n+$/, "");
+    expect(trimmedLedger.endsWith("\n")).toBe(false);
+    const out = appendRevocationRow(trimmedLedger, {
+      jti: "11111111-2222-4333-8444-555555555555",
+      issuedAt: "2026-05-01T10:00:00.000Z",
+      issuedBy: "@anton1rsod",
+      hintTelegram: "",
+      revokedBy: "@anton1rsod",
+      reason: "test",
+    });
+    expect(out.startsWith(trimmedLedger + "\n")).toBe(true);
+    expect(out.endsWith("|\n")).toBe(true);
+  });
 });
