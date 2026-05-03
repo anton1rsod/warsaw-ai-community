@@ -112,3 +112,54 @@ export function verifyToken(
 
   return result.data;
 }
+
+const emptyToUndef = (v: unknown) =>
+  typeof v === "string" && v.trim() === "" ? undefined : v;
+
+const noNewlines = z.string().refine((s) => !/[\r\n]/.test(s), {
+  message: "must be a single line",
+});
+
+/**
+ * Server-side form validation for /onboard.
+ *
+ * H8 (mass-assignment defense): Zod's default behavior strips fields not
+ * declared in `.object({...})` — only the listed 6 fields ever flow to
+ * the orchestrator, so a posted `role=admin` or `githubHandle=spoofed`
+ * is silently dropped.
+ *
+ * H9 (link safety): URL-syntax + .startsWith("https://") AND .max(200).
+ *
+ * H10 (newline rejection): display_name + focus refuse \r and \n,
+ * preventing injection of new markdown table rows in the bot's commit.
+ *
+ * git_email_alias case is preserved (lowercase happens in
+ * lib/git-email-aliases.ts:appendAlias if needed; for the alias file
+ * itself, case-insensitive comparison is the rule).
+ */
+export const RedeemFormSchema = z.object({
+  display_name: noNewlines
+    .transform((s) => s.trim())
+    .pipe(z.string().min(1).max(80)),
+  focus: z.preprocess(
+    emptyToUndef,
+    noNewlines.transform((s) => s.trim()).pipe(z.string().max(120)).optional(),
+  ),
+  link: z.preprocess(
+    emptyToUndef,
+    z
+      .string()
+      .trim()
+      .max(200)
+      .url()
+      .refine((s) => s.startsWith("https://"), {
+        message: "link must use https://",
+      })
+      .optional(),
+  ),
+  telegram: z.string().regex(/^@[a-zA-Z0-9_]{5,32}$/),
+  git_email_alias: z.string().email().max(120),
+  consent_accepted: z.literal(true),
+});
+
+export type RedeemFormInput = z.infer<typeof RedeemFormSchema>;
