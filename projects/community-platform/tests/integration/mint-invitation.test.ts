@@ -56,10 +56,10 @@ describe("mintInvitation server action", () => {
     expect(result.error).toMatch(/not authorized/i);
   });
 
-  it("returns { error } for unauthenticated", async () => {
+  it("returns { error } for unauthenticated (collapsed with not-admin per security-reviewer M2)", async () => {
     vi.mocked(auth).mockResolvedValue(null as never);
     const result = await mintInvitation(new FormData());
-    expect(result.error).toMatch(/not authenticated/i);
+    expect(result.error).toMatch(/not authorized/i);
   });
 
   it("rejects invalid hint_telegram (Zod input validation)", async () => {

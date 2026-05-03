@@ -299,9 +299,13 @@ export function appendRedemptionRow(
   ledger: string,
   input: RedemptionRowInput,
 ): string {
+  // Defense-in-depth (security-reviewer M1): every cell is pipe-escaped, not
+  // just `notes`. `iss`/`hint_telegram`/handles already pass upstream regex
+  // guards that exclude `|`, but escaping locally drops the upstream-trust
+  // dependency entirely.
   const row =
-    `| ${input.jti} | redeemed | ${input.issuedAt} | ${input.issuedBy} ` +
-    `| ${input.hintTelegram} | ${input.redeemedAt} | ${input.redeemedBy} ` +
+    `| ${escapeCell(input.jti)} | redeemed | ${escapeCell(input.issuedAt)} | ${escapeCell(input.issuedBy)} ` +
+    `| ${escapeCell(input.hintTelegram)} | ${escapeCell(input.redeemedAt)} | ${escapeCell(input.redeemedBy)} ` +
     `| ${escapeCell(input.notes ?? "")} |\n`;
   return ledger.endsWith("\n") ? `${ledger}${row}` : `${ledger}\n${row}`;
 }
@@ -319,10 +323,11 @@ export function appendRevocationRow(
   ledger: string,
   input: RevocationRowInput,
 ): string {
-  const notes = `revoked by ${input.revokedBy} (${escapeCell(input.reason)})`;
+  // M1 defense-in-depth: pipe-escape every cell.
+  const notes = `revoked by ${escapeCell(input.revokedBy)} (${escapeCell(input.reason)})`;
   const row =
-    `| ${input.jti} | revoked | ${input.issuedAt} | ${input.issuedBy} ` +
-    `| ${input.hintTelegram} |  |  | ${notes} |\n`;
+    `| ${escapeCell(input.jti)} | revoked | ${escapeCell(input.issuedAt)} | ${escapeCell(input.issuedBy)} ` +
+    `| ${escapeCell(input.hintTelegram)} |  |  | ${notes} |\n`;
   return ledger.endsWith("\n") ? `${ledger}${row}` : `${ledger}\n${row}`;
 }
 

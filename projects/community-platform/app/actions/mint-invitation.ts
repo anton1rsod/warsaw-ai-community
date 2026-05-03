@@ -31,9 +31,13 @@ export async function mintInvitation(
   formData: FormData,
 ): Promise<MintResult> {
   const session = await auth();
-  if (!session?.githubHandle) return { error: "Not authenticated." };
-  if (!isAdmin(session.githubHandle))
-    return { error: "Not authorized — admin role required." };
+  // Single message for both no-session and not-admin (security-reviewer M2):
+  // a direct POST to this server action otherwise lets a logged-in non-admin
+  // distinguish "not signed in" from "signed in but not admin," which is a
+  // mild RBAC enumeration oracle. Page-level RBAC handles the UX redirect.
+  if (!session?.githubHandle || !isAdmin(session.githubHandle)) {
+    return { error: "Not authorized." };
+  }
 
   const raw = {
     hint_telegram: emptyToUndef(formData.get("hint_telegram")),
