@@ -30,6 +30,17 @@ export interface DeleteOptions {
   authorEmail?: string;
 }
 
+export interface MultiFileCommitInput {
+  readonly files: readonly {
+    readonly path: string;
+    readonly content: string;
+  }[];
+  readonly message: string;
+  readonly expectedHeadSha: string;
+  readonly authorName?: string;
+  readonly authorEmail?: string;
+}
+
 export type GitHubAppErrorKind =
   | "sha_conflict"
   | "not_found"
@@ -55,6 +66,9 @@ export interface GitHubAppClient {
     options: WriteOptions,
   ): Promise<{ sha: string }>;
   deleteFile(path: string, options: DeleteOptions): Promise<void>;
+  commitMultipleFiles(
+    input: MultiFileCommitInput,
+  ): Promise<{ commitSha: string }>;
 }
 
 const DEFAULT_AUTHOR_NAME = "warsaw-ai-bot";
@@ -174,7 +188,81 @@ export function createGitHubApp(config: GitHubAppConfig): GitHubAppClient {
     }
   }
 
-  return { readFile, writeFile, deleteFile };
+  /**
+   * Atomically commits multiple files in a single git commit using the low-level
+   * git data API: blob×N → tree → commit → updateRef. CAS is enforced by passing
+   * `expectedHeadSha` as the parent commit; if the branch has moved, updateRef
+   * returns 409 → GitHubAppError(sha_conflict). The orchestrator (Task 11.1.13)
+   * is responsible for the single retry on conflict (H13); this function makes
+   * exactly one attempt.
+   */
+  async function commitMultipleFiles(
+    input: MultiFileCommitInput,
+  ): Promise<{ commitSha: string }> {
+    const author = {
+      name: input.authorName ?? DEFAULT_AUTHOR_NAME,
+      email: input.authorEmail ?? DEFAULT_AUTHOR_EMAIL,
+    };
+    try {
+      const blobs = await Promise.all(
+        input.files.map((f) =>
+          octokit.git.createBlob({
+            owner: config.owner,
+            repo: config.repo,
+            content: Buffer.from(f.content, "utf8").toString("base64"),
+            encoding: "base64",
+          }),
+        ),
+      );
+
+      const parentCommit = await octokit.git.getCommit({
+        owner: config.owner,
+        repo: config.repo,
+        commit_sha: input.expectedHeadSha,
+      });
+      const baseTreeSha = parentCommit.data.tree.sha;
+
+      const tree = await octokit.git.createTree({
+        owner: config.owner,
+        repo: config.repo,
+        base_tree: baseTreeSha,
+        tree: input.files.map((f, i) => {
+          const blobSha = blobs[i]?.data.sha ?? "";
+          return {
+            path: f.path,
+            mode: "100644" as const,
+            type: "blob" as const,
+            sha: blobSha,
+          };
+        }),
+      });
+
+      const commit = await octokit.git.createCommit({
+        owner: config.owner,
+        repo: config.repo,
+        message: input.message,
+        tree: tree.data.sha,
+        parents: [input.expectedHeadSha],
+        author,
+        committer: author,
+      });
+
+      await octokit.git.updateRef({
+        owner: config.owner,
+        repo: config.repo,
+        ref: `heads/${config.branch}`,
+        sha: commit.data.sha,
+        force: false,
+      });
+
+      return { commitSha: commit.data.sha };
+    } catch (err: unknown) {
+      if (err instanceof GitHubAppError) throw err;
+      throw mapError(err);
+    }
+  }
+
+  return { readFile, writeFile, deleteFile, commitMultipleFiles };
 }
 
 /**
