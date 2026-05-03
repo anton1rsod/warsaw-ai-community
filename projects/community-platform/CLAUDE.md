@@ -4,17 +4,18 @@ This file auto-loads when Claude Code runs anywhere under `projects/community-pl
 
 ## Read order for new chats
 
-1. **`STATE.md`** — current snapshot (last green commit, blockers, next chat). ~30 lines.
+1. **`STATE.md`** — current snapshot (last green commit, last verified state, blockers, next chat). ~80 lines. Includes a `Last verified` block listing state checks (env vars, OAuth callback, App install, etc.) and when they were last confirmed; if an entry is recent and your task doesn't depend on the surface, you can SKIP re-verifying.
 2. **`CONSTRAINTS.md`** — locked rules, secret handling, auto policy, self-review checklist. ~80 lines.
-3. **`phase-N-brief.md`** (where N is the phase this chat owns) — task list with file paths, amendments to apply this phase, closeout criteria. ~50 lines.
-4. **`plan.md` line ranges** — only the ranges the phase brief points at. Don't read the whole 7700-line plan.
-5. **Source files** — read as the work demands, not preemptively.
+3. **`GOTCHAS.md`** — operational patterns that bit prior chats (env, CLI, deploy, auth). ~120 lines. Read once if you're new to the project; reference by number from the per-phase brief when relevant.
+4. **`phase-N-brief.md`** (where N is the phase this chat owns) — task list with file paths, amendments to apply this phase, closeout criteria. ~50 lines.
+5. **`plan.md` line ranges** — only the ranges the phase brief points at. Don't read the whole 7700-line plan.
+6. **Source files** — read as the work demands, not preemptively.
 
 Skip `CHANGELOG.md` unless you specifically need history. CHANGELOG is canonical for history; STATE.md is the curated index for "right now."
 
 ## Companion artifacts in the monorepo
 
-- `docs/playbooks/recurring-plan-defects.md` — patterns observed during Phases 0–9 that future plans should pre-empt. Read once if you're new to the project.
+- `docs/playbooks/recurring-plan-defects.md` — code-level patterns (regex, casts, fixtures, mocks). Pair with `GOTCHAS.md` (ops-level patterns) above.
 - `docs/specs/<date>-community-platform-phase-N-handoff.md` — per-chat handoffs. The latest one points to the active per-phase brief.
 
 ## What this project is
@@ -27,10 +28,11 @@ See `README.md` for the project map; see `spec.md` for §1–§10 requirements; 
 
 ## Update protocol
 
-- `STATE.md` — every phase closeout, same commit as the CHANGELOG entry.
+- `STATE.md` — every phase closeout, same commit as the CHANGELOG entry. Includes the `Last verified` block — refresh entries when you re-verify or extend.
 - `CONSTRAINTS.md` — only when locked rules change (which should be rare; if it happens, also write an ADR).
+- `GOTCHAS.md` — append a row when you hit a non-obvious operational pattern that meets the criteria at the bottom of that file.
 - `phase-N-brief.md` — once, before chat N starts. Stays as a record.
-- `docs/playbooks/recurring-plan-defects.md` — append a new pattern when you observe one.
+- `docs/playbooks/recurring-plan-defects.md` — append a code-level pattern when you observe one.
 
 ## What NOT to do
 

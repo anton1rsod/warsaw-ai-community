@@ -18,6 +18,22 @@ production: "https://warsaw-ai-community-platform.vercel.app"
 tag: "community-platform-v0.1.0"
 ```
 
+## Last verified
+
+> Tracks state checks that future chats can SKIP re-running if recent (< ~7 days) and current task doesn't depend on the verified surface. Update when a check is performed; don't update without performing it.
+
+```yaml
+prod_env_vars: "2026-05-03 SHA 1b063ce — all 13 set, no placeholders, smoke green"
+oauth_callback_url: "2026-05-03 — production-only callback registered; preview OAuth disabled by design"
+github_app_install: "2026-05-03 — warsaw-ai-bot installed on anton1rsod/warsaw-ai-community"
+github_app_credentials: "2026-05-03 — scripts/smoke-github-app.ts returns OK end-to-end against real GitHub API"
+build_chain_no_git: "2026-05-03 — build-contributions.ts try/catch fix landed; CLI deploys succeed (b26a8c2)"
+contributions_alias_file: "2026-05-03 — community/members/git-email-aliases.md seeded with anton@rsod.solutions → anton1rsod"
+vercel_root_dir: "2026-05-03 — .vercel/ at repo root; rootDirectory=projects/community-platform; CLI deploys must run from repo root"
+prod_url_alias: "2026-05-03 — warsaw-ai-community-platform.vercel.app pointing at deploy fq36nrp5w"
+production_runtime: "2026-05-03 — full credential chain operational under real traffic (consent commit 29954f4 + status post 5b5699b + admin/health rendering 1/2)"
+```
+
 ## Spec §8 strict-list — 100% coverage
 
 - `lib/{auth,classification,content-snapshot,contributions,env,github-app,health-metric,markdown,rbac,status-reader,week}.ts`
@@ -71,8 +87,23 @@ tag: "community-platform-v0.1.0"
 When you close a phase:
 
 1. Update CHANGELOG with the phase entry (canonical history).
-2. Update this file's `Snapshot`, `Spec §8 strict-list`, `Live routes`, `Blockers`, and `Next chat` sections.
+2. Update this file's `Snapshot`, `Last verified`, `Spec §8 strict-list`, `Live routes`, `Blockers`, and `Next chat` sections.
 3. Bump `Last updated`.
-4. Commit both in the same `docs(community-platform): close Phase N` commit.
+4. If you observed a non-obvious operational gotcha during the phase, append a row to `GOTCHAS.md`.
+5. Commit STATE + CHANGELOG + GOTCHAS in the same `docs(community-platform): close Phase N` commit.
 
 If STATE.md drifts from CHANGELOG, treat CHANGELOG as authoritative and refresh STATE.md.
+
+## Where to find things
+
+| Need | Read |
+|---|---|
+| Right-now state of play | `STATE.md` (this file) — read first |
+| What this chat owns | `phase-N-brief.md` (the per-phase brief) |
+| Locked rules | `CONSTRAINTS.md` |
+| Operational gotchas (env, CLI, deploy, auth) | `GOTCHAS.md` |
+| Recurring code-level plan defects | `../../docs/playbooks/recurring-plan-defects.md` |
+| Phase tasks | `plan.md` — read by line range from the phase brief |
+| Plan amendments | `execution-plan.md §9` |
+| History | `CHANGELOG.md` — read on demand only |
+| Cold-pickup reference | `HANDOFF.md` — pre-Phase 0 archive; rarely needed |
