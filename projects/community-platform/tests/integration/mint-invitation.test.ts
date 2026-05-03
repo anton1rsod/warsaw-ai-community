@@ -73,6 +73,25 @@ describe("mintInvitation server action", () => {
     expect(result.error).toMatch(/invalid/i);
   });
 
+  it("treats whitespace-only hint values as absent (emptyToUndef)", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      githubHandle: "anton1rsod",
+    } as never);
+    vi.mocked(isAdmin).mockReturnValue(true);
+    const formData = new FormData();
+    // Empty + whitespace strings exercise the second emptyToUndef branch
+    // (`typeof v === "string" && v.trim() === ""` -> undefined). Without it
+    // the empty string would fail Zod's hint_telegram regex.
+    formData.set("hint_telegram", "");
+    formData.set("hint_display_name", "   ");
+    const result = await mintInvitation(formData);
+    expect(result.error).toBeUndefined();
+    const token = new URL(result.url ?? "").searchParams.get("token") ?? "";
+    const verified = verifyToken(token, "x".repeat(32));
+    expect(verified?.hint_telegram).toBeUndefined();
+    expect(verified?.hint_display_name).toBeUndefined();
+  });
+
   it("omits hint_telegram from token payload when absent", async () => {
     vi.mocked(auth).mockResolvedValue({
       githubHandle: "anton1rsod",
@@ -81,6 +100,20 @@ describe("mintInvitation server action", () => {
     const result = await mintInvitation(new FormData());
     const token = new URL(result.url ?? "").searchParams.get("token") ?? "";
     const verified = verifyToken(token, "x".repeat(32));
+    expect(verified?.hint_telegram).toBeUndefined();
+  });
+
+  it("includes hint_display_name in token payload when supplied", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      githubHandle: "anton1rsod",
+    } as never);
+    vi.mocked(isAdmin).mockReturnValue(true);
+    const formData = new FormData();
+    formData.set("hint_display_name", "Jane Doe");
+    const result = await mintInvitation(formData);
+    const token = new URL(result.url ?? "").searchParams.get("token") ?? "";
+    const verified = verifyToken(token, "x".repeat(32));
+    expect(verified?.hint_display_name).toBe("Jane Doe");
     expect(verified?.hint_telegram).toBeUndefined();
   });
 });

@@ -17,6 +17,9 @@ vi.mock("@/lib/env", () => ({
     GITHUB_REPO_BRANCH: "main",
   },
 }));
+vi.mock("@/lib/github-app", () => ({
+  createGitHubApp: vi.fn(),
+}));
 vi.mock("next/headers", () => ({
   cookies: vi.fn(),
 }));
@@ -48,6 +51,7 @@ import { findMemberByHandle } from "@/lib/content-snapshot";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redeemInvitation as orchestrate } from "@/lib/invitations";
+import { createGitHubApp } from "@/lib/github-app";
 
 const SECRET = "x".repeat(32);
 
@@ -153,6 +157,21 @@ describe("redeemInvitation server action", () => {
     expect(cookieStore.delete).not.toHaveBeenCalled();
   });
 
+  it("coerces missing form fields to undefined (RedeemFormSchema rejects)", async () => {
+    vi.mocked(auth).mockResolvedValue({ githubHandle: "newmember" } as never);
+    vi.mocked(findMemberByHandle).mockReturnValue(undefined);
+    const cookieStore = {
+      get: vi.fn(() => ({ value: validToken() })),
+      delete: vi.fn(),
+    };
+    vi.mocked(cookies).mockResolvedValue(cookieStore as never);
+    // Empty FormData — every formData.get() returns null, exercising the
+    // `?? undefined` null branches at lines 153/156-157. Schema rejects.
+    const result = await redeemAction(new FormData());
+    expect(result.error).toMatch(/invalid/i);
+    expect(cookieStore.delete).not.toHaveBeenCalled();
+  });
+
   it("returns { error } and clears cookie when token is invalid (signature mismatch)", async () => {
     vi.mocked(auth).mockResolvedValue({ githubHandle: "newmember" } as never);
     const cookieStore = {
@@ -193,5 +212,73 @@ describe("redeemInvitation server action", () => {
       path: "/onboard",
     });
     expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("uses productionClient when NEXT_PUBLIC_E2E_MODE !== '1'", async () => {
+    // Disable the E2E mock branch — exercise productionClient() closure.
+    delete process.env.NEXT_PUBLIC_E2E_MODE;
+
+    const readFile = vi.fn().mockImplementation(async (path: string) => {
+      if (path.endsWith("invitations.md")) {
+        return {
+          content:
+            "# Invitations Ledger\n\n| JTI | Status | Issued At | Issued By | Hint (Telegram) | Redeemed At | Redeemed By | Notes |\n|---|---|---|---|---|---|---|---|\n",
+          sha: "x",
+          path,
+        };
+      }
+      if (path.endsWith("roster.md")) {
+        return {
+          content:
+            "# Roster\n\n## Members (opt-in)\n\n| Name | GitHub | Telegram | Link | Focus |\n|---|---|---|---|---|\n",
+          sha: "x",
+          path,
+        };
+      }
+      if (path.endsWith("git-email-aliases.md")) {
+        return {
+          content:
+            "# Git email aliases\n\n| Git email | GitHub handle | Notes |\n|---|---|---|\n",
+          sha: "x",
+          path,
+        };
+      }
+      return null;
+    });
+    const commitMultipleFiles = vi
+      .fn()
+      .mockResolvedValue({ commitSha: "prod-sha" });
+    const getHeadSha = vi.fn().mockResolvedValue("prod-head");
+    vi.mocked(createGitHubApp).mockReturnValue({
+      readFile,
+      commitMultipleFiles,
+      getHeadSha,
+      writeFile: vi.fn(),
+      deleteFile: vi.fn(),
+    } as never);
+
+    vi.mocked(auth).mockResolvedValue({ githubHandle: "newmember" } as never);
+    vi.mocked(findMemberByHandle).mockReturnValue(undefined);
+    const cookieStore = {
+      get: vi.fn(() => ({ value: validToken() })),
+      delete: vi.fn(),
+    };
+    vi.mocked(cookies).mockResolvedValue(cookieStore as never);
+
+    const formData = new FormData();
+    formData.set("display_name", "New Member");
+    formData.set("telegram", "@newmember");
+    formData.set("git_email_alias", "new@member.com");
+    formData.set("consent_accepted", "true");
+
+    await expect(redeemAction(formData)).rejects.toThrow(
+      /__redirect__:\/this-week/,
+    );
+    expect(createGitHubApp).toHaveBeenCalled();
+    expect(readFile).toHaveBeenCalled();
+    expect(commitMultipleFiles).toHaveBeenCalled();
+    // getHeadSha is invoked by the orchestrator's CAS preamble — ensure
+    // the production wrapper bridged it through.
+    expect(getHeadSha).toHaveBeenCalled();
   });
 });

@@ -78,4 +78,17 @@ describe("OnboardForm", () => {
       expect(screen.getByText(/form failed/i)).toBeInTheDocument(),
     );
   });
+
+  it("shows fallback error when the action throws", async () => {
+    const action = vi.fn().mockRejectedValue(new Error("network down"));
+    const { container } = render(
+      <OnboardForm action={action} hintTelegram={null} />,
+    );
+    const form = container.querySelector("form");
+    if (!form) throw new Error("form not found");
+    fireEvent.submit(form);
+    await waitFor(() =>
+      expect(screen.getByText(/submission failed/i)).toBeInTheDocument(),
+    );
+  });
 });
