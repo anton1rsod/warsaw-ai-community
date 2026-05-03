@@ -73,7 +73,9 @@ production_runtime: "2026-05-03 — full credential chain operational under real
 
 ## Next chat
 
-**None for v0.1.** Post-ship work (v0.2+ invitation feature, follow-ups above, CI gate) belongs to a NEW spec/plan cycle.
+**Chat 7 — v0.2 invitation feature brainstorm.** Handoff doc + paste-ready prompt: [`docs/specs/2026-05-03-community-platform-v02-invitation-handoff.md`](../../docs/specs/2026-05-03-community-platform-v02-invitation-handoff.md). Mode: brainstorming-only (per project CLAUDE.md "Brainstorming before implementation"). Output: a v0.2 spec section, NOT plan.md or implementation.
+
+**Optional cleanup chat** before Chat 7 (low-priority; can also batch into a single v0.1.1 PR whenever convenient): COMMUNITY_NAME/SLUG re-set with `--no-sensitive`, persona slug↔folder mismatch fix, CI workflow merge from `.github/workflows/ci.yml` (already drafted). Not blocking Chat 7.
 
 ## Production
 
