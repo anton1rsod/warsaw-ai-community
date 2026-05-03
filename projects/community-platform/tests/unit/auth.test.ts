@@ -21,6 +21,7 @@ describe("authConfig", () => {
     process.env.GITHUB_REPO_BRANCH = "main";
     process.env.COMMUNITY_NAME = "Warsaw AI Community";
     process.env.COMMUNITY_SLUG = "warsaw-ai";
+    process.env.INVITE_SECRET = "x".repeat(32);
   });
   afterEach(() => {
     process.env = { ...originalEnv };

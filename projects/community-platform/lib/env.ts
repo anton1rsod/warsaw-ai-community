@@ -14,6 +14,7 @@ const envSchema = z.object({
   GITHUB_REPO_BRANCH: z.string().min(1).default("main"),
   COMMUNITY_NAME: z.string().min(1),
   COMMUNITY_SLUG: z.string().min(1),
+  INVITE_SECRET: z.string().min(32),
 });
 
 const result = envSchema.safeParse(process.env);
