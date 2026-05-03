@@ -24,6 +24,7 @@ const PUBLIC_PATHS = new Set<string>(
         "/api/test-auth",
         "/api/test-reset-status",
         "/api/test-reset-consent",
+        "/api/test-reset-invitations",
       ],
 );
 // Any new public-route entry point (e.g. /.well-known/security.txt,
