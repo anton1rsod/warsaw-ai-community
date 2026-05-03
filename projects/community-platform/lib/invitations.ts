@@ -163,3 +163,126 @@ export const RedeemFormSchema = z.object({
 });
 
 export type RedeemFormInput = z.infer<typeof RedeemFormSchema>;
+
+export interface LedgerRow {
+  readonly jti: string;
+  readonly status: "redeemed" | "revoked";
+  readonly issuedAt: string;
+  readonly issuedBy: string;
+  readonly hintTelegram: string;
+  readonly redeemedAt: string;
+  readonly redeemedBy: string;
+  readonly notes: string;
+}
+
+const SEPARATOR_ROW = /^\|[\s\-|:]+\|$/;
+const HEADER_FIRST_CELL = "JTI";
+
+function parseRowCells(line: string): string[] {
+  const inner = line.replace(/^\|/, "").replace(/\|$/, "");
+  return inner.split("|").map((c) => c.trim());
+}
+
+/**
+ * Parse the ledger markdown into rows. Tolerates absent/extra prose;
+ * locates the table by the `| JTI |` header followed by a separator
+ * row. Returns [] for the seeded empty ledger.
+ */
+export function parseInvitationsLedger(content: string): LedgerRow[] {
+  const lines = content.split("\n");
+  const rows: LedgerRow[] = [];
+  let inTableBody = false;
+  let lastWasHeader = false;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line.startsWith("|")) {
+      inTableBody = false;
+      lastWasHeader = false;
+      continue;
+    }
+    if (SEPARATOR_ROW.test(line)) {
+      if (lastWasHeader) inTableBody = true;
+      lastWasHeader = false;
+      continue;
+    }
+    const cells = parseRowCells(line);
+    if (cells[0] === HEADER_FIRST_CELL) {
+      lastWasHeader = true;
+      continue;
+    }
+    if (!inTableBody) continue;
+    if (cells.length < 8) continue;
+    const status = cells[1];
+    if (status !== "redeemed" && status !== "revoked") continue;
+    rows.push({
+      jti: cells[0] ?? "",
+      status,
+      issuedAt: cells[2] ?? "",
+      issuedBy: cells[3] ?? "",
+      hintTelegram: cells[4] ?? "",
+      redeemedAt: cells[5] ?? "",
+      redeemedBy: cells[6] ?? "",
+      notes: cells[7] ?? "",
+    });
+  }
+
+  return rows;
+}
+
+/**
+ * H2 + H3: a JTI is "final" (verifier rejects it) when ANY row exists
+ * with status redeemed or revoked. Append-only invariant: even both
+ * present together still rejects.
+ */
+export function jtiHasFinalRow(
+  rows: readonly LedgerRow[],
+  jti: string,
+): boolean {
+  return rows.some((r) => r.jti === jti);
+}
+
+function escapeCell(s: string): string {
+  return s.replaceAll("|", "&#124;");
+}
+
+export interface RedemptionRowInput {
+  readonly jti: string;
+  readonly issuedAt: string;
+  readonly issuedBy: string;
+  readonly hintTelegram: string;
+  readonly redeemedAt: string;
+  readonly redeemedBy: string;
+  readonly notes?: string;
+}
+
+export function appendRedemptionRow(
+  ledger: string,
+  input: RedemptionRowInput,
+): string {
+  const row =
+    `| ${input.jti} | redeemed | ${input.issuedAt} | ${input.issuedBy} ` +
+    `| ${input.hintTelegram} | ${input.redeemedAt} | ${input.redeemedBy} ` +
+    `| ${escapeCell(input.notes ?? "")} |\n`;
+  return ledger.endsWith("\n") ? `${ledger}${row}` : `${ledger}\n${row}`;
+}
+
+export interface RevocationRowInput {
+  readonly jti: string;
+  readonly issuedAt: string;
+  readonly issuedBy: string;
+  readonly hintTelegram: string;
+  readonly revokedBy: string;
+  readonly reason: string;
+}
+
+export function appendRevocationRow(
+  ledger: string,
+  input: RevocationRowInput,
+): string {
+  const notes = `revoked by ${input.revokedBy} (${escapeCell(input.reason)})`;
+  const row =
+    `| ${input.jti} | revoked | ${input.issuedAt} | ${input.issuedBy} ` +
+    `| ${input.hintTelegram} |  |  | ${notes} |\n`;
+  return ledger.endsWith("\n") ? `${ledger}${row}` : `${ledger}\n${row}`;
+}

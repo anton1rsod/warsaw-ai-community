@@ -5,6 +5,10 @@ import {
   verifyToken,
   InvitePayloadSchema,
   RedeemFormSchema,
+  parseInvitationsLedger,
+  appendRedemptionRow,
+  appendRevocationRow,
+  jtiHasFinalRow,
 } from "@/lib/invitations";
 import type { InvitePayload } from "@/lib/invitations";
 
@@ -337,5 +341,110 @@ describe("H10: RedeemFormSchema — newline rejection on display_name + focus", 
       focus: "",
     });
     expect(result.focus).toBeUndefined();
+  });
+});
+
+const EMPTY_LEDGER = `# Invitations Ledger
+
+Append-only audit trail of personal invitations. Rows are NEVER edited or deleted.
+
+| JTI | Status | Issued At | Issued By | Hint (Telegram) | Redeemed At | Redeemed By | Notes |
+|---|---|---|---|---|---|---|---|
+`;
+
+describe("parseInvitationsLedger", () => {
+  it("returns empty array for the seeded empty ledger", () => {
+    expect(parseInvitationsLedger(EMPTY_LEDGER)).toEqual([]);
+  });
+  it("parses a single redeemed row", () => {
+    const md =
+      EMPTY_LEDGER +
+      `| 11111111-2222-4333-8444-555555555555 | redeemed | 2026-05-01T10:00:00.000Z | @anton1rsod | @antonsafronov | 2026-05-01T11:00:00.000Z | @newmember |  |\n`;
+    const rows = parseInvitationsLedger(md);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.jti).toBe("11111111-2222-4333-8444-555555555555");
+    expect(rows[0]?.status).toBe("redeemed");
+    expect(rows[0]?.redeemedBy).toBe("@newmember");
+  });
+  it("parses a revoked row (empty Redeemed cells)", () => {
+    const md =
+      EMPTY_LEDGER +
+      `| 22222222-2222-4222-8222-222222222222 | revoked | 2026-05-02T00:00:00.000Z | @anton1rsod | @badactor |  |  | revoked by @anton1rsod (suspected leak) |\n`;
+    const rows = parseInvitationsLedger(md);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.status).toBe("revoked");
+    expect(rows[0]?.redeemedAt).toBe("");
+    expect(rows[0]?.notes).toMatch(/suspected leak/);
+  });
+});
+
+describe("H2 + H3: jtiHasFinalRow — replay + revocation defense", () => {
+  it("returns false for empty ledger", () => {
+    const rows = parseInvitationsLedger(EMPTY_LEDGER);
+    expect(jtiHasFinalRow(rows, "11111111-2222-4333-8444-555555555555")).toBe(
+      false,
+    );
+  });
+  it("returns true when JTI has a redeemed row (H2)", () => {
+    const md =
+      EMPTY_LEDGER +
+      `| 11111111-2222-4333-8444-555555555555 | redeemed | 2026-05-01T10:00:00.000Z | @anton1rsod |  | 2026-05-01T11:00:00.000Z | @newmember |  |\n`;
+    expect(
+      jtiHasFinalRow(
+        parseInvitationsLedger(md),
+        "11111111-2222-4333-8444-555555555555",
+      ),
+    ).toBe(true);
+  });
+  it("returns true when JTI has a revoked row (H3)", () => {
+    const md =
+      EMPTY_LEDGER +
+      `| 11111111-2222-4333-8444-555555555555 | revoked | 2026-05-01T10:00:00.000Z | @anton1rsod |  |  |  | revoked |\n`;
+    expect(
+      jtiHasFinalRow(
+        parseInvitationsLedger(md),
+        "11111111-2222-4333-8444-555555555555",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("appendRedemptionRow — snapshot-as-contract", () => {
+  it("appends a row to an empty ledger (snapshot)", () => {
+    const out = appendRedemptionRow(EMPTY_LEDGER, {
+      jti: "11111111-2222-4333-8444-555555555555",
+      issuedAt: "2026-05-01T10:00:00.000Z",
+      issuedBy: "@anton1rsod",
+      hintTelegram: "@antonsafronov",
+      redeemedAt: "2026-05-01T11:00:00.000Z",
+      redeemedBy: "@newmember",
+    });
+    expect(out).toMatchSnapshot();
+  });
+  it("escapes pipes in notes", () => {
+    const out = appendRedemptionRow(EMPTY_LEDGER, {
+      jti: "11111111-2222-4333-8444-555555555555",
+      issuedAt: "2026-05-01T10:00:00.000Z",
+      issuedBy: "@anton1rsod",
+      hintTelegram: "",
+      redeemedAt: "2026-05-01T11:00:00.000Z",
+      redeemedBy: "@newmember",
+      notes: "weird | content",
+    });
+    expect(out).toContain("weird &#124; content");
+  });
+});
+
+describe("appendRevocationRow — snapshot", () => {
+  it("appends a revocation row (snapshot)", () => {
+    const out = appendRevocationRow(EMPTY_LEDGER, {
+      jti: "22222222-2222-4222-8222-222222222222",
+      issuedAt: "2026-05-02T00:00:00.000Z",
+      issuedBy: "@anton1rsod",
+      hintTelegram: "@badactor",
+      revokedBy: "@anton1rsod",
+      reason: "suspected leak",
+    });
+    expect(out).toMatchSnapshot();
   });
 });
