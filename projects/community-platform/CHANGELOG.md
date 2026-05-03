@@ -455,6 +455,24 @@ Anton's decision: skip the manual Telegram-then-PR backfill of the 18 outstandin
 
 **Ship gates remaining:** #4 prod env vars only. Gates #1, #2, #3 closed.
 
+#### Update — Ship gate #4 cleared + bonus fix: `GITHUB_REPO_OWNER` (2026-05-03)
+
+`scripts/smoke-github-app.ts` returned `[smoke] README.md chars: 2708` / `SHA: ae0649…` / `OK` end-to-end against the real GitHub API using the 3 production `GITHUB_APP_*` env vars Anton just set on Vercel (App ID, Installation ID, Private Key from a real PEM downloaded for `warsaw-ai-bot`).
+
+**Bonus finding + fix during smoke:** `GITHUB_REPO_OWNER` was misconfigured to `warsaw-ai-community` (the repo *name*) instead of `anton1rsod` (the owner) — wrong on `.env.local`, Vercel preview (`warsaw-org-and-stack-guide`), AND Vercel production. Almost certainly a Phase 0 repo-migration artifact: `GITHUB_REPO_NAME` was updated from the old `warsaw-ai-community-gbrain` to the new `warsaw-ai-community` per CHANGELOG, but `GITHUB_REPO_OWNER` quietly stayed at the wrong value. The preview's test PEM masked the bug — every GitHub call failed at *auth* before reaching path-construction. Once the real PEM was in place, the smoke 404'd on `GET /repos/warsaw-ai-community/warsaw-ai-community/contents/README.md` (owner=name, repo=name) before `[smoke] OK` confirmed `anton1rsod/warsaw-ai-community` is the correct path. Fixed all three places: production + preview (both Vercel scopes) now `anton1rsod`; `.env.local` sed-patched.
+
+This bug would have made the deployed app 404 on every git read/write — `/this-week`, `/consent`, `/admin/health`, `/api/me/*` all broken silently. Catching it pre-deploy is the win.
+
+**Cosmetic finding for follow-up (non-blocking):** `COMMUNITY_NAME` and `COMMUNITY_SLUG` on production were set as sensitive — `vercel env pull` returns empty quotes for them. Runtime is unaffected (Vercel injects sensitive vars into `process.env` at function startup), but ops inspectability is broken. Re-set with `--no-sensitive` post-ship hygiene.
+
+**All 4 pre-deploy ship gates closed:**
+- #1 Contributions counter alias mechanism — commit `65bb9ce`.
+- #2 Mark Spasonov on roster + invitation feature deferred to v0.2+ — commit `f5b8136`.
+- #3 3 of 4 personas committed (heorhii-k, maksym-p, mark-s; Dmitry deferred) — commit `012a75f`.
+- #4 GitHub App credentials + `GITHUB_REPO_OWNER` fix — Vercel state, no code commit.
+
+**Next:** Phase 10.3 (production deploy) is unblocked pending Anton's authorize on `pnpm dlx vercel --prod`.
+
 Closeout green check (this commit):
 - `pnpm lint` — 0 errors / 0 warnings.
 - `pnpm typecheck` — clean.
