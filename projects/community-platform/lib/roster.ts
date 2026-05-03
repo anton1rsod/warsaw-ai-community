@@ -1,6 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { parseMarkdown, truncateToFirstH2 } from "@/lib/markdown";
+import { slugify } from "@/lib/slug";
 
 export interface RosterMember {
   name: string;
@@ -17,23 +18,6 @@ function normalizeHandle(raw: string): string {
   const trimmed = raw.trim().replace(/^@/, "").toLowerCase().trim();
   if (trimmed === "" || trimmed === "tbd") return "";
   return trimmed;
-}
-
-/**
- * Slugify a display name:
- * - NFKD-normalize to decompose accented chars
- * - Strip combining diacritics (Unicode combining characters U+0300–U+036F)
- * - Lowercase
- * - Replace runs of non-[a-z0-9] with a hyphen
- * - Strip leading/trailing hyphens
- */
-function slugify(name: string): string {
-  return name
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 /**
