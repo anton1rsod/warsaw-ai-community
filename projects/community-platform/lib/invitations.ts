@@ -286,3 +286,52 @@ export function appendRevocationRow(
     `| ${input.hintTelegram} |  |  | ${notes} |\n`;
   return ledger.endsWith("\n") ? `${ledger}${row}` : `${ledger}\n${row}`;
 }
+
+export type RedemptionEvent =
+  | "minted"
+  | "redeemed"
+  | "revoked"
+  | "invalid"
+  | "expired"
+  | "replayed"
+  | "commit-retry"
+  | "commit-success"
+  | "already-member";
+
+export interface RedemptionLogInput {
+  readonly jti: string;
+  readonly event: RedemptionEvent;
+  readonly redeemerGh?: string;
+  readonly issuerGh?: string;
+  readonly isoTimestamp?: string;
+  readonly httpStatus?: number;
+}
+
+/**
+ * H7: whitelist-based event logger.
+ *
+ * Permitted fields: jti, event, redeemerGh, issuerGh, isoTimestamp, http_status.
+ * Prohibited (NEVER logged): full token strings, INVITE_SECRET, OAuth
+ * tokens, cookie values, form-supplied PII (display_name, telegram,
+ * email, focus, link).
+ *
+ * The whitelist is enforced by the function signature — extra fields
+ * passed via TS-bypass are dropped by destructuring. Tests assert no
+ * console.{log,warn,error} emission contains forbidden strings (spec §11.5).
+ *
+ * console.log is the deliberate egress here — this is the ONLY production
+ * site allowed to call it (per spec §11.5 H7). Inline lint-disable scopes
+ * to one line.
+ */
+export function logRedemptionEvent(input: RedemptionLogInput): void {
+  const safe = {
+    jti: input.jti,
+    event: input.event,
+    redeemer_gh: input.redeemerGh,
+    issuer_gh: input.issuerGh,
+    iso_timestamp: input.isoTimestamp ?? new Date().toISOString(),
+    http_status: input.httpStatus,
+  };
+  // eslint-disable-next-line no-console
+  console.log(`[invitation] ${JSON.stringify(safe)}`);
+}

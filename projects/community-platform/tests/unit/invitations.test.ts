@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   canonicalJson,
   mintToken,
@@ -9,6 +9,7 @@ import {
   appendRedemptionRow,
   appendRevocationRow,
   jtiHasFinalRow,
+  logRedemptionEvent,
 } from "@/lib/invitations";
 import type { InvitePayload } from "@/lib/invitations";
 
@@ -446,5 +447,87 @@ describe("appendRevocationRow — snapshot", () => {
       reason: "suspected leak",
     });
     expect(out).toMatchSnapshot();
+  });
+});
+
+describe("H7: logRedemptionEvent — whitelist + never emits secrets", () => {
+  let consoleLog: ReturnType<typeof vi.spyOn>;
+  let consoleWarn: ReturnType<typeof vi.spyOn>;
+  let consoleError: ReturnType<typeof vi.spyOn>;
+  const noop = (): void => undefined;
+  beforeEach(() => {
+    consoleLog = vi.spyOn(console, "log").mockImplementation(noop);
+    consoleWarn = vi.spyOn(console, "warn").mockImplementation(noop);
+    consoleError = vi.spyOn(console, "error").mockImplementation(noop);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("emits a single line with whitelisted fields", () => {
+    logRedemptionEvent({
+      jti: "11111111-2222-4333-8444-555555555555",
+      event: "redeemed",
+      redeemerGh: "newmember",
+      issuerGh: "anton1rsod",
+      isoTimestamp: "2026-05-01T11:00:00.000Z",
+      httpStatus: 302,
+    });
+    expect(consoleLog).toHaveBeenCalledTimes(1);
+    const arg = consoleLog.mock.calls[0]?.[0] as string;
+    expect(arg).toContain("redeemed");
+    expect(arg).toContain("anton1rsod");
+  });
+
+  it("never emits the token string in any console method", () => {
+    const dangerousToken = "REDACTME-PAYLOAD.REDACTME-SIG";
+    logRedemptionEvent({
+      jti: "11111111-2222-4333-8444-555555555555",
+      event: "invalid",
+      ...({ token: dangerousToken } as Record<string, unknown>),
+    } as Parameters<typeof logRedemptionEvent>[0]);
+    for (const spy of [consoleLog, consoleWarn, consoleError]) {
+      const allLines = spy.mock.calls.map((c) => JSON.stringify(c)).join("\n");
+      expect(allLines).not.toContain(dangerousToken);
+    }
+  });
+
+  it("never emits INVITE_SECRET-shaped strings", () => {
+    process.env.INVITE_SECRET = "supersecret-32-bytes-of-entropy-1234";
+    logRedemptionEvent({
+      jti: "11111111-2222-4333-8444-555555555555",
+      event: "minted",
+    });
+    for (const spy of [consoleLog, consoleWarn, consoleError]) {
+      const allLines = spy.mock.calls.map((c) => JSON.stringify(c)).join("\n");
+      expect(allLines).not.toContain("supersecret-32-bytes-of-entropy-1234");
+    }
+  });
+
+  it("does not throw on a minimal valid event", () => {
+    expect(() =>
+      logRedemptionEvent({
+        jti: "11111111-2222-4333-8444-555555555555",
+        event: "redeemed",
+      }),
+    ).not.toThrow();
+  });
+
+  it("never emits form-supplied PII (display_name, telegram, email)", () => {
+    logRedemptionEvent({
+      jti: "11111111-2222-4333-8444-555555555555",
+      event: "redeemed",
+      ...({
+        display_name: "Łukasz Świątek",
+        telegram_handle: "@lukasz",
+        git_email_alias: "lukasz@example.com",
+      } as Record<string, unknown>),
+    } as Parameters<typeof logRedemptionEvent>[0]);
+    for (const spy of [consoleLog, consoleWarn, consoleError]) {
+      const allLines = spy.mock.calls.map((c) => JSON.stringify(c)).join("\n");
+      expect(allLines).not.toContain("Łukasz");
+      expect(allLines).not.toContain("@lukasz");
+      expect(allLines).not.toContain("lukasz@example.com");
+    }
   });
 });
