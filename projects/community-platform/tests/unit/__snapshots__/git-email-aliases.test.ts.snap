@@ -1,0 +1,15 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`appendAlias — snapshot + duplicate detection > appends a row preserving email case (snapshot) 1`] = `
+"# Git email aliases
+
+| Git email | GitHub handle | Notes |
+|---|---|---|
+| anton@rsod.solutions | anton1rsod | Founder |
+| Mark@SpaSonov.com | markspas |  |
+
+## Format rules
+
+- Header row must contain \`Git email\` and \`GitHub handle\` (case-insensitive).
+"
+`;

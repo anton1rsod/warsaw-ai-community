@@ -125,3 +125,60 @@ export async function readAliases(
     throw err;
   }
 }
+
+export interface AppendAliasInput {
+  readonly email: string; // case preserved on write
+  readonly githubHandle: string; // leading @ stripped if present
+}
+
+const ALIAS_TABLE_HEADER = /\|\s*Git\s*email\s*\|\s*GitHub\s*(handle\s*)?\|/i;
+
+/**
+ * Append a `<email> | <handle> |  |` row inside the alias table.
+ *
+ * Rules (spec §11.4):
+ *  - Strip leading `@` from handle.
+ *  - Preserve email case (git author emails are case-significant in some
+ *    git installations; lowercase only happens during MATCH, not WRITE).
+ *  - Reject duplicates by case-insensitive email comparison.
+ *  - Notes column left blank (parser tolerates).
+ */
+export function appendAlias(
+  aliasesMd: string,
+  input: AppendAliasInput,
+): string {
+  const existing = parseAliases(aliasesMd);
+  const targetEmail = input.email.toLowerCase();
+  if (existing.has(targetEmail)) {
+    throw new Error(`duplicate alias email: ${input.email}`);
+  }
+
+  const lines = aliasesMd.split("\n");
+  let headerIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (ALIAS_TABLE_HEADER.test(lines[i] ?? "")) {
+      headerIdx = i;
+      break;
+    }
+  }
+  if (headerIdx === -1) {
+    throw new Error("alias table not found: header row missing");
+  }
+  if (!SEPARATOR_ROW.test((lines[headerIdx + 1] ?? "").trim())) {
+    throw new Error("alias table malformed: separator row missing after header");
+  }
+  let insertIdx = -1;
+  for (let i = headerIdx + 2; i < lines.length; i++) {
+    const t = (lines[i] ?? "").trim();
+    if (!t.startsWith("|")) {
+      insertIdx = i;
+      break;
+    }
+  }
+  if (insertIdx === -1) insertIdx = lines.length;
+
+  const handle = input.githubHandle.replace(/^@/, "");
+  const row = `| ${input.email} | ${handle} |  |`;
+  const out = [...lines.slice(0, insertIdx), row, ...lines.slice(insertIdx)];
+  return out.join("\n");
+}

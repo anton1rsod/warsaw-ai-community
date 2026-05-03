@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  appendAlias,
   parseAliases,
   readAliases,
   resolveHandle,
@@ -117,5 +118,59 @@ describe("readAliases", () => {
       path.join(__dirname, "../fixtures/__does_not_exist__.md"),
     );
     expect(aliases.size).toBe(0);
+  });
+});
+
+const ALIASES_BEFORE = `# Git email aliases
+
+| Git email | GitHub handle | Notes |
+|---|---|---|
+| anton@rsod.solutions | anton1rsod | Founder |
+
+## Format rules
+
+- Header row must contain \`Git email\` and \`GitHub handle\` (case-insensitive).
+`;
+
+describe("appendAlias — snapshot + duplicate detection", () => {
+  it("appends a row preserving email case (snapshot)", () => {
+    const out = appendAlias(ALIASES_BEFORE, {
+      email: "Mark@SpaSonov.com",
+      githubHandle: "markspas",
+    });
+    expect(out).toMatchSnapshot();
+  });
+  it("strips a leading @ from the handle", () => {
+    const out = appendAlias(ALIASES_BEFORE, {
+      email: "new@member.com",
+      githubHandle: "@newmember",
+    });
+    expect(out).toContain("| new@member.com | newmember |");
+    expect(out).not.toContain("| new@member.com | @newmember |");
+  });
+  it("rejects a duplicate email (case-insensitive)", () => {
+    expect(() =>
+      appendAlias(ALIASES_BEFORE, {
+        email: "ANTON@RSOD.SOLUTIONS",
+        githubHandle: "anyone",
+      }),
+    ).toThrow(/duplicate.*email/i);
+  });
+  it("inserts the row inside the table, not at file-end", () => {
+    const out = appendAlias(ALIASES_BEFORE, {
+      email: "x@y.z",
+      githubHandle: "newhandle",
+    });
+    const insertPos = out.indexOf("newhandle");
+    const sectionPos = out.indexOf("## Format rules");
+    expect(insertPos).toBeLessThan(sectionPos);
+  });
+  it("throws when the alias table is absent", () => {
+    expect(() =>
+      appendAlias("# Empty file\n", {
+        email: "x@y.z",
+        githubHandle: "x",
+      }),
+    ).toThrow(/alias table not found/i);
   });
 });
