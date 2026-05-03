@@ -436,6 +436,25 @@ Anton's decision: skip the manual Telegram-then-PR backfill of the 18 outstandin
 
 **Ship gates remaining after this update:** #3 persona commits, #4 prod env vars. Gates #1 + #2 closed (gate #2 by reframing scope, not by clearing).
 
+#### Update — Ship gate #3 partially cleared: 3 of 4 personas committed (2026-05-03)
+
+`feat(persona-builder): commit public personas for heorhii-k, maksym-p, mark-s` lands the consent-stripped `.public.md` variants for the three personas Anton confirmed. Dmitry deferred per Anton's call.
+
+- Added `persona-builder/.gitignore` excluding `personas/*/persona-*.md` (private full versions) and re-including `personas/*/persona-*.public.md` (consent-stripped variants). Verified via `git check-ignore`: private files ignored, public files allowed. The non-public files stay on disk as Anton's working copies and never enter the repo.
+- 3 public personas committed: `heorhii-k`, `maksym-p`, `mark-s`. Dmitry's public file is allowed by the gitignore but intentionally not staged in this commit.
+
+**Known issue — slug↔folder mismatch (flagged for follow-up):**
+- `lib/roster.ts:181-201` (`readMemberPersona`) resolves the persona file by `persona-builder/personas/<roster-slug>/`. Roster slugs come from `slugify(member.name)`.
+- Mark Spasonov's slug is `mark-spasonov` but his persona folder is `mark-s` → `PersonaPanel` won't render his persona at runtime. Same mismatch will hit Maksym Pavlenko (`maksym-pavlenko` vs `maksym-p`) once he joins the roster. Heorhii K. (`heorhii-k`) matches.
+- Resolution options for a follow-up commit (out of scope for v0.1.0 ship):
+  1. Rename folders + `persona_id` frontmatter to match display-name slugs (cleanest; small touch on persona-builder skill conventions).
+  2. Add a `persona_id` lookup mechanism in `lib/roster.ts` analogous to `lib/git-email-aliases.ts` (decouples folder name from display name; mirrors the existing alias pattern).
+- §8.4 status: stays PARTIAL. Heorhii K. would render correctly *if* she were on the roster, but she's gated behind the future invitation feature. Mark is on the roster but his persona doesn't render due to the mismatch above. Maksym is in neither.
+
+**§8 verification table after this update:** unchanged at VERIFIED 2 / PARTIAL 3 / DEFERRED 1 / FAIL 1 — gate #3 cleared the *committing* part of §8.4 but not the *rendering* part.
+
+**Ship gates remaining:** #4 prod env vars only. Gates #1, #2, #3 closed.
+
 Closeout green check (this commit):
 - `pnpm lint` — 0 errors / 0 warnings.
 - `pnpm typecheck` — clean.

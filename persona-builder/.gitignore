@@ -1,0 +1,7 @@
+# Persona-builder: only commit the consent-stripped *.public.md variants.
+# The non-public *.md files are treated as private working copies and never
+# enter the repo — they may carry contact details, Telegram handles, work
+# history, or other content the member did not consent to publish.
+
+personas/*/persona-*.md
+!personas/*/persona-*.public.md
