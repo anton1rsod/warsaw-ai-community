@@ -34,17 +34,35 @@ interface GitLogEntry {
  * Author resolution delegates to `resolveHandle` (alias → noreply → local-part).
  * Authors whose resolved handle isn't on the roster are dropped downstream by
  * `computeContributions`, so unknown emails don't pollute counts.
+ *
+ * If git isn't available (Vercel CLI uploads files without `.git`; sandboxed
+ * builds; or git binary missing) we return an empty list rather than crashing
+ * the build. The resulting contributions.json shows all-zero counts for every
+ * roster member — accurate for that build context. Git-integration deploys
+ * (via `git push`) include `.git` and produce real counts.
  */
 function parseGitLog(aliases: ReadonlyMap<string, string>): GitLogEntry[] {
-  const output = execFileSync(
-    "git",
-    ["log", "--pretty=format:COMMIT|%H|%ae|%aI", "--name-only"],
-    {
-      cwd: REPO_ROOT,
-      encoding: "utf8",
-      maxBuffer: 100 * 1024 * 1024,
-    },
-  );
+  let output: string;
+  try {
+    output = execFileSync(
+      "git",
+      ["log", "--pretty=format:COMMIT|%H|%ae|%aI", "--name-only"],
+      {
+        cwd: REPO_ROOT,
+        encoding: "utf8",
+        maxBuffer: 100 * 1024 * 1024,
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+  } catch (err: unknown) {
+    const reason =
+      err instanceof Error ? err.message.split("\n")[0] : String(err);
+    console.warn(
+      `[contributions] git log unavailable (${reason}); skipping commit ` +
+        "scan. contributions.json will have zero counts for this build.",
+    );
+    return [];
+  }
 
   const entries: GitLogEntry[] = [];
   let current: GitLogEntry | null = null;
