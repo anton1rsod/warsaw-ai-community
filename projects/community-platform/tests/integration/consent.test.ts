@@ -89,7 +89,7 @@ describe("consent actions", () => {
       if (!call) throw new Error("expected one writeFile call");
       const [path, content, options] = call;
       expect(path).toBe("community/members/anton-safronov.md");
-      expect(content).toContain("name: Anton Safronov");
+      expect(content).toContain('name: "Anton Safronov"');
       expect(content).toContain("github_handle: anton1rsod");
       expect(content).toContain("consented_at:");
       expect(options).toMatchObject({

@@ -1,0 +1,45 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generateConsentMarkdown > emits canonical YAML frontmatter for ASCII name 1`] = `
+"---
+name: "Anton Safronov"
+github_handle: anton1rsod
+consented_at: "2026-05-15T14:23:11.456Z"
+---
+
+_Profile prose to come — open a PR to fill this in._
+"
+`;
+
+exports[`generateConsentMarkdown > escapes embedded double quotes (H11) 1`] = `
+"---
+name: "Anton \\"the founder\\" Safronov"
+github_handle: anton1rsod
+consented_at: "2026-05-15T14:23:11.456Z"
+---
+
+_Profile prose to come — open a PR to fill this in._
+"
+`;
+
+exports[`generateConsentMarkdown > quotes Unicode names safely (Polish diacritics) 1`] = `
+"---
+name: "Łukasz Świątek"
+github_handle: lukaszsw
+consented_at: "2026-05-15T14:23:11.456Z"
+---
+
+_Profile prose to come — open a PR to fill this in._
+"
+`;
+
+exports[`generateConsentMarkdown > rejects YAML-implicit-timestamp names by quoting (H11) 1`] = `
+"---
+name: "2026-04-24"
+github_handle: anton1rsod
+consented_at: "2026-05-15T14:23:11.456Z"
+---
+
+_Profile prose to come — open a PR to fill this in._
+"
+`;
