@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { generateConsentMarkdown } from "@/lib/consent-content";
+import { slugify, nextAvailableSlug } from "@/lib/slug";
+import { appendMember } from "@/lib/roster";
+import { appendAlias } from "@/lib/git-email-aliases";
 
 /**
  * Canonical JSON serialization for HMAC payload signing.
@@ -334,4 +338,218 @@ export function logRedemptionEvent(input: RedemptionLogInput): void {
   };
   // eslint-disable-next-line no-console
   console.log(`[invitation] ${JSON.stringify(safe)}`);
+}
+
+export interface RedemptionClient {
+  readFile(
+    path: string,
+  ): Promise<{ content: string; sha: string; path: string } | null>;
+  commitMultipleFiles(input: {
+    files: readonly { path: string; content: string }[];
+    message: string;
+    expectedHeadSha: string;
+  }): Promise<{ commitSha: string }>;
+  getHeadSha(): Promise<string>;
+}
+
+export interface RedemptionInput {
+  readonly payload: InvitePayload;
+  readonly redeemerHandle: string;
+  readonly form: RedeemFormInput;
+  readonly client: RedemptionClient;
+  /** Injectable now() for deterministic tests. */
+  readonly now: () => Date;
+}
+
+export type RedemptionResult =
+  | { ok: true; commitSha: string }
+  | { ok: false };
+
+const ROSTER_PATH = "community/members/roster.md";
+const ALIASES_PATH = "community/members/git-email-aliases.md";
+const LEDGER_PATH = "community/members/invitations.md";
+const MEMBERS_DIR = "community/members";
+const TOKEN_TTL_MS = 7 * 86400 * 1000;
+
+/**
+ * Atomic 4-file commit redemption orchestrator.
+ *
+ * Steps (spec §11.2 redemption + §11.5 H2/H3/H12/H13):
+ *   1. Read ledger; reject if JTI has a final row (H2/H3 defense-in-depth).
+ *   2. Read roster + aliases; resolve slug + collision (H12).
+ *   3. Build 4 file contents (roster row, alias row, ledger row, profile).
+ *   4. Capture HEAD SHA (CAS anchor).
+ *   5. Commit. On sha_conflict: retry ONCE with re-read ledger.
+ *   6. Emit logRedemptionEvent at terminal points.
+ */
+export async function redeemInvitation(
+  input: RedemptionInput,
+): Promise<RedemptionResult> {
+  const { payload, redeemerHandle, form, client, now } = input;
+
+  const ledgerFile = await client.readFile(LEDGER_PATH);
+  if (!ledgerFile) {
+    logRedemptionEvent({
+      jti: payload.jti,
+      event: "invalid",
+      redeemerGh: redeemerHandle,
+      isoTimestamp: now().toISOString(),
+    });
+    return { ok: false };
+  }
+  const ledgerRows = parseInvitationsLedger(ledgerFile.content);
+  if (jtiHasFinalRow(ledgerRows, payload.jti)) {
+    logRedemptionEvent({
+      jti: payload.jti,
+      event: "replayed",
+      redeemerGh: redeemerHandle,
+      isoTimestamp: now().toISOString(),
+    });
+    return { ok: false };
+  }
+
+  const baseSlug = slugify(form.display_name);
+  const exists = async (s: string): Promise<boolean> => {
+    const memberPath = `${MEMBERS_DIR}/${s}.md`;
+    return (await client.readFile(memberPath)) !== null;
+  };
+  let resolvedSlug: string;
+  try {
+    resolvedSlug = await nextAvailableSlug(baseSlug, exists);
+  } catch {
+    logRedemptionEvent({
+      jti: payload.jti,
+      event: "invalid",
+      redeemerGh: redeemerHandle,
+      isoTimestamp: now().toISOString(),
+    });
+    return { ok: false };
+  }
+
+  const rosterFile = await client.readFile(ROSTER_PATH);
+  const aliasesFile = await client.readFile(ALIASES_PATH);
+  if (!rosterFile || !aliasesFile) {
+    logRedemptionEvent({
+      jti: payload.jti,
+      event: "invalid",
+      redeemerGh: redeemerHandle,
+      isoTimestamp: now().toISOString(),
+    });
+    return { ok: false };
+  }
+
+  const newRosterMd = appendMember(rosterFile.content, {
+    name: form.display_name,
+    githubHandle: redeemerHandle,
+    telegram: form.telegram,
+    link: form.link ?? "",
+    focus: form.focus ?? "",
+  });
+
+  let newAliasesMd: string;
+  try {
+    newAliasesMd = appendAlias(aliasesFile.content, {
+      email: form.git_email_alias,
+      githubHandle: redeemerHandle,
+    });
+  } catch {
+    logRedemptionEvent({
+      jti: payload.jti,
+      event: "invalid",
+      redeemerGh: redeemerHandle,
+      isoTimestamp: now().toISOString(),
+    });
+    return { ok: false };
+  }
+
+  const redeemedAt = now().toISOString();
+  // Token has no `iat` field; reconstruct the issuance instant from `exp`
+  // using the documented 7-day TTL (spec §11.2).
+  const issuedAt = new Date(payload.exp * 1000 - TOKEN_TTL_MS).toISOString();
+  const newLedgerMd = appendRedemptionRow(ledgerFile.content, {
+    jti: payload.jti,
+    issuedAt,
+    issuedBy: `@${payload.iss}`,
+    hintTelegram: payload.hint_telegram ?? "",
+    redeemedAt,
+    redeemedBy: `@${redeemerHandle}`,
+  });
+
+  const profileMd = generateConsentMarkdown({
+    name: form.display_name,
+    githubHandle: redeemerHandle,
+  });
+
+  const files: readonly { path: string; content: string }[] = [
+    { path: ROSTER_PATH, content: newRosterMd },
+    { path: ALIASES_PATH, content: newAliasesMd },
+    { path: LEDGER_PATH, content: newLedgerMd },
+    { path: `${MEMBERS_DIR}/${resolvedSlug}.md`, content: profileMd },
+  ];
+
+  const message =
+    `invitation: redeem invite for @${redeemerHandle}\n\n` +
+    `Invited-By: @${payload.iss}\n` +
+    `Invitation-JTI: ${payload.jti}\n` +
+    (payload.hint_telegram
+      ? `Invitation-Hint-Telegram: ${payload.hint_telegram}\n`
+      : "");
+
+  let attempt = 0;
+  for (;;) {
+    attempt += 1;
+    const expectedHeadSha = await client.getHeadSha();
+    try {
+      const result = await client.commitMultipleFiles({
+        files,
+        message,
+        expectedHeadSha,
+      });
+      logRedemptionEvent({
+        jti: payload.jti,
+        event: "commit-success",
+        redeemerGh: redeemerHandle,
+        issuerGh: payload.iss,
+        isoTimestamp: redeemedAt,
+        httpStatus: 302,
+      });
+      return { ok: true, commitSha: result.commitSha };
+    } catch (err: unknown) {
+      const isConflict =
+        typeof err === "object" &&
+        err !== null &&
+        (err as { kind?: string }).kind === "sha_conflict";
+
+      if (!isConflict || attempt >= 2) {
+        logRedemptionEvent({
+          jti: payload.jti,
+          event: attempt >= 2 ? "commit-retry" : "invalid",
+          redeemerGh: redeemerHandle,
+          isoTimestamp: now().toISOString(),
+          httpStatus: attempt >= 2 ? 503 : 500,
+        });
+        return { ok: false };
+      }
+
+      logRedemptionEvent({
+        jti: payload.jti,
+        event: "commit-retry",
+        redeemerGh: redeemerHandle,
+        isoTimestamp: now().toISOString(),
+      });
+      const reReadLedger = await client.readFile(LEDGER_PATH);
+      if (
+        reReadLedger &&
+        jtiHasFinalRow(parseInvitationsLedger(reReadLedger.content), payload.jti)
+      ) {
+        logRedemptionEvent({
+          jti: payload.jti,
+          event: "replayed",
+          redeemerGh: redeemerHandle,
+          isoTimestamp: now().toISOString(),
+        });
+        return { ok: false };
+      }
+    }
+  }
 }

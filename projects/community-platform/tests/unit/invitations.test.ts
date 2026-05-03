@@ -10,6 +10,7 @@ import {
   appendRevocationRow,
   jtiHasFinalRow,
   logRedemptionEvent,
+  redeemInvitation,
 } from "@/lib/invitations";
 import type { InvitePayload } from "@/lib/invitations";
 
@@ -529,5 +530,293 @@ describe("H7: logRedemptionEvent — whitelist + never emits secrets", () => {
       expect(allLines).not.toContain("@lukasz");
       expect(allLines).not.toContain("lukasz@example.com");
     }
+  });
+});
+
+// Fixtures for redeemInvitation tests. ROSTER_BEFORE_MIGRATION and
+// ALIASES_BEFORE were declared inside other describe blocks in
+// tests/unit/roster.test.ts and tests/unit/git-email-aliases.test.ts.
+// Redeclared here under RI_ prefix (Redeem Invitation) to avoid
+// shadowing or cross-file imports.
+const RI_ROSTER_BEFORE = `# Member Roster
+
+**Count:** 1
+
+## Core organizers
+
+| Name | GitHub | Role | Telegram | Focus |
+|---|---|---|---|---|
+| Anton Safronov | @anton1rsod | Founder / BDFL | @antonsafronov | Direction |
+
+## Members (opt-in)
+
+| Name | GitHub | Telegram | Link | Focus |
+|---|---|---|---|---|
+| Mark Spasonov | @markspas |  | https://example.com | RevOps |
+
+## Notes
+
+- N/A
+`;
+
+const RI_ALIASES_BEFORE = `# Git email aliases
+
+| Git email | GitHub handle | Notes |
+|---|---|---|
+| anton@rsod.solutions | anton1rsod | Founder |
+
+## Format rules
+
+- Header row must contain \`Git email\` and \`GitHub handle\` (case-insensitive).
+`;
+
+interface MockClient {
+  readFile: ReturnType<typeof vi.fn>;
+  commitMultipleFiles: ReturnType<typeof vi.fn>;
+  getHeadSha: ReturnType<typeof vi.fn>;
+}
+
+function makeMockClient(): MockClient {
+  return {
+    readFile: vi.fn(),
+    commitMultipleFiles: vi.fn(),
+    getHeadSha: vi.fn().mockResolvedValue("headSha-001"),
+  };
+}
+
+const happyTokenPayload: InvitePayload = {
+  jti: "11111111-2222-4333-8444-555555555555",
+  iss: "anton1rsod",
+  exp: Math.floor(Date.now() / 1000) + 7 * 86400,
+  hint_telegram: "@antonsafronov",
+};
+
+describe("redeemInvitation — happy path", () => {
+  it("commits 4 files atomically and returns success", async () => {
+    const client = makeMockClient();
+    client.readFile.mockImplementation(async (path: string) => {
+      if (path.endsWith("invitations.md")) {
+        return { content: EMPTY_LEDGER, sha: "ledgerSha", path };
+      }
+      if (path.endsWith("roster.md")) {
+        return { content: RI_ROSTER_BEFORE, sha: "rosterSha", path };
+      }
+      if (path.endsWith("git-email-aliases.md")) {
+        return { content: RI_ALIASES_BEFORE, sha: "aliasSha", path };
+      }
+      return null;
+    });
+    client.commitMultipleFiles.mockResolvedValue({ commitSha: "newCommitSha" });
+
+    const result = await redeemInvitation({
+      payload: happyTokenPayload,
+      redeemerHandle: "newmember",
+      form: {
+        display_name: "New Member",
+        telegram: "@newmember",
+        git_email_alias: "new@member.com",
+        consent_accepted: true as const,
+      },
+      client,
+      now: () => new Date("2026-05-01T11:00:00.000Z"),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(client.commitMultipleFiles).toHaveBeenCalledTimes(1);
+    const args = client.commitMultipleFiles.mock.calls[0]?.[0] as {
+      files: { path: string; content: string }[];
+      message: string;
+      expectedHeadSha: string;
+    };
+    expect(args.files).toHaveLength(4);
+    expect(args.files.map((f) => f.path)).toEqual([
+      "community/members/roster.md",
+      "community/members/git-email-aliases.md",
+      "community/members/invitations.md",
+      "community/members/new-member.md",
+    ]);
+    expect(args.expectedHeadSha).toBe("headSha-001");
+    expect(args.message).toContain("invitation: redeem invite for @newmember");
+    expect(args.message).toContain("Invited-By: @anton1rsod");
+    expect(args.message).toContain("Invitation-JTI: 11111111-");
+    expect(args.message).toContain("Invitation-Hint-Telegram: @antonsafronov");
+  });
+});
+
+describe("H2: redeemInvitation — JTI replay defense", () => {
+  it("returns { ok: false } when JTI is in the ledger", async () => {
+    const client = makeMockClient();
+    const ledgerWithJti =
+      EMPTY_LEDGER +
+      `| 11111111-2222-4333-8444-555555555555 | redeemed | 2026-05-01T10:00:00.000Z | @anton1rsod |  | 2026-05-01T10:30:00.000Z | @prior |  |\n`;
+    client.readFile.mockImplementation(async (path: string) => {
+      if (path.endsWith("invitations.md")) {
+        return { content: ledgerWithJti, sha: "ledgerSha", path };
+      }
+      return null;
+    });
+
+    const result = await redeemInvitation({
+      payload: happyTokenPayload,
+      redeemerHandle: "newmember",
+      form: {
+        display_name: "New",
+        telegram: "@newmember",
+        git_email_alias: "new@member.com",
+        consent_accepted: true as const,
+      },
+      client,
+      now: () => new Date(),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(client.commitMultipleFiles).not.toHaveBeenCalled();
+  });
+});
+
+describe("H3: redeemInvitation — revocation defense", () => {
+  it("returns { ok: false } when JTI has a revoked row", async () => {
+    const client = makeMockClient();
+    const ledgerWithRevocation =
+      EMPTY_LEDGER +
+      `| 11111111-2222-4333-8444-555555555555 | revoked | 2026-05-01T10:00:00.000Z | @anton1rsod |  |  |  | revoked by @anton1rsod |\n`;
+    client.readFile.mockImplementation(async (path: string) =>
+      path.endsWith("invitations.md")
+        ? { content: ledgerWithRevocation, sha: "x", path }
+        : null,
+    );
+
+    const result = await redeemInvitation({
+      payload: happyTokenPayload,
+      redeemerHandle: "newmember",
+      form: {
+        display_name: "New",
+        telegram: "@newmember",
+        git_email_alias: "new@member.com",
+        consent_accepted: true as const,
+      },
+      client,
+      now: () => new Date(),
+    });
+    expect(result.ok).toBe(false);
+    expect(client.commitMultipleFiles).not.toHaveBeenCalled();
+  });
+});
+
+describe("H12: redeemInvitation — slug collision + reserved", () => {
+  it("uses <slug>-2 when display_name slugifies to a reserved slug", async () => {
+    const client = makeMockClient();
+    client.readFile.mockImplementation(async (path: string) => {
+      if (path.endsWith("invitations.md"))
+        return { content: EMPTY_LEDGER, sha: "x", path };
+      if (path.endsWith("roster.md"))
+        return { content: RI_ROSTER_BEFORE, sha: "x", path };
+      if (path.endsWith("git-email-aliases.md"))
+        return { content: RI_ALIASES_BEFORE, sha: "x", path };
+      return null;
+    });
+    client.commitMultipleFiles.mockResolvedValue({ commitSha: "newCommitSha" });
+
+    const result = await redeemInvitation({
+      payload: happyTokenPayload,
+      redeemerHandle: "x",
+      form: {
+        display_name: "Invitations",
+        telegram: "@xxxxx",
+        git_email_alias: "x@y.com",
+        consent_accepted: true as const,
+      },
+      client,
+      now: () => new Date(),
+    });
+
+    expect(result.ok).toBe(true);
+    const args = client.commitMultipleFiles.mock.calls[0]?.[0] as {
+      files: { path: string; content: string }[];
+    };
+    const profilePath = args.files.find((f) => {
+      const last = f.path.split("/").pop() ?? "";
+      return (
+        last.endsWith(".md") &&
+        !["roster.md", "git-email-aliases.md", "invitations.md"].includes(last)
+      );
+    })?.path;
+    expect(profilePath).toBe("community/members/invitations-2.md");
+  });
+});
+
+describe("H13: redeemInvitation — retry-once on 409", () => {
+  it("retries exactly once when first commit fails with sha_conflict", async () => {
+    const client = makeMockClient();
+    client.readFile.mockImplementation(async (path: string) => {
+      if (path.endsWith("invitations.md"))
+        return { content: EMPTY_LEDGER, sha: "x", path };
+      if (path.endsWith("roster.md"))
+        return { content: RI_ROSTER_BEFORE, sha: "x", path };
+      if (path.endsWith("git-email-aliases.md"))
+        return { content: RI_ALIASES_BEFORE, sha: "x", path };
+      return null;
+    });
+    let calls = 0;
+    client.commitMultipleFiles.mockImplementation(async () => {
+      calls += 1;
+      if (calls === 1) {
+        const e = new Error("sha conflict") as Error & { kind: string };
+        e.kind = "sha_conflict";
+        throw e;
+      }
+      return { commitSha: "newCommitSha" };
+    });
+    client.getHeadSha
+      .mockResolvedValueOnce("headSha-001")
+      .mockResolvedValueOnce("headSha-002");
+
+    const result = await redeemInvitation({
+      payload: happyTokenPayload,
+      redeemerHandle: "newmember",
+      form: {
+        display_name: "New",
+        telegram: "@newmember",
+        git_email_alias: "new@member.com",
+        consent_accepted: true as const,
+      },
+      client,
+      now: () => new Date(),
+    });
+    expect(result.ok).toBe(true);
+    expect(client.commitMultipleFiles).toHaveBeenCalledTimes(2);
+  });
+
+  it("aborts after second 409 (cap at 1 retry)", async () => {
+    const client = makeMockClient();
+    client.readFile.mockImplementation(async (path: string) => {
+      if (path.endsWith("invitations.md"))
+        return { content: EMPTY_LEDGER, sha: "x", path };
+      if (path.endsWith("roster.md"))
+        return { content: RI_ROSTER_BEFORE, sha: "x", path };
+      if (path.endsWith("git-email-aliases.md"))
+        return { content: RI_ALIASES_BEFORE, sha: "x", path };
+      return null;
+    });
+    client.commitMultipleFiles.mockImplementation(async () => {
+      const e = new Error("sha conflict") as Error & { kind: string };
+      e.kind = "sha_conflict";
+      throw e;
+    });
+
+    const result = await redeemInvitation({
+      payload: happyTokenPayload,
+      redeemerHandle: "newmember",
+      form: {
+        display_name: "New",
+        telegram: "@newmember",
+        git_email_alias: "new@member.com",
+        consent_accepted: true as const,
+      },
+      client,
+      now: () => new Date(),
+    });
+    expect(result.ok).toBe(false);
+    expect(client.commitMultipleFiles).toHaveBeenCalledTimes(2);
   });
 });
