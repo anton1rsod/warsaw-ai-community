@@ -493,4 +493,34 @@ describe("github-app", () => {
       }
     });
   });
+
+  describe("getHeadSha", () => {
+    it("returns the branch's commit SHA", async () => {
+      server.use(
+        tokenHandler(),
+        // Octokit's git.getRef uses the GET /git/ref/{ref} endpoint
+        // (singular `ref`); `/` in the {ref} parameter is percent-encoded
+        // as `%2F`, mirroring the {path} encoding for the Contents API.
+        http.get(`${GIT_BASE}/ref/heads%2Fmain`, () =>
+          HttpResponse.json({
+            ref: "refs/heads/main",
+            object: { type: "commit", sha: "headCommitSha" },
+          }),
+        ),
+      );
+      const app = createGitHubApp(config);
+      expect(await app.getHeadSha()).toBe("headCommitSha");
+    });
+
+    it("maps unknown HTTP error to GitHubAppError", async () => {
+      server.use(
+        tokenHandler(),
+        http.get(`${GIT_BASE}/ref/heads%2Fmain`, () =>
+          new HttpResponse(JSON.stringify({ message: "boom" }), { status: 500 }),
+        ),
+      );
+      const app = createGitHubApp(config);
+      await expect(app.getHeadSha()).rejects.toMatchObject({ kind: "unknown" });
+    });
+  });
 });

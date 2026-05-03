@@ -69,6 +69,7 @@ export interface GitHubAppClient {
   commitMultipleFiles(
     input: MultiFileCommitInput,
   ): Promise<{ commitSha: string }>;
+  getHeadSha(): Promise<string>;
 }
 
 const DEFAULT_AUTHOR_NAME = "warsaw-ai-bot";
@@ -262,7 +263,26 @@ export function createGitHubApp(config: GitHubAppConfig): GitHubAppClient {
     }
   }
 
-  return { readFile, writeFile, deleteFile, commitMultipleFiles };
+  /**
+   * Returns the current commit SHA at the tip of the configured branch.
+   * Used by the orchestrator (Task 11.1.13) as the CAS anchor passed as
+   * `expectedHeadSha` to `commitMultipleFiles`.
+   */
+  async function getHeadSha(): Promise<string> {
+    try {
+      const { data } = await octokit.git.getRef({
+        owner: config.owner,
+        repo: config.repo,
+        ref: `heads/${config.branch}`,
+      });
+      return data.object.sha;
+    } catch (err: unknown) {
+      if (err instanceof GitHubAppError) throw err;
+      throw mapError(err);
+    }
+  }
+
+  return { readFile, writeFile, deleteFile, commitMultipleFiles, getHeadSha };
 }
 
 /**
