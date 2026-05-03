@@ -423,6 +423,19 @@ Last green commit (pending closeout): this entry's commit. Last code-only green:
 - **Verification summary:** VERIFIED 2/7 (8.2, 8.7) · PARTIAL 3/7 (8.3, 8.4, 8.6) · DEFERRED 1/7 (8.5) · FAIL 1/7 (8.1).
 - **Ship gates remaining:** #2 roster backfill (Anton — Telegram outreach), #3 persona commits (Anton — `git add` the 4 untracked persona folders), #4 prod env vars (Anton — Vercel UI). Gate #1 closed.
 
+#### Update — Ship gate #2 reframed: minimum founder + Mark Spasonov; broader backfill deferred to v0.2+ invitation feature (2026-05-03)
+
+Anton's decision: skip the manual Telegram-then-PR backfill of the 18 outstanding members for v0.1.0. Instead:
+
+- **Now:** Mark Spasonov (`@markspas`) added to `community/members/roster.md` (2 of 19 backfilled — founder + Mark).
+- **Deferred:** the remaining 17 members onboard via a future "git-based personal-invitation self-registration" feature — platform issues a one-time invitation, member signs in with GitHub, `warsaw-ai-bot` commits the roster + alias updates. Belongs to v0.2+ scope.
+- **Brainstorm cadence:** fresh chat → `superpowers:brainstorming` → spec → `superpowers:writing-plans` → TDD implementation. **Don't roll the brainstorm into a Phase 10 chat — that violates the "spec before code" rule from the project CLAUDE.md.**
+- **§8 impact:** §8.1 stays FAIL (still 2/19, not 19/19) — the path changed from "manual backfill PR" to "v0.2+ feature ship" but the gate doesn't close. §8.3 stays PARTIAL — Mark has no commits in the repo yet, so the contributions counter spot-check still passes only for `anton1rsod`. §8.4 stays PARTIAL — Mark's persona folder is `mark-s` (slug mismatch with display_name `Mark Spasonov` → `mark-spasonov`), flagged as known issue below.
+
+**v0.1.0 ship policy:** spec §8.1 ships **as a documented gap**, not as a passing criterion. Acceptable because the platform's RBAC layer + sign-in proxy already enforce roster-only access — non-roster members simply cannot sign in. The "all 19 can log in" criterion is satisfied as soon as a member is added; for v0.1.0 the live count is 2 (Anton + Mark).
+
+**Ship gates remaining after this update:** #3 persona commits, #4 prod env vars. Gates #1 + #2 closed (gate #2 by reframing scope, not by clearing).
+
 Closeout green check (this commit):
 - `pnpm lint` — 0 errors / 0 warnings.
 - `pnpm typecheck` — clean.
