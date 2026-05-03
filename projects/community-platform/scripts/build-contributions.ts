@@ -6,6 +6,7 @@ import {
   computeContributions,
   type GitCommit,
 } from "@/lib/contributions";
+import { readAliases, resolveHandle } from "@/lib/git-email-aliases";
 import { readRoster } from "@/lib/roster";
 import { listMeetings } from "@/lib/meetings";
 
@@ -29,8 +30,12 @@ interface GitLogEntry {
  * Security: invokes git via `execFileSync` with no shell — all arguments are
  * hardcoded string literals; no user input ever reaches the subprocess. cwd is
  * a build-time constant (REPO_ROOT). See execution-plan.md §6.5.
+ *
+ * Author resolution delegates to `resolveHandle` (alias → noreply → local-part).
+ * Authors whose resolved handle isn't on the roster are dropped downstream by
+ * `computeContributions`, so unknown emails don't pollute counts.
  */
-function parseGitLog(): GitLogEntry[] {
+function parseGitLog(aliases: ReadonlyMap<string, string>): GitLogEntry[] {
   const output = execFileSync(
     "git",
     ["log", "--pretty=format:COMMIT|%H|%ae|%aI", "--name-only"],
@@ -51,14 +56,12 @@ function parseGitLog(): GitLogEntry[] {
       const sha = parts[0] ?? "";
       const email = parts[1] ?? "";
       const date = parts[2] ?? "";
-      // Best-effort email → GitHub handle mapping.
-      // GitHub noreply emails: "<id>+<handle>@users.noreply.github.com" or
-      // "<handle>@users.noreply.github.com". Non-noreply emails: use the
-      // local-part as a heuristic. Authors not on the roster are dropped by
-      // computeContributions so junk-handle commits don't pollute counts.
-      const localPart = email.replace(/@.*/, "");
-      const handle = localPart.replace(/^\d+\+/, "").toLowerCase();
-      current = { sha, author: handle, date, files: [] };
+      current = {
+        sha,
+        author: resolveHandle(email, aliases),
+        date,
+        files: [],
+      };
     } else if (line.trim() === "") {
       // Empty separator between commits — skip.
     } else if (current) {
@@ -71,12 +74,17 @@ function parseGitLog(): GitLogEntry[] {
 
 async function main(): Promise<void> {
   const rosterPath = path.join(REPO_ROOT, "community/members/roster.md");
-  const [roster, meetings] = await Promise.all([
+  const aliasesPath = path.join(
+    REPO_ROOT,
+    "community/members/git-email-aliases.md",
+  );
+  const [roster, meetings, aliases] = await Promise.all([
     readRoster(rosterPath),
     listMeetings(REPO_ROOT),
+    readAliases(aliasesPath),
   ]);
 
-  const commits: GitCommit[] = parseGitLog();
+  const commits: GitCommit[] = parseGitLog(aliases);
   const contributions = computeContributions({ commits, meetings, roster });
 
   await mkdir(path.dirname(OUTPUT), { recursive: true });
@@ -90,7 +98,8 @@ async function main(): Promise<void> {
     `[contributions] wrote ${path.relative(REPO_ROOT, OUTPUT)}\n` +
       `  members: ${Object.keys(contributions).length}\n` +
       `  commits scanned: ${commits.length}\n` +
-      `  meetings: ${meetings.length}`,
+      `  meetings: ${meetings.length}\n` +
+      `  aliases: ${aliases.size}`,
   );
 }
 

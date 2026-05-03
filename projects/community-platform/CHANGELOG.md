@@ -410,3 +410,22 @@ Last green commit (pending closeout): this entry's commit. Last code-only green:
 **Outstanding (Phase 10 ship-readiness gate):**
 - The 4 pre-deploy ship gates above (roster backfill, persona commits, contributions audit, prod env vars).
 - Tailwind typography plugin still not installed; `prose` classes render as plain HTML (cosmetic, non-blocking).
+
+#### Update — Ship gate #1 cleared (2026-05-03)
+
+`fix(community-platform): resolve git author email → roster handle via alias file` lands the resolver that §8.3 was blocked on.
+
+- New module `lib/git-email-aliases.ts` (`parseAliases` + `resolveHandle` + `readAliases`; 13 unit tests at 96.47% lines / 85.71% branches). Resolution order: explicit alias from `community/members/git-email-aliases.md` → GitHub noreply pattern (`<id>+<handle>@…` or `<handle>@…`) → local-part fallback. Roster-membership filter in `computeContributions` still drops unknown handles, so unaliased third-party authors don't pollute counts.
+- `scripts/build-contributions.ts` consults aliases via the new resolver. Missing alias file → empty map (soft enhancement; doesn't break the build).
+- `community/members/git-email-aliases.md` seeded with `anton@rsod.solutions → anton1rsod` and onboarding instructions for future contributors.
+- Snapshot regen confirms `anton1rsod: { projectCommits: 127, adrsFiled: 11, meetingsAttended: 0, statusPosts: 0 }` — non-zero counts spot-check against `git log --author="Anton Safronov"` (151 total commits; 127 land in `projects/*` per the counter's projectCommits scope; 11 file-edits across the 5 ADRs per the per-file-touch semantic at `lib/contributions.ts:58`).
+- **§8.3 status:** DEFERRED + flagged → **PARTIAL — verified for 1 of 19**; reaching ≥5 needs §8.1 roster backfill plus an alias entry for each member whose git author email's local-part ≠ their roster handle.
+- **Verification summary:** VERIFIED 2/7 (8.2, 8.7) · PARTIAL 3/7 (8.3, 8.4, 8.6) · DEFERRED 1/7 (8.5) · FAIL 1/7 (8.1).
+- **Ship gates remaining:** #2 roster backfill (Anton — Telegram outreach), #3 persona commits (Anton — `git add` the 4 untracked persona folders), #4 prod env vars (Anton — Vercel UI). Gate #1 closed.
+
+Closeout green check (this commit):
+- `pnpm lint` — 0 errors / 0 warnings.
+- `pnpm typecheck` — clean.
+- `pnpm test:coverage` — 30 files, **294 tests** pass (up from 281). Spec §8 strict-list still 100%. Overall 84.73% lines / 93.7% branches.
+- `pnpm build` — 18 routes (5 static + 8 SSG + 5 ƒ Dynamic) + ƒ Proxy (Middleware), clean.
+- E2E not re-run (this commit doesn't touch any E2E-covered surface; last 19 E2E green at SHA `56e1cd3`).
