@@ -1,16 +1,14 @@
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { findMemberByHandle } from "@/lib/content-snapshot";
-import { verifyToken } from "@/lib/invitations";
+import { INVITE_COOKIE_NAME, verifyToken } from "@/lib/invitations";
 import { OnboardForm } from "@/app/components/OnboardForm";
 import { redeemInvitation as redeemAction } from "@/app/actions/redeem-invitation";
 
 // auth() + cookies() + searchParams all force this route dynamic.
 export const dynamic = "force-dynamic";
-
-const COOKIE_NAME = "__Secure-warsaw_invite";
 
 interface OnboardPageProps {
   readonly searchParams: Promise<
@@ -19,26 +17,28 @@ interface OnboardPageProps {
 }
 
 /**
- * /onboard route — three render branches + first-GET cookie handoff.
+ * /onboard route — three render branches.
  *
- * H5 (redirect-to-clean-URL): first GET with `?token=…` verifies the
- * token, sets `__Secure-warsaw_invite`, then 302-redirects to `/onboard`
- * (no query). Result: the original token-bearing URL hits Vercel access
- * logs once per redemption; the URL bar is cleaned post-redirect.
+ * H5 (redirect-to-clean-URL): handled in `proxy.ts:tryInviteHandoff`
+ * (Server Components can't call `cookies().set()`). The proxy verifies
+ * the token signature, sets `__Secure-warsaw_invite`, and 302-redirects
+ * to the clean /onboard URL before this page ever runs. As a
+ * defence-in-depth fallback (e.g. if the proxy is bypassed in a future
+ * config change), the page treats `?token=invalid` the same way as a
+ * direct GET — render the generic 404.
  *
- * H6 (cookie security): `__Secure-warsaw_invite` is set HttpOnly +
- * Secure (in production) + SameSite=Strict + Path=/onboard +
- * Max-Age=86400. Path scope is /onboard so the cookie survives the
- * OAuth round-trip (callbackUrl /onboard) without bleeding to other
- * routes.
+ * H6 (cookie security): see `proxy.ts:tryInviteHandoff` for the cookie
+ * options (HttpOnly + Secure (prod) + SameSite=Strict + Path=/onboard +
+ * Max-Age=86400).
  *
  * Branches:
- *   1. ?token=valid     → set cookie + redirect to clean /onboard
- *   2. ?token=invalid   → notFound()
- *   3. cookie + no session → render signin form
- *   4. cookie + session + NOT in roster → render OnboardForm
- *   5. cookie + session + ALREADY in roster → notFound()
- *   6. no cookie + no token (direct GET) → notFound()
+ *   1. ?token=anything   → notFound() (proxy handled valid case + redirect;
+ *                          arriving here means proxy bypassed / token
+ *                          invalid → fall through to single 404 response)
+ *   2. cookie + no session → render signin form
+ *   3. cookie + session + NOT in roster → render OnboardForm
+ *   4. cookie + session + ALREADY in roster → notFound()
+ *   5. no cookie + no token (direct GET) → notFound()
  *
  * All non-OK branches use notFound() (single response shape) — no info
  * leak about which check failed (spec §11.5 H7).
@@ -50,23 +50,13 @@ export default async function OnboardPage({
   const tokenParam = typeof params.token === "string" ? params.token : null;
   const cookieStore = await cookies();
 
-  // Branch 1 (H5): first GET with ?token=… → set cookie + redirect to clean URL.
-  if (tokenParam) {
-    const verified = verifyToken(tokenParam, env.INVITE_SECRET);
-    if (!verified) notFound();
+  // Branch 1: any ?token=… arriving here means the proxy didn't redirect.
+  // Either the token was bad or proxy was bypassed. Both surface the
+  // generic 404 via the closest not-found.tsx (info-leak prevention).
+  if (tokenParam) notFound();
 
-    cookieStore.set(COOKIE_NAME, tokenParam, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/onboard",
-      maxAge: 86400,
-    });
-    redirect("/onboard");
-  }
-
-  // Branch 2-6: cookie-driven render.
-  const cookieToken = cookieStore.get(COOKIE_NAME)?.value;
+  // Branch 2-5: cookie-driven render.
+  const cookieToken = cookieStore.get(INVITE_COOKIE_NAME)?.value;
   if (!cookieToken) notFound();
 
   const verified = verifyToken(cookieToken, env.INVITE_SECRET);

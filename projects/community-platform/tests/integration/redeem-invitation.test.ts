@@ -96,7 +96,7 @@ describe("redeemInvitation server action", () => {
       /__redirect__:\/this-week/,
     );
     expect(cookieStore.delete).toHaveBeenCalledWith({
-      name: "__Secure-warsaw_invite",
+      name: "warsaw_invite",
       path: "/onboard",
     });
     expect(revalidatePath).toHaveBeenCalledWith("/members");
@@ -183,7 +183,7 @@ describe("redeemInvitation server action", () => {
     const result = await redeemAction(new FormData());
     expect(result.error).toBeDefined();
     expect(cookieStore.delete).toHaveBeenCalledWith({
-      name: "__Secure-warsaw_invite",
+      name: "warsaw_invite",
       path: "/onboard",
     });
   });
@@ -208,7 +208,7 @@ describe("redeemInvitation server action", () => {
     const result = await redeemAction(formData);
     expect(result.error).toBeDefined();
     expect(cookieStore.delete).toHaveBeenCalledWith({
-      name: "__Secure-warsaw_invite",
+      name: "warsaw_invite",
       path: "/onboard",
     });
     expect(revalidatePath).not.toHaveBeenCalled();

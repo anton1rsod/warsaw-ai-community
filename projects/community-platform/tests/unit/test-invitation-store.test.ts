@@ -24,4 +24,14 @@ describe("mockInvitationStore", () => {
     expect(mockInvitationStore.hasRedeemed("jti-1")).toBe(false);
     expect(mockInvitationStore.hasRosterAddition("@handle")).toBe(false);
   });
+
+  it("listRedeemedJtis returns all recorded JTIs (used by E2E mock readFile)", () => {
+    expect(mockInvitationStore.listRedeemedJtis()).toEqual([]);
+    mockInvitationStore.recordRedemption("jti-a", "@a");
+    mockInvitationStore.recordRedemption("jti-b", "@b");
+    expect(mockInvitationStore.listRedeemedJtis()).toEqual(
+      expect.arrayContaining(["jti-a", "jti-b"]),
+    );
+    expect(mockInvitationStore.listRedeemedJtis()).toHaveLength(2);
+  });
 });

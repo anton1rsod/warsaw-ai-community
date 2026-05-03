@@ -27,6 +27,9 @@ export const mockInvitationStore = {
   hasRedeemed(jti: string): boolean {
     return shared().redeemedJtis.has(jti);
   },
+  listRedeemedJtis(): readonly string[] {
+    return Array.from(shared().redeemedJtis);
+  },
   recordRedemption(jti: string, handle: string): void {
     shared().redeemedJtis.add(jti);
     shared().rosterAdditions.add(handle);

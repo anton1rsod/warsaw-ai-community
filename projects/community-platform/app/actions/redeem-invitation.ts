@@ -8,6 +8,7 @@ import { env } from "@/lib/env";
 import { findMemberByHandle } from "@/lib/content-snapshot";
 import { createGitHubApp, type GitHubAppClient } from "@/lib/github-app";
 import {
+  INVITE_COOKIE_NAME,
   verifyToken,
   RedeemFormSchema,
   redeemInvitation as orchestrate,
@@ -15,8 +16,6 @@ import {
   type RedemptionClient,
 } from "@/lib/invitations";
 import { mockInvitationStore } from "./_test-invitation-store";
-
-const COOKIE_NAME = "__Secure-warsaw_invite";
 
 // `"use server"` modules can only export async functions — keep types
 // inline. `interface` (not `type`) per project lint rule
@@ -39,17 +38,29 @@ function isE2EMockActive(): boolean {
  * shared mockInvitationStore. The orchestrator's CAS retry path is exercised
  * by integration tests against the real client; the mock returns a stable
  * head sha so the happy path always hits commit-success on the first attempt.
+ *
+ * `readFile("invitations.md")` rebuilds the ledger from
+ * `mockInvitationStore.listRedeemedJtis()` so the orchestrator's
+ * replay-defence path (jtiHasFinalRow) sees previously-redeemed tokens
+ * across consecutive redemptions in a single E2E run (Scenario 4).
  */
 function mockClient(): RedemptionClient {
+  const ledgerHeader =
+    "# Invitations Ledger\n\n| JTI | Status | Issued At | Issued By | Hint (Telegram) | Redeemed At | Redeemed By | Notes |\n|---|---|---|---|---|---|---|---|\n";
   return {
     async readFile(path: string) {
       if (path.endsWith("invitations.md")) {
-        return {
-          content:
-            "# Invitations Ledger\n\n| JTI | Status | Issued At | Issued By | Hint (Telegram) | Redeemed At | Redeemed By | Notes |\n|---|---|---|---|---|---|---|---|\n",
-          sha: "x",
-          path,
-        };
+        const redeemedRows = mockInvitationStore
+          .listRedeemedJtis()
+          .map(
+            (jti) =>
+              `| ${jti} | redeemed | 1970-01-01T00:00:00.000Z | mock | @mock | 1970-01-01T00:00:00.000Z | mock | mock |`,
+          )
+          .join("\n");
+        const content = redeemedRows
+          ? `${ledgerHeader}${redeemedRows}\n`
+          : ledgerHeader;
+        return { content, sha: "x", path };
       }
       if (path.endsWith("roster.md")) {
         return {
@@ -127,7 +138,7 @@ export async function redeemInvitation(
   }
 
   const cookieStore = await cookies();
-  const cookieToken = cookieStore.get(COOKIE_NAME)?.value;
+  const cookieToken = cookieStore.get(INVITE_COOKIE_NAME)?.value;
   if (!cookieToken) {
     logRedemptionEvent({ jti: "(unknown)", event: "invalid", httpStatus: 404 });
     return { error: "Invitation not found." };
@@ -135,12 +146,12 @@ export async function redeemInvitation(
 
   const payload = verifyToken(cookieToken, env.INVITE_SECRET);
   if (!payload) {
-    cookieStore.delete({ name: COOKIE_NAME, path: "/onboard" });
+    cookieStore.delete({ name: INVITE_COOKIE_NAME, path: "/onboard" });
     return { error: "Invitation not found." };
   }
 
   if (findMemberByHandle(session.githubHandle)) {
-    cookieStore.delete({ name: COOKIE_NAME, path: "/onboard" });
+    cookieStore.delete({ name: INVITE_COOKIE_NAME, path: "/onboard" });
     logRedemptionEvent({
       jti: payload.jti,
       event: "already-member",
@@ -171,11 +182,11 @@ export async function redeemInvitation(
   });
 
   if (!result.ok) {
-    cookieStore.delete({ name: COOKIE_NAME, path: "/onboard" });
+    cookieStore.delete({ name: INVITE_COOKIE_NAME, path: "/onboard" });
     return { error: "Invitation not found." };
   }
 
-  cookieStore.delete({ name: COOKIE_NAME, path: "/onboard" });
+  cookieStore.delete({ name: INVITE_COOKIE_NAME, path: "/onboard" });
   revalidatePath("/members");
   revalidatePath("/this-week");
   revalidatePath("/admin/health");

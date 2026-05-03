@@ -37,6 +37,41 @@ function sortKeys(_key: string, val: unknown): unknown {
     }, {});
 }
 
+/**
+ * Invitation cookie name. In production browsers enforce that any
+ * cookie prefixed `__Secure-` MUST be set with `Secure: true`, which
+ * requires HTTPS. Dev (HTTP) therefore drops the prefix and uses a
+ * plain name; production keeps the prefix for the real defence.
+ */
+export const INVITE_COOKIE_NAME =
+  process.env.NODE_ENV === "production"
+    ? "__Secure-warsaw_invite"
+    : "warsaw_invite";
+
+/**
+ * H6: cookie security profile for the invitation handoff cookie.
+ * HttpOnly + SameSite=Strict + Path=/onboard (so the cookie survives
+ * the OAuth round-trip without bleeding to other routes) + Max-Age=86400.
+ * `secure` is true only in production — must be paired with the
+ * `__Secure-` prefix to satisfy browser cookie-prefix rules.
+ */
+export interface InviteCookieOptions {
+  readonly httpOnly: true;
+  readonly secure: boolean;
+  readonly sameSite: "strict";
+  readonly path: "/onboard";
+  readonly maxAge: 86400;
+}
+export function inviteCookieOptions(): InviteCookieOptions {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/onboard",
+    maxAge: 86400,
+  };
+}
+
 export const InvitePayloadSchema = z.object({
   jti: z.string().uuid(),
   iss: z.string().regex(/^[a-zA-Z0-9-]{1,39}$/),
