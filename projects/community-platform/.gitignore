@@ -1,0 +1,16 @@
+node_modules/
+.next/
+.vercel/
+out/
+coverage/
+playwright-report/
+test-results/
+.env
+.env.local
+.env.*.local
+*.pem
+!tests/fixtures/**/*.pem
+next-env.d.ts
+*.tsbuildinfo
+.vercel
+lib/__generated__/

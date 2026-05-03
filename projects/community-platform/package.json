@@ -1,0 +1,73 @@
+{
+  "name": "@warsaw-ai/community-platform",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "snapshot": "tsx scripts/snapshot-content.ts",
+    "precontributions": "pnpm snapshot",
+    "contributions": "tsx scripts/build-contributions.ts",
+    "predev": "pnpm contributions",
+    "dev": "next dev",
+    "prebuild": "pnpm contributions",
+    "build": "next build",
+    "start": "next start",
+    "prelint": "pnpm contributions",
+    "lint": "eslint .",
+    "pretypecheck": "pnpm contributions",
+    "typecheck": "tsc --noEmit",
+    "pretest": "pnpm contributions",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "pretest:coverage": "pnpm contributions",
+    "test:coverage": "vitest run --coverage",
+    "pree2e": "pnpm contributions",
+    "e2e": "playwright test",
+    "e2e:install": "playwright install --with-deps",
+    "prepare": "cd ../.. && git config core.hooksPath projects/community-platform/.husky || true"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "pnpm exec eslint --fix"
+    ]
+  },
+  "dependencies": {
+    "@octokit/auth-app": "^7.2.2",
+    "@octokit/rest": "^21.1.1",
+    "gray-matter": "^4.0.3",
+    "next": "16.2.4",
+    "next-auth": "5.0.0-beta.31",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "rehype-sanitize": "^6.0.0",
+    "rehype-stringify": "^10.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.59.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "22.10.2",
+    "@types/react": "19.2.0",
+    "@types/react-dom": "19.2.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "autoprefixer": "^10.5.0",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "16.2.4",
+    "husky": "^9.1.7",
+    "jsdom": "^25.0.1",
+    "lint-staged": "^15.5.2",
+    "msw": "^2.14.2",
+    "postcss": "^8.5.13",
+    "tailwindcss": "^3.4.19",
+    "tsx": "^4.21.0",
+    "typescript": "5.7.2",
+    "typescript-eslint": "^8.59.1",
+    "vitest": "^2.1.9"
+  }
+}

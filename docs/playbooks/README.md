@@ -4,7 +4,9 @@ Runbooks and how-tos for organizers and active members. Unlike ADRs (decisions) 
 
 ## Current playbooks
 
+- [AI Collaborator Stack](ai-collaborator-stack.md) — the opinionated tooling stack for structured, feature-based development across all sub-projects (ECC + Superpowers + agents).
 - [GBrain Operations](gbrain-operations.md) — deploy, monitor, intervene, recover.
+- [GBrain Rollout](gbrain-rollout.md) — soft-launch sequencing.
 
 ## To write
 
