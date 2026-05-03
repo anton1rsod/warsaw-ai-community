@@ -453,3 +453,616 @@ These are spec-level commitments documented in v0.1 but applied later. Citing th
 - **Gamification phasing (anti-vanity).** v0.1 = observation (counter). v0.2 = milestone badges (light incentive). v0.3 = peer kudos (social incentive). v0.4 = directed quests aligned to community goals. Phasing avoids the §0.2 anti-pattern (vanity metrics, Anton-bias, Telegram noise).
 - **Health metric, locked from day one.** Weekly active posters / total roster members. Baseline ~0. v0.1 launch target 50%+. v0.2 sustained 60%+ across 4 weeks. v0.3 sustained 70%+. The metric tells us whether the platform is working before commercial conversations begin.
 - **Governance integration (v0.3+).** Decisions reader is read-only in v0.1. v0.2 / v0.3 can add a "propose ADR" or "vote" surface that integrates with the existing governance flow.
+
+## 11. v0.1.1 — Invitation registration
+
+> **Scope:** v0.1.x point release. 100% git (per §5 + CONSTRAINTS line 10), no DB, no new infrastructure.
+> **Brainstormed:** 2026-05-03 via `superpowers:brainstorming` (chat 7).
+> **Replaces:** the manual roster-backfill workflow (Telegram-then-PR cycle, v0.1.0). 17 outstanding members are unblocked by this feature.
+> **Locked decisions:** Q1-Q7 from `chat-7-brief.md`, applied below.
+
+### 11.1 Architecture
+
+Stateless 4-stage flow. No DB; the token IS the state. Trust = HMAC signature + JTI ledger lookup.
+
+```
+1. MINT                2. DELIVER         3. ARRIVE                  4. COMPLETE
+────────────────────   ──────────────     ──────────────────────     ─────────────────────
+Admin opens            Admin copies       Invitee opens link →       Invitee submits form →
+/admin/invite →        URL into a         GitHub OAuth (cookie-      server action verifies
+fills handle/hint →    Telegram DM        scoped Path=/onboard) →    token, runs warsaw-ai-bot
+server action          to invitee         /onboard renders           commit (4 files atomic)
+HMAC-signs payload                        prefilled form             → revalidate + redirect
+→ returns URL                                                        to /this-week
+```
+
+Three architectural pillars:
+
+1. **Stateless tokens.** `INVITE_SECRET`-keyed HMAC over `{jti, exp, iss, hint_telegram?, hint_display_name?}`. Verification = signature valid + `exp > now()` + `jti` not in ledger + redeemer-GH-handle not in roster.
+2. **`warsaw-ai-bot` is the only privileged writer.** Reuses `lib/github-app.ts`. New helper `commitMultipleFiles({owner, repo, branch, files, message, expectedHeadSha})` — v0.1 only commits single files; this is REQUIRED net-new functionality.
+3. **Admin gate at issuance, member gate at redemption.** `/admin/invite` admin-RBAC at page level (matches `/admin/health` pattern). `/onboard` is in `proxy.ts` PUBLIC_PATHS (auth-optional); server-side checks gate before any write.
+
+**Alternatives considered + rejected** (decision references):
+- DB-backed token state (Q1 → v0.2)
+- Telegram bot for issuance (Q2 → manual copy-paste)
+- Roster.md as implicit ledger (Q3 → dedicated ledger for audit trail)
+- Token reuse for self-update (Q6 → no retroactive coverage)
+- PR-based commit (Q7 → atomic direct commit)
+
+### 11.2 Token format and lifecycle
+
+#### Format
+
+```
+<base64url(canonicalJson(payload))>.<base64url(hmacSha256(thatBase64UrlString, INVITE_SECRET))>
+```
+
+- **base64url** = RFC 4648 §5, no padding.
+- **HMAC algorithm** = HMAC-SHA-256 (RFC 2104) via Node `crypto.createHmac("sha256", …)`.
+- **Signature scope** = HMAC computed over the base64url-no-padding STRING of the payload (NOT raw JSON bytes). Avoids padding-canonicalization ambiguity; matches JWS conventions while not being a JWT.
+
+**Format intentionally resembles JWT but is NOT a JWT** — no header, no `alg` field, no library negotiation. Custom HMAC envelope (~30 lines in `lib/invitations.ts`) closes the `alg=none` / library-confusion attack class.
+
+#### Payload schema (Zod-validated on sign + verify)
+
+```typescript
+const InvitePayloadSchema = z.object({
+  jti:               z.string().uuid(),                          // RFC 4122 v4, lowercase
+  iss:               z.string().regex(/^[a-zA-Z0-9-]{1,39}$/),    // GH handle of issuer
+  exp:               z.number().int().positive(),                 // UNIX seconds
+  hint_telegram:     z.string().regex(/^@[a-zA-Z0-9_]{5,32}$/).optional(),
+  hint_display_name: z.string().min(1).max(80).optional(),
+});
+```
+
+Canonical JSON serialization shared between sign + verify (single `canonicalJson(p)` function); fixed key order; only present keys included; no whitespace.
+
+#### Sign + verify (constant-time)
+
+`mintToken(payload, secret)` runs Zod validation → canonical JSON → HMAC → format. `verifyToken(token, secret)` runs split → HMAC compute → `crypto.timingSafeEqual` (constant-time; length-mismatch short-circuits — length isn't secret) → JSON parse → Zod safeParse → `exp` check.
+
+#### Lifecycle states
+
+```
+MINTED → DELIVERED → ARRIVED → AUTHENTICATED → SUBMITTED → REDEEMED ∎
+                          ↘ INVALID ∎    ↘ ALREADY-MEMBER ∎
+                          ↘ EXPIRED ∎
+                          ↘ REVOKED ∎
+```
+
+| State | Where | Mechanics |
+|---|---|---|
+| MINTED | server action on `/admin/invite` | `crypto.randomUUID()` for `jti`; `exp = floor(now()/1000) + 7*86400`; `iss = session.user.handle`. **Zero persistence at mint** — token IS the state. |
+| DELIVERED | out of system | admin copy-pastes URL into Telegram DM |
+| ARRIVED | first GET to `/onboard?token=…` | (see "Redirect-to-clean-URL" below) |
+| AUTHENTICATED | post-NextAuth callback | User has GitHub session; cookie carries token; render form (or already-member error) |
+| SUBMITTED | server action on form POST | Re-verify token; commit 4 files atomically; clear cookie |
+| REDEEMED | terminal | Ledger has redeemed row; redirect to `/this-week` |
+| INVALID/EXPIRED/REVOKED/ALREADY-MEMBER | any verify call | Same generic-error page (`app/onboard/error/page.tsx`), HTTP 404. **No info-leak about which check failed.** |
+
+#### Redirect-to-clean-URL (load-bearing token-leakage mitigation)
+
+First GET to `/onboard?token=<token>`:
+
+1. Server reads `token` from query string.
+2. `verifyToken(token, INVITE_SECRET)` → if `null`, render `/onboard/error` (HTTP 404).
+3. Read ledger via Octokit GET; if `jti` is in ledger as `redeemed` or `revoked` → render `/onboard/error`.
+4. Set cookie:
+   ```
+   __Secure-warsaw_invite=<token>;
+     HttpOnly; Secure; SameSite=Strict;
+     Path=/onboard;
+     Max-Age=86400
+   ```
+5. 302-redirect to `/onboard` (clean URL, no query string).
+
+**Result:** the original token-bearing URL touches Vercel access logs ONCE per redemption. URL bar is cleaned after redirect. External resources loaded by `/onboard` get no `Referer` (per §11.5 H4 header).
+
+#### Auth integration with NextAuth
+
+`/onboard` is in `proxy.ts` `PUBLIC_PATHS` — must be reachable BEFORE the user is in roster. Inside the route handler:
+- **No GH session + valid cookie token**: render form with action `signIn("github", { callbackUrl: "/onboard" })` (NextAuth client-form-POST signin per CONSTRAINTS line 18). `callbackUrl` is server-supplied (hardcoded `"/onboard"`), not user-supplied — closes open-redirect surface.
+- **Valid GH session + valid cookie + redeemer NOT in roster**: render prefilled form.
+- **Valid GH session + valid cookie + redeemer IN roster**: render `/onboard/error` (ALREADY-MEMBER).
+- **No cookie token** (direct GET to `/onboard`): render `/onboard/error`.
+
+#### Redemption (atomic 4-file commit + retry)
+
+Form submit → server action `redeemInvitation(formData)`:
+
+1. Read token from `__Secure-warsaw_invite` cookie.
+2. `verifyToken()` again (defense-in-depth).
+3. Check `session.user.handle` is NOT in roster.md.
+4. Validate form fields via Zod (RedeemFormSchema, §11.4).
+5. Octokit `commitMultipleFiles` with 4 file mutations (paths in §11.4).
+6. Commit message + trailers (§11.4).
+7. **On 409 conflict: retry ONCE** — re-fetch HEAD ref + ledger; re-verify JTI not now-redeemed; abort with generic error if it is, else commit. Hard cap at 1 retry.
+8. On success: `cookies().delete("__Secure-warsaw_invite", { path: "/onboard" })`; `revalidatePath` on `/members`, `/this-week`, `/admin/health`; redirect to `/this-week` (hardcoded).
+9. On any error path post-cookie-set: also delete cookie.
+
+#### Manual revocation
+
+No `/admin/revoke` UI in v0.1.x. Revocation = admin appends row to `community/members/invitations.md`:
+
+```markdown
+| <jti> | revoked | <iso8601> | revoked by @<admin_gh_handle> | <reason> |
+```
+
+Verifier rejects any `jti` with a `revoked` row.
+
+#### Locked standards
+
+| Concern | Standard |
+|---|---|
+| HMAC algorithm | HMAC-SHA-256 (RFC 2104) |
+| HMAC encoding | base64url no-padding (RFC 4648 §5) |
+| UUID format | v4 (RFC 4122 §4.4), lowercased |
+| Comparison | `crypto.timingSafeEqual` (constant-time) |
+| Cookie prefix | `__Secure-` (RFC 6265bis) |
+
+### 11.3 Components / files (~27 touched)
+
+#### New TS source files (6)
+
+| Path | Responsibility | Coverage gate |
+|---|---|---|
+| `lib/invitations.ts` | Token crypto, `RedeemFormSchema`, ledger parser/serializer, redemption orchestrator, revoke helper, `logRedemptionEvent`. ~310 lines. | **100% (strict-list)** |
+| `app/admin/invite/page.tsx` | Server component. `auth()` + `isAdmin(handle)`; non-admin → `redirect('/no-access')`. ƒ Dynamic. | 80% |
+| `app/onboard/page.tsx` | ƒ Dynamic. Reads cookie via `cookies()` from `next/headers`. Three render branches; first-GET handler does redirect-to-clean-URL handoff. | 80% |
+| `app/onboard/error/page.tsx` | Generic-error page for ALL error states. HTTP 404. Single message. | 80% |
+| `app/actions/mint-invitation.ts` | Admin-only server action. Validates Zod; mints token; returns URL. | **100% (strict-list)** |
+| `app/actions/redeem-invitation.ts` | Member-side server action. Reads cookie; re-verifies; checks redeemer not in roster; validates form; calls `lib/invitations.ts:redeemInvitation`; clears cookie; `revalidatePath`; redirects to `/this-week` (hardcoded). | **100% (strict-list)** |
+
+#### New components (3)
+
+| Path | Coverage gate |
+|---|---|
+| `app/components/InviteForm.tsx` | **100% (strict-list)** |
+| `app/components/InviteUrlDisplay.tsx` | **100% (strict-list)** |
+| `app/components/OnboardForm.tsx` (renders soft-binding banner; see §11.5) | **100% (strict-list)** |
+
+#### New data file (1)
+
+| Path | Initial content |
+|---|---|
+| `community/members/invitations.md` | Empty ledger; schema in §11.4 |
+
+#### Modified TS files (5)
+
+| Path | Change |
+|---|---|
+| `lib/rbac.ts` | Add `isAdmin(handle: string): Promise<boolean>` — reads roster.md; true if Role ∈ {`Founder / BDFL`, `Core organizer`}. |
+| `lib/roster.ts` | Add `appendMember({name, gh_handle, telegram, link, focus})`. Update parser for 5-col Members table. |
+| `lib/git-email-aliases.ts` | Add `appendAlias({email, gh_handle})` — rejects duplicates; preserves email case. |
+| `lib/github-app.ts` | **Add new helper** `commitMultipleFiles({owner, repo, branch, files, message, expectedHeadSha})`. Implements blob × N → tree → commit → updateRef. CAS via `expectedHeadSha`. |
+| `app/actions/consent.ts` (or new `lib/consent.ts`) | Extract `generateConsentMarkdown(ghHandle, formData): string` as a pure helper (DRY for consent-file content). Migrate existing `stubBody` to use `yamlString`. |
+
+#### Modified routing + headers + helper
+
+| Path | Change |
+|---|---|
+| `proxy.ts` | (a) `/onboard`, `/onboard/error` in PUBLIC_PATHS. (b) `/admin/invite` is normal authenticated path (admin gate is page-level). (c) Header injection for `/onboard*`: `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY`, `Cache-Control: no-store`. |
+| `lib/markdown.ts` (or new `lib/yaml-string.ts`) | Add `yamlString(v: string): string` — produces YAML 1.2-compatible double-quoted string via `JSON.stringify`. Used by `generateConsentMarkdown`. |
+
+#### Modified data/config files
+
+| Path | Change |
+|---|---|
+| `community/members/roster.md` | Schema migration: 5-col Members table (Name + GitHub + **Telegram** + Link + Focus). Mark Spasonov's row gets empty Telegram cell; backfilled separately (per Q6). |
+| `community/members/<slug>.md` (existing) | Regenerated using `yamlString`; no content change for Anton's profile (already YAML-safe). |
+| `.env.example` | Add `INVITE_SECRET=` placeholder with comment. |
+| `CHANGELOG.md` | v0.1.1 entry. |
+| `STATE.md` | Bump phase; add `INVITE_SECRET` row to last-verified. |
+
+#### Test files (11)
+
+| Path | Coverage focus |
+|---|---|
+| `lib/invitations.test.ts` | **100% lines + branches.** Token crypto, canonical JSON, ledger parser, redeem orchestrator (happy + retry + abort), revoke, schemas, snapshot tests for row generators, logging discipline test. |
+| `lib/rbac.test.ts` | `isAdmin` for {Founder, Core organizer, regular member, unknown, malformed}. |
+| `lib/roster.test.ts` (extension) | `appendMember` snapshot; 5-col parser; empty-Telegram-cell tolerance. |
+| `lib/git-email-aliases.test.ts` (extension) | `appendAlias` snapshot; rejects duplicates; preserves case. |
+| `lib/github-app.test.ts` (extension) | `commitMultipleFiles` happy + 409. |
+| `app/actions/mint-invitation.test.ts` | **100%.** Zod input; mint; URL return. |
+| `app/actions/redeem-invitation.test.ts` | **100%.** Mocked Octokit; 4-file commit shape; trailers; ledger row format; revalidatePath; redirect target. |
+| `app/admin/invite/page.test.tsx` | RTL: admin sees form; non-admin → `/no-access`. |
+| `app/onboard/page.test.tsx` | RTL: three render branches; cookie-handoff first-GET; soft-binding banner present. |
+| `app/onboard/error/page.test.tsx` | RTL: generic message; HTTP 404; no query-param leakage. |
+| `tests/e2e/invitation.spec.ts` | Playwright: 7 scenarios (§11.6). |
+
+#### Strict-list additions to spec §8
+
+`lib/invitations.ts`, `app/actions/mint-invitation.ts`, `app/actions/redeem-invitation.ts`, `app/components/InviteForm.tsx`, `app/components/OnboardForm.tsx`, `app/components/InviteUrlDisplay.tsx` — all at 100% lines + branches.
+
+#### Test-count budget
+
+~85 unit/integration tests + 7 E2E. ~30% growth on v0.1's 294/19 baseline.
+
+#### No new npm packages
+
+Reuses Node `crypto`, `zod`, `@octokit/*`, NextAuth/Auth.js v5, Tailwind.
+
+### 11.4 Data model
+
+#### Form input schema (Zod, validated server-side)
+
+```typescript
+const emptyToUndef = (v: unknown) =>
+  (typeof v === "string" && v.trim() === "" ? undefined : v);
+
+const noNewlines = z.string().refine(s => !/[\r\n]/.test(s), {
+  message: "must be a single line",
+});
+
+const RedeemFormSchema = z.object({
+  display_name:     noNewlines.transform(s => s.trim()).pipe(z.string().min(1).max(80)),
+  focus:            z.preprocess(emptyToUndef, noNewlines.transform(s => s.trim()).pipe(z.string().max(120)).optional()),
+  link:             z.preprocess(emptyToUndef, z.string().trim().url().refine(s => s.startsWith("https://")).max(200).optional()),
+  telegram:         z.string().regex(/^@[a-zA-Z0-9_]{5,32}$/),
+  git_email_alias:  z.string().email().max(120),  // case preserved
+  consent_accepted: z.literal(true),
+});
+```
+
+**3-boundary sanitization model:**
+
+| Boundary | Defense |
+|---|---|
+| Input | Zod schema rejects newlines, validates URL syntax + https scheme, validates email + telegram regex |
+| Write | Markdown row generators escape `\|` → `&#124;`; YAML frontmatter quoted via `yamlString()` |
+| Display | Existing `lib/markdown.ts` + `app/components/SafeHtml.tsx` pipeline (CONSTRAINTS line 22) sanitizes at view |
+
+#### `roster.md` schema migration
+
+| Before (v0.1.0, 4-col) | After (v0.1.1, 5-col) |
+|---|---|
+| `Name \| GitHub \| Link \| Focus` | `Name \| GitHub \| Telegram \| Link \| Focus` |
+
+- Mark Spasonov's row gets empty Telegram cell at migration; backfilled separately (per Q6).
+- Core organizers table unchanged.
+- Migration in v0.1.1 release commit, atomic with parser update.
+
+`appendMember` row format:
+```
+| <display_name_escaped> | @<gh_handle> | @<telegram> | <link_or_empty> | <focus_escaped_or_empty> |
+```
+
+#### `git-email-aliases.md` (existing format — locked)
+
+```markdown
+| Git email | GitHub handle | Notes |
+|---|---|---|
+| <new-email> | <handle-no-@> | <empty for invitation-flow appends> |
+```
+
+`appendAlias` rules: strip leading `@` from handle; preserve email case; case-insensitive duplicate check; pre-append rejection on duplicate.
+
+#### `invitations.md` ledger format (NEW)
+
+Initial content:
+```markdown
+# Invitations Ledger
+
+Append-only audit trail of personal invitations. Rows are NEVER edited or deleted.
+
+Lifecycle states tracked:
+- `redeemed` — bot-appended automatically when invitee completes redemption.
+- `revoked` — admin-appended manually (PR) to invalidate an unredeemed token.
+
+Pending (minted-but-not-yet-redeemed) tokens are stateless and NOT in this ledger.
+Expired tokens are not recorded; expiry is `Issued At + 7 days`.
+
+| JTI | Status | Issued At | Issued By | Hint (Telegram) | Redeemed At | Redeemed By | Notes |
+|---|---|---|---|---|---|---|---|
+```
+
+**Field schema:**
+
+| Field | Format | Required for |
+|---|---|---|
+| JTI | UUID v4 lowercase, hyphenated | Both |
+| Status | `redeemed` \| `revoked` | Both |
+| Issued At | `Date.prototype.toISOString()` (ms-precision UTC) | Both |
+| Issued By | `@<gh_handle>` | Both |
+| Hint (Telegram) | `@<handle>` or empty | Both |
+| Redeemed At | ISO 8601 UTC w/ ms | `redeemed` only |
+| Redeemed By | `@<gh_handle>` | `redeemed` only |
+| Notes | Free text (escape `\|`); no newlines | Optional |
+
+**Append-only invariant:** even when both `redeemed` and `revoked` rows exist for same JTI (operationally weird, post-redemption admin revocation), neither row is modified. Verifier rejects the JTI either way.
+
+#### Member profile / consent file (`community/members/<slug>.md`)
+
+Format matches v0.1.0 byte-for-byte (extracted from `app/actions/consent.ts:stubBody`):
+
+```markdown
+---
+name: "<display_name_yaml_safe>"
+github_handle: <gh_handle>
+consented_at: "<ISO 8601 UTC with ms>"
+---
+
+_Profile prose to come — open a PR to fill this in._
+```
+
+**YAML safety (v0.1.x bug-fix):**
+- `<display_name_yaml_safe>` produced by `yamlString(displayName)` — uses `JSON.stringify(...)` for YAML 1.2-compatible double-quoted string with proper escaping.
+- `consented_at` ISO timestamp wrapped in double quotes — prevents YAML 1.1 implicit timestamp typing.
+- v0.1's existing `stubBody` migrates to use `yamlString` in same release commit.
+
+Generation: single helper `generateConsentMarkdown({name, gh_handle})` — both consent action and redemption orchestrator consume.
+
+#### Slug derivation
+
+`slug = slugify(display_name)` using v0.1's existing helper (plan-writing locks call site).
+
+**Reserved slugs:**
+```typescript
+const RESERVED_SLUGS = new Set(["roster", "git-email-aliases", "invitations"]);
+```
+
+**Collision policy:** before writing `community/members/<slug>.md`:
+1. If `slug ∈ RESERVED_SLUGS` → use `<slug>-2` as starting point.
+2. Octokit `git.getContent` on target path; 404 → write at `<slug>.md`; exists → increment suffix.
+3. Hard cap at suffix `-9`; abort with generic error if hit.
+
+#### The 4-file commit (final)
+
+Single Octokit commit by `warsaw-ai-bot`:
+
+| # | Path | Operation | Generated by |
+|---|---|---|---|
+| 1 | `community/members/roster.md` | Append row | `lib/roster.ts:appendMember` |
+| 2 | `community/members/git-email-aliases.md` | Append row | `lib/git-email-aliases.ts:appendAlias` |
+| 3 | `community/members/invitations.md` | Append row | `lib/invitations.ts:appendRedemptionRow` |
+| 4 | `community/members/<slug>.md` | Create file | `generateConsentMarkdown` helper |
+
+All under `community/members/` — single-directory cohesion.
+
+Commit message:
+```
+invitation: redeem invite for @<gh_handle>
+
+Invited-By: @<iss>
+Invitation-JTI: <jti>
+Invitation-Hint-Telegram: @<hint_telegram>     # only if hint was present at mint
+```
+
+### 11.5 Threat model, hardenings, error handling
+
+#### Trusted assumptions
+
+| Trust | Source | Conditional on |
+|---|---|---|
+| HTTPS in transit | Vercel-managed; required by `__Secure-` cookie prefix | — |
+| Vercel function isolation | Platform-provided | — |
+| GitHub OAuth identity assertion | OAuth 2.0 + GH-issued signed tokens, verified by Auth.js v5 | — |
+| `INVITE_SECRET` confidentiality | Vercel encrypted env var; provisioned via Gotcha-6 | — |
+| `warsaw-ai-bot` GH App credentials | Inherited v0.1 trust; Phase 4.2 reviewed | — |
+| `git log` history immutability | Standard git | **Branch protection on `main` with no-force-push** (§11.7 ops checklist) |
+| Admin trust (Role ∈ {Founder/BDFL, Core organizer}) | Members-table-vetted | **GitHub 2FA on admin accounts** (§11.7 ops checklist) |
+
+#### Accepted risks (out of scope, documented)
+
+| Risk | Mitigation in place | Why acceptable |
+|---|---|---|
+| **Soft binding** — stolen Telegram DM within 7-day TTL can be redeemed by attacker as their own GH identity | TTL caps window; ledger records hint+actual; manual revocation; UX banner on `<OnboardForm>` ("This invitation was issued to @\<hint_telegram\>. If that's not you, please don't proceed.") | 10-member trust-based community; cost of cryptographic binding (admin must know all GH handles upfront) defeats purpose; detection post-hoc via audit. v0.2 path: optional email-confirmation step. |
+| Compromised admin Vercel session | NextAuth session expiry + browser security | General admin-session security; not invitation-specific |
+| `INVITE_SECRET` compromise | Vercel encrypted env var; never echoed in chat | Standard secret-management; rotate-on-suspect |
+| GitHub OAuth phishing | Out of scope | General OAuth phishing risk |
+| Compromised `warsaw-ai-bot` App credentials | Inherited v0.1 risk; Phase 4.2 reviewed | Same blast radius as v0.1 consent + status writes |
+
+#### Hardenings (13 total) — testable contract
+
+Each hardening has ≥1 `describe("H<n>: ...")` block; single grep at plan-writing-DoD verifies all 13 present.
+
+| H# | Hardening | Surface |
+|---|---|---|
+| H1 | HMAC-SHA-256 + `crypto.timingSafeEqual` + canonical-JSON | `lib/invitations.ts:verifyToken` |
+| H2 | JTI replay defense via ledger lookup | `lib/invitations.ts:redeemInvitation` |
+| H3 | Manual revocation via ledger row + verifier check | `lib/invitations.ts:verifyToken` |
+| H4 | `Referrer-Policy: no-referrer` on `/onboard*` | `proxy.ts` |
+| H5 | Redirect-to-clean-URL handoff | `app/onboard/page.tsx` first-GET handler |
+| H6 | Cookie security: `__Secure-warsaw_invite`, HttpOnly, Secure, SameSite=Strict, Path=/onboard, Max-Age=86400 | `app/onboard/page.tsx` + redeem action |
+| H7 | Whitelist-based event logger; never emits token contents or `INVITE_SECRET` | `lib/invitations.ts:logRedemptionEvent` + console-mock test |
+| H8 | Zod server-side validation of ALL form fields (mass-assignment defense via `.object({})` whitelist) | `app/actions/redeem-invitation.ts` |
+| H9 | URL syntax + `^https://` scheme check on `link` | `RedeemFormSchema` |
+| H10 | Newline rejection on `display_name` + `focus` | `RedeemFormSchema` |
+| H11 | YAML-safe emit (`yamlString`) for frontmatter | `lib/markdown.ts` (or `lib/yaml-string.ts`) |
+| H12 | Slug collision pre-check + `-N` suffix (cap N=9); RESERVED_SLUGS set | `lib/invitations.ts:redeemInvitation` |
+| H13 | Concurrent-redemption: retry-once-on-409 (re-read ledger; abort if JTI now-redeemed) | `lib/invitations.ts:redeemInvitation` |
+
+#### Cookie security properties (deep-dive on H6)
+
+```
+Set-Cookie: __Secure-warsaw_invite=<token>;
+              HttpOnly;
+              Secure;
+              SameSite=Strict;
+              Path=/onboard;
+              Max-Age=86400
+```
+
+**OAuth flow integration:** cookie set on first GET to `/onboard?token=…` (before user has session). Auth.js `signIn("github", { callbackUrl: "/onboard" })` triggers OAuth round-trip. Both pre-OAuth and post-OAuth requests target `/onboard`, so `Path=/onboard` doesn't drop the cookie across the OAuth chain. `Max-Age=86400` (24h) outlives a typical OAuth ceremony + reasonable user pause.
+
+**Cookie clearing:** `cookies().delete("__Secure-warsaw_invite", { path: "/onboard" })` on success AND on any error path post-cookie-set.
+
+#### Response headers (proxy.ts)
+
+For ALL `/onboard*` paths:
+```
+Referrer-Policy: no-referrer
+X-Frame-Options: DENY
+Cache-Control: no-store
+```
+
+Platform-wide headers (HSTS via Vercel, `X-Content-Type-Options: nosniff`, CSP if configured) are inherited.
+
+#### Error states and responses
+
+| State | Trigger | UI response | HTTP status | Cookie action |
+|---|---|---|---|---|
+| INVALID | Token signature fail / format malformed / payload schema fail | Generic-error page | 404 | Delete |
+| EXPIRED | `exp < now()` | Generic-error page | 404 | Delete |
+| REVOKED | JTI has revoked row | Generic-error page | 404 | Delete |
+| REPLAYED | JTI has redeemed row | Generic-error page | 404 | Delete |
+| ALREADY-MEMBER | Redeemer's GH handle in roster | Generic-error page | 404 | Delete |
+| NO-COOKIE | Direct GET to `/onboard` (no query, no cookie) | Generic-error page | 404 | (none to delete) |
+| FORM-VALIDATION-FAIL | Zod schema rejection on submit | In-place form with field-level errors | 200 | Keep (user can fix and retry) |
+| COMMIT-RETRY-EXHAUSTED | Two 409 conflicts during commit | Generic-error page (retry-later guidance) | 503 | Delete |
+
+**Generic-error UI** (`app/onboard/error/page.tsx`):
+
+```
+This invitation can't be completed.
+
+Please reach out to a community organizer if you need a new invitation.
+```
+
+Single message; no enumeration of failure modes (info-leak prevention).
+
+#### Logging discipline (deep-dive on H7)
+
+A single helper `logRedemptionEvent({jti, event, ...metadata})` in `lib/invitations.ts` whitelists fields.
+
+**Permitted:** `jti`, `event` (∈ `{minted, redeemed, revoked, invalid, expired, replayed, commit-retry, commit-success, already-member}`), `redeemer_gh`, `issuer_gh`, `iso_timestamp`, `http_status`.
+
+**Prohibited:** Full token strings (signature + payload), `INVITE_SECRET`, GitHub OAuth tokens, cookie values, stack traces with token strings, ***form-supplied PII*** (`git_email_alias`, `telegram_handle`, `display_name`, `focus`, `link` — public in git but kept out of runtime logs to minimize egress + simplify GDPR audit).
+
+**Test enforcement:** `lib/invitations.test.ts` mocks `console.{log,warn,error}` and asserts no emissions contain `INVITE_SECRET` or full token strings on any error path.
+
+#### Rate limiting
+
+DEFERRED to v0.2. UUIDv4 = 122-bit JTI; brute-force infeasible (HMAC-validated first → no valid attempts without `INVITE_SECRET`). 10-member community; legitimate traffic ≤ 1/day. Vercel platform DDoS protection at edge.
+
+#### Audit-log tamper resistance
+
+`community/members/invitations.md` is the *convenience* audit layer. The *immutable* audit layer is `git log -p community/members/invitations.md`.
+
+Branch protection on `main` (no force-push) is the precondition (§11.7 ops checklist).
+
+### 11.6 Testing strategy
+
+#### TDD discipline (CONSTRAINTS line 26)
+
+Red → green → refactor → commit. No exceptions for new code. HMAC verify, redeem orchestrator, form validation: tests BEFORE implementation.
+
+#### Coverage gates
+
+| Surface | Gate |
+|---|---|
+| Spec §8 strict-list (6 additions per §11.3) | **100% lines + branches** |
+| Other new code (pages, lib extensions) | 80% (matches v0.1 precedent — pages NOT in v0.1 strict-list) |
+| Overall project | 80% (existing gate; must not regress) |
+
+#### Hardening coverage map
+
+| H# | Primary | Smoke / integration |
+|---|---|---|
+| H1, H2, H3, H7, H11, H12, H13 | `lib/invitations.test.ts` | — |
+| H4 | `tests/e2e/invitation.spec.ts` (response-header assert) | — |
+| H5, H6 | `app/onboard/page.test.tsx` | E2E first-hit |
+| H8, H9, H10 | `lib/invitations.test.ts` (`RedeemFormSchema` direct) | `app/actions/redeem-invitation.test.ts` (1 case each) |
+
+#### Mocking strategy
+
+| What | Mock |
+|---|---|
+| Octokit (`createGitHubApp`) | Manual stub; record calls; canned responses; `OctokitError(status=409)` for retry tests |
+| `auth()` from NextAuth | Existing v0.1 pattern (`app/actions/_test-consent-store.ts`) |
+| `cookies()` from `next/headers` | Next 16 test utilities |
+| `crypto.randomUUID()` | Fixed UUID via `vi.spyOn` |
+| `Date.now()` / `new Date().toISOString()` | `vi.useFakeTimers()` |
+| Markdown row format regressions | **Snapshot tests** in `lib/__snapshots__/` for `appendRedemptionRow`, `appendMember`, `appendAlias`, `generateConsentMarkdown` |
+
+#### E2E test environment
+
+Per §11.7 (Gotcha 3): E2E runs are **dev-only** (Playwright + dev server + `E2E_MODE=1`). Reuses existing v0.1 mock pattern. No real git writes; no real OAuth.
+
+**Required scenarios:**
+1. Happy path: admin mints → invitee redeems → `/this-week` shows new member.
+2. Invalid token → `/onboard/error`.
+3. Expired token → `/onboard/error`.
+4. Replayed JTI → `/onboard/error`.
+5. Already-member redeemer → `/onboard/error`.
+6. Form validation fail (invalid email) → in-place errors.
+7. Soft-binding banner visibility check.
+
+E2E command: `pnpm e2e --retries=2` (Next 16 cold-start flake mitigation per defects-playbook pattern 9).
+
+#### Reviewer agents
+
+- **`security-reviewer`** at v0.1.1 closeout against `lib/invitations.ts`, `app/actions/redeem-invitation.ts`, `proxy.ts` deltas.
+- **`typescript-reviewer` + `code-reviewer`**: hit Anton's monthly Claude usage cap per CONSTRAINTS line 46. **Self-review checklist (CONSTRAINTS lines 50-59) is the standing fallback.**
+
+#### Test isolation
+
+`afterEach(cleanup)` for RTL tests; `vi.restoreAllMocks()` in `afterEach` for unit tests; no module-level mutable singletons under test; E2E tests independent.
+
+### 11.7 Migration / release notes
+
+#### Pre-release operations checklist
+
+- [ ] Generate `INVITE_SECRET` (production):
+  ```bash
+  openssl rand -base64 32 > ~/Documents/secrets/invite-secret-prod.txt
+  chmod 600 ~/Documents/secrets/invite-secret-prod.txt
+  vercel env add INVITE_SECRET production --yes < ~/Documents/secrets/invite-secret-prod.txt
+  ```
+- [ ] Generate `INVITE_SECRET` (preview, **different value**); same pattern with `--environment=preview`.
+- [ ] Enable branch protection on `main`: PR-required EXCEPT `warsaw-ai-bot` bypass (matches v0.1's existing direct-commit pattern); disable force-push; disable branch deletion.
+- [ ] Confirm GitHub 2FA on Anton's account.
+- [ ] Verify env-var presence: `vercel env pull .env.production-check --environment=production --yes`. `INVITE_SECRET=""` is expected (sensitive — empty quotes per Gotcha 5).
+- [ ] Local test gates:
+  - [ ] `pnpm tsc --noEmit` clean
+  - [ ] `pnpm test` green; coverage gates met
+  - [ ] `pnpm e2e --retries=2` green
+  - [ ] `grep -r "describe(\"H[0-9]" lib/ app/` returns 13 hardenings
+
+#### v0.1.1 release PR contents
+
+PR title: `release(community-platform): v0.1.1 invitation feature`. ~27 files touched (per §11.3 budget). Single PR; merged to main; auto-deploys.
+
+#### Post-deploy operations (within 24h)
+
+- [ ] **Production smoke test (non-polluting):** Anton mints token with `hint_telegram=@antonsafronov`; clicks own URL; Auth.js sees Anton's session; redeem flow triggers ALREADY-MEMBER → renders `/onboard/error` (HTTP 404). Verifies token + cookie + redirect chain without polluting roster/aliases/ledger. Token expires unused in 7d.
+- [ ] **Manual PR — Mark Spasonov backfill** (per Q6 + Q4 locks): `chore(community): backfill Mark Spasonov's git-email alias + telegram handle`. Adds row to `git-email-aliases.md`; fills Telegram cell in roster.md.
+- [ ] **First real invitation:** Anton mints + sends to one of the 17 outstanding members.
+
+#### Operational handoff (Telegram-DM playbook)
+
+| Before (v0.1.0) | After (v0.1.1) |
+|---|---|
+| Anton DM's invitee → asks for name + GH handle + focus + email → manually opens 2-3 PRs per member | Anton opens `/admin/invite`, fills `hint_telegram`, gets URL, copy-pastes into Telegram DM. Invitee redeems on their own time. |
+
+#### Rollback plan
+
+| Trigger | Mitigation |
+|---|---|
+| Redemptions fail in production | Vercel UI → previous deploy → Redeploy "with existing Build Cache" (~30s; `INVITE_SECRET` stays set, idempotent) |
+| Flagrant security issue (e.g., HMAC bypass) | `git revert <v0.1.1-merge-sha>` + push; rotate `INVITE_SECRET` (invalidates outstanding tokens) |
+| Half-completed multi-file commit (Octokit `updateRef` after `createCommit` succeeds) | Dangling commit harmless; GitHub gc reaps; no state corruption |
+| Ledger row written but roster row missing | Shouldn't happen (atomic commit); investigate via `git log -p`; manual cleanup PR |
+
+#### Future migration notes (v0.2 references — not in scope)
+
+| Trigger | Migration |
+|---|---|
+| DB introduced (per §6.1) | Token state migrates to DB; `invitations.md` becomes audit-only (one-time import) |
+| Email-confirmation step | Mitigates soft-binding accepted risk (§11.5); admin enters invitee email; token bound to email |
+| Branch protection tightens (no bot bypass) | All bot-write surfaces (consent + status + invitations) migrate to PR-based; system-wide change |
+| TTL changes | Ledger gains `Exp` column; existing rows pre-Exp-era treated as expired |
+| Self-service member updates | New `/me/edit` surface (Q6 deferred); auth-only, no token; same `warsaw-ai-bot` mechanism |
+
+#### Definition of Done for v0.1.1
+
+- [ ] All 7 §11 sections committed.
+- [ ] All ~27 files implemented per §11.3.
+- [ ] All 13 hardenings (H1-H13) tested with `H<n>:` prefix.
+- [ ] Coverage gates met (80% overall, 100% on 6 strict-list additions).
+- [ ] E2E green with `--retries=2`.
+- [ ] §11.7 pre-release ops checklist complete.
+- [ ] PR merged to main; CHANGELOG, STATE updated.
+- [ ] Production smoke (§11.7) passes ALREADY-MEMBER path.
+- [ ] Mark Spasonov backfill PR opened (separate from release PR).
+- [ ] First real invitation sent; ledger entry confirmed.
