@@ -532,7 +532,7 @@ MINTED → DELIVERED → ARRIVED → AUTHENTICATED → SUBMITTED → REDEEMED �
 
 | State | Where | Mechanics |
 |---|---|---|
-| MINTED | server action on `/admin/invite` | `crypto.randomUUID()` for `jti`; `exp = floor(now()/1000) + 7*86400`; `iss = session.user.handle`. **Zero persistence at mint** — token IS the state. |
+| MINTED | server action on `/admin/invite` | `crypto.randomUUID()` for `jti`; `exp = floor(now()/1000) + 7*86400`; `iss = session.githubHandle` (v0.1's Auth.js session shape, per `lib/auth.ts`). **Zero persistence at mint** — token IS the state. |
 | DELIVERED | out of system | admin copy-pastes URL into Telegram DM |
 | ARRIVED | first GET to `/onboard?token=…` | (see "Redirect-to-clean-URL" below) |
 | AUTHENTICATED | post-NextAuth callback | User has GitHub session; cookie carries token; render form (or already-member error) |
@@ -570,15 +570,18 @@ First GET to `/onboard?token=<token>`:
 
 Form submit → server action `redeemInvitation(formData)`:
 
-1. Read token from `__Secure-warsaw_invite` cookie.
-2. `verifyToken()` again (defense-in-depth).
-3. Check `session.user.handle` is NOT in roster.md.
-4. Validate form fields via Zod (RedeemFormSchema, §11.4).
-5. Octokit `commitMultipleFiles` with 4 file mutations (paths in §11.4).
-6. Commit message + trailers (§11.4).
-7. **On 409 conflict: retry ONCE** — re-fetch HEAD ref + ledger; re-verify JTI not now-redeemed; abort with generic error if it is, else commit. Hard cap at 1 retry.
-8. On success: `cookies().delete("__Secure-warsaw_invite", { path: "/onboard" })`; `revalidatePath` on `/members`, `/this-week`, `/admin/health`; redirect to `/this-week` (hardcoded).
-9. On any error path post-cookie-set: also delete cookie.
+1. Read session via `await auth()`; if `!session?.githubHandle` → generic error (no session, no leak).
+2. Read token from `__Secure-warsaw_invite` cookie; if absent → generic error.
+3. `verifyToken()` again (defense-in-depth).
+4. Check `session.githubHandle` is NOT in roster.md (ALREADY-MEMBER).
+5. **Capture `expectedHeadSha`** = current HEAD SHA of `main` via Octokit `git.getRef`.
+6. **Read ledger** at `expectedHeadSha`; if `jti` is in ledger as `redeemed` or `revoked` → abort (REPLAYED / REVOKED). Defense-in-depth before CAS at commit.
+7. Validate form fields via Zod (RedeemFormSchema, §11.4).
+8. Octokit `commitMultipleFiles({owner, repo, branch: "main", files, message, expectedHeadSha})` with 4 file mutations (paths in §11.4).
+9. Commit message + trailers (§11.4).
+10. **On 409 conflict (HEAD advanced between step 5 and step 8): retry ONCE** — re-fetch HEAD ref + ledger; re-verify JTI not now-redeemed; abort with generic error if it is, else re-attempt commit with new `expectedHeadSha`. Hard cap at 1 retry.
+11. On success: `cookies().delete("__Secure-warsaw_invite", { path: "/onboard" })`; `revalidatePath` on `/members`, `/this-week`, `/admin/health`; redirect to `/this-week` (hardcoded; no user-supplied destination).
+12. On any error path post-cookie-set: also delete cookie.
 
 #### Manual revocation
 
@@ -697,7 +700,7 @@ const noNewlines = z.string().refine(s => !/[\r\n]/.test(s), {
 const RedeemFormSchema = z.object({
   display_name:     noNewlines.transform(s => s.trim()).pipe(z.string().min(1).max(80)),
   focus:            z.preprocess(emptyToUndef, noNewlines.transform(s => s.trim()).pipe(z.string().max(120)).optional()),
-  link:             z.preprocess(emptyToUndef, z.string().trim().url().refine(s => s.startsWith("https://")).max(200).optional()),
+  link:             z.preprocess(emptyToUndef, z.string().trim().max(200).url().refine(s => s.startsWith("https://")).optional()),
   telegram:         z.string().regex(/^@[a-zA-Z0-9_]{5,32}$/),
   git_email_alias:  z.string().email().max(120),  // case preserved
   consent_accepted: z.literal(true),
