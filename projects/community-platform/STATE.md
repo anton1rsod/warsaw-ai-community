@@ -2,16 +2,17 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-03 (v0.1.0 shipped)
+**Last updated**: 2026-05-03 (v0.1.1 spec drafted; plan-writing next)
 
 ## Snapshot
 
 ```yaml
 last_green: b26a8c2                # fix: tolerate missing .git in build-contributions.ts
 last_code_only_green: b26a8c2      # same; release commit is doc-only
-phase: "10 complete (v0.1.0 shipped)"
-branch: warsaw-org-and-stack-guide
-tests: "294 unit/integration + 19 E2E"
+phase: "v0.1.1 spec drafted; plan-writing next"   # chat 7 (2026-05-03) produced spec §11
+spec_sha: 740be8e                   # spec §11 + final-pass hardening fixes
+branch: phase-10-followups          # spec lives here until PR merges
+tests: "294 unit/integration + 19 E2E"  # v0.1.0 baseline; v0.1.1 will add ~85 + 7
 overall_coverage: "84.73% lines / 93.7% branches  (gate: 80%)"
 amendments_applied: "§9.2, §9.5–§9.18"
 production: "https://warsaw-ai-community-platform.vercel.app"
@@ -73,9 +74,11 @@ production_runtime: "2026-05-03 — full credential chain operational under real
 
 ## Next chat
 
-**Chat 7 — v0.2 invitation feature brainstorm.** Handoff doc + paste-ready prompt: [`docs/specs/2026-05-03-community-platform-v02-invitation-handoff.md`](../../docs/specs/2026-05-03-community-platform-v02-invitation-handoff.md). Mode: brainstorming-only (per project CLAUDE.md "Brainstorming before implementation"). Output: a v0.2 spec section, NOT plan.md or implementation.
+**Chat 8 — v0.1.1 invitation feature plan-writing.** Handoff doc + paste-ready prompt: [`docs/specs/2026-05-03-community-platform-v0-1-1-plan-writing-handoff.md`](../../docs/specs/2026-05-03-community-platform-v0-1-1-plan-writing-handoff.md). Mode: `superpowers:writing-plans` skill. Input: `spec.md §11` (SHA `740be8e`). Output: TDD-structured implementation plan + chat-9 brief for the implementation chat.
 
-**Optional cleanup chat** before Chat 7 (low-priority; can also batch into a single v0.1.1 PR whenever convenient): COMMUNITY_NAME/SLUG re-set with `--no-sensitive`, persona slug↔folder mismatch fix, CI workflow merge from `.github/workflows/ci.yml` (already drafted). Not blocking Chat 7.
+**Chat 7 (DONE):** v0.1.1 invitation feature brainstorm via `superpowers:brainstorming`. Produced spec §11 (lines 457-1071, ~617 lines) at SHA `740be8e`. All Q1-Q7 decisions locked; 13 hardenings (H1-H13) numbered for testable contract.
+
+**Optional cleanup chat** (still low-priority; can batch with v0.1.1 PR when convenient): `COMMUNITY_NAME`/`SLUG` re-set with `--no-sensitive`, persona slug↔folder mismatch fix, CI workflow merge from `.github/workflows/ci.yml` (already drafted). Not blocking Chat 8.
 
 ## Production
 
