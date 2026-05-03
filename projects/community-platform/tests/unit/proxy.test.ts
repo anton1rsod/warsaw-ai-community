@@ -293,4 +293,81 @@ describe("proxy", () => {
       vi.unstubAllEnvs();
     });
   });
+
+  describe("/onboard PUBLIC_PATHS additions", () => {
+    it("allows /onboard without auth (PUBLIC_PATHS)", async () => {
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/onboard");
+      const res = await proxy(req as never);
+      // PUBLIC_PATHS hits return NextResponse.next() — no Location header.
+      expect(res.headers.get("location")).toBeNull();
+      expect(mocks.decodeFn).not.toHaveBeenCalled();
+    });
+
+    it("allows /onboard/error without auth", async () => {
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/onboard/error");
+      const res = await proxy(req as never);
+      expect(res.headers.get("location")).toBeNull();
+      expect(mocks.decodeFn).not.toHaveBeenCalled();
+    });
+
+    it("does NOT make /admin/invite public — auth-gated (page-level admin gate runs after auth)", async () => {
+      // No cookie → proxy redirects to /login
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/admin/invite");
+      const res = await proxy(req as never);
+      expect(res.headers.get("location")).toMatch(/\/login$/);
+    });
+
+    it("/onboard is public in production builds too", async () => {
+      vi.stubEnv("NODE_ENV", "production");
+      vi.resetModules();
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/onboard");
+      const res = await proxy(req as never);
+      expect(res.headers.get("location")).toBeNull();
+      vi.unstubAllEnvs();
+    });
+  });
+
+  describe("H4: Referrer-Policy + X-Frame-Options + Cache-Control on /onboard*", () => {
+    it("sets Referrer-Policy: no-referrer on /onboard", async () => {
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/onboard");
+      const res = await proxy(req as never);
+      expect(res.headers.get("referrer-policy")).toBe("no-referrer");
+    });
+
+    it("sets X-Frame-Options: DENY on /onboard", async () => {
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/onboard");
+      const res = await proxy(req as never);
+      expect(res.headers.get("x-frame-options")).toBe("DENY");
+    });
+
+    it("sets Cache-Control: no-store on /onboard", async () => {
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/onboard");
+      const res = await proxy(req as never);
+      expect(res.headers.get("cache-control")).toBe("no-store");
+    });
+
+    it("sets H4 headers on /onboard/error too", async () => {
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/onboard/error");
+      const res = await proxy(req as never);
+      expect(res.headers.get("referrer-policy")).toBe("no-referrer");
+      expect(res.headers.get("x-frame-options")).toBe("DENY");
+      expect(res.headers.get("cache-control")).toBe("no-store");
+    });
+
+    it("does NOT set H4 headers on other public paths (e.g., /login)", async () => {
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/login");
+      const res = await proxy(req as never);
+      expect(res.headers.get("referrer-policy")).toBeNull();
+      expect(res.headers.get("x-frame-options")).toBeNull();
+    });
+  });
 });

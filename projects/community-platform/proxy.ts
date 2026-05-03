@@ -14,11 +14,13 @@ import { CONSENT_COOKIE } from "@/lib/consent-cookie";
 // Defense-in-depth.
 const PUBLIC_PATHS = new Set<string>(
   process.env.NODE_ENV === "production"
-    ? ["/login", "/no-access", "/consent"]
+    ? ["/login", "/no-access", "/consent", "/onboard", "/onboard/error"]
     : [
         "/login",
         "/no-access",
         "/consent",
+        "/onboard",
+        "/onboard/error",
         "/api/test-auth",
         "/api/test-reset-status",
         "/api/test-reset-consent",
@@ -32,6 +34,18 @@ const PUBLIC_PREFIXES = [
   "/favicon",
   "/.well-known",
 ] as const;
+
+/**
+ * H4 (spec §11.5): /onboard* responses carry Referrer-Policy, X-Frame-Options,
+ * and Cache-Control: no-store so an invitation token in the URL doesn't leak
+ * via Referer header on outbound clicks, can't be framed, and isn't cached.
+ */
+function applyOnboardHeaders(res: NextResponse): NextResponse {
+  res.headers.set("Referrer-Policy", "no-referrer");
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("Cache-Control", "no-store");
+  return res;
+}
 
 const COOKIE_NAME = "authjs.session-token";
 const SECURE_COOKIE_NAME = "__Secure-authjs.session-token";
@@ -96,7 +110,13 @@ export default async function proxy(
 ): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
 
-  if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
+  if (PUBLIC_PATHS.has(pathname)) {
+    const res = NextResponse.next();
+    if (pathname === "/onboard" || pathname === "/onboard/error") {
+      return applyOnboardHeaders(res);
+    }
+    return res;
+  }
   if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
