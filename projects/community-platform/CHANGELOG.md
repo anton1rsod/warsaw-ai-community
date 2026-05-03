@@ -16,7 +16,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
-## [Unreleased] — 2026-05-01
+## [0.1.0] — 2026-05-03
+
+**Released.** Lite-slice platform shipped to https://warsaw-ai-community-platform.vercel.app — see Phase 10 entries below for the ship sequence + acceptance verification log.
+
+- **Surface:** GitHub OAuth + JWT sessions, roster-only proxy gate, member directory + profile, project / decision / meeting archive readers, status updates with GitHub App writer to `community/status/YYYY-Wnn/`, GDPR export/delete on own profile, admin health metric (`/admin/health`).
+- **Stack:** Next.js 16.2.4 + Vercel + NextAuth 5.0.0-beta.31 + GitHub App `warsaw-ai-bot` for git writes. 100% git-resident storage (no DB) — classification rule documented for v0.2+.
+- **Tests:** 294 unit/integration + 19 E2E green at SHA `b26a8c2`; coverage 84.73% lines / 93.7% branches; spec §8 strict-list at 100%.
+- **Live verification (production, 2026-05-03):** OAuth round-trip → consent commit (bot write to `main`) → status post (bot commit `5b5699b status: anton1rsod for 2026-W18`) → admin health metric rendering 1/2 = 50% active posters (hits v0.1 launch target). Every layer of the credential chain operational under real production traffic.
+
+(Phase-by-phase notes below — preserved from the running `[Unreleased]` log as the v0.1.0 historical record.)
 
 ### Added — Spec, plan, pre-launch, and handoff documentation
 - Project scaffold: `README.md`, `spec.md` (stub), `plan.md` (stub), this changelog.

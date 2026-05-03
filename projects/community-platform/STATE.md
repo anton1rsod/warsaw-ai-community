@@ -2,18 +2,20 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-03 (post-Phase 9 closeout)
+**Last updated**: 2026-05-03 (v0.1.0 shipped)
 
 ## Snapshot
 
 ```yaml
-last_green: 56e1cd3                # docs(community-platform): close Phase 9
-last_code_only_green: 18b0d9e      # Task 9.2 /admin/health page
-phase: "9 complete  →  10 next"
+last_green: b26a8c2                # fix: tolerate missing .git in build-contributions.ts
+last_code_only_green: b26a8c2      # same; release commit is doc-only
+phase: "10 complete (v0.1.0 shipped)"
 branch: warsaw-org-and-stack-guide
-tests: "281 unit/integration + 19 E2E"
-overall_coverage: "84.6% lines / 94.16% branches  (gate: 80%)"
+tests: "294 unit/integration + 19 E2E"
+overall_coverage: "84.73% lines / 93.7% branches  (gate: 80%)"
 amendments_applied: "§9.2, §9.5–§9.18"
+production: "https://warsaw-ai-community-platform.vercel.app"
+tag: "community-platform-v0.1.0"
 ```
 
 ## Spec §8 strict-list — 100% coverage
@@ -36,28 +38,33 @@ amendments_applied: "§9.2, §9.5–§9.18"
 - 5 static routes (`/`, `/login`, `/no-access`, `/members`, `/projects`, `/decisions`, `/meetings`, `/_not-found`)
 - `ƒ Proxy (Middleware)` (proxy.ts gates all non-PUBLIC_PATHS routes)
 
-## Blockers (carry forward; both required for Phase 10)
+## Blockers — none for v0.1.0 (all cleared in Phase 10)
 
-- **[H] Task 4.1** — `warsaw-ai-bot` GitHub App + `GITHUB_APP_ID` / `_PRIVATE_KEY` / `_INSTALLATION_ID` on Vercel **preview AND production**. Until set: `/this-week` + `/consent` + `/admin/health` + `/api/me/*` fail at installation-token acquisition. Preview is currently using a self-generated test PEM (`tests/fixtures/test-app.private-key.pem`) that signs JWTs GitHub rejects.
-- **Roster `github_handle` backfill** — 18 of 19 members are `*(TBD)*`. Required for non-founder logins. v0.1 ship-blocking.
+- ~~**[H] Task 4.1**~~ — Cleared 2026-05-03. Real `warsaw-ai-bot` GitHub App credentials set on Vercel production scope; smoke verified via `scripts/smoke-github-app.ts` + live consent + status writes.
+- ~~**Roster backfill**~~ — Reframed to v0.2+ scope. Founder + Mark Spasonov on roster (2 of 19); rest deferred to a future "git-based personal-invitation self-registration" feature (memory: `project_community_platform_invitation_feature.md`).
 
-## Known caveats (non-blocking)
+## Known caveats (non-blocking, post-v0.1.0 follow-ups)
 
+- **Persona slug↔folder mismatch:** `Mark Spasonov` slugifies to `mark-spasonov` but his persona folder is `mark-s` → `PersonaPanel` won't render his persona. Same for `Maksym Pavlenko` (would be `maksym-pavlenko` vs `maksym-p`) when added later. Resolution options: rename folders to display-name slugs, or add a `persona_id` lookup mechanism in `lib/roster.ts` analogous to `lib/git-email-aliases.ts`.
+- **`COMMUNITY_NAME` / `COMMUNITY_SLUG` on production stored as sensitive** — `vercel env pull` returns empty quotes for them. Runtime is unaffected (Vercel injects sensitive vars at function startup). Re-set with `--no-sensitive` for ops inspectability.
+- **Old preview alias** `warsaw-ai-platform.vercel.app` still points at a stale 2-day-old preview deploy; OAuth App Homepage URL also references it. Cosmetic only — production sign-in works.
+- **Lighthouse perf scores not yet measured against production.** Plan documented in CHANGELOG Phase 10 §8.5 row (cookie-injected lighthouse against authenticated routes).
+- **24-hour PII log scan** still pending (§8.6). Run after the platform sees a day of real traffic.
+- **OAuth App callback URL is now production-only** (preview sign-in via OAuth would 404). Vercel Deployment Protection on preview makes this acceptable for now; revisit if you want preview sign-in (separate OAuth App per scope).
+- **CI workflow drafted** at `.github/workflows/ci.yml` but uncommitted. Add as a follow-up PR after merge to main.
 - Tailwind typography plugin not installed; `prose` classes render as plain HTML (visual-only).
-- Preview env vars scoped to branch `warsaw-org-and-stack-guide` (per amendment §9.6) — broaden if any other branch needs preview deploys.
 - `typescript-reviewer` + `code-reviewer` agents both hit Anton's monthly Claude usage cap at Phase 6 + 7 closeouts. Self-review fallback (in `CONSTRAINTS.md`) is the standing pattern from Phase 6 onward.
 
 ## Next chat
 
-- **Chat 6** — Phase 10 (Pre-launch + ship), 4 tasks, ~0.5 day. Heavy Anton blockers on 10.3 (`vercel --prod`) and 10.4 (tag + announce).
-- Handoff (v2 lean): `docs/specs/2026-05-03-community-platform-phase-10-handoff.md`.
-- Per-phase brief: `projects/community-platform/phase-10-brief.md`.
+**None for v0.1.** Post-ship work (v0.2+ invitation feature, follow-ups above, CI gate) belongs to a NEW spec/plan cycle.
 
-## After Chat 6
+## Production
 
-- v0.1.0 ships. The `[Unreleased]` section in CHANGELOG flips to `[0.1.0] — <date>`.
-- This file should update to `phase: "10 complete (v0.1.0 shipped)"` with `next_chat: none`.
-- Any post-ship work (roster backfill, GBrain v0.2 kickoff, dashboard) belongs to a NEW spec/plan cycle, not the v0.1 cycle.
+- **URL:** https://warsaw-ai-community-platform.vercel.app
+- **Tag:** `community-platform-v0.1.0` at SHA `b26a8c2`
+- **Released:** 2026-05-03 via Vercel UI promote, then CLI redeploy after env-var fixes
+- **Repo will flip to public** at v0.1.0 ship per spec §0.5 + ADR-0001 (MIT licensing)
 
 ## Update protocol
 
