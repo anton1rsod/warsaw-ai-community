@@ -363,7 +363,50 @@ Last green commit (pending closeout): this entry's commit. Last code-only green:
 - Task 4.1 [H] still pending Anton (GitHub App + 3 env vars). `/admin/health` will return real metrics once env vars are real; until then the page either shows zero metrics (no statuses fetched because the bot can't authenticate) or fails at `getInstallationToken`.
 - Roster `github_handle` backfill for the other 18 members (carries from Phase 1).
 
-### Pending — Phase 10 (Pre-launch + ship)
-- Phase 10 (4 tasks: build verification, smoke, prod deploy, tag + announce) bundled into Chat 6 per execution-plan §10.2 (~0.5 day).
-- Includes 10.3 [H] (production deploy) and 10.4 [H] (tag + announce) — both blocked on Anton.
-- Tailwind typography plugin not installed; `prose` classes render as plain HTML for now (visual-only, no functional impact).
+### Phase 10 — Pre-launch + ship (verification in progress, 2026-05-03)
+
+Last green commit (pending closeout): this entry's commit. Last code-only green: `56e1cd3`.
+
+**Task 10.1 — Spec §8 acceptance verification log (this entry).** Per-item status:
+
+| § | Acceptance criterion | Status | Evidence / gap |
+|---|---|---|---|
+| 8.1 | All 19 roster members have `github_handle`; all can log in | **FAIL — ship-blocking** | `community/members/roster.md` has 1 of 19 backfilled (`@anton1rsod`); 2 organizer slots `*(TBD)*`; members table empty. Roster backfill PR required before 10.3. |
+| 8.2 | Status flow works E2E incl. delete + concurrent edit | **VERIFIED** | `e2e/status.spec.ts` covers post → list → edit → delete + concurrent-edit conflict (Phase 5 + 6). 19 E2E green at SHA `56e1cd3`. |
+| 8.3 | Contribution counter matches `git log` for ≥5 members | **DEFERRED + flagged** | (a) Blocked by 8.1 — only 1 backfilled handle is verifiable. (b) `lib/__generated__/contributions.json` currently shows `anton1rsod: { projectCommits: 0, adrsFiled: 0, meetingsAttended: 0, statusPosts: 0 }` despite 151 commits across the repo + 5 ADRs filed. Likely missing email/name→`github_handle` mapping or stale snapshot — investigate `lib/contributions.ts` + snapshot script before 10.3. Without a mapping the counter cannot pass for any member after backfill. |
+| 8.4 | Persona panel renders for 4 personas in `persona-builder/personas/` | **PARTIAL → ship-blocking** | `app/components/PersonaPanel.tsx` covered by tests (Phase §8 strict-list 100%). 4 persona folders (`dmitry-b`, `heorhii-k`, `maksym-p`, `mark-s`) exist on disk (created 2026-04-30) but are **untracked** in git as of SHA `4f0c735`. Commit + visual render verification required before 10.3. |
+| 8.5 | Lighthouse ≥ 90 on `/home`, `/members`, `/this-week` | **DEFERRED to post-deploy** | Preview URL `warsaw-ai-platform.vercel.app` returns **HTTP 401** (Vercel Deployment Protection); unauthenticated Lighthouse cannot crawl. Target routes also redirect to `/login` for unauthenticated GETs, so authenticated runs require Lighthouse `--extra-headers='{"Cookie":"next-auth.session-token=…"}'` against the production URL. Run plan in Task 10.2 below. |
+| 8.6 | No PII in error logs | **PARTIAL → defer log scan to post-deploy** | Code path covered: Phase 8 `security-reviewer` dispatch over `/api/me/{export,delete}`; GDPR endpoints derive identity from session, never request body (per `CONSTRAINTS.md` self-review item). Runtime log review against the first 24-hour window of production traffic happens after 10.3. |
+| 8.7 | Health metric viewable by admins | **VERIFIED** | `/admin/health` ships as ƒ Dynamic at `app/admin/health/page.tsx`; `isAdmin` gate runs before any GitHub API call (Phase 9 closeout, SHA `18b0d9e`). 100% coverage on `lib/health-metric.ts` (spec §8 strict-list addition). |
+
+**Verification summary:** VERIFIED 2/7 (8.2, 8.7) · PARTIAL 2/7 (8.4, 8.6) · DEFERRED 2/7 (8.3, 8.5) · FAIL 1/7 (8.1).
+
+**Pre-deploy ship gates (must clear before Task 10.3):**
+
+1. **Roster backfill** — the 18 outstanding members get `github_handle` populated in `community/members/roster.md` (current: 1 of 19). Closes §8.1; unblocks §8.3 prerequisite.
+2. **Persona commits** — the 4 untracked persona folders under `persona-builder/personas/` (`dmitry-b`, `heorhii-k`, `maksym-p`, `mark-s`) committed so §8.4 can be live-verified. PR or direct commit, Anton's call.
+3. **Contributions counter audit** — confirm `lib/contributions.ts` snapshot logic actually maps git authors → roster handles. If the all-zeros result is a real logic gap, ship a §9.x amendment + bugfix; else document the intended scoping in the snapshot script comment so future readers don't trip on it. Without this, §8.3 cannot pass even after backfill.
+4. **Task 4.1 production env vars** — `GITHUB_APP_ID` / `_PRIVATE_KEY` / `_INSTALLATION_ID` set on Vercel **production** scope (preview already has the test PEM). Verify with `vercel env ls` immediately before `vercel --prod`. Until set, `/this-week` + `/consent` + `/admin/health` + `/api/me/*` fail at installation-token acquisition in production.
+
+**Task 10.2 — Lighthouse + perf — DEFERRED to post-10.3** with reasoning (per phase brief: "score ≥ 90 OR documented gap"):
+
+- Preview URL gated at the Vercel edge (HTTP 401) → Lighthouse cannot crawl pre-deploy.
+- Production routes (`/home`, `/members`, `/this-week`) require an authenticated session; unauthenticated runs would measure the `/login` redirect target rather than the actual page payload.
+- **Run plan post-10.3:** Anton signs in to production once → captures the `next-auth.session-token` cookie value (DevTools → Application → Cookies) → runs:
+  ```bash
+  pnpm dlx lighthouse https://<prod-url>/home    --extra-headers='{"Cookie":"next-auth.session-token=<…>"}' --output=json --output-path=lighthouse-home.json    --view
+  pnpm dlx lighthouse https://<prod-url>/members --extra-headers='{"Cookie":"next-auth.session-token=<…>"}' --output=json --output-path=lighthouse-members.json --view
+  pnpm dlx lighthouse https://<prod-url>/this-week --extra-headers='{"Cookie":"next-auth.session-token=<…>"}' --output=json --output-path=lighthouse-this-week.json --view
+  ```
+- Score ≥ 90 on all three → proceed to 10.4. Score < 90 → apply plan.md L7543–L7547 fixes (`next/image`, `loading="lazy"`, `next.config.ts` cache headers), redeploy, re-run, then 10.4.
+- Fallback if cookie injection is brittle: use Vercel "Protection Bypass for Automation" or an authenticated headless run via Playwright + Lighthouse-CI. Decision deferred to the post-10.3 chat.
+
+**Tasks 10.3 + 10.4 — BLOCKED on the four pre-deploy ship gates above.** Auto-mode policy (per `CONSTRAINTS.md`) also pauses at `vercel --prod`, `git push --tags`, and `gh pr create` against main regardless of gate state — these need Anton at the keyboard.
+
+**Phase 10 partial closeout (verification log only — no code changes in this commit):**
+- `pnpm lint / typecheck / test:coverage / build` not re-run for this commit; doc-only edit. Last full green check at SHA `56e1cd3` (Phase 9 closeout): 281 unit/integration tests + 19 E2E green; coverage 84.6% lines / 94.16% branches; spec §8 strict-list at 100%.
+- This entry establishes the v0.1.0 readiness state at SHA `4f0c735`.
+
+**Outstanding (Phase 10 ship-readiness gate):**
+- The 4 pre-deploy ship gates above (roster backfill, persona commits, contributions audit, prod env vars).
+- Tailwind typography plugin still not installed; `prose` classes render as plain HTML (cosmetic, non-blocking).
