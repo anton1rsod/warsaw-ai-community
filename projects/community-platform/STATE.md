@@ -2,7 +2,7 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-04 (v0.1.1 SHIPPED)
+**Last updated**: 2026-05-04 (chat-10 follow-ups: Options C + E both DONE)
 
 ## Snapshot
 
@@ -40,6 +40,8 @@ phase_11_3_e2e_security_review: "2026-05-04 SHA 399e1a8 — 7 E2E scenarios (26 
 invite_secret_prod: "2026-05-04 — set, sensitive, 32+ bytes (Vercel CLI add)"
 invite_secret_preview: "2026-05-04 — set, sensitive, distinct from prod, gitBranch=null (all preview branches)"
 preview_env_branch_scope: "2026-05-04 — 13 vars re-scoped from warsaw-org-and-stack-guide → all preview branches via Vercel REST API PATCH on gitBranch field (no value handling)"
+community_vars_no_sensitive: "2026-05-04 — COMMUNITY_NAME + COMMUNITY_SLUG re-set with --no-sensitive on production AND preview (gitBranch=null); env pull returns 'Warsaw AI Community' / 'warsaw-ai' on both scopes"
+ci_workflow: "2026-05-04 — .github/workflows/ci.yml shipped via PR #4, merged to main at SHA ef19b65; Build step uses stub env vars (run bb959a0 green); workflow now runs on every PR touching projects/community-platform/**, community/**, persona-builder/personas/**/*.public.md, or .github/workflows/ci.yml itself"
 ```
 
 ## Spec §8 strict-list — 100% coverage
@@ -70,13 +72,13 @@ preview_env_branch_scope: "2026-05-04 — 13 vars re-scoped from warsaw-org-and-
 ## Known caveats (non-blocking, post-v0.1.0 follow-ups)
 
 - **Persona slug↔folder mismatch:** `Mark Spasonov` slugifies to `mark-spasonov` but his persona folder is `mark-s` → `PersonaPanel` won't render his persona. Same for `Maksym Pavlenko` (would be `maksym-pavlenko` vs `maksym-p`) when added later. Resolution options: rename folders to display-name slugs, or add a `persona_id` lookup mechanism in `lib/roster.ts` analogous to `lib/git-email-aliases.ts`.
-- **`COMMUNITY_NAME` / `COMMUNITY_SLUG` on production stored as sensitive** — `vercel env pull` returns empty quotes for them. Runtime is unaffected (Vercel injects sensitive vars at function startup). Re-set with `--no-sensitive` for ops inspectability.
+- ~~**`COMMUNITY_NAME` / `COMMUNITY_SLUG` on production stored as sensitive**~~ — RESOLVED 2026-05-04 (chat-10 Option C). Both vars re-set with `--no-sensitive` on production + preview; `vercel env pull` now returns the actual values on both scopes. (Caveat surfaced a CLI v52 quirk on the preview side — see `GOTCHAS.md` row 8.)
 - **Old preview alias** `warsaw-ai-platform.vercel.app` still points at a stale 2-day-old preview deploy; OAuth App Homepage URL also references it. Cosmetic only — production sign-in works.
 - ~~**Preview deploys are broken on every branch except `warsaw-org-and-stack-guide`**~~ — RESOLVED 2026-05-04. All 13 preview env vars re-scoped from `warsaw-org-and-stack-guide` → `gitBranch=null` (all preview branches) via Vercel REST API PATCH (no value handling needed). Recovery method (PATCH `/v9/projects/{id}/env/{envId}` with `{"gitBranch": null}`) is the canonical fix for branch-scoped-env-blocks-preview-builds — preferred over rm/add cycle because it leaves encrypted values untouched. Add row to GOTCHAS.md if pattern recurs.
 - **Lighthouse perf scores not yet measured against production.** Plan documented in CHANGELOG Phase 10 §8.5 row (cookie-injected lighthouse against authenticated routes).
 - **24-hour PII log scan** still pending (§8.6). Run after the platform sees a day of real traffic.
 - **OAuth App callback URL is now production-only** (preview sign-in via OAuth would 404). Vercel Deployment Protection on preview makes this acceptable for now; revisit if you want preview sign-in (separate OAuth App per scope).
-- **CI workflow drafted** at `.github/workflows/ci.yml` but uncommitted. Add as a follow-up PR after merge to main.
+- ~~**CI workflow drafted but uncommitted**~~ — RESOLVED 2026-05-04 (chat-10 Option E). Workflow shipped via PR #4, merged at SHA `ef19b65`. First run failed because `next build` page-data collection imports `lib/env.ts` (Zod-validated at module init); fixed in fix-up commit `bb959a0` adding stub env vars to the Build step only. Run `bb959a0` green pre-merge.
 - Tailwind typography plugin not installed; `prose` classes render as plain HTML (visual-only).
 - `typescript-reviewer` + `code-reviewer` agents both hit Anton's monthly Claude usage cap at Phase 6 + 7 closeouts. Self-review fallback (in `CONSTRAINTS.md`) is the standing pattern from Phase 6 onward.
 
@@ -88,14 +90,14 @@ preview_env_branch_scope: "2026-05-04 — 13 vars re-scoped from warsaw-org-and-
 
 **Chat 7 (DONE):** v0.1.1 invitation feature brainstorm via `superpowers:brainstorming`. Produced spec §11 (lines 457-1071, ~617 lines) at SHA `740be8e`. All Q1-Q7 decisions locked; 13 hardenings (H1-H13) numbered for testable contract.
 
-**Chat 10 handoff:** [`docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md). Menu of 8 small options (A–H) — Anton picks scope at chat start.
+**Chat 10 handoff:** [`docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md). Menu of 8 small options (A–H) — Anton picks scope at chat start. **Chat 10 picked C + E (DONE):** Option C closed (Vercel ops verified); Option E merged to main at SHA `ef19b65` (PR #4).
 
 **Pending follow-ups (mapped to chat-10 options):**
 - **A — Mark Spasonov backfill** (PR #3 open as Draft on `chore/mark-spasonov-backfill`): placeholders `@MARK_TELEGRAM_HANDLE_TBD` + `MARK_GIT_EMAIL_TBD` need real values from Mark out-of-band; mark Ready + merge.
-- **B — Branch protection on `main`**: PR-required + warsaw-ai-bot bypass + no force-push.
-- **C — `COMMUNITY_NAME`/`SLUG` `--no-sensitive`** re-set on production + preview.
+- **B — Branch protection on `main`**: PR-required + warsaw-ai-bot bypass + no force-push. **Prerequisite:** repo public flip per ADR-0001 (or GitHub Pro upgrade) — branch protection is gated on private-repo Free tier.
+- ~~**C — `COMMUNITY_NAME`/`SLUG` `--no-sensitive`**~~ — DONE 2026-05-04 (this chat). Both vars re-set on production + preview with `--no-sensitive`.
 - **D — Persona slug↔folder mismatch** (Łukasz/Maksym).
-- **E — CI workflow merge** from `.github/workflows/ci.yml` (drafted, uncommitted).
+- ~~**E — CI workflow merge**~~ — DONE 2026-05-04 (this chat). PR #4 merged to main at SHA `ef19b65`.
 - **F — v0.2 brainstorm** (project / contribution tracking — fresh `superpowers:brainstorming` chat).
 - **G — 24-hour PII log scan** (spec §8.6 carryover from v0.1.0).
 - **H — Lighthouse perf measurement** against production (spec §10 carryover).
