@@ -2,7 +2,7 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-04 (chat-10 follow-ups: Options C + E + G + H all DONE)
+**Last updated**: 2026-05-04 (chat-10 follow-ups: C + E + G + H DONE; B partial; D + F in PRs)
 
 ## Snapshot
 
@@ -44,6 +44,8 @@ community_vars_no_sensitive: "2026-05-04 — COMMUNITY_NAME + COMMUNITY_SLUG re-
 ci_workflow: "2026-05-04 — .github/workflows/ci.yml shipped via PR #4, merged to main at SHA ef19b65; Build step uses stub env vars (run bb959a0 green); workflow now runs on every PR touching projects/community-platform/**, community/**, persona-builder/personas/**/*.public.md, or .github/workflows/ci.yml itself"
 pii_log_scan_24h: "2026-05-04 — chat-10 Option G; vercel logs --environment=production --since=24h returned 6 entries (low traffic — Anton's smoke test only); zero matches for token/email/cookie patterns; one 'error' log was Auth.js InvalidCheck (PKCE flow interrupted) with stack frames but no PII. Re-run when real traffic accumulates."
 lighthouse_baseline_login: "2026-05-04 — chat-10 Option H; lighthouse 12.8.2 against production /login. Mobile: Performance 99 / Accessibility 100 / Best Practices 96 / SEO 91, LCP 1.5s, TBT 60ms, CLS 0. Desktop: Performance 100 / same others. All categories exceed spec §10 90+ budget. Authenticated-route measurement deferred (cookie-handoff). Reports at projects/community-platform/perf-baselines/."
+repo_visibility: "2026-05-04 — chat-10 Option B; flipped from private to public via `gh repo edit --visibility public --accept-visibility-change-consequences` per ADR-0001. Pre-flip secret scan against full git history was clean (zero realistic-looking PEM/OAuth-secret/NEXTAUTH_SECRET/INVITE_SECRET/AWS-key/JWT/Bearer/api-key matches; only test placeholders + allowlisted test PEM)."
+branch_protection_main: "2026-05-04 — chat-10 Option B; legacy branch-protection rule on main: allow_force_pushes=false, allow_deletions=false, enforce_admins=false. NO PR-required gate yet — user-owned repos can't use `bypass_pull_request_allowances` (org-only via legacy API), and modern Rulesets API needs warsaw-ai-bot's numeric App ID (not exposed via gh OAuth scope). Follow-up: paste App ID from GitHub Settings → Developer settings → GitHub Apps → warsaw-ai-bot, then create a Ruleset with `bypass_actors: [{actor_id: <id>, actor_type: Integration, bypass_mode: always}]` + `pull_request: required`."
 ```
 
 ## Spec §8 strict-list — 100% coverage
@@ -98,7 +100,7 @@ lighthouse_baseline_login: "2026-05-04 — chat-10 Option H; lighthouse 12.8.2 a
 
 **Pending follow-ups (mapped to chat-10 options):**
 - **A — Mark Spasonov backfill** (PR #3 open as Draft on `chore/mark-spasonov-backfill`): placeholders `@MARK_TELEGRAM_HANDLE_TBD` + `MARK_GIT_EMAIL_TBD` need real values from Mark out-of-band; mark Ready + merge. **Only chat-10 option NOT picked** — explicit Anton call.
-- **B — Branch protection on `main`** + repo public flip per ADR-0001. **In flight (chat 10).**
+- ~~**B — repo public flip + branch protection**~~ — PARTIAL 2026-05-04 (this chat). Repo flipped to public per ADR-0001 (secret scan clean). Branch protection on `main` set to: force-push=false, deletions=false. **PR-required gate deferred** — needs warsaw-ai-bot's numeric App ID for the modern Rulesets API (legacy `bypass_pull_request_allowances` is org-only and doesn't apply to user-owned repos). One-line follow-up commit lands the ruleset once the App ID is available.
 - ~~**C — `COMMUNITY_NAME`/`SLUG` `--no-sensitive`**~~ — DONE 2026-05-04. Both vars re-set on production + preview with `--no-sensitive`.
 - ~~**D — Persona slug↔folder mismatch**~~ — DONE 2026-05-04 (this chat). PR #7 — `mark-s` → `mark-spasonov`, `maksym-p` → `maksym-pavlenko`; forward-defending invariant test added.
 - ~~**E — CI workflow merge**~~ — DONE 2026-05-04. PR #4 merged at SHA `ef19b65`.
@@ -113,7 +115,8 @@ lighthouse_baseline_login: "2026-05-04 — chat-10 Option H; lighthouse 12.8.2 a
 - **Tag:** `community-platform-v0.1.1` at merge SHA `036695c`, deploy `fg6rfweki`
 - **Previous tag:** `community-platform-v0.1.0` at SHA `b26a8c2`
 - **Released:** 2026-05-04 via PR #2 merge → Vercel auto-deploy
-- **Repo flips to public** at v0.1.0 ship per spec §0.5 + ADR-0001 (MIT licensing)
+- **Repo is public** as of 2026-05-04 (chat-10 Option B) per spec §0.5 + ADR-0001 (MIT licensing)
+- **Branch protection on `main`:** force-push blocked, deletion blocked. PR-required gate is a follow-up (needs warsaw-ai-bot App ID for Rulesets API bypass).
 
 ## Update protocol
 
