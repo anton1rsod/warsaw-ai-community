@@ -2,22 +2,22 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-04 (v0.1.1 implementation complete; release PR pending)
+**Last updated**: 2026-05-04 (v0.1.1 SHIPPED)
 
 ## Snapshot
 
 ```yaml
-last_green: 629af16                # phase-10-followups HEAD; v0.1.1 implementation complete
+last_green: 036695c                # main HEAD — merge of PR #2 (v0.1.1 release)
 last_code_only_green: 399e1a8      # security-reviewer M1+M2 fixes (last code-touching commit)
-phase: "v0.1.1 implementation complete; release PR pending"
+phase: "v0.1.1 shipped"
 spec_sha: 740be8e                   # spec §11 + final-pass hardening fixes
 plan_sha: 2201dd9                   # v0.1.1-plan.md (37 tasks across 3 phases)
-branch: phase-10-followups          # release PR opens against main when preview goes green
-tests: "475 unit/integration + 26 E2E"  # +181 unit/integration, +7 E2E from v0.1.0 baseline
+branch: main                        # post-merge; phase-10-followups is now historical
+tests: "475 unit/integration + 26 E2E"
 overall_coverage: "88% lines / 92% branches  (gate: 80%)"
 amendments_applied: "§9.2, §9.5–§9.18"
 production: "https://warsaw-ai-community-platform.vercel.app"
-tag: "community-platform-v0.1.0"   # v0.1.1 tag pushed at Task 11.3.9
+tag: "community-platform-v0.1.1"   # at merge SHA 036695c, deployed to prod (fg6rfweki)
 ```
 
 ## Last verified
@@ -72,7 +72,7 @@ preview_env_branch_scope: "2026-05-04 — 13 vars re-scoped from warsaw-org-and-
 - **Persona slug↔folder mismatch:** `Mark Spasonov` slugifies to `mark-spasonov` but his persona folder is `mark-s` → `PersonaPanel` won't render his persona. Same for `Maksym Pavlenko` (would be `maksym-pavlenko` vs `maksym-p`) when added later. Resolution options: rename folders to display-name slugs, or add a `persona_id` lookup mechanism in `lib/roster.ts` analogous to `lib/git-email-aliases.ts`.
 - **`COMMUNITY_NAME` / `COMMUNITY_SLUG` on production stored as sensitive** — `vercel env pull` returns empty quotes for them. Runtime is unaffected (Vercel injects sensitive vars at function startup). Re-set with `--no-sensitive` for ops inspectability.
 - **Old preview alias** `warsaw-ai-platform.vercel.app` still points at a stale 2-day-old preview deploy; OAuth App Homepage URL also references it. Cosmetic only — production sign-in works.
-- **Preview deploys are broken on every branch except `warsaw-org-and-stack-guide`** (root cause diagnosed 2026-05-03 evening). All 13 application env vars on Preview are scoped to `Preview · warsaw-org-and-stack-guide` instead of all-Preview. Result: build fails at `Invalid environment configuration: <var>: Required` during `pnpm build`'s page-data collection. Dashboard Edit saves do NOT persist for sensitive-flagged vars (verified empirically — single-var test of `COMMUNITY_NAME` via dashboard didn't change `vercel env pull` output). **Recovery path:** CLI script that runs `vercel env rm <NAME> preview --git-branch warsaw-org-and-stack-guide --yes` then `vercel env add <NAME> preview` for each of the 13. The 3 true secrets (`NEXTAUTH_SECRET`, `GITHUB_OAUTH_CLIENT_SECRET`, `GITHUB_APP_PRIVATE_KEY`) need Gotcha-6 `pbpaste > file > chmod 600` flow; the other 10 are public-knowledge or extractable from production env pull (`GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, `GITHUB_REPO_OWNER`, `NEXTAUTH_URL` come through the pull; `COMMUNITY_NAME = "Warsaw AI Community"`, `COMMUNITY_SLUG = "warsaw-ai-community"`, `GITHUB_REPO_NAME = "warsaw-ai-community"`, `GITHUB_REPO_BRANCH = "main"`, `NEXTAUTH_SESSION_MAX_AGE = 2592000` are public; `GITHUB_OAUTH_CLIENT_ID` from GitHub OAuth App settings UI). **Blocking:** v0.1.1 Task 11.2.12 manual smoke requires preview green; resolve before that task starts. **Not blocking:** v0.1.0 production (live + healthy) or v0.1.1 plan-writing (committed). Add row to GOTCHAS.md after the fix lands and recovery is verified.
+- ~~**Preview deploys are broken on every branch except `warsaw-org-and-stack-guide`**~~ — RESOLVED 2026-05-04. All 13 preview env vars re-scoped from `warsaw-org-and-stack-guide` → `gitBranch=null` (all preview branches) via Vercel REST API PATCH (no value handling needed). Recovery method (PATCH `/v9/projects/{id}/env/{envId}` with `{"gitBranch": null}`) is the canonical fix for branch-scoped-env-blocks-preview-builds — preferred over rm/add cycle because it leaves encrypted values untouched. Add row to GOTCHAS.md if pattern recurs.
 - **Lighthouse perf scores not yet measured against production.** Plan documented in CHANGELOG Phase 10 §8.5 row (cookie-injected lighthouse against authenticated routes).
 - **24-hour PII log scan** still pending (§8.6). Run after the platform sees a day of real traffic.
 - **OAuth App callback URL is now production-only** (preview sign-in via OAuth would 404). Vercel Deployment Protection on preview makes this acceptable for now; revisit if you want preview sign-in (separate OAuth App per scope).
@@ -82,20 +82,25 @@ preview_env_branch_scope: "2026-05-04 — 13 vars re-scoped from warsaw-org-and-
 
 ## Next chat
 
-**Chat 9 — v0.1.1 invitation feature implementation.** Handoff doc + paste-ready prompt: [`docs/specs/2026-05-03-community-platform-v0-1-1-implementation-handoff.md`](../../docs/specs/2026-05-03-community-platform-v0-1-1-implementation-handoff.md). Mode: `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans`. Input: `v0.1.1-plan.md` (SHA `2201dd9`) + spec §11 (SHA `740be8e`). 37 tasks across 3 phases. Phase 11.1 first.
+**Chat 9 (DONE):** v0.1.1 invitation feature implementation via `superpowers:subagent-driven-development`. All 37 tasks shipped: PR #2 merged at `036695c`; tag `community-platform-v0.1.1` pushed; production deploy `fg6rfweki` Ready; ALREADY-MEMBER smoke verified by Anton on production.
 
 **Chat 8 (DONE):** v0.1.1 plan-writing via `superpowers:writing-plans`. Produced [`v0.1.1-plan.md`](v0.1.1-plan.md) at SHA `2201dd9` — 5858 lines, 37 tasks, 191 checkboxes, all 13 hardenings mapped to specific test files via `describe("H<n>:")` prefix.
 
 **Chat 7 (DONE):** v0.1.1 invitation feature brainstorm via `superpowers:brainstorming`. Produced spec §11 (lines 457-1071, ~617 lines) at SHA `740be8e`. All Q1-Q7 decisions locked; 13 hardenings (H1-H13) numbered for testable contract.
 
-**Optional cleanup chat** (still low-priority; can batch with v0.1.1 PR when convenient): `COMMUNITY_NAME`/`SLUG` re-set with `--no-sensitive`, persona slug↔folder mismatch fix, CI workflow merge from `.github/workflows/ci.yml` (already drafted). Not blocking Chat 8.
+**Pending follow-ups:**
+- **Mark Spasonov backfill PR** (Task 11.3.8 in v0.1.1-plan.md): small PR adding his Telegram handle + git-email-alias. Branch off main, tiny diff. Per Q6 lock — kept separate from release PR.
+- **Branch protection on `main`**: PR-required + warsaw-ai-bot bypass + no force-push. Verify via GitHub Settings → Branches.
+- **Optional cleanup**: persona slug↔folder mismatch (Łukasz/Maksym), `COMMUNITY_NAME`/`SLUG` `--no-sensitive` re-set, CI workflow merge from `.github/workflows/ci.yml` (drafted).
+- **First real invitation** (Anton's choice): mint for one of the 17 outstanding members; verify ledger gains a row after redemption.
 
 ## Production
 
 - **URL:** https://warsaw-ai-community-platform.vercel.app
-- **Tag:** `community-platform-v0.1.0` at SHA `b26a8c2`
-- **Released:** 2026-05-03 via Vercel UI promote, then CLI redeploy after env-var fixes
-- **Repo will flip to public** at v0.1.0 ship per spec §0.5 + ADR-0001 (MIT licensing)
+- **Tag:** `community-platform-v0.1.1` at merge SHA `036695c`, deploy `fg6rfweki`
+- **Previous tag:** `community-platform-v0.1.0` at SHA `b26a8c2`
+- **Released:** 2026-05-04 via PR #2 merge → Vercel auto-deploy
+- **Repo flips to public** at v0.1.0 ship per spec §0.5 + ADR-0001 (MIT licensing)
 
 ## Update protocol
 
