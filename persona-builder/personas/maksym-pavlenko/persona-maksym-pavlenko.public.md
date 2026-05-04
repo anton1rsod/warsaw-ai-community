@@ -1,5 +1,5 @@
 ---
-persona_id: maksym-p
+persona_id: maksym-pavlenko
 display_name: Maksym Pavlenko
 languages: [en]
 schema_version: 1.0
