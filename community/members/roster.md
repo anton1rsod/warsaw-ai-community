@@ -19,7 +19,7 @@ Opt-in public roster. Members listed here have consented to public visibility in
 
 | Name | GitHub | Telegram | Link | Focus |
 |---|---|---|---|---|
-| Mark Spasonov | @markspas |  | https://www.linkedin.com/in/markspas/ | RevOps / AI-augmented sales ops |
+| Mark Spasonov | @markspas | @MARK_TELEGRAM_HANDLE_TBD | https://www.linkedin.com/in/markspas/ | RevOps / AI-augmented sales ops |
 
 ## Notes
 
