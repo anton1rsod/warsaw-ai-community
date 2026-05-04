@@ -1,5 +1,5 @@
 ---
-persona_id: mark-s
+persona_id: mark-spasonov
 display_name: Mark Spasonov
 languages: [en]
 schema_version: 1.0
