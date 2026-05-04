@@ -2,22 +2,22 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-03 (v0.1.1 plan written; implementation next)
+**Last updated**: 2026-05-04 (v0.1.1 implementation complete; release PR pending)
 
 ## Snapshot
 
 ```yaml
-last_green: b26a8c2                # fix: tolerate missing .git in build-contributions.ts
-last_code_only_green: b26a8c2      # same; release commit is doc-only
-phase: "v0.1.1 plan written; implementation next"   # chat 8 (2026-05-03) produced plan
+last_green: 629af16                # phase-10-followups HEAD; v0.1.1 implementation complete
+last_code_only_green: 399e1a8      # security-reviewer M1+M2 fixes (last code-touching commit)
+phase: "v0.1.1 implementation complete; release PR pending"
 spec_sha: 740be8e                   # spec §11 + final-pass hardening fixes
 plan_sha: 2201dd9                   # v0.1.1-plan.md (37 tasks across 3 phases)
-branch: phase-10-followups          # plan lives here until v0.1.1 release PR merges
-tests: "294 unit/integration + 19 E2E"  # v0.1.0 baseline; v0.1.1 will add ~85 + 7
-overall_coverage: "84.73% lines / 93.7% branches  (gate: 80%)"
+branch: phase-10-followups          # release PR opens against main when preview goes green
+tests: "475 unit/integration + 26 E2E"  # +181 unit/integration, +7 E2E from v0.1.0 baseline
+overall_coverage: "88% lines / 92% branches  (gate: 80%)"
 amendments_applied: "§9.2, §9.5–§9.18"
 production: "https://warsaw-ai-community-platform.vercel.app"
-tag: "community-platform-v0.1.0"
+tag: "community-platform-v0.1.0"   # v0.1.1 tag pushed at Task 11.3.9
 ```
 
 ## Last verified
@@ -36,6 +36,10 @@ prod_url_alias: "2026-05-03 — warsaw-ai-community-platform.vercel.app pointing
 production_runtime: "2026-05-03 — full credential chain operational under real traffic (consent commit 29954f4 + status post 5b5699b + admin/health rendering 1/2)"
 phase_11_1_lib_primitives: "2026-05-03 SHA 47f7045 — lib/invitations.ts 100% lines/functions/statements (branches 92.55% — 7 unreachable post-guard fallbacks); H1, H2, H3, H7, H8, H9, H10, H11, H12, H13 tested; 406 unit tests green"
 phase_11_2_surfaces_actions: "2026-05-03 SHA aec8328 — all 13 hardenings (H1-H13) tested; 5 of 6 strict-list additions 100% lines/branches; lib/invitations.ts 100% lines (branch gap = post-guard unreachable fallbacks, accepted); pnpm build green; 467 unit/integration tests passing"
+phase_11_3_e2e_security_review: "2026-05-04 SHA 399e1a8 — 7 E2E scenarios (26 total); security review 0 CRITICAL / 0 HIGH; M1+M2 fixed inline; H1-H13 grep returns 16 hits across 13 unique IDs"
+invite_secret_prod: "2026-05-04 — set, sensitive, 32+ bytes (Vercel CLI add)"
+invite_secret_preview: "2026-05-04 — set, sensitive, distinct from prod, gitBranch=null (all preview branches)"
+preview_env_branch_scope: "2026-05-04 — 13 vars re-scoped from warsaw-org-and-stack-guide → all preview branches via Vercel REST API PATCH on gitBranch field (no value handling)"
 ```
 
 ## Spec §8 strict-list — 100% coverage
