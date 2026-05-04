@@ -88,11 +88,18 @@ preview_env_branch_scope: "2026-05-04 — 13 vars re-scoped from warsaw-org-and-
 
 **Chat 7 (DONE):** v0.1.1 invitation feature brainstorm via `superpowers:brainstorming`. Produced spec §11 (lines 457-1071, ~617 lines) at SHA `740be8e`. All Q1-Q7 decisions locked; 13 hardenings (H1-H13) numbered for testable contract.
 
-**Pending follow-ups:**
-- **Mark Spasonov backfill PR** (Task 11.3.8 in v0.1.1-plan.md): small PR adding his Telegram handle + git-email-alias. Branch off main, tiny diff. Per Q6 lock — kept separate from release PR.
-- **Branch protection on `main`**: PR-required + warsaw-ai-bot bypass + no force-push. Verify via GitHub Settings → Branches.
-- **Optional cleanup**: persona slug↔folder mismatch (Łukasz/Maksym), `COMMUNITY_NAME`/`SLUG` `--no-sensitive` re-set, CI workflow merge from `.github/workflows/ci.yml` (drafted).
-- **First real invitation** (Anton's choice): mint for one of the 17 outstanding members; verify ledger gains a row after redemption.
+**Chat 10 handoff:** [`docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md). Menu of 8 small options (A–H) — Anton picks scope at chat start.
+
+**Pending follow-ups (mapped to chat-10 options):**
+- **A — Mark Spasonov backfill** (PR #3 open as Draft on `chore/mark-spasonov-backfill`): placeholders `@MARK_TELEGRAM_HANDLE_TBD` + `MARK_GIT_EMAIL_TBD` need real values from Mark out-of-band; mark Ready + merge.
+- **B — Branch protection on `main`**: PR-required + warsaw-ai-bot bypass + no force-push.
+- **C — `COMMUNITY_NAME`/`SLUG` `--no-sensitive`** re-set on production + preview.
+- **D — Persona slug↔folder mismatch** (Łukasz/Maksym).
+- **E — CI workflow merge** from `.github/workflows/ci.yml` (drafted, uncommitted).
+- **F — v0.2 brainstorm** (project / contribution tracking — fresh `superpowers:brainstorming` chat).
+- **G — 24-hour PII log scan** (spec §8.6 carryover from v0.1.0).
+- **H — Lighthouse perf measurement** against production (spec §10 carryover).
+- **First real invitation** (Anton's choice): mint for one of the 17 outstanding members; verify ledger gains a row after redemption — separate from chat scope.
 
 ## Production
 
