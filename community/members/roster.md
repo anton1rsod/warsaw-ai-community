@@ -15,11 +15,11 @@ Opt-in public roster. Members listed here have consented to public visibility in
 
 ## Members (opt-in)
 
-*Members can add themselves via PR. Include: name, GitHub handle (required for community-platform sign-in), optional link (LinkedIn etc.), optional focus area.*
+*Members can add themselves via the invitation flow or via PR. Include: name, GitHub handle (required for community-platform sign-in), Telegram handle (required for invitation flow), optional link, optional focus area.*
 
-| Name | GitHub | Link | Focus |
-|---|---|---|---|
-| Mark Spasonov | @markspas | https://www.linkedin.com/in/markspas/ | RevOps / AI-augmented sales ops |
+| Name | GitHub | Telegram | Link | Focus |
+|---|---|---|---|---|
+| Mark Spasonov | @markspas |  | https://www.linkedin.com/in/markspas/ | RevOps / AI-augmented sales ops |
 
 ## Notes
 

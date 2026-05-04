@@ -1,0 +1,23 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`appendRedemptionRow — snapshot-as-contract > appends a row to an empty ledger (snapshot) 1`] = `
+"# Invitations Ledger
+
+Append-only audit trail of personal invitations. Rows are NEVER edited or deleted.
+
+| JTI | Status | Issued At | Issued By | Hint (Telegram) | Redeemed At | Redeemed By | Notes |
+|---|---|---|---|---|---|---|---|
+| 11111111-2222-4333-8444-555555555555 | redeemed | 2026-05-01T10:00:00.000Z | @anton1rsod | @antonsafronov | 2026-05-01T11:00:00.000Z | @newmember |  |
+"
+`;
+
+exports[`appendRevocationRow — snapshot > appends a revocation row (snapshot) 1`] = `
+"# Invitations Ledger
+
+Append-only audit trail of personal invitations. Rows are NEVER edited or deleted.
+
+| JTI | Status | Issued At | Issued By | Hint (Telegram) | Redeemed At | Redeemed By | Notes |
+|---|---|---|---|---|---|---|---|
+| 22222222-2222-4222-8222-222222222222 | revoked | 2026-05-02T00:00:00.000Z | @anton1rsod | @badactor |  |  | revoked by @anton1rsod (suspected leak) |
+"
+`;

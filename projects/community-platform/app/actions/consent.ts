@@ -7,6 +7,7 @@ import { findMemberByHandle } from "@/lib/content-snapshot";
 import { createGitHubApp } from "@/lib/github-app";
 import { CONSENT_COOKIE } from "@/lib/consent-cookie";
 import { mockConsentStore } from "@/app/actions/_test-consent-store";
+import { generateConsentMarkdown } from "@/lib/consent-content";
 
 // `"use server"` modules can only export async functions — keep types
 // inline (not exported) and import the cookie name from lib/.
@@ -26,19 +27,6 @@ function client(): ReturnType<typeof createGitHubApp> {
 
 function profilePath(slug: string): string {
   return `community/members/${slug}.md`;
-}
-
-function stubBody(handle: string, name: string): string {
-  return [
-    "---",
-    `name: ${name}`,
-    `github_handle: ${handle}`,
-    `consented_at: ${new Date().toISOString()}`,
-    "---",
-    "",
-    "_Profile prose to come — open a PR to fill this in._",
-    "",
-  ].join("\n");
 }
 
 function isE2EMockActive(): boolean {
@@ -90,7 +78,10 @@ export async function acceptConsent(): Promise<ConsentResult> {
 
     await c.writeFile(
       profilePath(member.slug),
-      stubBody(session.githubHandle, member.name),
+      generateConsentMarkdown({
+        name: member.name,
+        githubHandle: session.githubHandle,
+      }),
       { message: `feat(community): ${session.githubHandle} platform consent` },
     );
     return { ok: true };

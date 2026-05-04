@@ -2,20 +2,44 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-03 (v0.1.0 shipped)
+**Last updated**: 2026-05-04 (v0.1.1 implementation complete; release PR pending)
 
 ## Snapshot
 
 ```yaml
-last_green: b26a8c2                # fix: tolerate missing .git in build-contributions.ts
-last_code_only_green: b26a8c2      # same; release commit is doc-only
-phase: "10 complete (v0.1.0 shipped)"
-branch: warsaw-org-and-stack-guide
-tests: "294 unit/integration + 19 E2E"
-overall_coverage: "84.73% lines / 93.7% branches  (gate: 80%)"
+last_green: 629af16                # phase-10-followups HEAD; v0.1.1 implementation complete
+last_code_only_green: 399e1a8      # security-reviewer M1+M2 fixes (last code-touching commit)
+phase: "v0.1.1 implementation complete; release PR pending"
+spec_sha: 740be8e                   # spec §11 + final-pass hardening fixes
+plan_sha: 2201dd9                   # v0.1.1-plan.md (37 tasks across 3 phases)
+branch: phase-10-followups          # release PR opens against main when preview goes green
+tests: "475 unit/integration + 26 E2E"  # +181 unit/integration, +7 E2E from v0.1.0 baseline
+overall_coverage: "88% lines / 92% branches  (gate: 80%)"
 amendments_applied: "§9.2, §9.5–§9.18"
 production: "https://warsaw-ai-community-platform.vercel.app"
-tag: "community-platform-v0.1.0"
+tag: "community-platform-v0.1.0"   # v0.1.1 tag pushed at Task 11.3.9
+```
+
+## Last verified
+
+> Tracks state checks that future chats can SKIP re-running if recent (< ~7 days) and current task doesn't depend on the verified surface. Update when a check is performed; don't update without performing it.
+
+```yaml
+prod_env_vars: "2026-05-03 SHA 1b063ce — all 13 set, no placeholders, smoke green"
+oauth_callback_url: "2026-05-03 — production-only callback registered; preview OAuth disabled by design"
+github_app_install: "2026-05-03 — warsaw-ai-bot installed on anton1rsod/warsaw-ai-community"
+github_app_credentials: "2026-05-03 — scripts/smoke-github-app.ts returns OK end-to-end against real GitHub API"
+build_chain_no_git: "2026-05-03 — build-contributions.ts try/catch fix landed; CLI deploys succeed (b26a8c2)"
+contributions_alias_file: "2026-05-03 — community/members/git-email-aliases.md seeded with anton@rsod.solutions → anton1rsod"
+vercel_root_dir: "2026-05-03 — .vercel/ at repo root; rootDirectory=projects/community-platform; CLI deploys must run from repo root"
+prod_url_alias: "2026-05-03 — warsaw-ai-community-platform.vercel.app pointing at deploy fq36nrp5w"
+production_runtime: "2026-05-03 — full credential chain operational under real traffic (consent commit 29954f4 + status post 5b5699b + admin/health rendering 1/2)"
+phase_11_1_lib_primitives: "2026-05-03 SHA 47f7045 — lib/invitations.ts 100% lines/functions/statements (branches 92.55% — 7 unreachable post-guard fallbacks); H1, H2, H3, H7, H8, H9, H10, H11, H12, H13 tested; 406 unit tests green"
+phase_11_2_surfaces_actions: "2026-05-03 SHA aec8328 — all 13 hardenings (H1-H13) tested; 5 of 6 strict-list additions 100% lines/branches; lib/invitations.ts 100% lines (branch gap = post-guard unreachable fallbacks, accepted); pnpm build green; 467 unit/integration tests passing"
+phase_11_3_e2e_security_review: "2026-05-04 SHA 399e1a8 — 7 E2E scenarios (26 total); security review 0 CRITICAL / 0 HIGH; M1+M2 fixed inline; H1-H13 grep returns 16 hits across 13 unique IDs"
+invite_secret_prod: "2026-05-04 — set, sensitive, 32+ bytes (Vercel CLI add)"
+invite_secret_preview: "2026-05-04 — set, sensitive, distinct from prod, gitBranch=null (all preview branches)"
+preview_env_branch_scope: "2026-05-04 — 13 vars re-scoped from warsaw-org-and-stack-guide → all preview branches via Vercel REST API PATCH on gitBranch field (no value handling)"
 ```
 
 ## Spec §8 strict-list — 100% coverage
@@ -48,6 +72,7 @@ tag: "community-platform-v0.1.0"
 - **Persona slug↔folder mismatch:** `Mark Spasonov` slugifies to `mark-spasonov` but his persona folder is `mark-s` → `PersonaPanel` won't render his persona. Same for `Maksym Pavlenko` (would be `maksym-pavlenko` vs `maksym-p`) when added later. Resolution options: rename folders to display-name slugs, or add a `persona_id` lookup mechanism in `lib/roster.ts` analogous to `lib/git-email-aliases.ts`.
 - **`COMMUNITY_NAME` / `COMMUNITY_SLUG` on production stored as sensitive** — `vercel env pull` returns empty quotes for them. Runtime is unaffected (Vercel injects sensitive vars at function startup). Re-set with `--no-sensitive` for ops inspectability.
 - **Old preview alias** `warsaw-ai-platform.vercel.app` still points at a stale 2-day-old preview deploy; OAuth App Homepage URL also references it. Cosmetic only — production sign-in works.
+- **Preview deploys are broken on every branch except `warsaw-org-and-stack-guide`** (root cause diagnosed 2026-05-03 evening). All 13 application env vars on Preview are scoped to `Preview · warsaw-org-and-stack-guide` instead of all-Preview. Result: build fails at `Invalid environment configuration: <var>: Required` during `pnpm build`'s page-data collection. Dashboard Edit saves do NOT persist for sensitive-flagged vars (verified empirically — single-var test of `COMMUNITY_NAME` via dashboard didn't change `vercel env pull` output). **Recovery path:** CLI script that runs `vercel env rm <NAME> preview --git-branch warsaw-org-and-stack-guide --yes` then `vercel env add <NAME> preview` for each of the 13. The 3 true secrets (`NEXTAUTH_SECRET`, `GITHUB_OAUTH_CLIENT_SECRET`, `GITHUB_APP_PRIVATE_KEY`) need Gotcha-6 `pbpaste > file > chmod 600` flow; the other 10 are public-knowledge or extractable from production env pull (`GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, `GITHUB_REPO_OWNER`, `NEXTAUTH_URL` come through the pull; `COMMUNITY_NAME = "Warsaw AI Community"`, `COMMUNITY_SLUG = "warsaw-ai-community"`, `GITHUB_REPO_NAME = "warsaw-ai-community"`, `GITHUB_REPO_BRANCH = "main"`, `NEXTAUTH_SESSION_MAX_AGE = 2592000` are public; `GITHUB_OAUTH_CLIENT_ID` from GitHub OAuth App settings UI). **Blocking:** v0.1.1 Task 11.2.12 manual smoke requires preview green; resolve before that task starts. **Not blocking:** v0.1.0 production (live + healthy) or v0.1.1 plan-writing (committed). Add row to GOTCHAS.md after the fix lands and recovery is verified.
 - **Lighthouse perf scores not yet measured against production.** Plan documented in CHANGELOG Phase 10 §8.5 row (cookie-injected lighthouse against authenticated routes).
 - **24-hour PII log scan** still pending (§8.6). Run after the platform sees a day of real traffic.
 - **OAuth App callback URL is now production-only** (preview sign-in via OAuth would 404). Vercel Deployment Protection on preview makes this acceptable for now; revisit if you want preview sign-in (separate OAuth App per scope).
@@ -57,7 +82,13 @@ tag: "community-platform-v0.1.0"
 
 ## Next chat
 
-**None for v0.1.** Post-ship work (v0.2+ invitation feature, follow-ups above, CI gate) belongs to a NEW spec/plan cycle.
+**Chat 9 — v0.1.1 invitation feature implementation.** Handoff doc + paste-ready prompt: [`docs/specs/2026-05-03-community-platform-v0-1-1-implementation-handoff.md`](../../docs/specs/2026-05-03-community-platform-v0-1-1-implementation-handoff.md). Mode: `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans`. Input: `v0.1.1-plan.md` (SHA `2201dd9`) + spec §11 (SHA `740be8e`). 37 tasks across 3 phases. Phase 11.1 first.
+
+**Chat 8 (DONE):** v0.1.1 plan-writing via `superpowers:writing-plans`. Produced [`v0.1.1-plan.md`](v0.1.1-plan.md) at SHA `2201dd9` — 5858 lines, 37 tasks, 191 checkboxes, all 13 hardenings mapped to specific test files via `describe("H<n>:")` prefix.
+
+**Chat 7 (DONE):** v0.1.1 invitation feature brainstorm via `superpowers:brainstorming`. Produced spec §11 (lines 457-1071, ~617 lines) at SHA `740be8e`. All Q1-Q7 decisions locked; 13 hardenings (H1-H13) numbered for testable contract.
+
+**Optional cleanup chat** (still low-priority; can batch with v0.1.1 PR when convenient): `COMMUNITY_NAME`/`SLUG` re-set with `--no-sensitive`, persona slug↔folder mismatch fix, CI workflow merge from `.github/workflows/ci.yml` (already drafted). Not blocking Chat 8.
 
 ## Production
 
@@ -71,8 +102,23 @@ tag: "community-platform-v0.1.0"
 When you close a phase:
 
 1. Update CHANGELOG with the phase entry (canonical history).
-2. Update this file's `Snapshot`, `Spec §8 strict-list`, `Live routes`, `Blockers`, and `Next chat` sections.
+2. Update this file's `Snapshot`, `Last verified`, `Spec §8 strict-list`, `Live routes`, `Blockers`, and `Next chat` sections.
 3. Bump `Last updated`.
-4. Commit both in the same `docs(community-platform): close Phase N` commit.
+4. If you observed a non-obvious operational gotcha during the phase, append a row to `GOTCHAS.md`.
+5. Commit STATE + CHANGELOG + GOTCHAS in the same `docs(community-platform): close Phase N` commit.
 
 If STATE.md drifts from CHANGELOG, treat CHANGELOG as authoritative and refresh STATE.md.
+
+## Where to find things
+
+| Need | Read |
+|---|---|
+| Right-now state of play | `STATE.md` (this file) — read first |
+| What this chat owns | `phase-N-brief.md` (the per-phase brief) |
+| Locked rules | `CONSTRAINTS.md` |
+| Operational gotchas (env, CLI, deploy, auth) | `GOTCHAS.md` |
+| Recurring code-level plan defects | `../../docs/playbooks/recurring-plan-defects.md` |
+| Phase tasks | `plan.md` — read by line range from the phase brief |
+| Plan amendments | `execution-plan.md §9` |
+| History | `CHANGELOG.md` — read on demand only |
+| Cold-pickup reference | `HANDOFF.md` — pre-Phase 0 archive; rarely needed |

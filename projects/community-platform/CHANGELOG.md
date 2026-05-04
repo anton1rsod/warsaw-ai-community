@@ -16,6 +16,72 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.1.1] — 2026-05-04
+
+**Personal-invitation registration shipped.** Admin mints HMAC-signed `/onboard?token=…` URL → invitee redeems → `warsaw-ai-bot` writes 4 files atomically (roster + git-email-aliases + invitations ledger + member profile). Replaces the manual Telegram-then-PR roster backfill workflow.
+
+- **Architecture (spec §11):** stateless tokens — HMAC-SHA-256 over canonical-JSON payload, base64url-encoded, RFC 4122 v4 JTI, 7-day TTL. Trust = signature valid + `exp > now()` + JTI not in ledger + redeemer-handle not in roster. The token IS the state.
+- **Surfaces:** `/admin/invite` (admin RBAC), `/onboard` (3 render branches: signin / form / 404), `/onboard/error` (generic info-leak-resistant 404). `/admin/health` pattern reused for the admin gate.
+- **13 hardenings (H1–H13)** under `describe("H<n>: …")` test prefixes — single grep at DoD verifies all present:
+
+  | ID | Property |
+  |---|---|
+  | H1 | HMAC-SHA-256 + canonical-JSON + `crypto.timingSafeEqual` |
+  | H2 | JTI replay defense via append-only ledger |
+  | H3 | Manual revocation via append-only ledger |
+  | H4 | `Referrer-Policy: no-referrer` + `X-Frame-Options: DENY` + `Cache-Control: no-store` on `/onboard*` |
+  | H5 | First-GET handoff in `proxy.ts` (token consumed → cookie set → 302 to clean URL) |
+  | H6 | `__Secure-warsaw_invite` cookie (HttpOnly + Secure + SameSite=Strict + Path=/onboard + 24h) — dev fallback `warsaw_invite` (no Secure) |
+  | H7 | `logRedemptionEvent` whitelist logger — never emits token / secret / form PII |
+  | H8 | Zod `.object({})` whitelist (mass-assignment defense) |
+  | H9 | https-only link validation + max 200 chars |
+  | H10 | Newline rejection on display_name + focus |
+  | H11 | YAML-safe emitter (`yamlString` = `JSON.stringify`) — closes YAML 1.1 implicit-typing risks |
+  | H12 | Slug collision + reserved-slug policy (`-2` … cap at `-9`) |
+  | H13 | Retry-once on 409 sha_conflict, with re-read of ledger before re-attempt |
+
+- **Tests:** 475 unit/integration (was 294 in v0.1.0) + 26 E2E (was 19). Coverage: 88% lines / 92% branches; v0.1.1 strict-list additions at 100% lines (lib/invitations.ts has 7 unreachable post-guard branches, accepted).
+- **Security review (2026-05-04):** 0 CRITICAL / 0 HIGH / 2 MEDIUM (M1 + M2 fixed inline at SHA `399e1a8`) / 3 LOW (deferred — no blocking issue). All 13 hardenings verified clean.
+
+### Added
+
+- `lib/slug.ts` — promoted `slugify` from `lib/roster.ts`; new `RESERVED_SLUGS` + `nextAvailableSlug`.
+- `lib/yaml-string.ts` — H11 helper.
+- `lib/consent-content.ts` — extracted `generateConsentMarkdown` (DRY for consent + redemption flows).
+- `lib/invitations.ts` — `canonicalJson`, `mintToken`, `verifyToken`, `RedeemFormSchema`, ledger parser + row generators, `logRedemptionEvent`, orchestrator `redeemInvitation`.
+- `lib/roster.ts` — `appendMember` (5-col Members table writer).
+- `lib/git-email-aliases.ts` — `appendAlias` with case-insensitive duplicate guard.
+- `lib/github-app.ts` — `commitMultipleFiles` (atomic blob×N → tree → commit → updateRef with CAS) + `getHeadSha`.
+- `lib/env.ts` — `INVITE_SECRET` required (min 32 chars, sensitive).
+- Routes: `app/admin/invite/page.tsx`, `app/onboard/page.tsx`, `app/onboard/error/page.tsx`, `app/onboard/not-found.tsx`, `app/api/test-reset-invitations/route.ts` (dev only), `app/api/test-mint-expired/route.ts` (dev only).
+- Components: `app/components/InviteUrlDisplay.tsx`, `app/components/InviteForm.tsx`, `app/components/OnboardForm.tsx` (with soft-binding banner).
+- Server actions: `app/actions/mint-invitation.ts`, `app/actions/redeem-invitation.ts`, `app/actions/_test-invitation-store.ts`.
+- `community/members/invitations.md` — empty append-only ledger seed.
+- E2E: `e2e/invitation.spec.ts` (7 scenarios — happy + invalid + expired + replayed + already-member + form-fail + soft-binding banner with H4 header assertion).
+
+### Changed
+
+- `community/members/roster.md` — Members table migrated 4-col → 5-col (Telegram added). Mark Spasonov's Telegram cell intentionally blank (backfilled via separate PR per Q6 lock).
+- `app/actions/consent.ts` — uses extracted `generateConsentMarkdown`. Member profile YAML frontmatter `name` + `consented_at` now double-quoted (H11) — closes YAML 1.1 implicit-typing risks.
+- `proxy.ts` — `/onboard` + `/onboard/error` added to PUBLIC_PATHS; `/api/test-reset-invitations` + `/api/test-mint-expired` added to dev-only PUBLIC_PATHS; H5 invite handoff (cookie-set + redirect-to-clean-URL) moved into proxy because Next 16 disallows `cookies().set()` in Server Components.
+- `app/onboard/page.tsx` — three render branches with `notFound()` short-circuits; soft-binding banner conditionally rendered when `hint_telegram` present.
+
+### Reused (plan refinement, not addition)
+
+- Existing `isAdmin` from `lib/content-snapshot.ts` (matches `/admin/health` pattern). Spec §11.3 said "Add isAdmin" but v0.1 already had a synchronous, governance-snapshot-backed version. Admin semantics for v0.1.1 = handle in `community/governance/admins.md`.
+
+### Pre-release ops
+
+- `INVITE_SECRET` provisioned on production + preview (distinct values, sensitive).
+- Preview env vars re-scoped from `warsaw-org-and-stack-guide` → all preview branches via Vercel REST API PATCH on `gitBranch` (no value handling required).
+- §11.7 DoD checklist verified; H1–H13 grep returns 16 hits across 13 unique hardening identifiers.
+
+### Spec + plan
+
+- Spec §11 at SHA `740be8e`. Plan: `v0.1.1-plan.md` at SHA `2201dd9`.
+
+---
+
 ## [0.1.0] — 2026-05-03
 
 **Released.** Lite-slice platform shipped to https://warsaw-ai-community-platform.vercel.app — see Phase 10 entries below for the ship sequence + acceptance verification log.

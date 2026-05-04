@@ -2,6 +2,11 @@ import { NextResponse, type NextRequest } from "next/server";
 import { decode } from "next-auth/jwt";
 import { findMemberByHandle } from "@/lib/content-snapshot";
 import { CONSENT_COOKIE } from "@/lib/consent-cookie";
+import {
+  INVITE_COOKIE_NAME,
+  inviteCookieOptions,
+  verifyToken,
+} from "@/lib/invitations";
 
 // `/consent` is reachable while not yet consented (that's the whole
 // point — first-time roster members hit this page to opt in). Every
@@ -14,14 +19,18 @@ import { CONSENT_COOKIE } from "@/lib/consent-cookie";
 // Defense-in-depth.
 const PUBLIC_PATHS = new Set<string>(
   process.env.NODE_ENV === "production"
-    ? ["/login", "/no-access", "/consent"]
+    ? ["/login", "/no-access", "/consent", "/onboard", "/onboard/error"]
     : [
         "/login",
         "/no-access",
         "/consent",
+        "/onboard",
+        "/onboard/error",
         "/api/test-auth",
         "/api/test-reset-status",
         "/api/test-reset-consent",
+        "/api/test-reset-invitations",
+        "/api/test-mint-expired",
       ],
 );
 // Any new public-route entry point (e.g. /.well-known/security.txt,
@@ -32,6 +41,18 @@ const PUBLIC_PREFIXES = [
   "/favicon",
   "/.well-known",
 ] as const;
+
+/**
+ * H4 (spec §11.5): /onboard* responses carry Referrer-Policy, X-Frame-Options,
+ * and Cache-Control: no-store so an invitation token in the URL doesn't leak
+ * via Referer header on outbound clicks, can't be framed, and isn't cached.
+ */
+function applyOnboardHeaders(res: NextResponse): NextResponse {
+  res.headers.set("Referrer-Policy", "no-referrer");
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("Cache-Control", "no-store");
+  return res;
+}
 
 const COOKIE_NAME = "authjs.session-token";
 const SECURE_COOKIE_NAME = "__Secure-authjs.session-token";
@@ -91,12 +112,66 @@ async function getHandleFromRequest(
   }
 }
 
+/**
+ * H5 (spec §11.5): redirect-to-clean-URL for /onboard?token=…
+ *
+ * When a user clicks an invitation URL, the proxy verifies the token's
+ * HMAC signature, sets the `__Secure-warsaw_invite` cookie scoped to
+ * /onboard, and 302-redirects to the clean /onboard URL. The
+ * token-bearing URL therefore touches Vercel access logs ONCE per
+ * redemption, and the URL bar is cleaned post-redirect.
+ *
+ * Why proxy.ts rather than the page: Server Components can't call
+ * `cookies().set()` (Next.js raises "Cookies can only be modified in a
+ * Server Action or Route Handler"). The proxy CAN modify cookies on the
+ * outgoing response. Doing the handoff here also collapses two GETs
+ * (page + redirect) into one early-return at the proxy boundary.
+ *
+ * If the token signature/exp/schema is invalid, return null so the
+ * caller falls through to the standard PUBLIC_PATHS path. The page then
+ * sees no cookie and renders the generic 404 (info-leak prevention).
+ */
+function tryInviteHandoff(
+  req: NextRequest,
+  token: string,
+): NextResponse | null {
+  const secret = process.env.INVITE_SECRET;
+  if (!secret) return null;
+  const verified = verifyToken(token, secret);
+  if (!verified) return null;
+
+  const cleanUrl = new URL("/onboard", req.url);
+  const res = NextResponse.redirect(cleanUrl);
+  res.cookies.set(INVITE_COOKIE_NAME, token, inviteCookieOptions());
+  applyOnboardHeaders(res);
+  return res;
+}
+
 export default async function proxy(
   req: NextRequest,
 ): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
 
-  if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
+  // H5: handle /onboard?token=… handoff before falling into PUBLIC_PATHS.
+  // A successful handoff returns a 302 to the clean URL with the cookie
+  // attached; failures (bad signature/exp/schema) fall through to the
+  // page so the page emits the same generic 404 as a direct GET (no
+  // info leak).
+  if (pathname === "/onboard") {
+    const tokenParam = req.nextUrl.searchParams.get("token");
+    if (tokenParam) {
+      const handoff = tryInviteHandoff(req, tokenParam);
+      if (handoff) return handoff;
+    }
+  }
+
+  if (PUBLIC_PATHS.has(pathname)) {
+    const res = NextResponse.next();
+    if (pathname === "/onboard" || pathname === "/onboard/error") {
+      return applyOnboardHeaders(res);
+    }
+    return res;
+  }
   if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
