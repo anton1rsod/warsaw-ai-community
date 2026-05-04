@@ -2,7 +2,7 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-04 (chat-10 follow-ups: Options C + E both DONE)
+**Last updated**: 2026-05-04 (chat-10 follow-ups: C + E + G + H DONE; B partial; D + F in PRs)
 
 ## Snapshot
 
@@ -42,6 +42,10 @@ invite_secret_preview: "2026-05-04 — set, sensitive, distinct from prod, gitBr
 preview_env_branch_scope: "2026-05-04 — 13 vars re-scoped from warsaw-org-and-stack-guide → all preview branches via Vercel REST API PATCH on gitBranch field (no value handling)"
 community_vars_no_sensitive: "2026-05-04 — COMMUNITY_NAME + COMMUNITY_SLUG re-set with --no-sensitive on production AND preview (gitBranch=null); env pull returns 'Warsaw AI Community' / 'warsaw-ai' on both scopes"
 ci_workflow: "2026-05-04 — .github/workflows/ci.yml shipped via PR #4, merged to main at SHA ef19b65; Build step uses stub env vars (run bb959a0 green); workflow now runs on every PR touching projects/community-platform/**, community/**, persona-builder/personas/**/*.public.md, or .github/workflows/ci.yml itself"
+pii_log_scan_24h: "2026-05-04 — chat-10 Option G; vercel logs --environment=production --since=24h returned 6 entries (low traffic — Anton's smoke test only); zero matches for token/email/cookie patterns; one 'error' log was Auth.js InvalidCheck (PKCE flow interrupted) with stack frames but no PII. Re-run when real traffic accumulates."
+lighthouse_baseline_login: "2026-05-04 — chat-10 Option H; lighthouse 12.8.2 against production /login. Mobile: Performance 99 / Accessibility 100 / Best Practices 96 / SEO 91, LCP 1.5s, TBT 60ms, CLS 0. Desktop: Performance 100 / same others. All categories exceed spec §10 90+ budget. Authenticated-route measurement deferred (cookie-handoff). Reports at projects/community-platform/perf-baselines/."
+repo_visibility: "2026-05-04 — chat-10 Option B; flipped from private to public via `gh repo edit --visibility public --accept-visibility-change-consequences` per ADR-0001. Pre-flip secret scan against full git history was clean (zero realistic-looking PEM/OAuth-secret/NEXTAUTH_SECRET/INVITE_SECRET/AWS-key/JWT/Bearer/api-key matches; only test placeholders + allowlisted test PEM)."
+branch_protection_main: "2026-05-04 — chat-10 Option B; legacy branch-protection rule on main: allow_force_pushes=false, allow_deletions=false, enforce_admins=false. NO PR-required gate yet — user-owned repos can't use `bypass_pull_request_allowances` (org-only via legacy API), and modern Rulesets API needs warsaw-ai-bot's numeric App ID (not exposed via gh OAuth scope). Follow-up: paste App ID from GitHub Settings → Developer settings → GitHub Apps → warsaw-ai-bot, then create a Ruleset with `bypass_actors: [{actor_id: <id>, actor_type: Integration, bypass_mode: always}]` + `pull_request: required`."
 ```
 
 ## Spec §8 strict-list — 100% coverage
@@ -75,8 +79,8 @@ ci_workflow: "2026-05-04 — .github/workflows/ci.yml shipped via PR #4, merged 
 - ~~**`COMMUNITY_NAME` / `COMMUNITY_SLUG` on production stored as sensitive**~~ — RESOLVED 2026-05-04 (chat-10 Option C). Both vars re-set with `--no-sensitive` on production + preview; `vercel env pull` now returns the actual values on both scopes. (Caveat surfaced a CLI v52 quirk on the preview side — see `GOTCHAS.md` row 8.)
 - **Old preview alias** `warsaw-ai-platform.vercel.app` still points at a stale 2-day-old preview deploy; OAuth App Homepage URL also references it. Cosmetic only — production sign-in works.
 - ~~**Preview deploys are broken on every branch except `warsaw-org-and-stack-guide`**~~ — RESOLVED 2026-05-04. All 13 preview env vars re-scoped from `warsaw-org-and-stack-guide` → `gitBranch=null` (all preview branches) via Vercel REST API PATCH (no value handling needed). Recovery method (PATCH `/v9/projects/{id}/env/{envId}` with `{"gitBranch": null}`) is the canonical fix for branch-scoped-env-blocks-preview-builds — preferred over rm/add cycle because it leaves encrypted values untouched. Add row to GOTCHAS.md if pattern recurs.
-- **Lighthouse perf scores not yet measured against production.** Plan documented in CHANGELOG Phase 10 §8.5 row (cookie-injected lighthouse against authenticated routes).
-- **24-hour PII log scan** still pending (§8.6). Run after the platform sees a day of real traffic.
+- ~~**Lighthouse perf scores not yet measured against production**~~ — RESOLVED 2026-05-04 (chat-10 Option H). Anonymous-route baseline at `projects/community-platform/perf-baselines/`: Performance 99/100 mobile, 100/100 desktop. Authenticated-route measurement still deferred (needs cookie handoff per `perf-baselines/README.md`).
+- ~~**24-hour PII log scan still pending**~~ — RUN 2026-05-04 (chat-10 Option G). Zero token/email/cookie leaks across the 24h window. **Caveat:** only 6 logs captured (low traffic — Anton's smoke test only); structural verification rather than stress test. Re-run when real traffic accumulates per spec §8.6.
 - **OAuth App callback URL is now production-only** (preview sign-in via OAuth would 404). Vercel Deployment Protection on preview makes this acceptable for now; revisit if you want preview sign-in (separate OAuth App per scope).
 - ~~**CI workflow drafted but uncommitted**~~ — RESOLVED 2026-05-04 (chat-10 Option E). Workflow shipped via PR #4, merged at SHA `ef19b65`. First run failed because `next build` page-data collection imports `lib/env.ts` (Zod-validated at module init); fixed in fix-up commit `bb959a0` adding stub env vars to the Build step only. Run `bb959a0` green pre-merge.
 - Tailwind typography plugin not installed; `prose` classes render as plain HTML (visual-only).
@@ -90,17 +94,19 @@ ci_workflow: "2026-05-04 — .github/workflows/ci.yml shipped via PR #4, merged 
 
 **Chat 7 (DONE):** v0.1.1 invitation feature brainstorm via `superpowers:brainstorming`. Produced spec §11 (lines 457-1071, ~617 lines) at SHA `740be8e`. All Q1-Q7 decisions locked; 13 hardenings (H1-H13) numbered for testable contract.
 
-**Chat 10 handoff:** [`docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md). Menu of 8 small options (A–H) — Anton picks scope at chat start. **Chat 10 picked C + E (DONE):** Option C closed (Vercel ops verified); Option E merged to main at SHA `ef19b65` (PR #4).
+**Chat 10 handoff:** [`docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md). Menu of 8 small options (A–H) — Anton picks scope at chat start. **Chat 10 picked everything except A** (B + C + D + E + F + G + H). All seven done or merged-pending in chat 10.
+
+**Chat 11 handoff (DRAFTED):** [`docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md). v0.2 brainstorm scope: project / contribution tracking, profile editor UI, admin/CM-distinct UI, DB-return decision (§6.1). Per HANDOFF_PROTOCOL §8 sub-skill sequence — chat-11 invokes `superpowers:brainstorming`.
 
 **Pending follow-ups (mapped to chat-10 options):**
-- **A — Mark Spasonov backfill** (PR #3 open as Draft on `chore/mark-spasonov-backfill`): placeholders `@MARK_TELEGRAM_HANDLE_TBD` + `MARK_GIT_EMAIL_TBD` need real values from Mark out-of-band; mark Ready + merge.
-- **B — Branch protection on `main`**: PR-required + warsaw-ai-bot bypass + no force-push. **Prerequisite:** repo public flip per ADR-0001 (or GitHub Pro upgrade) — branch protection is gated on private-repo Free tier.
-- ~~**C — `COMMUNITY_NAME`/`SLUG` `--no-sensitive`**~~ — DONE 2026-05-04 (this chat). Both vars re-set on production + preview with `--no-sensitive`.
-- **D — Persona slug↔folder mismatch** (Łukasz/Maksym).
-- ~~**E — CI workflow merge**~~ — DONE 2026-05-04 (this chat). PR #4 merged to main at SHA `ef19b65`.
-- **F — v0.2 brainstorm** (project / contribution tracking — fresh `superpowers:brainstorming` chat).
-- **G — 24-hour PII log scan** (spec §8.6 carryover from v0.1.0).
-- **H — Lighthouse perf measurement** against production (spec §10 carryover).
+- **A — Mark Spasonov backfill** (PR #3 open as Draft on `chore/mark-spasonov-backfill`): placeholders `@MARK_TELEGRAM_HANDLE_TBD` + `MARK_GIT_EMAIL_TBD` need real values from Mark out-of-band; mark Ready + merge. **Only chat-10 option NOT picked** — explicit Anton call.
+- ~~**B — repo public flip + branch protection**~~ — PARTIAL 2026-05-04 (this chat). Repo flipped to public per ADR-0001 (secret scan clean). Branch protection on `main` set to: force-push=false, deletions=false. **PR-required gate deferred** — needs warsaw-ai-bot's numeric App ID for the modern Rulesets API (legacy `bypass_pull_request_allowances` is org-only and doesn't apply to user-owned repos). One-line follow-up commit lands the ruleset once the App ID is available.
+- ~~**C — `COMMUNITY_NAME`/`SLUG` `--no-sensitive`**~~ — DONE 2026-05-04. Both vars re-set on production + preview with `--no-sensitive`.
+- ~~**D — Persona slug↔folder mismatch**~~ — DONE 2026-05-04 (this chat). PR #7 — `mark-s` → `mark-spasonov`, `maksym-p` → `maksym-pavlenko`; forward-defending invariant test added.
+- ~~**E — CI workflow merge**~~ — DONE 2026-05-04. PR #4 merged at SHA `ef19b65`.
+- ~~**F — v0.2 brainstorm**~~ — HANDOFF DRAFTED 2026-05-04 (chat-11 invocation queued via `superpowers:brainstorming`). PR #6.
+- ~~**G — 24-hour PII log scan**~~ — RUN 2026-05-04. Zero leaks; structural-verification only (low traffic).
+- ~~**H — Lighthouse perf measurement**~~ — DONE 2026-05-04. /login Performance 99 mobile / 100 desktop; auth-routes deferred.
 - **First real invitation** (Anton's choice): mint for one of the 17 outstanding members; verify ledger gains a row after redemption — separate from chat scope.
 
 ## Production
@@ -109,7 +115,8 @@ ci_workflow: "2026-05-04 — .github/workflows/ci.yml shipped via PR #4, merged 
 - **Tag:** `community-platform-v0.1.1` at merge SHA `036695c`, deploy `fg6rfweki`
 - **Previous tag:** `community-platform-v0.1.0` at SHA `b26a8c2`
 - **Released:** 2026-05-04 via PR #2 merge → Vercel auto-deploy
-- **Repo flips to public** at v0.1.0 ship per spec §0.5 + ADR-0001 (MIT licensing)
+- **Repo is public** as of 2026-05-04 (chat-10 Option B) per spec §0.5 + ADR-0001 (MIT licensing)
+- **Branch protection on `main`:** force-push blocked, deletion blocked. PR-required gate is a follow-up (needs warsaw-ai-bot App ID for Rulesets API bypass).
 
 ## Update protocol
 
