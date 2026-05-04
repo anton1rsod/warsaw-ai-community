@@ -2,7 +2,7 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-04 (chat-10 follow-ups: Option C closed; Option E PR #4 open + green)
+**Last updated**: 2026-05-04 (chat-10 follow-ups: Options C + E both DONE)
 
 ## Snapshot
 
@@ -41,7 +41,7 @@ invite_secret_prod: "2026-05-04 — set, sensitive, 32+ bytes (Vercel CLI add)"
 invite_secret_preview: "2026-05-04 — set, sensitive, distinct from prod, gitBranch=null (all preview branches)"
 preview_env_branch_scope: "2026-05-04 — 13 vars re-scoped from warsaw-org-and-stack-guide → all preview branches via Vercel REST API PATCH on gitBranch field (no value handling)"
 community_vars_no_sensitive: "2026-05-04 — COMMUNITY_NAME + COMMUNITY_SLUG re-set with --no-sensitive on production AND preview (gitBranch=null); env pull returns 'Warsaw AI Community' / 'warsaw-ai' on both scopes"
-ci_workflow: "2026-05-04 — .github/workflows/ci.yml shipped via PR #4 (chore/community-platform-ci-workflow); Build step uses stub env vars (run bb959a0 green); awaiting merge to main"
+ci_workflow: "2026-05-04 — .github/workflows/ci.yml shipped via PR #4, merged to main at SHA ef19b65; Build step uses stub env vars (run bb959a0 green); workflow now runs on every PR touching projects/community-platform/**, community/**, persona-builder/personas/**/*.public.md, or .github/workflows/ci.yml itself"
 ```
 
 ## Spec §8 strict-list — 100% coverage
@@ -78,7 +78,7 @@ ci_workflow: "2026-05-04 — .github/workflows/ci.yml shipped via PR #4 (chore/c
 - **Lighthouse perf scores not yet measured against production.** Plan documented in CHANGELOG Phase 10 §8.5 row (cookie-injected lighthouse against authenticated routes).
 - **24-hour PII log scan** still pending (§8.6). Run after the platform sees a day of real traffic.
 - **OAuth App callback URL is now production-only** (preview sign-in via OAuth would 404). Vercel Deployment Protection on preview makes this acceptable for now; revisit if you want preview sign-in (separate OAuth App per scope).
-- ~~**CI workflow drafted but uncommitted**~~ — IN FLIGHT 2026-05-04 (chat-10 Option E). Workflow shipped via PR #4 on `chore/community-platform-ci-workflow`; first run failed because `next build` page-data collection imports `lib/env.ts` (Zod-validated at module init); fixed in fix-up commit `bb959a0` adding stub env vars to the Build step only. Run `bb959a0` green. Awaiting merge to main.
+- ~~**CI workflow drafted but uncommitted**~~ — RESOLVED 2026-05-04 (chat-10 Option E). Workflow shipped via PR #4, merged at SHA `ef19b65`. First run failed because `next build` page-data collection imports `lib/env.ts` (Zod-validated at module init); fixed in fix-up commit `bb959a0` adding stub env vars to the Build step only. Run `bb959a0` green pre-merge.
 - Tailwind typography plugin not installed; `prose` classes render as plain HTML (visual-only).
 - `typescript-reviewer` + `code-reviewer` agents both hit Anton's monthly Claude usage cap at Phase 6 + 7 closeouts. Self-review fallback (in `CONSTRAINTS.md`) is the standing pattern from Phase 6 onward.
 
@@ -90,14 +90,14 @@ ci_workflow: "2026-05-04 — .github/workflows/ci.yml shipped via PR #4 (chore/c
 
 **Chat 7 (DONE):** v0.1.1 invitation feature brainstorm via `superpowers:brainstorming`. Produced spec §11 (lines 457-1071, ~617 lines) at SHA `740be8e`. All Q1-Q7 decisions locked; 13 hardenings (H1-H13) numbered for testable contract.
 
-**Chat 10 handoff:** [`docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md). Menu of 8 small options (A–H) — Anton picks scope at chat start. **Chat 10 picked C + E:** Option C closed; Option E in flight (PR #4 open + green at SHA `bb959a0`).
+**Chat 10 handoff:** [`docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md). Menu of 8 small options (A–H) — Anton picks scope at chat start. **Chat 10 picked C + E (DONE):** Option C closed (Vercel ops verified); Option E merged to main at SHA `ef19b65` (PR #4).
 
 **Pending follow-ups (mapped to chat-10 options):**
 - **A — Mark Spasonov backfill** (PR #3 open as Draft on `chore/mark-spasonov-backfill`): placeholders `@MARK_TELEGRAM_HANDLE_TBD` + `MARK_GIT_EMAIL_TBD` need real values from Mark out-of-band; mark Ready + merge.
 - **B — Branch protection on `main`**: PR-required + warsaw-ai-bot bypass + no force-push. **Prerequisite:** repo public flip per ADR-0001 (or GitHub Pro upgrade) — branch protection is gated on private-repo Free tier.
 - ~~**C — `COMMUNITY_NAME`/`SLUG` `--no-sensitive`**~~ — DONE 2026-05-04 (this chat). Both vars re-set on production + preview with `--no-sensitive`.
 - **D — Persona slug↔folder mismatch** (Łukasz/Maksym).
-- ~~**E — CI workflow merge**~~ — IN FLIGHT 2026-05-04 (this chat). PR #4 open at SHA `bb959a0`, run green. Awaiting merge to main.
+- ~~**E — CI workflow merge**~~ — DONE 2026-05-04 (this chat). PR #4 merged to main at SHA `ef19b65`.
 - **F — v0.2 brainstorm** (project / contribution tracking — fresh `superpowers:brainstorming` chat).
 - **G — 24-hour PII log scan** (spec §8.6 carryover from v0.1.0).
 - **H — Lighthouse perf measurement** against production (spec §10 carryover).
