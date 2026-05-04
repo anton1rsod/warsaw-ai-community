@@ -76,4 +76,23 @@ jobs:
         run: pnpm test:coverage
 
       - name: Build
+        # `next build` collects page data, which triggers module init on
+        # every route — including `lib/env.ts` whose Zod schema rejects
+        # missing values at import. Real secrets are not in CI; the values
+        # below are dummies that satisfy the schema (`min(32)` for HMAC
+        # secrets, valid URL for `NEXTAUTH_URL`). No GitHub API calls
+        # happen during build, so stub credentials are safe.
+        env:
+          NEXTAUTH_SECRET: '0123456789abcdef0123456789abcdef0123456789'
+          NEXTAUTH_URL: 'http://localhost:3000'
+          GITHUB_OAUTH_CLIENT_ID: 'ci-stub-client-id'
+          GITHUB_OAUTH_CLIENT_SECRET: 'ci-stub-client-secret'
+          GITHUB_APP_ID: '0'
+          GITHUB_APP_PRIVATE_KEY: 'ci-stub-private-key-not-real'
+          GITHUB_APP_INSTALLATION_ID: '0'
+          GITHUB_REPO_OWNER: 'ci-stub-owner'
+          GITHUB_REPO_NAME: 'ci-stub-repo'
+          COMMUNITY_NAME: 'CI Build'
+          COMMUNITY_SLUG: 'ci-build'
+          INVITE_SECRET: 'ci-stub-invite-secret-min-32-chars'
         run: pnpm build
