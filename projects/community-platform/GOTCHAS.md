@@ -94,6 +94,24 @@ Then `vercel env add NAME production --yes < ~/Documents/secrets/<name>.txt`. Th
 
 ---
 
+## 8. `vercel env add NAME preview` silently no-ops without an empty `""` branch positional
+
+**Symptom.** `vercel env rm NAME preview --yes` succeeds; the matching `vercel env add NAME preview --no-sensitive --yes <<< "value"` does NOT add the row back. `vercel env ls preview` shows the var is gone. No error printed; the CLI exits cleanly.
+
+**Root cause.** Preview env vars in Vercel are branch-scoped: each row carries a `gitBranch` field (specific branch name OR `null` for "all preview branches"). When the CLI is invoked in agent / non-interactive mode without an explicit branch positional, it cannot prompt for the branch and exits without writing the row. Production env vars don't carry `gitBranch`, so the same `add` syntax works on production.
+
+**Recovery.** Add an empty positional `""` after the env name to mean "all preview branches" (i.e. `gitBranch=null`):
+
+```bash
+echo "Warsaw AI Community" | vercel env add COMMUNITY_NAME preview "" --no-sensitive --yes
+```
+
+To verify, `vercel env ls preview` should show the row, and `vercel env pull --environment=preview --git-branch=<any>` should return the value (any branch works because `gitBranch=null` matches all).
+
+**First observed.** Chat-10 Option C, 2026-05-04. Production rm/add cycle completed cleanly; preview rm worked but preview add (without `""`) silently no-op'd, leaving preview Zod-validation broken until the empty-positional retry. Project memory `project_community_platform_invitation_feature.md` already noted the quirk for v0.1.1 INVITE_SECRET setup; this row makes it discoverable from `GOTCHAS.md` for future ops.
+
+---
+
 ## Meta — when to add a row
 
 A new gotcha earns a row when ALL of:
