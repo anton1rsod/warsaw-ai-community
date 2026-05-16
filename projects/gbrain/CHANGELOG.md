@@ -63,7 +63,7 @@ GBrain stays in `0.x` indefinitely. The major version `1.0.0` is reserved — An
 - Real-channel cutover — Phase E (separate dedicated chat) covers bot-token rotation, `CHAT_ID` switch to the real Warsaw AI Community channel, onboarding pin, and the `gbrain-v0.2.0` tag.
 
 ### Calibration note
-- `ASK_SIMILARITY_THRESHOLD` set to `<TBD-after-calibration>` (commands/ask.ts). Tuned against the staging archive via `scripts/calibrate-threshold.ts` — see closeout doc `docs/specs/2026-05-NN-gbrain-0.1.2-rehearsal-closeout.md` for the seed query set, sample size, and the chosen value's rationale.
+- `ASK_SIMILARITY_THRESHOLD` set to `0.55` (commands/ask.ts, commit `e16a60d`). Tuned via sandbox-via-fixtures using `scripts/calibrate-fixtures.ts` — the monorepo archive had 0 `#kb` items at calibration time, so a real-corpus retune is scheduled for 0.2.x (per spec §9.3 OQ-1 follow-on). See closeout doc `docs/specs/2026-05-NN-gbrain-0.1.2-rehearsal-closeout.md` §3 for the seed query set, sample size, and the chosen value's rationale.
 
 ## [0.1.1] - 2026-04-26 — rehearsal complete + Phase D cleanup + Gemini direct
 

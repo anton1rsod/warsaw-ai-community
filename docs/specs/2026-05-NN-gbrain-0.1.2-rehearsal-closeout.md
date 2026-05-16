@@ -41,7 +41,7 @@ Released as **`gbrain-v0.1.2`**.
 | **3 — `/help` + `/help <command>`** | `<PASS/FAIL>` | Full registry rendered. Per-command detail page renders. Telegram link: `<paste>`. |
 | **4 — Pinned-message regeneration** | `<PASS/FAIL>` | Ran `pnpm tsx scripts/regen-pinned.ts --confirm-chat-id=<staging-id>`. Pinned messages confirmed across N topics: `<list>`. |
 | **5 — GitHub Action build-index <60s** | `<PASS/FAIL>` | Pushed test `#kb` item. Action run id: `<paste>`. Wall-clock: `<X>s`. New index roundtrips through `/ask`. |
-| **6 — Calibration → threshold tuned** | `<PASS/FAIL>` | See §3 below. Verified in staging that `/ask` returns answers above threshold and refuses below. |
+| **6 — Calibration → threshold tuned** | `<PASS/FAIL>` | Threshold `0.55` set at `e16a60d` via sandbox-via-fixtures (`calibrate-fixtures.ts`); see §3. Verify in staging: `/ask` returns answers above threshold and refuses below. |
 
 If any gate fails, do **not** tag. Open a follow-up commit on the branch and re-run.
 
@@ -98,19 +98,23 @@ Calibration surfaced a latent bug: `embed()` in `src/ai/gateway.ts` did not pin 
 
 ---
 
-## 6. Tag commit
+## 6. Tag + merge
 
 ```bash
 # Once all 6 gates above pass:
-git add projects/gbrain/CHANGELOG.md projects/gbrain/app/package.json projects/gbrain/app/src/commands/ask.ts
-git commit -m "release(gbrain): 0.1.2 — /ask + /search + /help bundle (day-30 gate passed)"
-git tag gbrain-v0.1.2
 
-# Merge to main (ff impossible — main has advanced 187 commits since divergence at 3e8c296):
+# Step 3 — release commit + tag
+git add projects/gbrain/CHANGELOG.md projects/gbrain/app/package.json
+git commit -m "release(gbrain): 0.1.2 — /ask + /search + /help bundle (day-30 gates passed)"
+git tag gbrain-v0.1.2
+git push origin gbrain-0.1.2-ask-bundle
+git push origin gbrain-v0.1.2
+
+# Step 4 — --no-ff merge to main (ff impossible — main has advanced ~224 commits since divergence at 3e8c296):
 git checkout main
+git pull --ff-only origin main
 git merge --no-ff gbrain-0.1.2-ask-bundle -m "Merge gbrain-0.1.2-ask-bundle: 0.1.2 day-30 launch bundle"
 git push origin main
-git push origin gbrain-v0.1.2
 ```
 
 Verify:
