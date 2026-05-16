@@ -2,9 +2,10 @@ import type { RosterMember, MemberProfile } from "@/lib/roster";
 import type { ProjectDetail } from "@/lib/projects";
 import type { Decision } from "@/lib/decisions";
 import type { Meeting } from "@/lib/meetings";
-import type { Contributions } from "@/lib/contributions";
+import type { Contributions, ProjectContribution } from "@/lib/contributions";
 import snapshotJson from "@/lib/__generated__/content-snapshot.json";
 import contributionsJson from "@/lib/__generated__/contributions.json";
+import projectContributionsJson from "@/lib/__generated__/project-contributions.json";
 
 export interface MemberWithProfile extends RosterMember {
   profile: MemberProfile | null;
@@ -98,4 +99,13 @@ const ZERO_CONTRIBUTIONS: Contributions = {
 export function getContributions(handle: string): Contributions {
   if (!handle) return ZERO_CONTRIBUTIONS;
   return contributionsByHandle[normalize(handle)] ?? ZERO_CONTRIBUTIONS;
+}
+
+const projectContributions: Record<string, readonly ProjectContribution[]> =
+  projectContributionsJson as Record<string, readonly ProjectContribution[]>;
+
+export function getProjectContributions(
+  projectSlug: string,
+): readonly ProjectContribution[] {
+  return projectContributions[projectSlug] ?? [];
 }

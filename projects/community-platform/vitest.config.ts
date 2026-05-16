@@ -19,6 +19,7 @@ export default defineConfig({
         "lib/**/*.ts",
         "app/actions/**/*.ts",
         "app/components/**/*.tsx",
+        "app/api/preview-markdown/route.ts",
         "scripts/**/*.ts",
         "proxy.ts",
       ],

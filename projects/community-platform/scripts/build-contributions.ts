@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   computeContributions,
+  computeProjectContributions,
   type GitCommit,
 } from "@/lib/contributions";
 import { readAliases, resolveHandle } from "@/lib/git-email-aliases";
@@ -15,6 +16,10 @@ const REPO_ROOT = path.resolve(__dirname, "../../..");
 const OUTPUT = path.resolve(
   __dirname,
   "../lib/__generated__/contributions.json",
+);
+const PROJECT_OUTPUT = path.resolve(
+  __dirname,
+  "../lib/__generated__/project-contributions.json",
 );
 
 interface GitLogEntry {
@@ -118,6 +123,19 @@ async function main(): Promise<void> {
       `  commits scanned: ${commits.length}\n` +
       `  meetings: ${meetings.length}\n` +
       `  aliases: ${aliases.size}`,
+  );
+
+  const projectContributions = computeProjectContributions({ commits, roster });
+
+  await writeFile(
+    PROJECT_OUTPUT,
+    JSON.stringify(projectContributions, null, 2) + "\n",
+    "utf-8",
+  );
+
+  console.log(
+    `[contributions] wrote ${path.relative(REPO_ROOT, PROJECT_OUTPUT)}\n` +
+      `  projects: ${Object.keys(projectContributions).length}`,
   );
 }
 

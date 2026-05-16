@@ -1,8 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { findProjectBySlug, listProjectDetails } from "@/lib/content-snapshot";
+import {
+  findProjectBySlug,
+  listProjectDetails,
+  getProjectContributions,
+  findMemberByHandle,
+} from "@/lib/content-snapshot";
+import { TopContributors } from "@/app/components/TopContributors";
+import { AskGBrainButton } from "@/app/components/AskGBrainButton";
 import { renderMarkdownToHtml } from "@/lib/markdown";
 import { SafeHtml } from "@/app/components/SafeHtml";
+import { env } from "@/lib/env";
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   return listProjectDetails().map((p) => ({ slug: p.slug }));
@@ -21,6 +29,10 @@ export default async function ProjectPage({
   const { slug } = await params;
   const project = findProjectBySlug(slug);
   if (!project) notFound();
+
+  const contributors = getProjectContributions(slug);
+  const slugFor = (handle: string): string =>
+    findMemberByHandle(handle)?.slug ?? handle;
 
   const sections: { title: string; body: string | null }[] = [
     { title: "README", body: project.readme },
@@ -45,6 +57,15 @@ export default async function ProjectPage({
       <p className="mt-1 font-mono text-sm text-neutral-600 dark:text-neutral-400">
         projects/{project.slug}/
       </p>
+
+      <div className="mt-3">
+        <AskGBrainButton
+          projectSlug={project.slug}
+          baseUrl={env.GBRAIN_BASE_URL ?? null}
+        />
+      </div>
+
+      <TopContributors contributors={contributors} slugFor={slugFor} />
 
       {rendered.map((s) => (
         <section key={s.title} className="mt-8">

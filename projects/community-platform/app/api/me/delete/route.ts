@@ -6,6 +6,8 @@ import { findMemberByHandle } from "@/lib/content-snapshot";
 import { createGitHubApp, GitHubAppError } from "@/lib/github-app";
 import { readWeekStatuses } from "@/lib/status-reader";
 import { weekFromDate } from "@/lib/week";
+import { mockConsentStore } from "@/app/actions/_test-consent-store";
+import { mockProfileStore } from "@/app/actions/_test-profile-store";
 
 async function getInstallationToken(): Promise<string> {
   const ghAppAuth = createAppAuth({
@@ -15,6 +17,13 @@ async function getInstallationToken(): Promise<string> {
   });
   const installation = await ghAppAuth({ type: "installation" });
   return installation.token;
+}
+
+function isE2EMockActive(): boolean {
+  return (
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_E2E_MODE === "1"
+  );
 }
 
 export async function POST(_req: Request): Promise<Response> {
@@ -32,6 +41,14 @@ export async function POST(_req: Request): Promise<Response> {
   // (per execution-plan §6.6 risk register).
   const slug = member.slug;
   const handle = session.githubHandle;
+
+  if (isE2EMockActive()) {
+    // Clear both consent and profile mocks so the H21 E2E scenario exercises
+    // the full "deleted → /me/edit redirects to /consent" contract.
+    mockConsentStore.reset();
+    mockProfileStore.remove(slug);
+    return NextResponse.json({ ok: true });
+  }
 
   const client = createGitHubApp({
     appId: env.GITHUB_APP_ID,

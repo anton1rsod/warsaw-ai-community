@@ -13,4 +13,6 @@ test-results/
 next-env.d.ts
 *.tsbuildinfo
 .vercel
-lib/__generated__/
+lib/__generated__/*
+!lib/__generated__/contributions.json
+!lib/__generated__/project-contributions.json

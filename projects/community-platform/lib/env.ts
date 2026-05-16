@@ -15,6 +15,7 @@ const envSchema = z.object({
   COMMUNITY_NAME: z.string().min(1),
   COMMUNITY_SLUG: z.string().min(1),
   INVITE_SECRET: z.string().min(32),
+  GBRAIN_BASE_URL: z.string().url().optional(),
 });
 
 const result = envSchema.safeParse(process.env);

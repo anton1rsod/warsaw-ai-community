@@ -71,3 +71,60 @@ export function computeContributions(
 
   return result;
 }
+
+export interface ProjectContribution {
+  handle: string;
+  commits: number;
+}
+
+export type ProjectContributions = Record<string, readonly ProjectContribution[]>;
+
+export const TOP_CONTRIBUTORS_LIMIT = 5 as const;
+
+export interface ComputeProjectContributionsInput {
+  commits: readonly GitCommit[];
+  roster: readonly RosterMember[];
+}
+
+export function computeProjectContributions(
+  input: ComputeProjectContributionsInput,
+): ProjectContributions {
+  const rosterSet = new Set(input.roster.map((m) => m.githubHandle));
+  const buckets = new Map<string, Map<string, number>>();
+
+  for (const commit of input.commits) {
+    const author = commit.author.toLowerCase();
+    if (BOT_AUTHORS.has(author)) continue; // H26
+    if (!rosterSet.has(author)) continue; // Correction D: use lowercased author
+
+    const slugs = new Set<string>();
+    for (const file of commit.files) {
+      if (!file.startsWith("projects/")) continue;
+      const parts = file.split("/");
+      const slug = parts[1];
+      if (slug) slugs.add(slug);
+    }
+
+    for (const slug of slugs) {
+      let projectBucket = buckets.get(slug);
+      if (!projectBucket) {
+        projectBucket = new Map<string, number>();
+        buckets.set(slug, projectBucket);
+      }
+      projectBucket.set(
+        author, // Correction D: use lowercased author
+        (projectBucket.get(author) ?? 0) + 1,
+      );
+    }
+  }
+
+  const result: Record<string, readonly ProjectContribution[]> = {};
+  for (const [slug, bucket] of buckets) {
+    const sorted = Array.from(bucket.entries())
+      .map(([handle, commits]) => ({ handle, commits }))
+      .sort((a, b) => b.commits - a.commits)
+      .slice(0, TOP_CONTRIBUTORS_LIMIT);
+    result[slug] = sorted;
+  }
+  return result;
+}
