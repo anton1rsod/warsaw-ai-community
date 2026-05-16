@@ -16,6 +16,51 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.2.2] — 2026-05-16
+
+**Profile editor SHA passthrough — closes v0.2.0's documented Scenario 2 E2E skip + plugs a production lost-update window.** Client now echoes the SHA loaded at SSR (`/me/edit`) as a `sha` field in the save FormData; `saveProfile` gates writes on that token instead of re-reading at save time. The prior retry-on-409 loop in `saveProfile` silently overwrote concurrent commits — removed.
+
+### Fixed
+
+- **Production lost-update on `/me/edit` save** — when an external commit (PR merge or a second tab) landed between page-load and save, the v0.2.0 code path would re-read the new SHA at save time, compose the user's stale body against the new frontmatter, and write — overwriting the concurrent change with no warning. With client-SHA gating, this surfaces as `refresh_needed` ("Someone else updated this — refresh") instead.
+- **E2E `Scenario 2: concurrent edit → REFRESH_NEEDED message`** — was `test.skip` in v0.2.0 because `attemptSave` re-read the mock store's CURRENT SHA at save time, making the race unreachable via sequential `.click()` calls. Now deterministic: both tabs load the same SHA at mount, tab A's save advances the store, tab B's save echoes the now-stale SHA, server returns `refresh_needed`.
+
+### Changed
+
+- **`SaveProfileSchema`** (`lib/profile-editor.ts`) — adds `expectedSha: z.string().min(1)`. Missing, empty, or non-string → `invalid_body`.
+- **`saveProfile` server action** (`app/actions/save-profile.ts`) — single-attempt SHA-CAS. Any conflict (stale client SHA at read-time OR TOCTOU at GitHub write-time) maps to `refresh_needed`. The prior retry-on-409 loop is gone — it was a lost-update vulnerability that silently overwrote concurrent commits.
+- **`ProfileEditor`** (`app/components/ProfileEditor.tsx`) — new required `initialSha: string` prop; `onSave` calls `fd.append("sha", initialSha)`.
+- **`/me/edit` page** (`app/me/edit/page.tsx`) — passes `initialSha={file.sha}` (production: from `gh.readFile`; E2E mock: from store entry).
+- **E2E mock branch in `attemptSave`** — no longer seeds the store when the entry is missing; returns `file_missing` instead, aligning with production's `gh.readFile === null` behavior.
+
+### Hardenings — H16 (revised)
+
+H16 in v0.2.0 was "SHA-CAS optimistic locking on save with single retry." v0.2.2 keeps the SHA-CAS but **drops the single retry**: the retry was unsafe (it re-read the new SHA after a concurrent commit and wrote the user's stale body on top, silently overwriting the remote change). The corrected contract is: client passes the SHA loaded at SSR; server rejects with `refresh_needed` on any mismatch. The H16 hardening row in `spec.md` §12 is otherwise unchanged.
+
+### Test infrastructure
+
+- `tests/unit/profile-editor.test.ts` — 3 new H16 tests verifying schema requires non-empty `expectedSha`.
+- `tests/unit/ProfileEditor.test.tsx` — new test asserting `initialSha` is appended to FormData on save.
+- `tests/unit/me-edit-page.test.tsx` — mock `ProfileEditor` to capture props; new test asserts `file.sha` flows through as `initialSha`.
+- `tests/integration/save-profile.test.ts` — reshapes H16/H20/H21 tests for the new no-retry semantic; new "stale-SHA → refresh_needed" tests on both production and E2E mock paths; new "rejects missing sha" test.
+- `e2e/profile-editor.spec.ts` — Scenario 2 unskipped; the structural skip-comment explaining the v0.2.0 limitation is removed.
+
+### Verification
+
+- `pnpm test` — 578 unit + integration green (575 → 578, +3 schema H16 tests).
+- `pnpm e2e` — 33 passing, 0 skipped (was 32 active + 1 documented skip).
+- `pnpm tsc --noEmit` + `pnpm lint` — clean.
+- §12.7 strict-list coverage holds: `lib/profile-editor.ts` 100/100/100, `app/actions/save-profile.ts` 100% lines, `app/components/ProfileEditor.tsx` 100% lines (functions 91.66% / branches 94% match the v0.2.0 baseline).
+- CI on PR will run lint + typecheck + test + build.
+
+### Migration / release
+
+- No env-var changes.
+- Action contract change (`saveProfile` now requires `sha` in FormData) is scoped to its only in-app caller (`ProfileEditor`), updated in the same commit. No external API surface.
+- Tag: `community-platform-v0.2.2` at merge SHA (post-PR).
+
+---
+
 ## [0.2.1] — 2026-05-16
 
 **Consent redirect chain hardening.** Two follow-up commits to close the redirect-loop class of bugs that surfaced after `community-platform-v0.2.0` (`69362e9`). Tag `community-platform-v0.2.1` at merge SHA `dd3a675`.

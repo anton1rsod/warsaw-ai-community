@@ -76,6 +76,7 @@ export default async function MeEditPage(): Promise<React.JSX.Element> {
       </p>
       <ProfileEditor
         initialBody={body.trim()}
+        initialSha={file.sha}
         slug={member.slug}
         previewEndpoint="/api/preview-markdown"
       />

@@ -13,24 +13,41 @@ describe("SaveProfileSchema", () => {
   describe("H18: profile body size cap 64KB", () => {
     it("accepts body up to 65_536 bytes", () => {
       const body = "x".repeat(65_536);
-      const result = SaveProfileSchema.safeParse({ body });
+      const result = SaveProfileSchema.safeParse({ body, expectedSha: "sha" });
       expect(result.success).toBe(true);
     });
 
     it("rejects body over 65_536 bytes", () => {
       const body = "x".repeat(65_537);
-      const result = SaveProfileSchema.safeParse({ body });
+      const result = SaveProfileSchema.safeParse({ body, expectedSha: "sha" });
       expect(result.success).toBe(false);
     });
 
     it("rejects non-string body", () => {
-      const result = SaveProfileSchema.safeParse({ body: 123 });
+      const result = SaveProfileSchema.safeParse({ body: 123, expectedSha: "sha" });
       expect(result.success).toBe(false);
     });
 
     it("accepts empty body", () => {
-      const result = SaveProfileSchema.safeParse({ body: "" });
+      const result = SaveProfileSchema.safeParse({ body: "", expectedSha: "sha" });
       expect(result.success).toBe(true);
+    });
+  });
+
+  describe("H16: expectedSha is required (optimistic-lock token)", () => {
+    it("rejects payload without expectedSha", () => {
+      const result = SaveProfileSchema.safeParse({ body: "ok" });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects empty expectedSha", () => {
+      const result = SaveProfileSchema.safeParse({ body: "ok", expectedSha: "" });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects non-string expectedSha (formData.get('sha') is null when missing)", () => {
+      const result = SaveProfileSchema.safeParse({ body: "ok", expectedSha: null });
+      expect(result.success).toBe(false);
     });
   });
 });

@@ -65,62 +65,49 @@ test.describe("Profile editor (v0.2)", () => {
     ).toHaveValue("Updated prose — v0.2 scenario 1.");
   });
 
-  test.skip(
-    "Scenario 2: concurrent edit → REFRESH_NEEDED message",
-    // TODO: This scenario requires a structural addition to the mock that is
-    // out of scope for Task 3.6.
+  test("Scenario 2: concurrent edit → REFRESH_NEEDED message", async ({
+    browser,
+  }) => {
+    // Two browser contexts both signed in as anton1rsod load /me/edit at the
+    // same store SHA. Tab A saves first → store advances to a new SHA. Tab B
+    // saves with its stale SHA → server compares, finds mismatch, returns
+    // refresh_needed (no write attempted). UI surfaces "Someone else updated".
     //
-    // Root cause: `attemptSave` in E2E mode re-reads the store's CURRENT sha
-    // at save time (mirroring production's gh.readFile pattern). Both page A
-    // and page B therefore get a fresh sha on each save call, so the CAS
-    // write always succeeds — the race condition that triggers `refresh_needed`
-    // cannot be manufactured via two sequential `.click()` calls.
-    //
-    // Fix required (Task 4.x): the ProfileEditor must pass the sha it loaded
-    // at mount time as a hidden form field (or optimistic-lock header), and
-    // `attemptSave` must accept an `expectedSha` parameter rather than re-
-    // reading. In E2E mode this value comes from the mock store entry read at
-    // page-load; in production it comes from `gh.readFile`. Once that plumbing
-    // exists, this test can re-use `mockProfileStore.write(slug, body, stale)`
-    // to deterministically simulate the conflict.
-    //
-    // The unit-level coverage for `refresh_needed` is solid in
-    // tests/integration/save-profile.test.ts (H16/H20 tests). This E2E
-    // scenario adds no new coverage until the form-field-sha plumbing ships.
-    async ({ browser }) => {
-      const ctxA = await browser.newContext();
-      const ctxB = await browser.newContext();
-      const pageA = await ctxA.newPage();
-      const pageB = await ctxB.newPage();
+    // Made possible by v0.2.1: ProfileEditor echoes file.sha as a hidden
+    // form field, and saveProfile gates on that token instead of re-reading
+    // the current SHA at save time.
+    const ctxA = await browser.newContext();
+    const ctxB = await browser.newContext();
+    const pageA = await ctxA.newPage();
+    const pageB = await ctxB.newPage();
 
-      await loginAs(pageA, "anton1rsod");
-      await loginAs(pageB, "anton1rsod");
-      await resetProfileStore(pageA, "Original.");
+    await loginAs(pageA, "anton1rsod");
+    await loginAs(pageB, "anton1rsod");
+    await resetProfileStore(pageA, "Original.");
 
-      await pageA.goto("/me/edit");
-      await pageB.goto("/me/edit");
+    await pageA.goto("/me/edit");
+    await pageB.goto("/me/edit");
 
-      await pageA
-        .getByRole("textbox", { name: /profile prose/i })
-        .fill("Page A edit.");
-      await pageB
-        .getByRole("textbox", { name: /profile prose/i })
-        .fill("Page B edit.");
+    await pageA
+      .getByRole("textbox", { name: /profile prose/i })
+      .fill("Page A edit.");
+    await pageB
+      .getByRole("textbox", { name: /profile prose/i })
+      .fill("Page B edit.");
 
-      await pageA.getByRole("button", { name: /^save$/i }).click();
-      await expect(pageA.getByText(/rebuilding/i)).toBeVisible({
-        timeout: 10000,
-      });
+    await pageA.getByRole("button", { name: /^save$/i }).click();
+    await expect(pageA.getByText(/rebuilding/i)).toBeVisible({
+      timeout: 10000,
+    });
 
-      await pageB.getByRole("button", { name: /^save$/i }).click();
-      await expect(
-        pageB.getByText(/Someone else updated/i),
-      ).toBeVisible({ timeout: 10000 });
+    await pageB.getByRole("button", { name: /^save$/i }).click();
+    await expect(pageB.getByText(/Someone else updated/i)).toBeVisible({
+      timeout: 10000,
+    });
 
-      await ctxA.close();
-      await ctxB.close();
-    },
-  );
+    await ctxA.close();
+    await ctxB.close();
+  });
 
   test("Scenario 3: discard draft", async ({ page }) => {
     await loginAs(page, "anton1rsod");
