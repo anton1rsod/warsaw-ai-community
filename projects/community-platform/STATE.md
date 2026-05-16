@@ -127,6 +127,7 @@ v0_2_2_ship: "2026-05-16 (chat-16) — SHA `7cd87c3`; PR #17 merged to main; tag
 
 **Chat 11 handoff:** [`docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md).
 **Chat 13 handoff:** [`docs/specs/2026-05-16-community-platform-v0-2-implementation-handoff.md`](../../docs/specs/2026-05-16-community-platform-v0-2-implementation-handoff.md).
+**Chat 17 handoff:** [`docs/specs/2026-05-16-community-platform-v0-2-2-shipped-followups-handoff.md`](../../docs/specs/2026-05-16-community-platform-v0-2-2-shipped-followups-handoff.md) — post-v0.2.2 menu of six scope options; v0.3 brainstorm recommended.
 
 **Pending follow-ups (mapped to chat-10 options):**
 - **A — Mark Spasonov backfill** (PR #3 open as Draft on `chore/mark-spasonov-backfill`): placeholders `@MARK_TELEGRAM_HANDLE_TBD` + `MARK_GIT_EMAIL_TBD` need real values from Mark out-of-band; mark Ready + merge. **Only chat-10 option NOT picked** — explicit Anton call.
