@@ -16,6 +16,43 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [Unreleased]
+
+**v0.2.0 post-ship reliability fixes — consent redirect chain hardening.** Two follow-up commits to close the redirect-loop class of bugs that surfaced after `community-platform-v0.2.0` (`69362e9`).
+
+### Fixed
+
+- **`/home` ↔ `/consent` redirect loop** (chat-14 hotfix, SHA `d0e60e1`) — `proxy.ts` re-seeds `waic-consented` cookie inline when the build-time content snapshot already shows the bot-written profile (`member.profile` non-null). Common case (cookie cleared in a browser that's been signed-in for weeks; profile committed long ago and present in the snapshot) collapses to a single hop, no `/consent` round-trip.
+- **`/consent` snapshot-stale recovery** (chat-15, SHA `1672178`) — closes the edge case explicitly deferred by chat-14: profile committed but build-time snapshot rebuild pending (the 60-90s window between commit and Vercel build). Added `/api/consent/recover` Route Handler; `/consent/page.tsx` now redirects there when `hasConsent()` (live GitHub read) is true. The handler re-runs auth + roster + `hasConsent` checks, sets `Set-Cookie: waic-consented=1` on its own response, and 307s to `/home` — Route Handlers are the canonical Next 16 surface for cookie mutation on a redirect (Server Components cannot `cookies().set()`).
+
+### Added
+
+- **`/api/consent/recover`** GET route handler — defense in depth (re-runs `auth()` + `findMemberByHandle()` + `hasConsent()` on every request; does not trust the `/consent` page to have already verified).
+- **`/api/consent/recover` added to `PUBLIC_PATHS`** in `proxy.ts` (production + dev branches) — the proxy's consent gate would otherwise bounce the recovery endpoint to `/consent`, re-creating the loop. The handler enforces auth + roster + consent itself, so bypassing the proxy gate is safe.
+- **`/api/test-mark-consented`** dev helper — `POST { slug }` calls `mockConsentStore.add(slug)` so an E2E can simulate "profile committed but snapshot not yet rebuilt" without going through `/consent`. Hard-gated to `NODE_ENV !== "production"` AND `NEXT_PUBLIC_E2E_MODE === "1"`.
+
+### Hardenings — H30–H31 (continues v0.2.0's H14–H29)
+
+| ID | Property |
+|---|---|
+| H30 | `/api/consent/recover` is a Route Handler that sets `Set-Cookie` on its own response — the canonical Next 16 pattern for cookie mutation on redirect. Server Components cannot mutate cookies; the previous `redirect("/home")` from `/consent/page.tsx` could not commit the cookie and therefore could not break the loop. |
+| H31 | `/api/consent/recover` re-runs `auth()` + `findMemberByHandle()` + `hasConsent()` (live GitHub read) on every request; does not trust the caller (`/consent` page) to have already verified anything. TOCTOU race between page check and handler check is bounded by the handler's own consent check. |
+
+### Test infrastructure
+
+- `tests/integration/consent-recover.test.ts` — 5 integration tests covering all handler branches (`/login` redirect when no session, `/no-access` redirect when off-roster, `/consent` redirect when `hasConsent=false`, `/home` redirect + cookie attributes when `hasConsent=true`, no `writeFile` on the recovery path).
+- `tests/unit/proxy.test.ts` — 2 new tests for `/api/consent/recover` and `/api/test-mark-consented` `PUBLIC_PATHS` passthrough.
+- `e2e/consent.spec.ts` — 1 new snapshot-stale recovery scenario; fixed pre-existing breakage in "first-time roster member redirects to /consent" (anton-safronov.md was committed at SHA `29954f4` on 2026-05-03, so anton's profile is in the snapshot and the chat-14 hotfix re-seeds his cookie before `/consent` is reached — defeating the test's "first-time" intent). Now uses `markspas`, whose profile is genuinely absent from the snapshot. CI doesn't run E2E so this break went unnoticed.
+
+### Verification
+
+- `pnpm test` — 575 unit + integration green (562 before fix; +13 net).
+- `pnpm e2e` — 32 passing, 1 documented skip (Scenario 2 from v0.2.0).
+- `pnpm tsc --noEmit` + `pnpm lint` — clean.
+- Playwright MCP manual browser drive — 4-hop redirect chain confirmed (`GET /home 307 → /consent 307 → /api/consent/recover 307 → /home 200`); second `/home` fetch with `redirect: manual` returns `200 / null` (cookie persisted); anton chat-14 hotfix path verified separately (1 hop, no `/api/consent/recover` involvement).
+
+---
+
 ## [0.2.0] — 2026-05-16
 
 **Self-service profile editor shipped (B + thin A + GBrain link tag-along).** Members sign in at `/me/edit`, edit `community/members/<slug>.md` body prose with markdown preview, save via `warsaw-ai-bot` with SHA-CAS optimistic locking + single retry. Project pages now surface top-5 contributors derived from git history (bot commits excluded). Optional outbound "Ask GBrain about this project" link on project pages, env-gated by `GBRAIN_BASE_URL`.

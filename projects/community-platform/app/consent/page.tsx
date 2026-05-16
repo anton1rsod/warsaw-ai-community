@@ -17,7 +17,16 @@ export default async function ConsentPage(): Promise<React.JSX.Element> {
   const member = findMemberByHandle(session.githubHandle);
   if (!member) redirect("/no-access");
 
-  if (await hasConsent(session.githubHandle)) redirect("/home");
+  // Snapshot-stale recovery: hasConsent() is the live source of truth
+  // (reads the profile file directly via GitHub App). If live says
+  // "consented" but the proxy bounced us here anyway, the consent
+  // cookie is missing AND the build-time snapshot doesn't yet reflect
+  // the profile. A bare `redirect("/home")` from this Server Component
+  // can't `cookies().set()`, so /home → proxy → /consent would loop.
+  // /api/consent/recover (Route Handler) sets the cookie on its own
+  // response, breaking the loop in a single hop.
+  if (await hasConsent(session.githubHandle))
+    redirect("/api/consent/recover");
 
   return <ConsentClient />;
 }
