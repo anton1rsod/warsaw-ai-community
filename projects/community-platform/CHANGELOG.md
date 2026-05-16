@@ -57,7 +57,7 @@ H16 in v0.2.0 was "SHA-CAS optimistic locking on save with single retry." v0.2.2
 
 - No env-var changes.
 - Action contract change (`saveProfile` now requires `sha` in FormData) is scoped to its only in-app caller (`ProfileEditor`), updated in the same commit. No external API surface.
-- Tag: `community-platform-v0.2.2` at merge SHA (post-PR).
+- Tag: `community-platform-v0.2.2` at merge SHA `7cd87c3` (PR #17).
 
 ---
 

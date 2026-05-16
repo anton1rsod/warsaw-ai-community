@@ -2,25 +2,25 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-16 (chat-15 v0.2.1 shipped + production smoke VALIDATED — PR #16 merged at SHA `dd3a675`; tag `community-platform-v0.2.1` pushed; chat-14 hotfix byte-for-byte confirmed via DevTools-driven smoke)
+**Last updated**: 2026-05-16 (chat-16 v0.2.2 shipped — PR #17 merged at SHA `7cd87c3`; tag `community-platform-v0.2.2` pushed; closes the v0.2.0 documented E2E Scenario 2 skip + plugs the retry-on-409 lost-update window in `saveProfile`)
 
 ## Snapshot
 
 ```yaml
-last_green: dd3a675                 # main HEAD — merge of PR #16 (v0.2.1 — consent redirect chain hardening)
-last_code_only_green: 1672178       # /api/consent/recover route handler commit (chat-15 fix)
-phase: "v0.2.1 shipped"             # chat-14 hotfix + chat-15 recovery route both on main; tag pushed
+last_green: 7cd87c3                 # main HEAD — merge of PR #17 (v0.2.2 — profile editor SHA passthrough)
+last_code_only_green: 6195715       # ProfileEditor + saveProfile + tests (chat-16 fix)
+phase: "v0.2.2 shipped"             # PR #17 merged on main; tag pushed; v0.2 chapter fully sealed
 spec_sha: 740be8e                   # spec §11 (v0.1.1) — frozen
 v0_2_spec_sha: 95197dc              # spec §12 brainstorm merged via PR #11
 v0_2_plan_sha: e700d19              # v0.2.0-plan.md merged via PR #12
 plan_sha: 2201dd9                   # v0.1.1-plan.md (frozen)
-branch: main                        # post-merge; fix/community-platform-consent-recover deleted
-tests: "575 unit/integration + 32 E2E (1 documented skip — Scenario 2 from v0.2.0)"
+branch: main                        # post-merge; fix/community-platform-profile-editor-sha deleted
+tests: "578 unit/integration + 33 E2E (0 skips — v0.2.0's Scenario 2 unskipped + green)"
 overall_coverage: "90% lines / 94% branches  (gate: 80%)"
 amendments_applied: "§9.2, §9.5–§9.18"
 production: "https://warsaw-ai-community-platform.vercel.app"
-tag: "community-platform-v0.2.1"   # at merge SHA dd3a675
-previous_tag: "community-platform-v0.2.0"   # at SHA 69362e9
+tag: "community-platform-v0.2.2"   # at merge SHA 7cd87c3
+previous_tag: "community-platform-v0.2.1"   # at SHA dd3a675
 ```
 
 ## Last verified
@@ -53,6 +53,7 @@ v0_2_ship: "2026-05-16 SHA 69362e9 — PR #13 merged to main; tag community-plat
 v0_2_smoke_unauth: "2026-05-16 (chat-14) — HTTP-layer smoke green. Tag `community-platform-v0.2.0` → SHA `69362e9` verified via `git rev-parse`. PR #13 MERGED to main at 2026-05-16T16:49:25Z (gh pr view 13). Production deploy `aohvw75w8` Ready in 42s, 10m before smoke (vercel ls --prod). Public route `/login` 200 + cache HIT + 7529B (Next.js routed via `x-matched-path: /login`). Auth-gated paths `/`, `/members`, `/projects/community-platform`, `/me/edit`, `/api/preview-markdown` all 307→/login (proxy.ts gate working including v0.2.0's `/me/edit` route — proves new build is serving). Cannot HTTP-distinguish 'route registered' from 'route missing' because proxy gates all non-PUBLIC paths uniformly (good security posture). Auth-gated user flows (sign-in → /me/edit → save → verify commit on main; TopContributors render on /projects/community-platform; AskGBrainButton render iff GBRAIN_BASE_URL set) still PENDING Anton — separate row when run. `GBRAIN_BASE_URL` env var status NOT verified (`vercel env ls production` blocked by harness; safe-by-design — leave as user-side check)."
 v0_2_1_consent_recover: "2026-05-16 (chat-15) — `/consent` snapshot-stale recovery shipped on branch `fix/community-platform-consent-recover` (HEAD `1672178`); closes the edge case explicitly deferred from chat-14 (proxy hotfix `d0e60e1`): profile committed but build-time content snapshot rebuild pending (60-90s window). New route handler `/api/consent/recover` sets `waic-consented` cookie on its own response — Route Handlers are the only Next 16 surface that can mutate cookies on a redirect (Server Components cannot). `/consent/page.tsx` now redirects to the recovery endpoint when `hasConsent()` is true; the chat-14 hotfix path (proxy re-seeds cookie when `member.profile` in snapshot) remains the fast path for the common case. Tests: +5 integration + 2 unit + 1 E2E (575 + 32 total green); also fixes pre-existing E2E breakage in 'first-time roster member redirects to /consent' (was using anton1rsod whose profile.md was committed at SHA `29954f4` 2026-05-03; switched to `markspas` whose profile is genuinely absent from snapshot). Playwright MCP browser drive confirmed the 4-hop redirect chain (`/home 307 → /consent 307 → /api/consent/recover 307 → /home 200`); cookie persists across reloads. PR #16 merged at SHA `dd3a675`; tag `community-platform-v0.2.1` pushed."
 v0_2_1_prod_smoke: "2026-05-16 (chat-15, Anton DevTools-driven) — chat-14 hotfix byte-for-byte VALIDATED on production. Production deploy `8094rf58h` (from main HEAD `4a54801` = docs commit on top of merge `dd3a675`) Ready, aliased to `warsaw-ai-community-platform.vercel.app` + `…-git-main-…`. Smoke flow: signed in as anton1rsod → DevTools Application → deleted `waic-consented` cookie → Cmd-R reload of `/home`. Result: SINGLE 200 response on `/home` (no redirect hops at all — proxy returned `NextResponse.next()` not redirect, since `member.profile` is in snapshot). Set-Cookie header byte-perfect match to `proxy.ts:212` code: `waic-consented=1; Path=/; Expires=Sun, 16 May 2027 20:31:13 GMT; Max-Age=31536000; Secure; HttpOnly; SameSite=Lax`. Defense-in-depth headers also confirmed on the same response: `Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate` + `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` + `Referrer-Policy: strict-origin-when-cross-origin` + `X-Vercel-Cache: MISS` (correctly never edge-cached). The v0.2.1 4-hop snapshot-stale recovery path cannot be exercised from anton's account (his profile is in the snapshot), so its prod validation remains structural-only (HTTP probes via Playwright MCP earlier this chat) + Playwright MCP dev-server drive of the same compiled code path. Will exercise naturally on the next new-member invitation redemption within the post-commit snapshot-rebuild window."
+v0_2_2_ship: "2026-05-16 (chat-16) — SHA `7cd87c3`; PR #17 merged to main; tag `community-platform-v0.2.2` pushed; CI green (Lint+typecheck+test+build 1m5s); Vercel preview pass. Closes the only v0.2.0 documented E2E skip (`profile-editor.spec.ts` Scenario 2: concurrent edit → REFRESH_NEEDED message) AND removes the v0.2.0 retry-on-409 lost-update window in `saveProfile` (the retry re-read the new SHA after a concurrent commit and overwrote the user's stale body on top of the remote change — silent). v0.2.2 contract: client passes `sha` (loaded at /me/edit SSR) in save FormData; server gates on that token, returns `refresh_needed` on any mismatch (no retry). Tests: 578 unit/integration + 33 E2E (was 575 + 32 active + 1 skip). §12.7 strict-list coverage holds: `lib/profile-editor.ts` 100/100/100, `app/actions/save-profile.ts` 100% lines (97.14% branches), `app/components/ProfileEditor.tsx` 100% lines (matches v0.2.0 baseline of 91.66% functions / 94% branches). Production smoke (Anton-side, post-merge): sign in as anton1rsod → /me/edit → save → verify commit on main; concurrent-edit race needs two browser sessions (tab A saves → tab B saves with stale page → expect 'Someone else updated this — refresh')."
 ```
 
 ## Spec §8 strict-list — 100% coverage
@@ -120,7 +121,9 @@ v0_2_1_prod_smoke: "2026-05-16 (chat-15, Anton DevTools-driven) — chat-14 hotf
 
 **Chat 14 (DONE):** v0.2.0 post-ship hotfix — `/home` ↔ `/consent` redirect loop. PR #15 merged at SHA `592b2cb`; `proxy.ts` re-seeds `waic-consented` cookie inline when `member.profile` in snapshot. Covers the common case (cookie cleared after profile committed long ago). Edge case (snapshot rebuild pending) explicitly deferred to chat-15.
 
-**Chat 15 (DONE):** v0.2.1 `/consent` snapshot-stale recovery via `/api/consent/recover` Route Handler. PR #16 merged at SHA `dd3a675`; tag `community-platform-v0.2.1` pushed. Closes chat-14's deferred edge case; both code paths (proxy hotfix for snapshot-fresh + recovery route for snapshot-stale) preserved as defense in depth. Tests: 575 unit/integration + 32 E2E green. Verified via Playwright MCP browser drive (4-hop redirect chain). Vercel production auto-deploys on main merge — production smoke (clear cookie + visit /home → expect 4-hop chain) PENDING Anton.
+**Chat 15 (DONE):** v0.2.1 `/consent` snapshot-stale recovery via `/api/consent/recover` Route Handler. PR #16 merged at SHA `dd3a675`; tag `community-platform-v0.2.1` pushed. Closes chat-14's deferred edge case; both code paths (proxy hotfix for snapshot-fresh + recovery route for snapshot-stale) preserved as defense in depth. Tests: 575 unit/integration + 32 E2E green. Verified via Playwright MCP browser drive (4-hop redirect chain). Vercel production auto-deploys on main merge — production smoke (clear cookie + visit /home → expect 4-hop chain) VALIDATED 2026-05-16 (chat-15, Anton DevTools-driven; see `v0_2_1_prod_smoke` row in Last verified).
+
+**Chat 16 (DONE):** v0.2.2 profile editor SHA passthrough — closes the v0.2.0 documented Scenario 2 E2E skip (concurrent edit → REFRESH_NEEDED) AND removes the v0.2.0 retry-on-409 lost-update window in `saveProfile`. ProfileEditor echoes `file.sha` (loaded at /me/edit SSR) in the save FormData; `saveProfile` gates writes on that token instead of re-reading the live SHA at save time (the prior retry-once was a silent lost-update on concurrent external commits). PR #17 merged at SHA `7cd87c3`; tag `community-platform-v0.2.2` pushed. Tests: 578 unit/integration + 33 E2E (0 skips). Production smoke PENDING Anton — single-user smoke is the existing /me/edit → save flow (Scenario 1 already covered in E2E); concurrent-edit smoke needs two browser sessions.
 
 **Chat 11 handoff:** [`docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md).
 **Chat 13 handoff:** [`docs/specs/2026-05-16-community-platform-v0-2-implementation-handoff.md`](../../docs/specs/2026-05-16-community-platform-v0-2-implementation-handoff.md).
@@ -139,9 +142,9 @@ v0_2_1_prod_smoke: "2026-05-16 (chat-15, Anton DevTools-driven) — chat-14 hotf
 ## Production
 
 - **URL:** https://warsaw-ai-community-platform.vercel.app
-- **Tag:** `community-platform-v0.2.0` at merge SHA `69362e9`
-- **Previous tags:** `community-platform-v0.1.1` (`036695c`, deploy `fg6rfweki`), `community-platform-v0.1.0` (`b26a8c2`)
-- **Released:** 2026-05-16 via PR #13 merge → Vercel auto-deploy
+- **Tag:** `community-platform-v0.2.2` at merge SHA `7cd87c3`
+- **Previous tags:** `community-platform-v0.2.1` (`dd3a675`), `community-platform-v0.2.0` (`69362e9`), `community-platform-v0.1.1` (`036695c`, deploy `fg6rfweki`), `community-platform-v0.1.0` (`b26a8c2`)
+- **Released:** 2026-05-16 via PR #17 merge → Vercel auto-deploy
 - **Repo is public** as of 2026-05-04 (chat-10 Option B) per spec §0.5 + ADR-0001 (MIT licensing)
 - **Branch protection on `main`:** force-push blocked, deletion blocked. PR-required gate is a follow-up (needs warsaw-ai-bot App ID for Rulesets API bypass).
 
