@@ -6,6 +6,7 @@ import {
   findMemberBySlug,
   findProjectBySlug,
   getContributions,
+  getProjectContributions,
   isAdmin,
   isCommunityManager,
   listDecisionsFromSnapshot,
@@ -260,5 +261,26 @@ describe("getContributions", () => {
     const c = getContributions("@anton1rsod");
     expect(a).toEqual(b);
     expect(b).toEqual(c);
+  });
+});
+
+describe("getProjectContributions", () => {
+  it("returns an empty array for an unknown project slug", () => {
+    const result = getProjectContributions("nonexistent-project");
+    expect(result).toEqual([]);
+  });
+
+  it("returns the top-N contributors for a known project (shape only)", () => {
+    // 'community-platform' is one of the projects in the live snapshot.
+    const result = getProjectContributions("community-platform");
+    expect(Array.isArray(result)).toBe(true);
+    // Don't assert specific counts (they change with each rebuild) — assert shape only.
+    if (result.length > 0) {
+      const first = result[0];
+      expect(first).toMatchObject({
+        handle: expect.any(String),
+        commits: expect.any(Number),
+      });
+    }
   });
 });
