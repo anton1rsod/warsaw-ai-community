@@ -7,8 +7,10 @@ import {
   findMemberByHandle,
 } from "@/lib/content-snapshot";
 import { TopContributors } from "@/app/components/TopContributors";
+import { AskGBrainButton } from "@/app/components/AskGBrainButton";
 import { renderMarkdownToHtml } from "@/lib/markdown";
 import { SafeHtml } from "@/app/components/SafeHtml";
+import { env } from "@/lib/env";
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   return listProjectDetails().map((p) => ({ slug: p.slug }));
@@ -55,6 +57,13 @@ export default async function ProjectPage({
       <p className="mt-1 font-mono text-sm text-neutral-600 dark:text-neutral-400">
         projects/{project.slug}/
       </p>
+
+      <div className="mt-3">
+        <AskGBrainButton
+          projectSlug={project.slug}
+          baseUrl={env.GBRAIN_BASE_URL ?? null}
+        />
+      </div>
 
       <TopContributors contributors={contributors} slugFor={slugFor} />
 

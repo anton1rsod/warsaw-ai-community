@@ -1,6 +1,24 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 
+vi.mock("@/lib/env", () => ({
+  env: {
+    NEXTAUTH_SECRET: "x".repeat(32),
+    NEXTAUTH_URL: "http://localhost:3000",
+    GITHUB_OAUTH_CLIENT_ID: "x",
+    GITHUB_OAUTH_CLIENT_SECRET: "x",
+    GITHUB_APP_ID: "x",
+    GITHUB_APP_PRIVATE_KEY: "x",
+    GITHUB_APP_INSTALLATION_ID: "x",
+    GITHUB_REPO_OWNER: "x",
+    GITHUB_REPO_NAME: "x",
+    GITHUB_REPO_BRANCH: "main",
+    COMMUNITY_NAME: "Warsaw AI Community",
+    COMMUNITY_SLUG: "warsaw-ai",
+    INVITE_SECRET: "x".repeat(32),
+    GBRAIN_BASE_URL: "https://gbrain.example.com",
+  },
+}));
 vi.mock("@/lib/content-snapshot", () => ({
   findProjectBySlug: vi.fn(),
   listProjectDetails: vi.fn(() => []),
@@ -90,5 +108,24 @@ describe("/projects/[slug] — TopContributors integration", () => {
     await expect(
       ProjectPage({ params: Promise.resolve({ slug: "unknown" }) }),
     ).rejects.toThrow(/__notFound__/);
+  });
+});
+
+describe("/projects/[slug] — AskGBrainButton placement", () => {
+  it("renders the Ask GBrain link when GBRAIN_BASE_URL is set", async () => {
+    vi.mocked(findProjectBySlug).mockReturnValue(BASE_PROJECT as never);
+    vi.mocked(getProjectContributions).mockReturnValue([]);
+
+    const tree = await ProjectPage({
+      params: Promise.resolve({ slug: "community-platform" }),
+    });
+    render(tree);
+
+    const link = screen.getByRole("link", { name: /ask gbrain/i });
+    expect(link).toBeInTheDocument();
+    expect(link.getAttribute("href")).toContain("https://gbrain.example.com");
+    expect(link.getAttribute("href")).toContain(
+      `project=${encodeURIComponent("community-platform")}`,
+    );
   });
 });
