@@ -2,24 +2,25 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-16 (chat-12 v0.2.0 plan-writing — `v0.2.0-plan.md` drafted on branch `chore/community-platform-v0-2-plan`; chat-11 brainstorm merged to main at SHA `95197dc`)
+**Last updated**: 2026-05-16 (chat-13 v0.2.0 SHIPPED — PR #13 merged to main at SHA `69362e9`; tag `community-platform-v0.2.0` pushed)
 
 ## Snapshot
 
 ```yaml
-last_green: 036695c                # main HEAD — merge of PR #2 (v0.1.1 release)
-last_code_only_green: 399e1a8      # security-reviewer M1+M2 fixes (last code-touching commit)
-phase: "v0.2 plan-writing"          # v0.2.0-plan.md drafted on chore/community-platform-v0-2-plan; PR pending
-spec_sha: 740be8e                   # spec §11 + final-pass hardening fixes (v0.1.1)
+last_green: 69362e9                 # main HEAD — merge of PR #13 (v0.2.0 release)
+last_code_only_green: 89e732b       # CI fix (catch fetch rejection in loadPreview) — last code-touching commit on feat branch before merge
+phase: "v0.2.0 shipped"             # 22 tasks across 4 phases complete; tag pushed
+spec_sha: 740be8e                   # spec §11 (v0.1.1) — frozen
 v0_2_spec_sha: 95197dc              # spec §12 brainstorm merged via PR #11
-v0_2_plan_sha: pending              # v0.2.0-plan.md plan-writing output — populated on PR merge
-plan_sha: 2201dd9                   # v0.1.1-plan.md (37 tasks across 3 phases)
-branch: main                        # post-merge; phase-10-followups is now historical
-tests: "475 unit/integration + 26 E2E"
-overall_coverage: "88% lines / 92% branches  (gate: 80%)"
+v0_2_plan_sha: e700d19              # v0.2.0-plan.md merged via PR #12
+plan_sha: 2201dd9                   # v0.1.1-plan.md (frozen)
+branch: main                        # post-merge; feat/community-platform-v0-2-0 is now historical
+tests: "562 unit/integration + 26 E2E (v0.1.1) + 6 E2E (v0.2 — 5 passing, 1 documented skip)"
+overall_coverage: "90% lines / 94% branches  (gate: 80%)"
 amendments_applied: "§9.2, §9.5–§9.18"
 production: "https://warsaw-ai-community-platform.vercel.app"
-tag: "community-platform-v0.1.1"   # at merge SHA 036695c, deployed to prod (fg6rfweki)
+tag: "community-platform-v0.2.0"   # at merge SHA 69362e9
+previous_tag: "community-platform-v0.1.1"   # at SHA 036695c
 ```
 
 ## Last verified
@@ -48,15 +49,25 @@ pii_log_scan_24h: "2026-05-04 — chat-10 Option G; vercel logs --environment=pr
 lighthouse_baseline_login: "2026-05-04 — chat-10 Option H; lighthouse 12.8.2 against production /login. Mobile: Performance 99 / Accessibility 100 / Best Practices 96 / SEO 91, LCP 1.5s, TBT 60ms, CLS 0. Desktop: Performance 100 / same others. All categories exceed spec §10 90+ budget. Authenticated-route measurement deferred (cookie-handoff). Reports at projects/community-platform/perf-baselines/."
 repo_visibility: "2026-05-04 — chat-10 Option B; flipped from private to public via `gh repo edit --visibility public --accept-visibility-change-consequences` per ADR-0001. Pre-flip secret scan against full git history was clean (zero realistic-looking PEM/OAuth-secret/NEXTAUTH_SECRET/INVITE_SECRET/AWS-key/JWT/Bearer/api-key matches; only test placeholders + allowlisted test PEM)."
 branch_protection_main: "2026-05-04 — chat-10 Option B; legacy branch-protection rule on main: allow_force_pushes=false, allow_deletions=false, enforce_admins=false. NO PR-required gate yet — user-owned repos can't use `bypass_pull_request_allowances` (org-only via legacy API), and modern Rulesets API needs warsaw-ai-bot's numeric App ID (not exposed via gh OAuth scope). Follow-up: paste App ID from GitHub Settings → Developer settings → GitHub Apps → warsaw-ai-bot, then create a Ruleset with `bypass_actors: [{actor_id: <id>, actor_type: Integration, bypass_mode: always}]` + `pull_request: required`."
+v0_2_ship: "2026-05-16 SHA 69362e9 — PR #13 merged to main; tag community-platform-v0.2.0 pushed; CI green (lint+tsc+test+build 1m11s); Vercel preview pass. Production smoke deferred to user-side execution (sign in as anton1rsod → /me/edit → save → verify commit; /projects/community-platform → Top Contributors renders; Ask GBrain renders iff GBRAIN_BASE_URL set). Coverage: §12.7 strict-list 100% lines (save-profile.ts, profile-editor.ts, preview-markdown/route.ts, ProfileEditor.tsx, TopContributors.tsx, AskGBrainButton.tsx). 16 hardening IDs (H14–H29) grep-verified. Security review 0 CRITICAL / 0 HIGH (Next.js bumped 16.2.4 → 16.2.6 to patch middleware bypass CVEs)."
 ```
 
 ## Spec §8 strict-list — 100% coverage
 
+**v0.1 strict-list (all 100% lines):**
 - `lib/{auth,classification,content-snapshot,contributions,env,github-app,health-metric,markdown,rbac,status-reader,week}.ts`
 - `proxy.ts`
 - `app/actions/consent.ts`
 - `app/components/{ConsentModal,ContributionCard,PersonaPanel,SafeHtml,StatusEditor}.tsx`
 - `app/components/GdprPanel.tsx` — 100% lines / 80% branches (defensive `unknown error` fallbacks; well above 80% gate)
+
+**v0.1.1 additions:** `lib/invitations.ts` — 100% lines / 93% branches (7 unreachable post-guard fallbacks, accepted).
+
+**v0.2.0 additions (per §12.7):**
+- `lib/profile-editor.ts` — 100/100/100
+- `app/actions/save-profile.ts` — 100/100/100
+- `app/api/preview-markdown/route.ts` — 100/100/100
+- `app/components/{ProfileEditor,TopContributors,AskGBrainButton}.tsx` — 100% lines (ProfileEditor: 91.66% functions / 94% branches, acceptable per ≥80% allowance)
 
 ## Live routes
 
@@ -100,9 +111,12 @@ branch_protection_main: "2026-05-04 — chat-10 Option B; legacy branch-protecti
 
 **Chat 11 (DONE):** v0.2 brainstorm via `superpowers:brainstorming`. Spec §12 lines 1075-1569 (~495 lines incl. Vercel/Next-16 reality-pass amendments) merged via PR #11 at SHA `95197dc`. Locked Q1-Q5 + D1-D9: primary thrust = Profile editor (B) + thin (A) contribution surfacing + GBrain link tag-along; **stays 100% git** (§6.1 dormant); single v0.2.0 release; **16 hardenings H14–H29** (continues §11's H1–H13).
 
-**Chat 12 (IN FLIGHT):** v0.2.0 plan-writing via `superpowers:writing-plans`. `projects/community-platform/v0.2.0-plan.md` drafted (3156 lines, 22 tasks across 4 phases) on branch `chore/community-platform-v0-2-plan`. Open spec questions locked with rationale: O1 = server-side `/api/preview-markdown` route; O2 = sibling file `lib/__generated__/project-contributions.json`; O3 = `parseFrontmatter` + `serializeFrontmatter` in `lib/profile-editor.ts` via `gray-matter`. Execution order in self-review notes. PR pending after plan commit.
+**Chat 12 (DONE):** v0.2.0 plan-writing via `superpowers:writing-plans`. `projects/community-platform/v0.2.0-plan.md` (3156 lines, 22 tasks across 4 phases) merged via PR #12 at SHA `e700d19`. Open spec questions locked with rationale: O1 = server-side `/api/preview-markdown` route; O2 = sibling file `lib/__generated__/project-contributions.json`; O3 = `parseFrontmatter` + `serializeFrontmatter` in `lib/profile-editor.ts` via `gray-matter`.
+
+**Chat 13 (DONE):** v0.2.0 implementation via `superpowers:subagent-driven-development`. 22 tasks shipped: PR #13 merged to main at SHA `69362e9`; tag `community-platform-v0.2.0` pushed. 562 unit/integration + 5/6 E2E green (Scenario 2 documented skip — concurrent-edit user-flow needs client-side SHA passthrough, v0.2.1). Security review 0 CRITICAL / 0 HIGH (Next.js bumped 16.2.4 → 16.2.6 for middleware bypass CVEs). Production smoke: deferred to user-side post-merge (sign in → /me/edit → save → verify commit; project page TopContributors + AskGBrain rendering).
 
 **Chat 11 handoff:** [`docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md).
+**Chat 13 handoff:** [`docs/specs/2026-05-16-community-platform-v0-2-implementation-handoff.md`](../../docs/specs/2026-05-16-community-platform-v0-2-implementation-handoff.md).
 
 **Pending follow-ups (mapped to chat-10 options):**
 - **A — Mark Spasonov backfill** (PR #3 open as Draft on `chore/mark-spasonov-backfill`): placeholders `@MARK_TELEGRAM_HANDLE_TBD` + `MARK_GIT_EMAIL_TBD` need real values from Mark out-of-band; mark Ready + merge. **Only chat-10 option NOT picked** — explicit Anton call.
@@ -118,9 +132,9 @@ branch_protection_main: "2026-05-04 — chat-10 Option B; legacy branch-protecti
 ## Production
 
 - **URL:** https://warsaw-ai-community-platform.vercel.app
-- **Tag:** `community-platform-v0.1.1` at merge SHA `036695c`, deploy `fg6rfweki`
-- **Previous tag:** `community-platform-v0.1.0` at SHA `b26a8c2`
-- **Released:** 2026-05-04 via PR #2 merge → Vercel auto-deploy
+- **Tag:** `community-platform-v0.2.0` at merge SHA `69362e9`
+- **Previous tags:** `community-platform-v0.1.1` (`036695c`, deploy `fg6rfweki`), `community-platform-v0.1.0` (`b26a8c2`)
+- **Released:** 2026-05-16 via PR #13 merge → Vercel auto-deploy
 - **Repo is public** as of 2026-05-04 (chat-10 Option B) per spec §0.5 + ADR-0001 (MIT licensing)
 - **Branch protection on `main`:** force-push blocked, deletion blocked. PR-required gate is a follow-up (needs warsaw-ai-bot App ID for Rulesets API bypass).
 
