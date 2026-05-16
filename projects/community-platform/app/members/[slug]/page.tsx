@@ -56,7 +56,17 @@ export default async function MemberPage({
 
       {profileHtml ? (
         <section className="mt-6">
-          <h2 className="text-xl font-medium">Profile</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-medium">Profile</h2>
+            {isSelf ? (
+              <Link
+                href="/me/edit"
+                className="text-sm underline"
+              >
+                Edit profile →
+              </Link>
+            ) : null}
+          </div>
           <SafeHtml
             html={profileHtml}
             className="prose prose-neutral dark:prose-invert mt-2 max-w-none"
@@ -64,8 +74,16 @@ export default async function MemberPage({
         </section>
       ) : (
         <section className="mt-6 rounded border border-dashed p-4 text-sm text-neutral-600 dark:text-neutral-400">
-          {member.name} hasn&apos;t filled out a profile yet. Members can edit{" "}
-          <code>community/members/{member.slug}.md</code> directly via git.
+          {isSelf ? (
+            <Link href="/me/edit" className="underline">
+              Edit your profile →
+            </Link>
+          ) : (
+            <>
+              {member.name} hasn&apos;t filled out a profile yet. Members can edit{" "}
+              <code>community/members/{member.slug}.md</code> directly via git.
+            </>
+          )}
         </section>
       )}
 
