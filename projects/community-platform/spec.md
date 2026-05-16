@@ -1189,6 +1189,13 @@ Three regions:
 2. **Preview tab**: renders body via `renderMarkdownToHtml()` + `SafeHtml` (existing audit pipeline, CONSTRAINTS line 20). On-demand render (tab click), not live. Plan-writing locks the render mechanism: client-side rehype pipeline (no roundtrip) OR `/api/preview-markdown` (server-side; must be auth-gated and session-slug-derived, never body-slug-trusted). Either choice MUST go through the same `lib/markdown.ts` audit boundary.
 3. **Save / Cancel** action row. Save submits to `saveProfile` server action; Cancel reverts to last-saved or localStorage draft.
 
+Post-save UX (rebuild-lag transparency):
+
+- On successful save, display: *"Saved. Your profile is rebuilding and will appear on `/members/<slug>` in ~60-90s after the next deploy completes."*
+- Rationale: profile prose lives in `lib/__generated__/content-snapshot.json` (build-time bundled per `pnpm prebuild → pnpm snapshot`). The bot commit triggers a Vercel rebuild via §6.3 path filter, but the running deployment continues serving the OLD snapshot until the new deploy aliases to production. `revalidatePath` (see §12.3.4) clears Next's RSC payload cache but cannot refresh the bundled snapshot — the rebuild does. Without this UX message, members will click Save, reload `/members/<slug>`, and be confused by the stale prose.
+- Member's edit is committed to git immediately; the rebuild-lag is purely cosmetic. The editor's localStorage draft (cleared on save) is sufficient evidence the save succeeded.
+- Inherits the same lag pattern v0.1.1 invitation flow has for `community/members/roster.md` updates (admin sees new roster row only after the next deploy).
+
 Draft persistence (H23):
 
 - localStorage key: `warsaw-profile-draft-<slug>` (slug from server-rendered prop, NOT from session — slug is already self-derived server-side).
@@ -1211,7 +1218,7 @@ Draft persistence (H23):
 8. Commit message + Co-Authored-By trailer (§12.3.6).
 9. `client().writeFile(profilePath(slug), newContent, {message, expectedSha: <step-4-sha>})`.
 10. On `sha_conflict` (409): re-execute steps 4-7 (re-read file; re-validate frontmatter) → retry once. On second 409, return `REFRESH_NEEDED` error (H20).
-11. On success: `revalidatePath("/members/<slug>")`, `revalidatePath("/members")`. Return `{ok: true, savedAt: <iso8601>}`.
+11. On success: `revalidatePath("/members/<slug>")`, `revalidatePath("/members")`. Return `{ok: true, savedAt: <iso8601>}`. **Note:** `revalidatePath` is defense-in-depth — it clears Next's RSC payload cache, but cannot refresh `lib/__generated__/content-snapshot.json` (bundled at build time). Actual prose freshness comes from the **Vercel rebuild** triggered by the bot's push to `community/members/` per §6.3 path filter. Expected freshness lag: 60-90s. The rebuild-lag UX message in §12.3.3 sets this expectation client-side.
 12. Log discipline (H24): log only `{slug, sha, success: true|false, error?: "code"}`. Never log body content, raw error object, or stack trace contents.
 
 #### 12.3.5 Form schema
@@ -1546,6 +1553,7 @@ NONE that are launch-blocking (D9). Optional:
 | Draft autosave for status posts (consistency) | Same draft pattern + storage scope; reusable abstraction |
 | Cross-coupling beyond outbound links (e.g., GBrain Q&A embed) | Architectural ADR before any iframe / SSO / API integration; outbound link is the v0.2 precedent |
 | Admin / CM-distinct UI (Option C deferred from chat-11) | v0.2.1 / v0.3 brainstorm; roster editor, member-ops UI, moderation surfaces |
+| Next.js 16 Cache Components adoption | v0.3+ candidate: enable `cacheComponents: true` in `next.config.ts`; migrate `force-dynamic` pages + the build-time-snapshot pattern to `'use cache'` + `cacheTag` directives. Would enable `updateTag(profile-<slug>)` in the save action for **immediate** post-save freshness (eliminates the 60-90s rebuild-lag captured in §12.3.3). Substantial change touching `next.config.ts`, every snapshot-consuming page, the build pipeline, and reviewer surface — out of v0.2.0 scope. Reference: Next.js 16 Cache Components docs + `vercel:next-cache-components` skill. |
 
 ### 12.10 Definition of Done for v0.2.0
 
