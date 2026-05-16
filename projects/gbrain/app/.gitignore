@@ -12,3 +12,4 @@ next-env.d.ts
 # community/archive/_index/ by scripts/copy-index.ts (prebuild/predev).
 # Do NOT commit — it's regenerated on every build.
 /data/_index/
+.vercel
