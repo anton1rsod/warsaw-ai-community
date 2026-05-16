@@ -50,30 +50,33 @@ If any gate fails, do **not** tag. Open a follow-up commit on the branch and re-
 ## 3. Calibration results (OQ-1)
 
 ### Method
-`<sandbox-via-fixtures | real-staging-corpus>` — 0.1.2 staging had `<N>` `#kb` items committed to main at calibration time (last digest `<YYYY-MM-DD>`), so calibration was run against `<the fixture corpus / the real corpus>` via `pnpm tsx scripts/calibrate-<fixtures | threshold>.ts`. Real-corpus retune scheduled for 0.2.x per spec §9.3 OQ-1 follow-on.
+**Sandbox-via-fixtures.** At calibration time (2026-05-16) the monorepo `community/archive/` had 0 `#kb` items — the gbrain Vercel project had been deploying from a separate `warsaw-ai-community-gbrain` repo until today's repo-migration cutover, so the migrated monorepo was effectively a fresh archive. To produce a defensible threshold without first repopulating staging by hand, calibration ran against the fixture corpus (3 `#kb` items + 1 digest at `projects/gbrain/app/tests/fixtures/archive/`) via `pnpm tsx scripts/calibrate-fixtures.ts`. Real-corpus retune scheduled for 0.2.x per spec §9.3 OQ-1 follow-on.
 
 ### Seed query set
-- **Positive queries (count: `<N>`):** *(see `tests/fixtures/calibration-queries.json`; expanded with founder-added paraphrases against the chosen corpus.)*
-- **Negative queries (count: `<N>`):** *(off-topic / out-of-corpus.)*
+- **Positive queries (count: 3):** `"when does the community meet?"`, `"what's Jurek building?"`, `"what was in the daily digest?"` — designed to match `qa-example.md` (meetups), `builds-example.md` (Jurek/LoRA), and `digests/2026-04-26.md` respectively. See `tests/fixtures/calibration-queries.json`.
+- **Negative queries (count: 3):** `"what's the weather in Tokyo?"`, `"best pizza in Warsaw"`, `"what is the meaning of life"` — off-topic, out-of-corpus.
 
 ### Score distribution
 ```
-Positive scores (sorted asc): <paste>
-Negative scores (sorted desc): <paste>
+Positive scores (sorted asc): [0.556, 0.634, 0.679]
+Negative scores (sorted desc): [0.542, 0.514, 0.468]
 
-Min positive: <X.XXX>
-Max negative: <Y.YYY>
+Min positive: 0.556
+Max negative: 0.542
 
-SUGGESTED THRESHOLD: <Z.ZZZ>
+SUGGESTED THRESHOLD (sandbox, N=6): 0.549
 ```
 
 ### Chosen threshold
-`ASK_SIMILARITY_THRESHOLD = <Z.ZZZ>` in `projects/gbrain/app/src/commands/ask.ts`.
+`ASK_SIMILARITY_THRESHOLD = 0.55` in `projects/gbrain/app/src/commands/ask.ts`.
 
-**Rationale:** *(one or two sentences — e.g., "Suggested midpoint accepted as-is; min-positive `0.612` clears max-negative `0.408` with comfortable margin, sample size N=10 positives / N=10 negatives. Will retune in 0.2.x once real-channel corpus accrues.")*
+**Rationale:** Empirical midpoint is `0.549`; accepted `0.55` (delta `+0.001`, well below noise floor at N=6) for slight precision bias. For `/ask`, false positives erode member trust faster than false negatives — rounding *up* from the midpoint is the asymmetric correct call. Margin to nearest negative is `0.008`; margin to nearest positive is `0.006`. Sample size is intentionally small (sandbox fixtures designed to match seed queries 1-to-1); the retune in 0.2.x once real-channel corpus accrues is the calibration's second pass.
 
 ### Sample-size caveat
-At 0.1.2 staging only contains `<N>` `#kb` items (small N). The calibrated value is provisional for the day-30 gate. Re-run after the first 14-day real-channel window in 0.2.x (per spec §9.3 OQ-1 follow-on).
+The sandbox value is **provisional for the day-30 gate** — it confirms the spec's default `0.55` lands in the right zone with real Gemini embeddings (768-dim, `gemini-embedding-001`), but the score landscape will shift when real members post real `#kb` content. Re-run after the first 14-day real-channel window in 0.2.x (per spec §9.3 OQ-1 follow-on).
+
+### Related fix
+Calibration surfaced a latent bug: `embed()` in `src/ai/gateway.ts` did not pin `outputDimensionality`, so Gemini returned its full 3072-dim vector instead of the 768 dims required by `IndexFileSchema`. Fixed at commit `bd3923a` (`fix(gbrain): pin embed() to 768 dims via providerOptions`). Untriggered in 0.1.1 because the digest path doesn't embed.
 
 ---
 

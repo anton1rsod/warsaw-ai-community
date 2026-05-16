@@ -9,7 +9,14 @@ import { checkRateLimit } from "../rate-limit";
 import { escapeMd, formatLinkMd } from "../telegram/format";
 
 const K = 5;
-// Calibrated at rehearsal — see spec §9.3 OQ-1.
+// Calibrated 2026-05-16 via scripts/calibrate-fixtures.ts (sandbox, N=6).
+// Score distribution from gemini-embedding-001 against the fixture corpus:
+//   positives (sorted asc): [0.556, 0.634, 0.679]
+//   negatives (sorted desc): [0.542, 0.514, 0.468]
+// Empirical midpoint 0.549; accepted 0.55 with slight precision bias (false
+// positives erode /ask trust faster than false negatives). Margin to nearest
+// negative: 0.008. Retune scheduled for 0.2.x once real-channel corpus accrues
+// per spec §9.3 OQ-1 + closeout doc §3.
 export const ASK_SIMILARITY_THRESHOLD = 0.55;
 
 export const handleAsk: CommandHandler = async ({ parsed, bot }) => {
