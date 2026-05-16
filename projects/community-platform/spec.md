@@ -1567,3 +1567,950 @@ NONE that are launch-blocking (D9). Optional:
 - [ ] Tag `community-platform-v0.2.0` pushed.
 - [ ] Production smoke (§12.9.2 step 4) passes.
 - [ ] Memory entry `project_community_platform_v0_2_ship.md` written.
+
+## 13. v0.3.0 — Discovery+ (meeting + event surfacing, /home activity feed, RSVP, GCal feed)
+
+> **Scope:** v0.3.0 release. 100% git (per §5 + CONSTRAINTS line 10), no DB / KV. §6.1 classification rule stays dormant.
+> **Brainstormed:** 2026-05-16 via `superpowers:brainstorming` (chat 17).
+> **Closes:** none from §11/§12 forward-looking rows; opens new entry points (`/home` as a content surface; `/events` and `/meetings` indexes; event RSVP affordance; ICS subscribe feed).
+> **Locked decisions:** Q1–Q6 + D1–D18 from chat-17; applied below.
+> **Versioning:** single v0.3.0 ship. Plan-writing (chat 18) has standing authority to re-split into v0.3.0 + v0.3.1 if implementation estimate exceeds 50 tasks OR 2 weeks elapsed wall-time; default split point if forced = (v0.3.0 = meeting + event surfacing + /home + L2 + GCal V-static / v0.3.1 = event RSVP L3).
+> **Hardening ID namespace:** §13 uses **H30–H55** (continues from §12's H14–H29 to avoid cross-section grep collisions). 26 IDs (H53–H55 added in chat-17 self-review for modern-platform fold-in: Kudos, RSVP tri-state, roster privacy, PWA).
+
+### 13.1 Locked decisions
+
+| ID | Lock | Decision |
+|---|---|---|
+| Q1 | Primary thrust | Ambitious Hardened A1 — Discovery+ v0.3 = B (meeting surfacing) + A (events surface) + L1 (unified /home feed) + L2 (/this-week strip) + L3 (event RSVP) + V-static (GCal ICS feed) |
+| Q2 | §6.1 classification trigger | NO. 100% git stays. §6.1 stays dormant. v0.3 adds build-time-generated derived indexes; no per-request DB/KV state. RSVP writes go through the v0.2 SHA-passthrough write path on the member's profile.md |
+| Q3 | Telegram bridge | NO. Defer to v0.4 (separate thread). Telegram-handle-on-profile dropped from this brainstorm in favor of L1 unified /home feed (chat-17 hardening pass) |
+| Q4 | Status gamification | NO. Cultural risk too high (charter is collaborative; gamification is competitive). v0.3 ships discovery + member-action (RSVP); engagement via social proof, not leaderboards |
+| Q5 | Google Calendar integration | V-static only — generate ICS from git frontmatter + serve a subscribable feed at `/api/calendar.ics`. NO GCal API pull (changes source-of-truth; defer to v0.4 bundled with Telegram bridge if pursued). Community confirmed (chat-17): personal GCals, no shared one → V-static fits |
+| Q6 | Versioning | Single v0.3.0 ship; plan-writing may re-split per trigger criteria above |
+| D1 | /home feed layout | D — This-Week Roll-up (time-anchored: "This Week" + "Recent"; bounded scroll). Rejected: A (vertical timeline, unbounded), B (categorized panels, no temporal anchor) |
+| D2 | "This Week" definition | Current calendar week (Mon-Sun, Europe/Warsaw) for meetings; + 14-day forward window for upcoming events |
+| D3 | "Recent" definition | Last 30 days, EXCLUDING the This-Week window |
+| D4 | Feed empty states | Per-section: "Nothing scheduled this week — browse all events." with link to `/events`. Never render an empty section block silently |
+| D5 | "This Week" item shape | Type icon + bold title (link to detail) + relative time (`Today`, `Tue`) + 1-line summary excerpt |
+| D6 | "Recent" item shape | Compact one-liner: icon + title (link) + author (where applicable) + relative time |
+| D7 | /this-week L2 placement | Strip mounted ABOVE the status compose box (content-as-prompt flow). Single `HomeFeed` component, two pages (`/home`, `/this-week`) |
+| D8 | /meetings index | Reverse-chronological list grouped by month. No pagination v0.3 (revisit at ~50 entries) |
+| D9 | /events index | "Upcoming" section (nearest first) + "Past" section (reverse chronological). No pagination v0.3 |
+| D10 | Event RSVP UI | B — prominent CTA below event title (toggles "Mark as Going" ↔ "✓ Going"). Roster as avatar grid below event content |
+| D11 | RSVP state | TRI-STATE: `events_going` (committed) OR `events_interested` (soft signal) OR absent (no signal). Mutually exclusive per slug. Reversal-pass on initial binary lock (chat-17 self-review): "Interested" tier is widely validated on modern event platforms (Lu.ma, Eventbrite, FB Events) and captures the most common pre-event state |
+| D12 | RSVP roster visibility | Per-member, profile-frontmatter-configurable via `event_rsvp_visibility: "public" \| "members_only"`. NEW RSVPs from v0.3 forward default to `"members_only"` (chat-17 self-review: trust posture is opt-in for event-attendance visibility). Existing public `/members/[slug]` directory itself stays public for v0.1 precedent; event-attendance is a finer-grained opt-in |
+| D13 | Avatar fallback | Initials when profile photo absent (existing v0.1 pattern) |
+| D14 | GCal integration shape | V-static — ICS generation from git frontmatter only. No GCal API |
+| D15 | ICS subscribe URL | `/api/calendar.ics` (public, cache-controlled, build-time-generated artifact) |
+| D16 | Add-to-Calendar buttons | On `/meetings/[slug]` + `/events/[slug]` detail pages. Triggers download of a single-event `.ics` file |
+| D17 | Frontmatter additions | Meeting + event notes add `start_time`, `duration_minutes`, `location` (all optional). Defaults via community-defaults file |
+| D18 | Community defaults | `community/community-defaults.yaml` (new) — keys: `meeting_default_time`, `meeting_default_duration`, `meeting_default_location`, `events.*` equivalents, `timezone`. Used when frontmatter omits the field |
+| D19 | Member-to-member recognition (Kudos / Thanks) | `+ Thanks` affordance on status posts, contributions, and meeting notes. Stored in giver's profile frontmatter `thanks_given: [{recipient, item_type, item_id, given_at}]`. Aggregated build-time → `lib/__generated__/kudos.json`. Displayed on `/members/[slug]` as "Thanked N times" + per-item button state. Recognition primitive (no leaderboard surface — explicitly distinct from Q4-rejected gamification) |
+| D20 | PWA manifest | `public/manifest.json` + 192/512 icons + `<link rel="manifest">` via Next 16 `metadata.manifest` in `app/layout.tsx`. Installable on mobile/desktop. NO service worker / offline mode v0.3 (Next.js default caching is sufficient); installability is the goal |
+
+**§6.1 dormancy preserved.** All v0.3 surfaces read derived data computed at build time. `events_going` lists are stored in member profiles (git, not DB). RSVP toggles use v0.2.2's SHA-passthrough write contract on member profile files.
+
+**Telegram-handle-on-profile dropped** (chat-17 hardening pass): originally proposed as the v0.3 tag-along; replaced by the L1 unified /home feed which addresses the same "drive engagement" weakness with stronger spec coherence. Telegram bridge belongs to v0.4 if pursued.
+
+### 13.2 Architecture
+
+v0.3.0 extends v0.1.x + v0.2.x surfaces; no new infrastructure. New env vars: NONE (community defaults configured in-repo YAML).
+
+```
+┌──────────────────────────────────────────────────┐
+│  Existing v0.1.x / v0.2.x surfaces (unchanged)   │
+│  • Auth, proxy.ts, lib/markdown.ts + SafeHtml    │
+│  • lib/github-app.ts (warsaw-ai-bot writer):     │
+│      readFile, writeFile, getHeadSha (SHA-CAS)   │
+│  • lib/content-snapshot.ts (build-time JSON)     │
+│  • lib/contributions.ts (4-count per member)     │
+│  • lib/profile-editor.ts (v0.2 SaveProfileSchema │
+│      + SHA-passthrough write contract)           │
+│  • app/actions/save-profile.ts (v0.2.2 SHA       │
+│      passthrough; reused for events_going write) │
+└─────────────────┬────────────────────────────────┘
+                  │
+                  ▼ v0.3.0 additions
+┌──────────────────────────────────────────────────┐
+│  lib/events.ts (new)                             │
+│  • Frontmatter validator (date, slug, time)     │
+│  • EventSlug branded type                        │
+│  • Event reader (community/events/*/README.md)   │
+│  • Orphan-slug filter (H34, H39)                 │
+└──────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  lib/meetings.ts (new — extract from existing)   │
+│  • Meeting reader + frontmatter validator        │
+│  • Date-grouping helper for index page           │
+└──────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  lib/home-feed.ts (new)                          │
+│  • Aggregator: meetings + events + statuses +    │
+│    contributions → { thisWeek, recent } shape    │
+│  • Pure function over content-snapshot           │
+└──────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  lib/ical.ts (new)                               │
+│  • ICS generation (RFC 5545) via `ics` npm pkg   │
+│  • Frontmatter → VEVENT mapping                  │
+└──────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  lib/__generated__/event-rosters.json (new)      │
+│  • Build-time derived: {<event-slug>: [<slug>…]} │
+│  • Source: roster's events_going arrays          │
+│                                                  │
+│  lib/__generated__/calendar.ics (new)            │
+│  • Build-time aggregate ICS for /api endpoint    │
+└──────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  /home          (rewrite: SSG → HomeFeed)        │
+│  /this-week     (extend: HomeFeed strip above)   │
+│  /events        (new ƒ SSG: events index)        │
+│  /events/[slug] (new ƒ SSG: detail + RSVP UI)    │
+│  /meetings      (new ƒ SSG: meetings index)      │
+│  /api/calendar.ics  (new: serves build-time      │
+│                      artifact w/ cache headers)  │
+└──────────────────────────────────────────────────┘
+```
+
+Five architectural pillars (analog to §11.1, §12.2):
+
+1. **Build-time aggregation, not per-request.** `lib/home-feed.ts` runs as part of the existing snapshot pipeline; serves derived `{ thisWeek, recent }` from `content-snapshot.json`. No per-request git read; no per-request roster scan. `event-rosters.json` and `calendar.ics` are built the same way (H32, H38, H48).
+2. **RSVP reuses v0.2 save-profile contract.** `events_going` is a frontmatter field in `community/members/<slug>.md`. The `rsvp-event` server action thin-wraps `save-profile.ts`'s SHA-passthrough write pattern — same lost-update protection (v0.2.2; H31, H40), same audit trail (member `Co-Authored-By`), same revalidation lag UX (60-90s rebuild before roster surfaces refresh on `/events/[slug]`).
+3. **RSVP state is binary by construction.** `events_going: [slug]` — slug present means going; absence means not-going. No `maybe` state, no per-event timestamp on profile (commit history holds the timestamp). Reversal-cost analysis: adding richer states later requires a frontmatter migration; we accept that cost iff member feedback explicitly demands it.
+4. **ICS feed is build-time generated; route serves the artifact.** `/api/calendar.ics` is a Route Handler (not SSG, because it must return `Content-Type: text/calendar` with cache headers) that reads `lib/__generated__/calendar.ics` (text file). Build pipeline emits the .ics from the same `lib/ical.ts` used by per-event AddToCalendarButton.
+5. **Build reliability is a v0.3 invariant.** v0.3 adds at least one new npm dependency (`ics` for ICS generation). Per chat-17 finding (gbrain PR #14, 15 days of broken production builds via `@grammyjs/types` + transitive `@types/aws-lambda`), `projects/community-platform/tsconfig.json` MUST scope `types` to prevent implicit `@types/*` loading. See §13.7.
+
+**Alternatives considered + rejected:**
+- GCal API pull / OAuth-bind a service account (Q5 → defers to v0.4; changes source-of-truth and adds Vercel env-var surface for API keys)
+- "Maybe" / "not-going" RSVP states (D11 → YAGNI; reversal cost real)
+- Telegram-handle-on-profile (originally chat-17 tag-along; dropped → replaced by L1 unified feed)
+- Per-event RSVP timestamps in profile frontmatter (D11 → only `events_going: [slug]` list; commit history holds the timestamp via member's profile.md commits)
+- Status streak / leaderboard (Q4 → cultural risk; charter is collaborative not competitive)
+- iframe-embed of public GCal (Q5 V-embed → no; dual source-of-truth between git and external GCal)
+- Vertical timeline `/home` (D1 → unbounded scroll grows with project activity; chose D for week-bounded scannability)
+
+### 13.3 Meeting surfacing (B)
+
+#### 13.3.1 Routing
+
+- New route: `app/meetings/page.tsx` — meetings index (currently only `/meetings/[slug]` exists per v0.1's 8 SSG routes). SSG, no `auth()` read.
+- Existing route: `app/meetings/[slug]/page.tsx` — extended to render extended frontmatter (start_time, duration, location) and surface `<AddToCalendarButton>`.
+
+#### 13.3.2 Meeting frontmatter (extended; additive migration)
+
+```yaml
+---
+date: 2026-05-19           # required, ISO 8601, must match filename
+title: "Weekly sync"        # required
+start_time: "18:00"        # optional, HH:MM 24h Europe/Warsaw; falls back to community-defaults
+duration_minutes: 60       # optional; falls back to community-defaults
+location: "Telegram #voice" # optional; falls back to community-defaults
+host: "anton1rsod"          # optional, GitHub handle
+attendees: ["anton1rsod"]  # optional, GitHub handles
+---
+```
+
+Migration posture (additive): existing meeting notes lacking `start_time` / `duration_minutes` / `location` continue to render and to be aggregated by `/home`; ICS generation uses community defaults for missing fields. No backfill blocker. `community/meetings/weekly/_template.md` updated with commented-out slots so future notes adopt the extended shape.
+
+#### 13.3.3 /meetings index page
+
+`app/meetings/page.tsx`:
+
+- Server component, SSG (`force-static`).
+- Reads via `lib/meetings.ts:listMeetings()` from content-snapshot.
+- Renders header + month-grouped list (reverse chrono).
+- Each row: date · title link to `/meetings/[slug]` · 1-line summary excerpt.
+- Empty state: "No meetings yet. The next sync will appear here once the first meeting note lands." with link to `community/meetings/weekly/_template.md` (GitHub web URL).
+- Top-right: "Subscribe to calendar (ICS)" link to `/api/calendar.ics` (D15).
+
+#### 13.3.4 /meetings/[slug] extension
+
+Existing detail page extended:
+- Render `start_time`, `duration_minutes`, `location` if present in frontmatter.
+- Add `<AddToCalendarButton meeting={meeting}>` near the header (D16).
+- No layout overhaul; surgical additions.
+
+### 13.4 Events surface + RSVP (A + L3)
+
+#### 13.4.1 Events folder convention (formalized from existing `community/events/README.md`)
+
+- Folder: `community/events/YYYY-MM-DD-slug/` (validated; H44).
+- Files:
+  - `README.md` — main content + frontmatter (REQUIRED).
+  - `pitch.md` — original proposal (optional).
+  - `outcomes.md` — `#kb` outcomes (optional).
+  - `artifacts/` — files (optional).
+
+v0.3 reads `README.md` for surfacing. `pitch.md` / `outcomes.md` are surfaced as sub-section links on the detail page only.
+
+`community/events/_template/README.md` (new) mirrors the meetings template.
+
+#### 13.4.2 Event frontmatter (new)
+
+```yaml
+---
+date: 2026-06-15              # required, ISO 8601, must match folder name
+slug: "ai-hackathon-kickoff"  # required, must match folder slug
+title: "AI Hackathon Kickoff" # required
+start_time: "18:00"           # optional, falls back to community-defaults
+duration_minutes: 180         # optional, falls back to community-defaults
+location: "Quointelligence office" # optional, falls back to community-defaults
+host: "anton1rsod"            # optional
+url: "https://..."            # optional — RSVP link or external page
+status: "scheduled"           # optional: scheduled (default) | cancelled | completed
+---
+```
+
+`EventSlug` branded type in `lib/events.ts` validates: format `YYYY-MM-DD-<kebab>`, date parseable, folder name matches frontmatter slug (H42).
+
+#### 13.4.3 /events index page
+
+`app/events/page.tsx`:
+
+- SSG (`force-static`).
+- Two sections rendered in order:
+  1. **Upcoming** — `date >= today` (build time), nearest first. Each row: date · title link · `[N] going` count badge derived from `event-rosters.json`.
+  2. **Past** — `date < today` (build time), reverse chronological. Each row: date · title link · `[N] went` count.
+- Empty states: "No upcoming events" / "No past events yet" inline.
+- Top-right: "Subscribe to calendar (ICS)" link to `/api/calendar.ics`.
+
+#### 13.4.4 /events/[slug] detail page
+
+`app/events/[slug]/page.tsx`:
+
+- SSG with `generateStaticParams()` enumerating event folders.
+- Renders: frontmatter metadata (date, time, location, host), `<EventRsvpButton>` below title (D10), body content via `lib/markdown.ts`, `<EventRoster>` below content, `<AddToCalendarButton event={event}>` near header.
+- Sub-section links to `pitch.md` / `outcomes.md` if those files exist in the folder.
+- 404 handled gracefully (H34): if slug appears in any member's `events_going` but folder is missing, profile page renders with the orphan slug filtered.
+
+#### 13.4.5 EventRsvpButton component
+
+`app/components/EventRsvpButton.tsx` (client component, `"use client"`):
+
+```typescript
+interface EventRsvpButtonProps {
+  eventSlug: EventSlug;
+  initialState: "going" | "interested" | "none" | "not-signed-in";
+  memberSlug?: string;  // undefined when not-signed-in
+  profileSha?: string;  // required when signed in (SHA-passthrough; H31)
+}
+```
+
+Tri-state UI per D11 (two adjacent buttons): `[Going]` + `[Interested]`. Mutually exclusive — member is in `events_going` OR `events_interested`, never both. Click on a non-active button transitions through `rsvp-event` action with `desiredState`.
+
+States (signed in):
+- `"none"`: both buttons inactive. Click `Going` → desiredState="going"; click `Interested` → desiredState="interested".
+- `"going"`: `[✓ Going]` active (green). Click `[✓ Going]` → desiredState="none" (clears). Click `[Interested]` → desiredState="interested" (atomic switch via mutual exclusion).
+- `"interested"`: `[★ Interested]` active (amber). Click `[★ Interested]` → desiredState="none". Click `[Going]` → desiredState="going" (atomic switch).
+- `"not-signed-in"`: renders disabled-styled link "Sign in to RSVP" → `/login?callbackUrl=/events/<slug>`.
+
+Optimistic UI: flip immediately on click; revert on action error. On 409 SHA conflict: revert + show "Someone else updated your profile — refresh." inline.
+
+#### 13.4.6 rsvp-event server action
+
+`app/actions/rsvp-event.ts`:
+
+Input: `{eventSlug: EventSlug, desiredState: "going" | "interested" | "none", profileSha: string}`.
+
+1. `await auth()` → `session.githubHandle` (else `not_authenticated`).
+2. `findMemberByHandle(handle)` → resolve `slug` (else `not_a_member`).
+3. Validate `eventSlug` is known: `isKnownEventSlug(eventSlug)` against current events list (H37). Else return `event_not_found`.
+4. Thin-wrap `save-profile` write path:
+   - Read profile via `client().readFile(profilePath(slug))` → capture `{content, sha}`.
+   - Parse frontmatter; read `events_going` AND `events_interested` arrays (defaults `[]`).
+   - **Mutual exclusion reconciliation:** remove `eventSlug` from BOTH arrays first. If `desiredState === "going"`, add to `events_going`. If `desiredState === "interested"`, add to `events_interested`. If `desiredState === "none"`, leave removed from both. Idempotent regardless of prior state.
+   - If frontmatter lacks `event_rsvp_visibility` (first RSVP from v0.3 forward), set it to `"members_only"` per D12 (H46).
+   - Serialize new frontmatter; preserve body verbatim.
+   - `client().writeFile(profilePath(slug), newContent, {message, expectedSha: <step-4-sha>})`.
+5. On `sha_conflict` (409): NO retry (per v0.2.2 contract; H40) — return `REFRESH_NEEDED`.
+6. On success: `revalidatePath("/events/" + eventSlug)`, `revalidatePath("/members/" + slug)`. Return `{ok: true, state: desiredState}`.
+7. Log discipline: log only `{slug, eventSlug, desiredState, prior_state, sha, success, error?: code}`. No body content logged.
+
+Commit message:
+```
+chore(community): @<gh-handle> RSVP <going|interested|none> "<event-slug>"
+
+Co-Authored-By: <gh-handle> <gh-handle@users.noreply.github.com>
+```
+
+#### 13.4.7 EventRoster component
+
+`app/components/EventRoster.tsx` (server component):
+
+```typescript
+interface EventRosterProps {
+  eventSlug: EventSlug;
+}
+```
+
+Renders two sub-rosters per D11 tri-state + D12 privacy:
+- **Going (N total)** — public avatar grid of members whose `event_rsvp_visibility === "public"` + count badge `+ M members (sign in to see)` for hidden (`"members_only"`) members. The hidden-count CTA links to `/login?callbackUrl=/events/<slug>`.
+- **Interested (P total)** — same shape; styled distinctly (amber accent vs green for Going).
+- Avatar grid: 5-wide responsive; each tile links to `/members/[slug]`.
+- Reads from `lib/__generated__/event-rosters.json` (build-time derived; H32).
+- Empty states: "No one's marked going yet — be the first." / "No one's marked interested yet."
+
+`event-rosters.json` shape per event:
+
+```json
+{
+  "<event-slug>": {
+    "going": { "publicSlugs": ["..."], "hiddenCount": N },
+    "interested": { "publicSlugs": ["..."], "hiddenCount": M }
+  }
+}
+```
+
+The split keeps `/events/[slug]` SSG (no auth read on page). Reveal-on-auth UX (whether hidden names appear after sign-in) is locked at plan-writing per O6. Options: (a) keep SSG with sign-in CTA hint only, (b) add a Dynamic auth-aware roster route, (c) client-side fetch after hydration. Default: (a) — simplest, ships v0.3.
+
+Public visibility posture: `/members/[slug]` directory itself remains public per v0.1.x precedent (D12 amendment); event-attendance is the new finer-grained opt-in.
+
+#### 13.4.8 events_going + events_interested + event_rsvp_visibility fields on member profile
+
+Frontmatter additions to `community/members/<slug>.md`:
+
+```yaml
+events_going: ["2026-06-15-ai-hackathon-kickoff", ...]      # optional, default []
+events_interested: ["2026-07-04-some-other-event", ...]    # optional, default []  (D11 tri-state)
+event_rsvp_visibility: "members_only"                       # optional: "public" | "members_only"; default "members_only" for new RSVPs from v0.3 forward (D12)
+```
+
+Migration: members without these fields don't break — absence equals empty array (slug lists) OR `"members_only"` (visibility default, applied on first write).
+
+**Mutual exclusion invariant (D11):** for any given `eventSlug`, the member is in EITHER `events_going` OR `events_interested`, never both. Server action enforces (§13.4.6 step 4). Plan-writing adds a profile-validator check in `lib/profile-editor.ts` that flags violations at save time.
+
+Stale-slug protection (H39 — extended to both arrays): build-time `scripts/build-event-rosters.ts` only includes slugs present in `community/events/`; orphan slugs are filtered out of both `events_going` and `events_interested` for roster purposes. Member profile may temporarily contain a stale slug after an event folder is deleted — no harm done (next save by the member cleans up).
+
+### 13.5 Unified /home feed + /this-week strip (L1 + L2)
+
+#### 13.5.1 HomeFeed component
+
+`app/components/HomeFeed.tsx` (server component):
+
+```typescript
+interface HomeFeedProps {
+  feed: HomeFeedData;
+  showRecent?: boolean;  // default true; /this-week strip sets false
+}
+
+interface HomeFeedData {
+  thisWeek: FeedItem[];
+  recent: FeedItem[];
+}
+
+interface FeedItem {
+  type: "meeting" | "event" | "status" | "contribution";
+  slug: string;          // for link target
+  title: string;
+  href: string;          // resolved link
+  date: string;          // ISO 8601
+  author?: string;       // GitHub handle (status, contribution)
+  excerpt?: string;      // 1-line, for "This Week" section only
+}
+```
+
+Renders the D layout: "THIS WEEK" header → "This Week" items in D5 shape (bold + type icon + relative-time + excerpt) → "RECENT" header → "Recent" items in D6 shape (compact + icon + title + author + relative-time). Icon strategy locked at plan-writing (SVG over emoji recommended for accessibility; let plan-writing finalize).
+
+#### 13.5.2 home-feed aggregator
+
+`lib/home-feed.ts:computeHomeFeed()`:
+
+Pure function over content-snapshot. Inputs: meetings list, events list, status posts list, contributions list. Output: `HomeFeedData`.
+
+This-Week bucket (D2):
+- Meetings with `date` in current calendar week (Mon-Sun, Europe/Warsaw).
+- Events with `date` in next 14 days from `now()`.
+
+Recent bucket (D3):
+- Items with `date` in last 30 days, EXCLUDING the This-Week window.
+- Sort desc by date; cap at 10 items.
+
+`now()` is computed at build time (call time of `computeHomeFeed`). Build cadence: every git push triggers a Vercel deploy → snapshot refresh → fresh `now()`. Acceptable freshness lag (60-90s rebuild window per v0.2's pattern).
+
+#### 13.5.3 /home page rewrite
+
+`app/home/page.tsx`:
+- Existing implementation inspected by plan-writing to determine diff scope; rewrite replaces page body with `<HomeFeed feed={feed}>`.
+- SSG (`force-static`). No `auth()` read (anonymous visitor sees the same feed — public-by-default; H30).
+- If current `/home` is in `proxy.ts` PUBLIC_PATHS, no change. If not, plan-writing locks (O3).
+- Empty states: per-section "Nothing scheduled this week — browse all events" link to `/events`.
+
+#### 13.5.4 /this-week L2 strip
+
+`app/this-week/page.tsx` extension:
+- Mount `<HomeFeed feed={feed} showRecent={false}>` ABOVE the existing status compose box (D7).
+- Pass only the This-Week bucket; do not render Recent (avoid duplicating the status list which is the page's primary content).
+- Empty state (H45): if This-Week is empty, render nothing — no "Nothing happening" label between compose and post list.
+
+### 13.6 GCal V-static
+
+#### 13.6.1 lib/ical.ts
+
+```typescript
+// Pseudocode shape; plan-writing finalizes
+import { createEvents, type EventAttributes } from "ics";
+
+export interface IcsEvent {
+  uid: string;        // stable: "meeting-<slug>" or "event-<slug>"
+  title: string;
+  start: EventAttributes["start"];
+  duration: { minutes: number };
+  location?: string;
+  description?: string;
+  url?: string;       // canonical URL on platform
+}
+
+export function meetingToIcsEvent(meeting: Meeting, defaults: CommunityDefaults): IcsEvent { ... }
+export function eventToIcsEvent(event: Event, defaults: CommunityDefaults): IcsEvent { ... }
+export function generateIcs(events: IcsEvent[]): string { ... }  // returns RFC 5545 string
+```
+
+Plan-writing locks the specific `ics` package version (latest stable on npm); type-completeness vetted per §13.7.2 checklist (H52).
+
+#### 13.6.2 Community defaults
+
+`community/community-defaults.yaml` (new):
+
+```yaml
+timezone: "Europe/Warsaw"
+meetings:
+  default_start_time: "18:00"
+  default_duration_minutes: 60
+  default_location: "Telegram #voice"
+events:
+  default_start_time: "18:00"
+  default_duration_minutes: 120
+  default_location: "TBD — see event description"
+```
+
+Read by `lib/ical.ts` and `lib/community-defaults.ts` when frontmatter omits the field (H49). Plan-writing may choose JSON instead of YAML for tighter Zod validation (O5).
+
+#### 13.6.3 /api/calendar.ics route
+
+`app/api/calendar.ics/route.ts`:
+
+```typescript
+import { readFile } from "node:fs/promises";
+
+export async function GET() {
+  const ics = await readFile("lib/__generated__/calendar.ics", "utf-8");
+  return new Response(ics, {
+    headers: {
+      "Content-Type": "text/calendar; charset=utf-8",
+      "Cache-Control": "public, max-age=300, s-maxage=300",
+    },
+  });
+}
+```
+
+Build step: `scripts/build-calendar.ts` generates `lib/__generated__/calendar.ics` aggregating all upcoming meetings + events (past items excluded after 30 days to keep the file small). Plan-writing locks whether this route is `force-static` or `force-dynamic` based on Vercel route-handler constraints (H48).
+
+Public (no auth gate); must be in `proxy.ts` PUBLIC_PATHS (O4).
+
+#### 13.6.4 AddToCalendarButton component
+
+`app/components/AddToCalendarButton.tsx` (client component for download trigger):
+
+```typescript
+interface AddToCalendarButtonProps {
+  ics: string;          // pre-rendered single-event ICS string (server-rendered)
+  filename: string;     // e.g., "weekly-sync-2026-05-19.ics"
+}
+```
+
+Renders a button that triggers a client-side download of the inline `ics` prop (no server round-trip). Pre-rendering the ICS string on the server avoids leaking event-detail data into per-click API requests and keeps the click responsive.
+
+#### 13.6.5 Subscribe URL UX
+
+`/events` and `/meetings` index pages each surface a "Subscribe to calendar (ICS)" link pointing to `/api/calendar.ics`. Subtitle: "Add to Google Calendar, Apple Calendar, or any ICS-compatible app."
+
+### 13.7 Build reliability + dependency vetting
+
+**Trigger.** Chat-17 investigation found gbrain production builds had been broken for 15 days (2026-05-01 → 2026-05-16) via two transitive type-dep failures: `@grammyjs/types` (Deno-targeted, no `.d.ts` in the published tarball) and `@types/aws-lambda` (auto-loaded by TypeScript when `tsconfig.json` has no `types` field). Fixed in PR #14 with an ambient module shim + `"types": ["node"]`.
+
+v0.3 adds at least one new npm dependency (`ics` for V-static GCal). Without proactive scoping, the same failure mode can bite community-platform.
+
+#### 13.7.1 tsconfig types scoping (H50)
+
+`projects/community-platform/tsconfig.json` adds (verify; current state may already be partially scoped):
+
+```json
+{
+  "compilerOptions": {
+    "types": ["node"]
+  }
+}
+```
+
+Effect: prevents implicit loading of every `@types/*` package. Explicit imports (`import type { X } from "some-types"`) still work. If a test framework needs auto-loading (e.g., `vitest/globals`), it's added to the array (`["node", "vitest/globals"]`).
+
+#### 13.7.2 Dependency vetting checklist (plan-writing input; H52)
+
+For each new npm dep proposed by v0.3 implementation:
+
+- [ ] Ships `.d.ts` in the published tarball (verify via `npm pack <pkg> --dry-run` or by inspecting the tarball after install).
+- [ ] No transitive `@types/*` that conflict with the explicit `types` scope.
+- [ ] `pnpm typecheck` passes on a fresh `pnpm install` (CI test; H51).
+- [ ] `pnpm build` passes on a Vercel preview before merge.
+
+Candidate ICS generator: `ics` (npm, MIT). Pre-vetted shape: ships `.d.ts`, no transitive `@types/*`, ~5KB minified. Plan-writing locks the final choice (and version) after running the checklist (O1).
+
+#### 13.7.3 GOTCHAS row 9 (committed alongside §13)
+
+A new row appended to `projects/community-platform/GOTCHAS.md` captures the transitive-types failure pattern recovered in gbrain PR #14. Grep-recoverable for future ops.
+
+### 13.8 Threat model + hardenings (H30–H52)
+
+H30–H55 are the testable invariants every v0.3 code change preserves. Each maps to a `describe("H<n>: …")` block per HANDOFF_PROTOCOL §4. 26 IDs total (H53–H55 added in chat-17 self-review for modern-platform fold-in: Kudos atomicity + aggregator, PWA manifest). Grep verification at DoD:
+
+```bash
+grep -rn 'describe("H3[0-9]:\|describe("H4[0-9]:\|describe("H5[0-5]:' \
+  projects/community-platform/tests \
+  projects/community-platform/lib \
+  projects/community-platform/app \
+  | sed 's/.*describe("\(H[0-9]\+\):.*/\1/' | sort -u | wc -l
+# Expected: 26
+```
+
+#### /home unified feed (L1) — H30, H33, H38, H41
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H30** | `/home` feed is SSG; no `auth()` read | `force-static` directive; `HomeFeed` is a pure server component over snapshot data | `app/home/page.test.tsx` (build-time render; no session-derived branches) |
+| **H33** | Empty states tested per section | `HomeFeed` renders empty-section copy or skips section (D4) | `HomeFeed.test.tsx` (empty `thisWeek`; empty `recent`; both empty) |
+| **H38** | Feed data freshness via build pipeline | `computeHomeFeed` runs in the snapshot prebuild phase; no per-request git read | `lib/home-feed.test.ts` (pure function over snapshot input; integration test asserts called from build script) |
+| **H41** | Performance — `/home` LCP doesn't regress beyond v0.2 baseline | Lighthouse CI assertion on `/home` mobile + desktop; baseline = v0.2 (99 mobile / 100 desktop per STATE row `lighthouse_baseline_login`) | `e2e/lighthouse-home.spec.ts` (new); thresholds enforced |
+
+#### RSVP (L3) — H31, H32, H34, H37, H39, H40
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H31** | RSVP write SHA-gated (v0.2.2 contract reused) | `rsvp-event` action uses `client().writeFile({expectedSha})`; on 409 returns `REFRESH_NEEDED` (NO retry per v0.2.2 lost-update fix) | `rsvp-event.test.ts` (mock Octokit 200; 409 → REFRESH_NEEDED) |
+| **H32** | Event roster reads from generated index, not roster scan | `EventRoster` reads `lib/__generated__/event-rosters.json`; no per-request `listMembers()` call | `EventRoster.test.tsx` (no network/git calls during render); build pipeline integration |
+| **H34** | Stale slug in member profile renders gracefully | `lib/events.ts:isKnownEventSlug()` filters orphans; profile page skips struck-through orphan slugs | `events.test.ts` (orphan slug → filtered); `app/members/[slug]/page.test.tsx` (member with orphan slug renders without throw) |
+| **H37** | RSVP write validates event slug exists | `rsvp-event` action calls `isKnownEventSlug(eventSlug)` before any write; returns `event_not_found` if absent | `rsvp-event.test.ts` (unknown slug → error code) |
+| **H39** | Event removal doesn't corrupt member profiles | Members may have stale slugs in `events_going`; reads filter, writes preserve (until member next saves) | `events.test.ts` (orphan slug retained on read; profile unchanged) |
+| **H40** | Concurrent RSVP race uses v0.2.2 SHA passthrough | Same code path as `save-profile`; conflict surface = same `REFRESH_NEEDED` | `rsvp-event.test.ts` (concurrent edit scenario) |
+
+#### Events surface (A) — H35, H42, H44
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H35** | Strict-list 100% lines: `lib/events.ts`, `app/events/page.tsx`, `app/events/[slug]/page.tsx`, `EventRsvpButton.tsx`, `EventRoster.tsx`, `rsvp-event.ts` | Strict-list discipline per §12.7 pattern | Per-file `.test.ts(x)` |
+| **H42** | `EventSlug` branded type enforces format | Validator: `YYYY-MM-DD-<kebab>`, date parseable, folder name matches frontmatter slug | `events.test.ts` (valid + invalid samples) |
+| **H44** | Events folder structure validated in CI | CI test fails if `community/events/X/` doesn't match `YYYY-MM-DD-slug/` shape | `scripts/validate-events-folders.ts` (new); CI step |
+
+#### Meetings surface (B) — H36
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H36** | Strict-list 100% lines: `lib/meetings.ts`, `lib/home-feed.ts`, `HomeFeed.tsx`, `app/meetings/page.tsx`, `app/home/page.tsx` | Strict-list discipline | Per-file tests |
+
+#### Cross-cutting — H43, H45, H46
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H43** | All rendered titles + excerpts via `SafeHtml` pipeline | `HomeFeed` renders markdown via existing audit boundary (CONSTRAINTS line 20) | `HomeFeed.test.tsx` (script tag in title → escaped) |
+| **H45** | `/this-week` L2 strip empty-state | When feed empty, strip hides (no "Nothing happening" between compose + post list) | `this-week/page.test.tsx` (empty feed scenario) |
+| **H46** | Roster visibility posture per-member configurable | Per-member `event_rsvp_visibility` profile field (D12); new RSVPs default to `"members_only"` set by `rsvp-event` action on first write; `/members/[slug]` directory remains public per v0.1.x precedent | `rsvp-event.test.ts` (first-RSVP defaults applied); `events.test.ts` (rosters filter by visibility) |
+
+#### GCal V-static — H47, H48, H49
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H47** | ICS output is RFC 5545 valid | Use `ics` npm package; assert via structural checks on key VEVENT properties | `lib/ical.test.ts` (snapshot + structural assertions) |
+| **H48** | `/api/calendar.ics` serves build-time artifact, cache-controlled | Route handler reads `lib/__generated__/calendar.ics`; `Cache-Control: public, max-age=300, s-maxage=300` | `app/api/calendar.ics/route.test.ts` (response shape + headers) |
+| **H49** | Frontmatter migration is additive | `lib/ical.ts` falls back to community-defaults when frontmatter omits `start_time` / `duration_minutes` / `location` | `lib/ical.test.ts` (omitted fields → defaults applied) |
+
+#### Build reliability — H50, H51, H52
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H50** | `tsconfig.json` `types` field scoped | `"types": ["node"]` in `projects/community-platform/tsconfig.json` | `tests/build-reliability.test.ts` (reads tsconfig; asserts types array set) |
+| **H51** | New deps pass typecheck + build on clean install | CI runs `pnpm install --frozen-lockfile && pnpm typecheck && pnpm build` on any branch that modifies `package.json` | CI workflow update |
+| **H52** | V-static ICS generator chosen on type-completeness criteria | Plan-writing locks specific package (candidate: `ics`); criteria documented in §13.7.2 | Plan-writing artifact (O1) |
+
+#### Kudos (D19) — H53, H54
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H53** | `thanks_given` write: SHA-passthrough + idempotent on `(recipient, item_type, item_id)` triple | `thank-status` action uses `client().writeFile({expectedSha})`; pre-check dedup against current `thanks_given` array; returns `already_thanked: true` (no commit) on duplicate | `thank-status.test.ts` (happy-path commit; duplicate triple → already_thanked no-commit; 409 → REFRESH_NEEDED) |
+| **H54** | Kudos aggregator excludes bot commits + non-roster members | `build-kudos-aggregate` filters via `BOT_AUTHORS` (same set as `lib/contributions.ts:18`; H26 pattern) + drops thanks records where giver or recipient is not on current roster | `build-kudos-aggregate.test.ts` (bot author → excluded; non-roster giver/recipient → excluded) |
+
+#### PWA install (D20) — H55
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H55** | `public/manifest.json` valid against W3C Web App Manifest spec | CI test parses manifest; asserts `name`, `short_name`, `start_url`, `display`, `icons[192]`, `icons[512]` present and well-typed | `tests/build-reliability.test.ts` extended with manifest validity assertions |
+
+### 13.9 Components / files (~50 touched)
+
+#### New TS source files (14)
+
+| Path | Responsibility | Coverage gate |
+|---|---|---|
+| `lib/events.ts` | Event reader, frontmatter validator, `EventSlug` branded type, orphan-slug filter | **100% (strict-list)** |
+| `lib/meetings.ts` | Meeting reader, frontmatter validator, date grouping helper | **100% (strict-list)** |
+| `lib/home-feed.ts` | `computeHomeFeed()` aggregator | **100% (strict-list)** |
+| `lib/ical.ts` | Frontmatter → ICS event mapper; uses `ics` npm package | **100% (strict-list)** |
+| `lib/community-defaults.ts` | Read `community/community-defaults.yaml` (or .json); expose typed defaults | 80% |
+| `app/components/HomeFeed.tsx` | D layout renderer (server component) | **100% (strict-list)** |
+| `app/components/EventRsvpButton.tsx` | B UI (client component); toggle action invocation | **100% (strict-list)** |
+| `app/components/EventRoster.tsx` | Avatar grid (server component); reads `event-rosters.json` | **100% (strict-list)** |
+| `app/components/AddToCalendarButton.tsx` | Inline ICS download trigger (client component) | **100% (strict-list)** |
+| `app/actions/rsvp-event.ts` | Server action; SHA-passthrough write to member profile | **100% (strict-list)** |
+| `app/api/calendar.ics/route.ts` | Route handler serving build-time ICS artifact | **100% (strict-list)** |
+| `scripts/build-event-rosters.ts` | Build-time: aggregates roster `events_going` → `lib/__generated__/event-rosters.json` | 80% |
+| `scripts/build-calendar.ts` | Build-time: aggregates meetings + events → `lib/__generated__/calendar.ics` | 80% |
+| `scripts/validate-events-folders.ts` | CI guard: enforces `YYYY-MM-DD-slug/` pattern in `community/events/` | 80% |
+
+#### New routes (4)
+
+| Path | Type | Purpose |
+|---|---|---|
+| `app/home/page.tsx` (REWRITE) | SSG | Mounts `<HomeFeed>` |
+| `app/events/page.tsx` | SSG | Events index (upcoming + past) |
+| `app/events/[slug]/page.tsx` | SSG | Event detail with RSVP UI |
+| `app/meetings/page.tsx` | SSG | Meetings index grouped by month |
+
+#### Modified TS files
+
+| Path | Change |
+|---|---|
+| `app/this-week/page.tsx` | Mount `<HomeFeed feed showRecent={false}>` above status compose box (L2 strip) |
+| `app/meetings/[slug]/page.tsx` | Render extended frontmatter (start_time, duration, location); add `<AddToCalendarButton>` |
+| `app/members/[slug]/page.tsx` | Render `events_going` list (links to /events/[slug]); filter orphan slugs |
+| `lib/content-snapshot.ts` | Extend with `getMeetings()`, `getEvents()` consumers; integrate `event-rosters.json` |
+| `scripts/build-snapshot.ts` (or equivalent existing) | Invoke `build-event-rosters.ts` + `build-calendar.ts` in the prebuild pipeline |
+| `projects/community-platform/tsconfig.json` | Add `"types": ["node"]` to `compilerOptions` (H50) |
+| `community/meetings/weekly/_template.md` | Add commented-out `start_time` / `duration_minutes` / `location` frontmatter slots |
+| `package.json` | Add `ics` dependency (plan-writing locks version) |
+| `proxy.ts` | Add `/home`, `/events`, `/events/[slug]`, `/meetings`, `/api/calendar.ics` to PUBLIC_PATHS if not already (plan-writing locks O3, O4) |
+
+#### New data/config files (4)
+
+| Path | Purpose |
+|---|---|
+| `community/community-defaults.yaml` | Meeting + event default time/duration/location/timezone (or .json per O5) |
+| `community/events/_template/README.md` | Event template (mirrors meetings template) |
+| `lib/__generated__/event-rosters.json` | Build-time derived; committed for diff visibility (v0.2 precedent; plan-writing confirms O2) |
+| `lib/__generated__/calendar.ics` | Build-time derived ICS aggregate |
+
+#### Test files (12)
+
+| Path | Coverage focus |
+|---|---|
+| `lib/events.test.ts` | **100%.** EventSlug validator, frontmatter, orphan filter (H34, H39, H42) |
+| `lib/meetings.test.ts` | **100%.** Reader + grouping helper |
+| `lib/home-feed.test.ts` | **100%.** Bucket boundaries (H38), empty cases (H33), sort + cap |
+| `lib/ical.test.ts` | **100%.** ICS validity (H47), defaults fallback (H49) |
+| `app/components/HomeFeed.test.tsx` | **100%.** D layout render, XSS via SafeHtml (H43), empty states (H33, H45) |
+| `app/components/EventRsvpButton.test.tsx` | **100%.** State transitions, optimistic UI, 409 revert |
+| `app/components/EventRoster.test.tsx` | **100%.** Grid render, link to `/members/[slug]`, empty state |
+| `app/components/AddToCalendarButton.test.tsx` | **100%.** Download trigger, filename |
+| `app/actions/rsvp-event.test.ts` | **100%.** Session derivation, slug validation (H37), SHA-gated write (H31), 409 (H40), commit message |
+| `app/api/calendar.ics/route.test.ts` | **100%.** Response body + headers (H48) |
+| `tests/build-reliability.test.ts` | tsconfig types scope (H50) |
+| `e2e/v0-3-discovery.spec.ts` | 8 scenarios (§13.10) |
+
+#### Routing + middleware
+
+| Path | Change |
+|---|---|
+| `proxy.ts` | Add `/home`, `/events`, `/events/[slug]`, `/meetings`, `/api/calendar.ics` to PUBLIC_PATHS if necessary (plan-writing locks per O3, O4) |
+
+#### Chat-17 fold-in additions (Kudos D19 + PWA D20)
+
+**New TS source files (+4 → 18 total):**
+
+| Path | Responsibility | Coverage gate |
+|---|---|---|
+| `app/components/ThankButton.tsx` | `+ Thanks` affordance (client component); state-aware UI; calls thank-status action | **100% (strict-list)** |
+| `app/components/KudosCount.tsx` | Renders "Thanked N times" on /members/[slug] (server component); reads kudos.json | **100% (strict-list)** |
+| `app/actions/thank-status.ts` | Server action; SHA-passthrough write to giver's profile; idempotent on `(recipient, item_type, item_id)` dedup | **100% (strict-list)** |
+| `scripts/build-kudos-aggregate.ts` | Build-time: aggregates giver profiles' `thanks_given` → `lib/__generated__/kudos.json` | 80% |
+
+**New data/config files (+4 → 8 total):**
+
+| Path | Purpose |
+|---|---|
+| `public/manifest.json` | PWA install manifest (D20) |
+| `public/icons/icon-192.png` | PWA 192×192 icon |
+| `public/icons/icon-512.png` | PWA 512×512 icon |
+| `lib/__generated__/kudos.json` | Build-time derived kudos aggregate per recipient |
+
+**Test files (+4 → 16 total):**
+
+| Path | Coverage focus |
+|---|---|
+| `app/components/ThankButton.test.tsx` | **100%.** State transitions (thanked / not-thanked / not-signed-in / self); optimistic UI; duplicate no-op |
+| `app/components/KudosCount.test.tsx` | **100%.** Renders count + recent-givers row; empty state |
+| `app/actions/thank-status.test.ts` | **100%.** SHA-passthrough (H53); idempotent dedup; self-thank rejected; 409 → REFRESH_NEEDED |
+| `scripts/build-kudos-aggregate.test.ts` | Bot-author exclusion (H54); non-roster exclusion (H54) |
+
+**Additional modifications (added to Modified TS files):**
+
+| Path | Change |
+|---|---|
+| `app/layout.tsx` | Add `metadata.manifest = "/manifest.json"` for PWA install (D20) |
+| `app/this-week/page.tsx` | + mount `<ThankButton>` per status post (D19) |
+| `app/meetings/[slug]/page.tsx` | + mount `<ThankButton>` at top of meeting note (D19) |
+| `app/members/[slug]/page.tsx` | + mount `<KudosCount>` component (D19) |
+| `app/projects/[slug]/page.tsx` | Extend `<TopContributors>` rendering to mount `<ThankButton>` per contributor row (D19) |
+| `lib/profile-editor.ts` | Add `thanks_given` schema; validate mutual exclusion (`events_going` ∩ `events_interested` = ∅) per D11 |
+| `scripts/build-snapshot.ts` (or equivalent existing) | + invoke `build-kudos-aggregate.ts` in prebuild pipeline |
+
+### 13.10 Testing strategy
+
+#### Unit + integration
+
+Per §13.9 — every new source file at 100% strict-list (lines + functions; branches ≥80% where defensive branches are unreachable post-guard, same accepted gap as v0.1.1 `lib/invitations.ts`).
+
+**Hardening-specific (grep-verifiable):** every H30–H52 has a `describe("H<n>: …")` block. DoD verifies the §13.8 grep returns 23 unique IDs.
+
+#### E2E (Playwright)
+
+`e2e/v0-3-discovery.spec.ts` — 14 new scenarios (8 v0.3 base + 6 chat-17 fold-in):
+
+1. **Anonymous /home renders feed** — no sign-in; feed surfaces meetings + events + statuses + contributions per D1.
+2. **/this-week strip above compose** — signed in; feed strip appears above status compose box; compose still works.
+3. **Event RSVP (sign-in → mark going → roster updates)** — full path through B UI + server action.
+4. **RSVP toggle (mark going → revert)** — idempotent both directions.
+5. **Concurrent RSVP race** — two-tab; second save 409 → REFRESH_NEEDED inline message.
+6. **Orphan slug graceful** — manually edit a roster profile to include nonexistent event slug; visit member page → orphan filtered.
+7. **Subscribe to calendar (ICS)** — request `/api/calendar.ics` → valid response, correct Content-Type, parses as ICS.
+8. **Add to Calendar button on event detail** — click button → file download with VEVENT for that event.
+9. **Thank a status post (D19)** — sign in as member A; click `+ Thanks` on member B's status post; reload `/members/B` → "Thanked 1 times" after rebuild.
+10. **Self-thank blocked (D19)** — member A's own status post does not render `+ Thanks` button (initialState="self").
+11. **Duplicate-thank dedup (D19)** — member A clicks `+ Thanks` twice on same item; second click no-op (`already_thanked: true`).
+12. **RSVP tri-state transitions (D11)** — member RSVPs Going → Interested (atomic switch) → none → Going; verify profile frontmatter reflects each state.
+13. **RSVP privacy posture (D12)** — new member with default `members_only` RSVPs; verify name appears in hidden count for anonymous viewer (not in public avatar grid).
+14. **PWA install (D20)** — `curl /manifest.json` returns valid JSON with required fields; Lighthouse PWA audit passes; Chrome devtools install prompt fires on `/home`.
+
+Recommend `pnpm e2e --retries=2` for closeout per CONSTRAINTS line 28 (Next 16 cold-start flakes).
+
+#### Coverage targets
+
+Per spec §8 + CONSTRAINTS line 27:
+- Overall: 80% lines + branches.
+- Strict-list additions (§13.9): 100% lines; branches ≥80% where unreachable post-guard.
+
+#### Build reliability (chat-17 finding)
+
+`tests/build-reliability.test.ts` asserts `tsconfig.json` has `types: ["node"]` (H50). CI workflow extended with `pnpm typecheck` + `pnpm build` step that fails on any branch modifying `package.json` (H51). Dependency vetting checklist in §13.7.2 (plan-writing artifact; H52).
+
+#### Reviewer agents
+
+Per CONSTRAINTS lines 40-46:
+- **`security-reviewer`** at end of RSVP implementation (`rsvp-event.ts` is a privileged-write surface inheriting v0.2.2 audit; verify no regression).
+- **`typescript-reviewer` + `code-reviewer`** at v0.3.0 closeout if Anthropic monthly cap allows; CONSTRAINTS self-review fallback otherwise (standing pattern from Phase 6).
+
+### 13.11 Migration / release notes
+
+#### 13.11.1 Pre-release tasks
+
+NONE launch-blocking. Optional:
+- Seed at least one event under `community/events/2026-MM-DD-slug/` and one extended-frontmatter meeting under `community/meetings/weekly/2026-MM-DD.md` so v0.3 surfaces have non-empty content on ship day.
+- Confirm `community/community-defaults.yaml` matches actual community practice (default meeting time, location).
+
+#### 13.11.2 Ship-day runbook
+
+1. Merge v0.3.0 PR.
+2. Tag `community-platform-v0.3.0`.
+3. Vercel auto-deploys (existing git-push integration; see GOTCHAS rows 1-2).
+4. Smoke test:
+   - Anonymous: visit `/home` → feed renders (or per O3 — sign-in if proxy-gated).
+   - Signed in as Anton: `/home` → feed; `/this-week` → strip above compose.
+   - `/events` → upcoming + past sections.
+   - `/events/[slug]` → RSVP toggle → reload → roster shows your avatar.
+   - `/api/calendar.ics` → `curl` returns text/calendar; parse OK.
+   - `/meetings` → index grouped by month.
+5. Update `STATE.md`: phase → "v0.3.0 shipped", new tag row, refresh `last_verified` rows.
+6. Append CHANGELOG entry.
+7. Memory: `project_community_platform_v0_3_ship.md` with timeline, PR #, tag SHA.
+
+#### 13.11.3 Forward-looking migration notes (v0.4+, NOT in v0.3 scope)
+
+| Trigger | Migration |
+|---|---|
+| Telegram bridge — handle on profile / cross-posting / message ingest | v0.4 thread; member consent + storage-class re-evaluation (§6.1 may activate for ingest depth) |
+| Google Calendar API pull (V-pull) | v0.4 if community adopts a shared GCal; service-account creds + cache layer; rendering path swaps from build-time-static to per-request-with-cache |
+| RSVP states beyond binary (maybe / waitlist / declined) | v0.4+ frontmatter migration; per-event timestamps via member profile commit log if needed |
+| Event reminders / notifications | Wakes §6.1 (notification queue) OR Telegram-bridge dependency (post via bot) |
+| Meeting attendance tracking from frontmatter `attendees` field | Derive engagement metrics; pairs with status gamification if revisited |
+| Status streak / leaderboards (Q4 rejected for v0.3) | v0.4+ only if explicit member feedback signals demand AND cultural shift is socialized |
+| Pagination on `/events` past / `/meetings` index | When entries exceed ~50 items per spec line 9 (no v0.3 pagination by design) |
+
+### 13.12 Definition of Done for v0.3.0
+
+- [ ] All §13 sections committed (this section).
+- [ ] All ~30 files implemented per §13.9.
+- [ ] All 23 hardenings (H30–H52) tested with `H<n>:` prefix; grep (§13.8) returns 23 unique IDs.
+- [ ] Coverage gates met (80% overall, 100% on §13.9 strict-list additions).
+- [ ] E2E green with `--retries=2`.
+- [ ] §13.11.2 ship-day runbook executed.
+- [ ] `tsconfig.json` `"types": ["node"]` scoped (H50).
+- [ ] `community/community-defaults.yaml` (or .json) reflects actual community practice.
+- [ ] `community/events/_template/README.md` documents event folder convention.
+- [ ] GOTCHAS.md row 9 committed (transitive types pattern).
+- [ ] PR merged to `main`; `CHANGELOG.md`, `STATE.md` updated.
+- [ ] Tag `community-platform-v0.3.0` pushed.
+- [ ] Production smoke (§13.11.2 step 4) passes.
+- [ ] Memory entry `project_community_platform_v0_3_ship.md` written.
+- [ ] Kudos primitive (D19) tested end-to-end: thank → kudos.json aggregator → /members/[slug] kudos count after rebuild.
+- [ ] RSVP tri-state (D11) validated: Going/Interested/none transitions; mutual exclusion enforced.
+- [ ] Event roster privacy (D12) validated: `members_only` RSVPs hidden from anonymous viewer; reveal-on-auth per O7 default.
+- [ ] PWA install (D20) validated: `/manifest.json` valid; Chrome devtools install prompt fires.
+
+### 13.13 Member-to-member recognition (Kudos) — D19
+
+**Trigger.** Chat-17 self-review (2026-modern lens). Recognition is table-stakes for community platforms; Top Contributors (v0.2) is auto-derived from commits and doesn't capture *intentional* acknowledgment between members.
+
+#### 13.13.1 thanks_given field on member profile
+
+Frontmatter addition to `community/members/<slug>.md`:
+
+```yaml
+thanks_given:                                              # optional, default []
+  - recipient: "anton-safronov"                            # member slug
+    item_type: "status" | "contribution" | "meeting"
+    item_id: "2026-05-19-anton-status-3" | "0123abc..." | "2026-05-19"  # status post id, commit SHA, or meeting date
+    given_at: "2026-05-19T18:23:00Z"                       # ISO 8601
+```
+
+Mutually distinct from `events_going` / `events_interested`; orthogonal to RSVP semantics.
+
+Idempotency: server action enforces unique `(recipient, item_type, item_id)` triples per giver — re-clicking `+ Thanks` on an already-thanked item is a no-op (returns `{ok: true, already_thanked: true}` without committing). Plan-writing locks the dedup mechanism (in-memory set scan vs. profile re-read) per O7.
+
+#### 13.13.2 thank-status server action
+
+`app/actions/thank-status.ts`:
+
+Input: `{recipient: string, item_type: "status" | "contribution" | "meeting", item_id: string, profileSha: string}`.
+
+1. `await auth()` → `session.githubHandle`; resolve giver slug.
+2. Reject if `recipient === giver` (self-thanks blocked; H53).
+3. Reject if `findMemberBySlug(recipient)` returns null (recipient must be on current roster).
+4. Validate `item_id` exists for the `item_type`: status post in content-snapshot, commit SHA reachable, meeting note path resolves. Plan-writing locks validator implementations per O8.
+5. Read giver profile; parse `thanks_given` array.
+6. If `(recipient, item_type, item_id)` already present: return `{ok: true, already_thanked: true}` — no commit.
+7. Append the thanks record (with `given_at = new Date().toISOString()`).
+8. Write via SHA-passthrough (v0.2.2 contract).
+9. On success: `revalidatePath("/members/" + recipient)` + the item's own page.
+10. Log discipline: `{giver, recipient, item_type, item_id, sha, success, error?: code}`. No content logged.
+
+Commit message:
+```
+chore(community): @<giver-gh> thanks @<recipient-gh> for <item_type> "<item_id>"
+
+Co-Authored-By: <giver-gh> <giver-gh@users.noreply.github.com>
+```
+
+#### 13.13.3 Kudos aggregator
+
+`scripts/build-kudos-aggregate.ts` (build-time):
+
+Reads all member profiles' `thanks_given` arrays → produces `lib/__generated__/kudos.json`:
+
+```json
+{
+  "<recipient-slug>": {
+    "total": N,
+    "by_type": {"status": A, "contribution": B, "meeting": C},
+    "recent": [{"giver": "...", "item_type": "...", "item_id": "...", "given_at": "..."}]
+  }
+}
+```
+
+Last 5 thanks shown in `recent`. Bot commits excluded per existing `BOT_AUTHORS` set (H54 — same pattern as H26). Non-roster members (giver or recipient) dropped from aggregation.
+
+#### 13.13.4 ThankButton component
+
+`app/components/ThankButton.tsx` (client component):
+
+```typescript
+interface ThankButtonProps {
+  recipient: string;
+  itemType: "status" | "contribution" | "meeting";
+  itemId: string;
+  initialState: "thanked" | "not-thanked" | "not-signed-in" | "self";
+  profileSha?: string;
+}
+```
+
+States:
+- `"thanked"`: `[♥ Thanked]` active (warm rose); click → no-op (one-shot recognition; re-thanking not supported in v0.3).
+- `"not-thanked"`: `[+ Thanks]` inactive; click → action → optimistic flip to `"thanked"`.
+- `"not-signed-in"`: hidden OR styled `"Sign in to thank"` link → `/login?callbackUrl=<current-url>`.
+- `"self"`: hidden (no self-thank UI surface).
+
+Surface placements (v0.3):
+- Status posts on `/this-week` — `<ThankButton>` next to each post's timestamp.
+- Project contribution rows on `/projects/[slug]` — `<ThankButton>` next to each TopContributor row (item_id = synthetic per-contributor id; plan-writing locks per O8).
+- Meeting notes on `/meetings/[slug]` — single `<ThankButton>` at top of each meeting note (item_id = date).
+
+#### 13.13.5 KudosCount component
+
+`app/components/KudosCount.tsx` (server component):
+
+Renders on `/members/[slug]`:
+- "Thanked N times" pill (link to future `/members/[slug]/kudos` page; not in v0.3 — placeholder href).
+- Optional recent-givers row (3 avatars).
+
+Reads from `lib/__generated__/kudos.json`.
+
+#### 13.13.6 Forward-looking (NOT in v0.3)
+
+- `/members/[slug]/kudos` page showing all kudos received with context (v0.3.1+).
+- Kudos for ADRs / decision contributions (v0.3.1+ — needs `item_id` resolution for ADR scope).
+- Leaderboard / "Top thanked this month" — explicitly excluded per Q4 (no gamification surface).
+
+### 13.14 PWA install — D20
+
+**Trigger.** Chat-17 self-review (2026-modern lens). Platform is mobile-friendly (Lighthouse 99/100 mobile per STATE row `lighthouse_baseline_login`) but not installable. PWA manifest is 1-task ROI for the "modern" signal.
+
+#### 13.14.1 manifest.json
+
+`public/manifest.json` (new):
+
+```json
+{
+  "name": "Warsaw AI Community",
+  "short_name": "Warsaw AI",
+  "description": "Discovery + decisions + ship cadence for the Warsaw AI Community",
+  "start_url": "/home",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
+```
+
+Icons (new): `public/icons/icon-192.png` (192×192) + `public/icons/icon-512.png` (512×512). Plan-writing locks the icon artwork (community logo derivative; plan-writing produces or sources).
+
+#### 13.14.2 Layout link
+
+`app/layout.tsx` extension:
+
+```tsx
+export const metadata = {
+  // ... existing
+  manifest: "/manifest.json",
+};
+```
+
+Next 16 inlines the `<link rel="manifest">` from the `metadata` export — no manual `<head>` work.
+
+#### 13.14.3 NO service worker / offline mode (v0.3 scope)
+
+Deliberate omission. Service workers + offline caching add complexity disproportionate to v0.3 thesis (Discovery+). Members get the install prompt + standalone app launch; content fetching follows Next.js default caching. Offline mode and push notifications are v0.4+ candidates.
+
+#### 13.14.4 Forward-looking (NOT in v0.3)
+
+- Service worker for offline-first reads (v0.4 candidate).
+- Web Push subscriptions for event reminders (v0.4 — pairs with email-digest scope; both wake §6.1).
+- Apple Touch icons + iOS-specific manifest extensions (v0.3.1 if mobile install adoption signals demand).

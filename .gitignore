@@ -46,6 +46,8 @@ htmlcov/
 
 # Claude/agent caches (if any tooling runs locally)
 .claude/local/
+.superpowers/
+.playwright-mcp/
 
 # Vercel CLI linkage (local-only; project linked at repo root for monorepo
 # CLI deploys per Phase 10 Option C — `pnpm dlx vercel --prod` runs from here)
