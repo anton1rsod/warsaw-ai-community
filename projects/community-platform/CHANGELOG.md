@@ -16,9 +16,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
-## [Unreleased]
+## [0.2.1] — 2026-05-16
 
-**v0.2.0 post-ship reliability fixes — consent redirect chain hardening.** Two follow-up commits to close the redirect-loop class of bugs that surfaced after `community-platform-v0.2.0` (`69362e9`).
+**Consent redirect chain hardening.** Two follow-up commits to close the redirect-loop class of bugs that surfaced after `community-platform-v0.2.0` (`69362e9`). Tag `community-platform-v0.2.1` at merge SHA `dd3a675`.
 
 ### Fixed
 
@@ -50,6 +50,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - `pnpm e2e` — 32 passing, 1 documented skip (Scenario 2 from v0.2.0).
 - `pnpm tsc --noEmit` + `pnpm lint` — clean.
 - Playwright MCP manual browser drive — 4-hop redirect chain confirmed (`GET /home 307 → /consent 307 → /api/consent/recover 307 → /home 200`); second `/home` fetch with `redirect: manual` returns `200 / null` (cookie persisted); anton chat-14 hotfix path verified separately (1 hop, no `/api/consent/recover` involvement).
+- CI on PR #16 green (Lint+typecheck+test+build).
+
+### Migration / release
+
+- No env-var changes required.
+- Tag: `community-platform-v0.2.1` at merge SHA `dd3a675`.
+- Production smoke (Anton-side, post-tag): clear `waic-consented` cookie in a logged-in browser → visit `/home` → expect 4-hop chain ending at `/home 200`. The chat-14 hotfix already covers the common case (cookie cleared, profile committed long ago) at 1 hop.
 
 ---
 

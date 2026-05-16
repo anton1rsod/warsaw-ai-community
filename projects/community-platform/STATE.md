@@ -2,25 +2,25 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-16 (chat-15 v0.2.1-track `/consent` snapshot-stale recovery — `v0_2_1_consent_recover` row added; PR opened, awaiting merge)
+**Last updated**: 2026-05-16 (chat-15 v0.2.1 shipped — PR #16 merged at SHA `dd3a675`; tag `community-platform-v0.2.1` pushed; production smoke pending Anton)
 
 ## Snapshot
 
 ```yaml
-last_green: 69362e9                 # main HEAD — merge of PR #13 (v0.2.0 release)
-last_code_only_green: 89e732b       # CI fix (catch fetch rejection in loadPreview) — last code-touching commit on feat branch before merge
-phase: "v0.2.0 shipped"             # 22 tasks across 4 phases complete; tag pushed
+last_green: dd3a675                 # main HEAD — merge of PR #16 (v0.2.1 — consent redirect chain hardening)
+last_code_only_green: 1672178       # /api/consent/recover route handler commit (chat-15 fix)
+phase: "v0.2.1 shipped"             # chat-14 hotfix + chat-15 recovery route both on main; tag pushed
 spec_sha: 740be8e                   # spec §11 (v0.1.1) — frozen
 v0_2_spec_sha: 95197dc              # spec §12 brainstorm merged via PR #11
 v0_2_plan_sha: e700d19              # v0.2.0-plan.md merged via PR #12
 plan_sha: 2201dd9                   # v0.1.1-plan.md (frozen)
-branch: main                        # post-merge; feat/community-platform-v0-2-0 is now historical
-tests: "562 unit/integration + 26 E2E (v0.1.1) + 6 E2E (v0.2 — 5 passing, 1 documented skip)"
+branch: main                        # post-merge; fix/community-platform-consent-recover deleted
+tests: "575 unit/integration + 32 E2E (1 documented skip — Scenario 2 from v0.2.0)"
 overall_coverage: "90% lines / 94% branches  (gate: 80%)"
 amendments_applied: "§9.2, §9.5–§9.18"
 production: "https://warsaw-ai-community-platform.vercel.app"
-tag: "community-platform-v0.2.0"   # at merge SHA 69362e9
-previous_tag: "community-platform-v0.1.1"   # at SHA 036695c
+tag: "community-platform-v0.2.1"   # at merge SHA dd3a675
+previous_tag: "community-platform-v0.2.0"   # at SHA 69362e9
 ```
 
 ## Last verified
@@ -119,7 +119,7 @@ v0_2_1_consent_recover: "2026-05-16 (chat-15) — `/consent` snapshot-stale reco
 
 **Chat 14 (DONE):** v0.2.0 post-ship hotfix — `/home` ↔ `/consent` redirect loop. PR #15 merged at SHA `592b2cb`; `proxy.ts` re-seeds `waic-consented` cookie inline when `member.profile` in snapshot. Covers the common case (cookie cleared after profile committed long ago). Edge case (snapshot rebuild pending) explicitly deferred to chat-15.
 
-**Chat 15 (DONE):** v0.2.1-track `/consent` snapshot-stale recovery via `/api/consent/recover` Route Handler. Branch `fix/community-platform-consent-recover` (HEAD `1672178`). Closes chat-14's deferred edge case; both code paths (proxy hotfix for snapshot-fresh + recovery route for snapshot-stale) preserved as defense in depth. Tests: 575 unit/integration + 32 E2E green. Verified via Playwright MCP browser drive (4-hop redirect chain). PR open, awaiting merge + Vercel preview deploy.
+**Chat 15 (DONE):** v0.2.1 `/consent` snapshot-stale recovery via `/api/consent/recover` Route Handler. PR #16 merged at SHA `dd3a675`; tag `community-platform-v0.2.1` pushed. Closes chat-14's deferred edge case; both code paths (proxy hotfix for snapshot-fresh + recovery route for snapshot-stale) preserved as defense in depth. Tests: 575 unit/integration + 32 E2E green. Verified via Playwright MCP browser drive (4-hop redirect chain). Vercel production auto-deploys on main merge — production smoke (clear cookie + visit /home → expect 4-hop chain) PENDING Anton.
 
 **Chat 11 handoff:** [`docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md).
 **Chat 13 handoff:** [`docs/specs/2026-05-16-community-platform-v0-2-implementation-handoff.md`](../../docs/specs/2026-05-16-community-platform-v0-2-implementation-handoff.md).
