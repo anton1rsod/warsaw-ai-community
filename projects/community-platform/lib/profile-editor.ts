@@ -18,9 +18,14 @@ export type FrontmatterRecord = Record<string, unknown>;
 
 /**
  * H18: 64KB cap prevents commit-size DoS + display perf issues.
+ * H16: expectedSha is the SHA the client loaded at /me/edit render time —
+ * the server rejects with refresh_needed when it doesn't match the current
+ * file SHA, closing the v0.2.0 lost-update window where the retry-on-409
+ * loop silently overwrote concurrent commits.
  */
 export const SaveProfileSchema = z.object({
   body: z.string().max(65_536, "Profile body too large (max 64KB)"),
+  expectedSha: z.string().min(1, "expectedSha required"),
 });
 
 export type SaveProfileInput = z.infer<typeof SaveProfileSchema>;

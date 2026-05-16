@@ -37,6 +37,7 @@ afterEach(cleanup);
 
 const baseProps = {
   initialBody: "Original prose.",
+  initialSha: "sha-from-mount",
   slug: "anton-safronov",
   previewEndpoint: "/api/preview-markdown",
 } as const;
@@ -186,6 +187,20 @@ describe("ProfileEditor", () => {
       await waitFor(() => {
         expect(screen.getByText(/rebuilding.*60.*90s/i)).toBeInTheDocument();
       });
+    });
+  });
+
+  describe("H16: passes initialSha to the server action (optimistic-lock token)", () => {
+    it("appends initialSha to FormData as the 'sha' field on save", async () => {
+      saveMock.mockResolvedValue({ ok: true, savedAt: new Date().toISOString() });
+      render(<ProfileEditor {...baseProps} initialSha="sha-loaded-at-mount" />);
+      const saveBtn = screen.getByRole("button", { name: /save/i });
+      fireEvent.click(saveBtn);
+      await waitFor(() => {
+        expect(saveMock).toHaveBeenCalled();
+      });
+      const fd = saveMock.mock.calls[0]?.[0] as FormData;
+      expect(fd.get("sha")).toBe("sha-loaded-at-mount");
     });
   });
 

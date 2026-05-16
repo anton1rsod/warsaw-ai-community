@@ -6,6 +6,10 @@ import { SafeHtml } from "@/app/components/SafeHtml";
 
 interface ProfileEditorProps {
   initialBody: string;
+  // H16: SHA loaded at SSR time. Echoed back to the server action as an
+  // optimistic-lock token so a concurrent commit between page-load and save
+  // surfaces refresh_needed instead of silently overwriting the remote change.
+  initialSha: string;
   slug: string;
   previewEndpoint: string;
 }
@@ -55,6 +59,7 @@ function clearDraft(slug: string): void {
 
 export function ProfileEditor({
   initialBody,
+  initialSha,
   slug,
   previewEndpoint,
 }: ProfileEditorProps): React.JSX.Element {
@@ -118,6 +123,7 @@ export function ProfileEditor({
     startTransition(async () => {
       const fd = new FormData();
       fd.append("body", body);
+      fd.append("sha", initialSha);
       const result = await saveProfile(fd);
       if (result.ok) {
         clearDraft(slug);

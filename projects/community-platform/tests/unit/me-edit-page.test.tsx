@@ -40,6 +40,21 @@ vi.mock("@/app/actions/save-profile", () => ({
   saveProfile: vi.fn(),
 }));
 
+interface CapturedEditorProps {
+  initialBody: string;
+  initialSha: string;
+  slug: string;
+  previewEndpoint: string;
+}
+
+const capturedProps: { current: CapturedEditorProps | null } = { current: null };
+vi.mock("@/app/components/ProfileEditor", () => ({
+  ProfileEditor: (props: CapturedEditorProps) => {
+    capturedProps.current = props;
+    return <div data-testid="profile-editor-mock">{props.initialBody}</div>;
+  },
+}));
+
 import { auth } from "@/lib/auth";
 import { findMemberByHandle } from "@/lib/content-snapshot";
 import { redirect } from "next/navigation";
@@ -48,6 +63,7 @@ import MeEditPage from "@/app/me/edit/page";
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
+  capturedProps.current = null;
 });
 afterEach(cleanup);
 
@@ -95,7 +111,28 @@ describe("/me/edit page", () => {
     render(tree);
 
     expect(screen.getByRole("heading", { name: /Edit profile/i })).toBeInTheDocument();
-    expect(screen.getByRole("textbox")).toBeInTheDocument();
-    expect(screen.getByDisplayValue(/Hello world/)).toBeInTheDocument();
+    expect(screen.getByTestId("profile-editor-mock")).toBeInTheDocument();
+    expect(capturedProps.current?.initialBody).toBe("Hello world.");
+    expect(capturedProps.current?.slug).toBe("anton-safronov");
+  });
+
+  it("H16: passes file.sha to ProfileEditor as initialSha (optimistic-lock plumbing)", async () => {
+    vi.mocked(auth).mockResolvedValue({ githubHandle: "anton1rsod" } as never);
+    vi.mocked(findMemberByHandle).mockReturnValue({
+      slug: "anton-safronov",
+      githubHandle: "anton1rsod",
+      name: "Anton Safronov",
+    } as never);
+    mockClient.readFile.mockResolvedValue({
+      content:
+        "---\nname: Anton Safronov\ngithub_handle: anton1rsod\nconsented_at: 2026-05-03T13:59:19.410Z\n---\n\nBody.\n",
+      sha: "sha-from-github-readfile",
+      path: "community/members/anton-safronov.md",
+    });
+
+    const tree = await MeEditPage();
+    render(tree);
+
+    expect(capturedProps.current?.initialSha).toBe("sha-from-github-readfile");
   });
 });

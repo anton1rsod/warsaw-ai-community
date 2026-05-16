@@ -62,6 +62,7 @@ async function attemptSave(
   path: string,
   newBody: string,
   handle: string,
+  expectedSha: string,
 ): Promise<AttemptResult> {
   if (isE2EMockActive()) {
     // Extract slug from path: "community/members/<slug>.md"
@@ -69,19 +70,18 @@ async function attemptSave(
       .replace("community/members/", "")
       .replace(".md", "");
     const current = mockProfileStore.get(slug);
-    if (!current) {
-      // Seed with the new body — simulates first-time save through a
-      // freshly consented member's file. seed() always returns the entry.
-      const seeded = mockProfileStore.seed(slug, newBody);
-      return { kind: "ok", sha: seeded.sha };
-    }
-    const written = mockProfileStore.write(slug, newBody, current.sha);
+    if (!current) return { kind: "error", error: "file_missing" };
+    if (current.sha !== expectedSha) return { kind: "conflict" };
+    const written = mockProfileStore.write(slug, newBody, expectedSha);
     if (!written) return { kind: "conflict" };
     return { kind: "ok", sha: written.sha };
   }
 
   const file = await gh.readFile(path);
   if (!file) return { kind: "error", error: "file_missing" };
+  // H16: optimistic-lock check. If the file moved between /me/edit render
+  // and save submit, the user's view is stale — refuse the write.
+  if (file.sha !== expectedSha) return { kind: "conflict" };
 
   const { data } = parseFrontmatter(file.content);
   if (!hasRequiredFrontmatter(data)) {
@@ -93,7 +93,7 @@ async function attemptSave(
   try {
     const result = await gh.writeFile(path, newContent, {
       message: commitMessage(handle),
-      sha: file.sha,
+      sha: expectedSha,
     });
     return { kind: "ok", sha: result.sha };
   } catch (err: unknown) {
@@ -131,7 +131,11 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
   const slug = member.slug;
 
   // H18: 64KB cap (defined in SaveProfileSchema) prevents commit-size DoS.
-  const parsed = SaveProfileSchema.safeParse({ body: formData.get("body") });
+  // H16: schema also requires expectedSha (the SHA the client loaded at SSR).
+  const parsed = SaveProfileSchema.safeParse({
+    body: formData.get("body"),
+    expectedSha: formData.get("sha"),
+  });
   if (!parsed.success) {
     console.warn("[save-profile]", {
       slug,
@@ -144,20 +148,23 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
   const gh = buildClient();
   const path = profilePath(slug);
 
-  // H16: SHA-CAS optimistic locking. First attempt uses the SHA from readFile.
-  // H20: On sha_conflict (concurrent edit), retry once with a fresh read.
-  // Second conflict → refresh_needed (tell the user to reload).
-  let attempt = await attemptSave(gh, path, parsed.data.body, handle);
+  // H16/H20: single-attempt SHA-CAS. Any conflict (stale client SHA or
+  // GitHub-side TOCTOU at write time) maps to refresh_needed. The prior
+  // retry-on-409 path silently overwrote concurrent commits — removed.
+  const attempt = await attemptSave(
+    gh,
+    path,
+    parsed.data.body,
+    handle,
+    parsed.data.expectedSha,
+  );
   if (attempt.kind === "conflict") {
-    attempt = await attemptSave(gh, path, parsed.data.body, handle);
-    if (attempt.kind === "conflict") {
-      console.warn("[save-profile]", {
-        slug,
-        success: false,
-        error: "refresh_needed",
-      });
-      return { ok: false, error: "refresh_needed" };
-    }
+    console.warn("[save-profile]", {
+      slug,
+      success: false,
+      error: "refresh_needed",
+    });
+    return { ok: false, error: "refresh_needed" };
   }
 
   if (attempt.kind === "error") {
