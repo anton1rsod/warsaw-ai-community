@@ -105,45 +105,49 @@ The brainstorm DOES NOT:
 ```
 Warsaw AI Community Platform — Chat 11: v0.2 brainstorm
 
-v0.1.1 shipped 2026-05-04. Chat-10 follow-ups closed (PR #4 + PR #5
-merged). v0.2 scope is OPEN — to be brainstormed in this chat.
+v0.1.1 shipped 2026-05-04 (tag community-platform-v0.1.1 at SHA 036695c).
+Chat-10 follow-ups closed (PRs #4 + #5 merged). v0.2 scope is OPEN.
 
-Invoke superpowers:brainstorming at the very start.
+Working dir for this chat: ~/Projects/Warsaw\ AI\ Comunity/projects/community-platform/
+(auto-loads root CLAUDE.md + this dir's CLAUDE.md — follow its Read order).
 
-Read in order (~620 lines):
-1. projects/community-platform/STATE.md
-2. projects/community-platform/CONSTRAINTS.md
-3. projects/community-platform/GOTCHAS.md
-4. projects/community-platform/HANDOFF_PROTOCOL.md
-5. projects/community-platform/spec.md §6.1, §6.6, §6.7, §6.8, §3, §9
-6. memory: project_community_platform.md +
-   project_community_platform_invitation_feature.md
+Invoke `superpowers:brainstorming` at the very start (per HANDOFF_PROTOCOL §8).
 
-This chat owns: spec §12 (v0.2 scope) drafted + committed + Draft PR
-+ STATE update + project memory + chat-12 plan-writing handoff.
+Full handoff doc: docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md
+Read sections "This chat owns", "Done means", "Anti-patterns" — skip its
+"Read in order" list since the project CLAUDE.md already encodes that read order.
 
-Three v0.2 candidates from spec + chat-10 menu:
-(A) Project / contribution tracking surfaced UI-side
-(B) Profile editor UI (deferred from v0.1 §3 non-goals)
-(C) Admin / CM-distinct UI capabilities (§6.10)
+This chat owns: spec §12 (v0.2 scope) drafted + committed + Draft PR + STATE.md
+update + project memory + chat-12 plan-writing handoff.
 
-The brainstorm must lock:
-Q1 — Which of (A)/(B)/(C) is the primary thrust? Bundle or single?
-Q2 — DB return decision (§6.1 classification rule trigger?)
-Q3 — GBrain coupling (§6.8 candidate) — in or deferred?
-Q4 — Hardenings (H<n>) for security/correctness invariants
-Q5 — Versioning split (v0.2.0 vs v0.2.1+) if scope is too big
+Three v0.2 candidates from spec §3 non-goals + chat-10 menu:
+(A) Project / contribution tracking surfaced UI-side — counts already in
+    lib/__generated__/contributions.json; project pages don't aggregate.
+(B) Profile editor UI — §3 non-goal #1; today members edit their persona md
+    via direct git PR.
+(C) Admin / CM-distinct UI capabilities — §6.10 says "admin-distinct features
+    arrive in v0.2+" (roster editor, member-ops, moderation surfaces).
 
-Done means: spec §12 lines committed; chat-12 plan-writing handoff
-drafted at docs/specs/.
+Lock during brainstorm:
+Q1 — Primary thrust: A, B, C, or bundle? Single-thrust or multi-thrust release?
+Q2 — DB return decision (§6.1 classification rule trigger)? If yes, what shape
+     (rate limits / draft autosave / notification queue / etc.)? If no, defer to v0.3.
+Q3 — GBrain coupling (§6.8 "Ask GBrain about this project") — in or deferred?
+Q4 — Hardenings (H<n>) for security/correctness invariants, like v0.1.1's H1–H13.
+Q5 — Versioning split (v0.2.0 vs v0.2.1+) if scope is too big for one release.
 
 Anti-patterns:
-- Don't reopen v0.1.x architecture
-- Don't predetermine DB return
-- Don't write code or plan
-- Don't bundle retroactive v0.1.x cleanup
+- Don't reopen v0.1.x architecture (auth, RBAC, GitHub App writes, JWT sessions,
+  proxy.ts pattern, classification rule — all locked).
+- Don't predetermine DB return — let the data shapes the brainstorm surfaces
+  answer §6.1.
+- Don't write code. Don't write the plan (chat-12 owns that via writing-plans).
+- Don't bundle retroactive v0.1.x cleanup (persona slug fix, Mark backfill, etc.).
+
+Token discipline: brainstorm chat is single-purpose; no subagents. Spec §12
+likely 400–700 lines (compare v0.1.1's §11 at ~617).
 ```
 
 ---
 
-*Drafted 2026-05-04 in chat-10 (closure session for Options F+G+D+H+B). References HANDOFF_PROTOCOL.md as the operating discipline; chat-11 is the v0.2 brainstorming step in the protocol §8 sub-skill sequence (brainstorm → plan → implement → review).*
+*Drafted 2026-05-04 in chat-10 (closure session for Options F+G+D+H+B). Inline prompt refreshed 2026-05-16 to account for the CLAUDE.md hardening (PR #9 + #10) — project CLAUDE.md now carries its own read order, so the prompt drops the duplicate list and points at handoff sections instead. References HANDOFF_PROTOCOL.md as the operating discipline; chat-11 is the v0.2 brainstorming step in the protocol §8 sub-skill sequence (brainstorm → plan → implement → review).*
