@@ -300,6 +300,51 @@ describe("proxy", () => {
       const res = await proxy(req as never);
       expect(res.headers.get("location")).toMatch(/\/login$/);
     });
+
+    it("re-seeds waic-consented cookie when snapshot shows profile but cookie is missing", async () => {
+      // Fix for /home ↔ /consent redirect loop: when the snapshot already
+      // shows the bot-written profile, the proxy sets the cookie inline
+      // and passes through, rather than bouncing to /consent.
+      mocks.findMemberByHandleFn.mockReturnValueOnce({
+        name: "Anton Safronov",
+        githubHandle: "anton1rsod",
+        slug: "anton-safronov",
+        profile: { data: {}, body: "Some prose." },
+      });
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/home", {
+        cookieValue: "valid.jwt",
+        consented: false,
+      });
+      const res = await proxy(req as never);
+      // No redirect — request passes through to /home.
+      expect(res.headers.get("location")).toBeNull();
+      // Cookie was set via res.cookies.set on the response.
+      const cookieHeader = res.headers.get("set-cookie") ?? "";
+      expect(cookieHeader).toContain("waic-consented=1");
+      expect(cookieHeader.toLowerCase()).toContain("httponly");
+      expect(cookieHeader.toLowerCase()).toContain("samesite=lax");
+      expect(cookieHeader.toLowerCase()).toContain("path=/");
+    });
+
+    it("still redirects to /consent when cookie missing AND no profile in snapshot (first-time member)", async () => {
+      // member.profile null = bot hasn't written the file yet. This is the
+      // normal first-time consent flow — proxy bounces to /consent so the
+      // user sees the modal.
+      mocks.findMemberByHandleFn.mockReturnValueOnce({
+        name: "Anton Safronov",
+        githubHandle: "anton1rsod",
+        slug: "anton-safronov",
+        profile: null,
+      });
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/home", {
+        cookieValue: "valid.jwt",
+        consented: false,
+      });
+      const res = await proxy(req as never);
+      expect(res.headers.get("location")).toMatch(/\/consent$/);
+    });
   });
 
   describe("PUBLIC_PATHS shape under NODE_ENV", () => {

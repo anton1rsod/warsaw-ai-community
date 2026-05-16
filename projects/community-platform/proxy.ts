@@ -193,8 +193,30 @@ export default async function proxy(
   // /consent page itself short-circuits to /home if the bot already
   // wrote their profile (cookie was the only thing missing); otherwise
   // it shows the modal.
+  //
+  // Fix for /home ↔ /consent redirect loop (2026-05-16, v0.2.0 post-ship):
+  // /consent/page.tsx does `redirect("/home")` when hasConsent is true but
+  // doesn't set the cookie (Server Components can't `cookies().set()`).
+  // If the snapshot already shows the bot-written profile, we re-seed the
+  // missing cookie INLINE here rather than bouncing through /consent. The
+  // snapshot is the build-time projection of the same source-of-truth
+  // (`community/members/<slug>.md`) that `hasConsent` checks live; using
+  // the snapshot keeps the proxy synchronous (no GitHub API call per
+  // request) and resolves the loop for the common case (Anton's cookie
+  // cleared, profile committed weeks ago).
   const consented = req.cookies.get(CONSENT_COOKIE)?.value === "1";
   if (!consented) {
+    if (member.profile) {
+      const res = NextResponse.next();
+      res.cookies.set(CONSENT_COOKIE, "1", {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: true,
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+      });
+      return res;
+    }
     return NextResponse.redirect(new URL("/consent", req.url));
   }
 
