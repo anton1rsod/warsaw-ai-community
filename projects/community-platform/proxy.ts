@@ -19,16 +19,25 @@ import {
 // Defense-in-depth.
 const PUBLIC_PATHS = new Set<string>(
   process.env.NODE_ENV === "production"
-    ? ["/login", "/no-access", "/consent", "/onboard", "/onboard/error"]
+    ? [
+        "/login",
+        "/no-access",
+        "/consent",
+        "/api/consent/recover",
+        "/onboard",
+        "/onboard/error",
+      ]
     : [
         "/login",
         "/no-access",
         "/consent",
+        "/api/consent/recover",
         "/onboard",
         "/onboard/error",
         "/api/test-auth",
         "/api/test-reset-status",
         "/api/test-reset-consent",
+        "/api/test-mark-consented",
         "/api/test-reset-invitations",
         "/api/test-reset-profile",
         "/api/test-mint-expired",

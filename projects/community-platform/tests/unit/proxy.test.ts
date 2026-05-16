@@ -129,6 +129,14 @@ describe("proxy", () => {
     expect(mocks.decodeFn).not.toHaveBeenCalled();
   });
 
+  it("allows /api/test-mark-consented in dev (PUBLIC_PATHS, E2E helper)", async () => {
+    const { default: proxy } = await import("@/proxy");
+    const req = makeReq("/api/test-mark-consented");
+    const res = await proxy(req as never);
+    expect(res.headers.get("location")).toBeNull();
+    expect(mocks.decodeFn).not.toHaveBeenCalled();
+  });
+
   it("passes through /api/auth/* (public prefix)", async () => {
     const { default: proxy } = await import("@/proxy");
     const req = makeReq("/api/auth/callback/github");
@@ -344,6 +352,18 @@ describe("proxy", () => {
       });
       const res = await proxy(req as never);
       expect(res.headers.get("location")).toMatch(/\/consent$/);
+    });
+
+    it("passes /api/consent/recover through PUBLIC_PATHS without the consent gate", async () => {
+      // The route handler does its own auth + roster + hasConsent checks
+      // and sets the cookie on its own response. If the proxy gated it
+      // with the consent rule, an unauthenticated/no-cookie caller would
+      // bounce to /consent → /api/consent/recover → /consent → … (loop).
+      const { default: proxy } = await import("@/proxy");
+      const req = makeReq("/api/consent/recover", { consented: false });
+      const res = await proxy(req as never);
+      expect(res.headers.get("location")).toBeNull();
+      expect(mocks.decodeFn).not.toHaveBeenCalled();
     });
   });
 
