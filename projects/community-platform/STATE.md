@@ -2,16 +2,17 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-16 (chat-11 v0.2 brainstorm — spec §12 drafted on branch `chore/community-platform-v0-2-brainstorm`)
+**Last updated**: 2026-05-16 (chat-12 v0.2.0 plan-writing — `v0.2.0-plan.md` drafted on branch `chore/community-platform-v0-2-plan`; chat-11 brainstorm merged to main at SHA `95197dc`)
 
 ## Snapshot
 
 ```yaml
 last_green: 036695c                # main HEAD — merge of PR #2 (v0.1.1 release)
 last_code_only_green: 399e1a8      # security-reviewer M1+M2 fixes (last code-touching commit)
-phase: "v0.2 brainstorm"            # spec §12 drafted on chore/community-platform-v0-2-brainstorm; PR pending
+phase: "v0.2 plan-writing"          # v0.2.0-plan.md drafted on chore/community-platform-v0-2-plan; PR pending
 spec_sha: 740be8e                   # spec §11 + final-pass hardening fixes (v0.1.1)
-v0_2_spec_sha: pending              # spec §12 brainstorm output — populated on PR merge
+v0_2_spec_sha: 95197dc              # spec §12 brainstorm merged via PR #11
+v0_2_plan_sha: pending              # v0.2.0-plan.md plan-writing output — populated on PR merge
 plan_sha: 2201dd9                   # v0.1.1-plan.md (37 tasks across 3 phases)
 branch: main                        # post-merge; phase-10-followups is now historical
 tests: "475 unit/integration + 26 E2E"
@@ -97,7 +98,9 @@ branch_protection_main: "2026-05-04 — chat-10 Option B; legacy branch-protecti
 
 **Chat 10 handoff:** [`docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md). Menu of 8 small options (A–H) — Anton picks scope at chat start. **Chat 10 picked everything except A** (B + C + D + E + F + G + H). All seven done or merged-pending in chat 10.
 
-**Chat 11 (IN FLIGHT):** v0.2 brainstorm via `superpowers:brainstorming`. Spec §12 drafted (`projects/community-platform/spec.md` lines 1075-1561, ~486 lines) on branch `chore/community-platform-v0-2-brainstorm`. Locked decisions Q1-Q5 + D1-D9: primary thrust = Profile editor (B) + thin (A) contribution surfacing + GBrain link tag-along; **stays 100% git** (§6.1 dormant); single v0.2.0 release; **16 hardenings H14–H29** (continues §11's H1–H13). PR pending after spec commit.
+**Chat 11 (DONE):** v0.2 brainstorm via `superpowers:brainstorming`. Spec §12 lines 1075-1569 (~495 lines incl. Vercel/Next-16 reality-pass amendments) merged via PR #11 at SHA `95197dc`. Locked Q1-Q5 + D1-D9: primary thrust = Profile editor (B) + thin (A) contribution surfacing + GBrain link tag-along; **stays 100% git** (§6.1 dormant); single v0.2.0 release; **16 hardenings H14–H29** (continues §11's H1–H13).
+
+**Chat 12 (IN FLIGHT):** v0.2.0 plan-writing via `superpowers:writing-plans`. `projects/community-platform/v0.2.0-plan.md` drafted (3156 lines, 22 tasks across 4 phases) on branch `chore/community-platform-v0-2-plan`. Open spec questions locked with rationale: O1 = server-side `/api/preview-markdown` route; O2 = sibling file `lib/__generated__/project-contributions.json`; O3 = `parseFrontmatter` + `serializeFrontmatter` in `lib/profile-editor.ts` via `gray-matter`. Execution order in self-review notes. PR pending after plan commit.
 
 **Chat 11 handoff:** [`docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md).
 
