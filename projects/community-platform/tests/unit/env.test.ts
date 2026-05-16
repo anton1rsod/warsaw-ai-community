@@ -47,4 +47,24 @@ describe("env", () => {
     process.env.INVITE_SECRET = "tooshort";
     await expect(import("@/lib/env")).rejects.toThrow(/INVITE_SECRET/);
   });
+
+  it("accepts a valid HTTPS URL for GBRAIN_BASE_URL", async () => {
+    setRequiredEnv();
+    process.env.GBRAIN_BASE_URL = "https://gbrain.example.com";
+    const { env } = await import("@/lib/env");
+    expect(env.GBRAIN_BASE_URL).toBe("https://gbrain.example.com");
+  });
+
+  it("treats GBRAIN_BASE_URL as optional (undefined when unset)", async () => {
+    setRequiredEnv();
+    delete process.env.GBRAIN_BASE_URL;
+    const { env } = await import("@/lib/env");
+    expect(env.GBRAIN_BASE_URL).toBeUndefined();
+  });
+
+  it("throws when GBRAIN_BASE_URL is set but is not a valid URL", async () => {
+    setRequiredEnv();
+    process.env.GBRAIN_BASE_URL = "not-a-url";
+    await expect(import("@/lib/env")).rejects.toThrow(/GBRAIN_BASE_URL/);
+  });
 });
