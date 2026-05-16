@@ -1575,7 +1575,7 @@ NONE that are launch-blocking (D9). Optional:
 > **Closes:** none from §11/§12 forward-looking rows; opens new entry points (`/home` as a content surface; `/events` and `/meetings` indexes; event RSVP affordance; ICS subscribe feed).
 > **Locked decisions:** Q1–Q6 + D1–D18 from chat-17; applied below.
 > **Versioning:** single v0.3.0 ship. Plan-writing (chat 18) has standing authority to re-split into v0.3.0 + v0.3.1 if implementation estimate exceeds 50 tasks OR 2 weeks elapsed wall-time; default split point if forced = (v0.3.0 = meeting + event surfacing + /home + L2 + GCal V-static / v0.3.1 = event RSVP L3).
-> **Hardening ID namespace:** §13 uses **H30–H52** (continues from §12's H14–H29 to avoid cross-section grep collisions). 23 IDs.
+> **Hardening ID namespace:** §13 uses **H30–H55** (continues from §12's H14–H29 to avoid cross-section grep collisions). 26 IDs (H53–H55 added in chat-17 self-review for modern-platform fold-in: Kudos, RSVP tri-state, roster privacy, PWA).
 
 ### 13.1 Locked decisions
 
@@ -1597,14 +1597,16 @@ NONE that are launch-blocking (D9). Optional:
 | D8 | /meetings index | Reverse-chronological list grouped by month. No pagination v0.3 (revisit at ~50 entries) |
 | D9 | /events index | "Upcoming" section (nearest first) + "Past" section (reverse chronological). No pagination v0.3 |
 | D10 | Event RSVP UI | B — prominent CTA below event title (toggles "Mark as Going" ↔ "✓ Going"). Roster as avatar grid below event content |
-| D11 | RSVP state | BINARY only: present in `events_going` OR absent. No "maybe" / "not-going" states (YAGNI; reversal-cost real if added later, so explicitly excluded for v0.3) |
-| D12 | RSVP roster visibility | Public — same posture as `/members/[slug]` (already public per v0.1). No separate ADR needed |
+| D11 | RSVP state | TRI-STATE: `events_going` (committed) OR `events_interested` (soft signal) OR absent (no signal). Mutually exclusive per slug. Reversal-pass on initial binary lock (chat-17 self-review): "Interested" tier is widely validated on modern event platforms (Lu.ma, Eventbrite, FB Events) and captures the most common pre-event state |
+| D12 | RSVP roster visibility | Per-member, profile-frontmatter-configurable via `event_rsvp_visibility: "public" \| "members_only"`. NEW RSVPs from v0.3 forward default to `"members_only"` (chat-17 self-review: trust posture is opt-in for event-attendance visibility). Existing public `/members/[slug]` directory itself stays public for v0.1 precedent; event-attendance is a finer-grained opt-in |
 | D13 | Avatar fallback | Initials when profile photo absent (existing v0.1 pattern) |
 | D14 | GCal integration shape | V-static — ICS generation from git frontmatter only. No GCal API |
 | D15 | ICS subscribe URL | `/api/calendar.ics` (public, cache-controlled, build-time-generated artifact) |
 | D16 | Add-to-Calendar buttons | On `/meetings/[slug]` + `/events/[slug]` detail pages. Triggers download of a single-event `.ics` file |
 | D17 | Frontmatter additions | Meeting + event notes add `start_time`, `duration_minutes`, `location` (all optional). Defaults via community-defaults file |
 | D18 | Community defaults | `community/community-defaults.yaml` (new) — keys: `meeting_default_time`, `meeting_default_duration`, `meeting_default_location`, `events.*` equivalents, `timezone`. Used when frontmatter omits the field |
+| D19 | Member-to-member recognition (Kudos / Thanks) | `+ Thanks` affordance on status posts, contributions, and meeting notes. Stored in giver's profile frontmatter `thanks_given: [{recipient, item_type, item_id, given_at}]`. Aggregated build-time → `lib/__generated__/kudos.json`. Displayed on `/members/[slug]` as "Thanked N times" + per-item button state. Recognition primitive (no leaderboard surface — explicitly distinct from Q4-rejected gamification) |
+| D20 | PWA manifest | `public/manifest.json` + 192/512 icons + `<link rel="manifest">` via Next 16 `metadata.manifest` in `app/layout.tsx`. Installable on mobile/desktop. NO service worker / offline mode v0.3 (Next.js default caching is sufficient); installability is the goal |
 
 **§6.1 dormancy preserved.** All v0.3 surfaces read derived data computed at build time. `events_going` lists are stored in member profiles (git, not DB). RSVP toggles use v0.2.2's SHA-passthrough write contract on member profile files.
 
@@ -1789,38 +1791,45 @@ status: "scheduled"           # optional: scheduled (default) | cancelled | comp
 ```typescript
 interface EventRsvpButtonProps {
   eventSlug: EventSlug;
-  initialState: "going" | "not-going" | "not-signed-in";
+  initialState: "going" | "interested" | "none" | "not-signed-in";
   memberSlug?: string;  // undefined when not-signed-in
   profileSha?: string;  // required when signed in (SHA-passthrough; H31)
 }
 ```
 
-States:
+Tri-state UI per D11 (two adjacent buttons): `[Going]` + `[Interested]`. Mutually exclusive — member is in `events_going` OR `events_interested`, never both. Click on a non-active button transitions through `rsvp-event` action with `desiredState`.
+
+States (signed in):
+- `"none"`: both buttons inactive. Click `Going` → desiredState="going"; click `Interested` → desiredState="interested".
+- `"going"`: `[✓ Going]` active (green). Click `[✓ Going]` → desiredState="none" (clears). Click `[Interested]` → desiredState="interested" (atomic switch via mutual exclusion).
+- `"interested"`: `[★ Interested]` active (amber). Click `[★ Interested]` → desiredState="none". Click `[Going]` → desiredState="going" (atomic switch).
 - `"not-signed-in"`: renders disabled-styled link "Sign in to RSVP" → `/login?callbackUrl=/events/<slug>`.
-- `"going"`: renders `[✓ Going]` styled green; click → toggle (action="remove"); optimistic UI flip to "not-going" on success.
-- `"not-going"`: renders `[Mark as Going]` styled primary blue; click → toggle (action="add"); optimistic UI flip to "going" on success.
-- On 409 SHA conflict: revert optimistic UI; show "Someone else updated your profile — refresh." inline.
+
+Optimistic UI: flip immediately on click; revert on action error. On 409 SHA conflict: revert + show "Someone else updated your profile — refresh." inline.
 
 #### 13.4.6 rsvp-event server action
 
 `app/actions/rsvp-event.ts`:
+
+Input: `{eventSlug: EventSlug, desiredState: "going" | "interested" | "none", profileSha: string}`.
 
 1. `await auth()` → `session.githubHandle` (else `not_authenticated`).
 2. `findMemberByHandle(handle)` → resolve `slug` (else `not_a_member`).
 3. Validate `eventSlug` is known: `isKnownEventSlug(eventSlug)` against current events list (H37). Else return `event_not_found`.
 4. Thin-wrap `save-profile` write path:
    - Read profile via `client().readFile(profilePath(slug))` → capture `{content, sha}`.
-   - Parse frontmatter, read existing `events_going` array (default `[]`).
-   - Add or remove `eventSlug` (action="add" | "remove"; idempotent both directions).
+   - Parse frontmatter; read `events_going` AND `events_interested` arrays (defaults `[]`).
+   - **Mutual exclusion reconciliation:** remove `eventSlug` from BOTH arrays first. If `desiredState === "going"`, add to `events_going`. If `desiredState === "interested"`, add to `events_interested`. If `desiredState === "none"`, leave removed from both. Idempotent regardless of prior state.
+   - If frontmatter lacks `event_rsvp_visibility` (first RSVP from v0.3 forward), set it to `"members_only"` per D12 (H46).
    - Serialize new frontmatter; preserve body verbatim.
    - `client().writeFile(profilePath(slug), newContent, {message, expectedSha: <step-4-sha>})`.
 5. On `sha_conflict` (409): NO retry (per v0.2.2 contract; H40) — return `REFRESH_NEEDED`.
-6. On success: `revalidatePath("/events/" + eventSlug)`, `revalidatePath("/members/" + slug)`. Return `{ok: true, state: "going" | "not-going"}`.
-7. Log discipline: log only `{slug, eventSlug, action, sha, success, error?: code}`. No body content logged.
+6. On success: `revalidatePath("/events/" + eventSlug)`, `revalidatePath("/members/" + slug)`. Return `{ok: true, state: desiredState}`.
+7. Log discipline: log only `{slug, eventSlug, desiredState, prior_state, sha, success, error?: code}`. No body content logged.
 
 Commit message:
 ```
-chore(community): @<gh-handle> RSVP <going|not-going> "<event-slug>"
+chore(community): @<gh-handle> RSVP <going|interested|none> "<event-slug>"
 
 Co-Authored-By: <gh-handle> <gh-handle@users.noreply.github.com>
 ```
@@ -1835,24 +1844,43 @@ interface EventRosterProps {
 }
 ```
 
-Renders:
-- Section heading "Going (N)".
-- Avatar grid (5-wide responsive), each tile linking to `/members/[slug]`.
-- Reads from `lib/__generated__/event-rosters.json` (built from member profile frontmatter at build time, NOT per-request roster scan; H32).
-- Empty state: "No one's marked going yet — be the first."
-- Public visibility (D12) — same posture as `/members/[slug]`.
+Renders two sub-rosters per D11 tri-state + D12 privacy:
+- **Going (N total)** — public avatar grid of members whose `event_rsvp_visibility === "public"` + count badge `+ M members (sign in to see)` for hidden (`"members_only"`) members. The hidden-count CTA links to `/login?callbackUrl=/events/<slug>`.
+- **Interested (P total)** — same shape; styled distinctly (amber accent vs green for Going).
+- Avatar grid: 5-wide responsive; each tile links to `/members/[slug]`.
+- Reads from `lib/__generated__/event-rosters.json` (build-time derived; H32).
+- Empty states: "No one's marked going yet — be the first." / "No one's marked interested yet."
 
-#### 13.4.8 events_going field on member profile
+`event-rosters.json` shape per event:
 
-Frontmatter addition to `community/members/<slug>.md`:
-
-```yaml
-events_going: ["2026-06-15-ai-hackathon-kickoff", ...]   # optional, default []
+```json
+{
+  "<event-slug>": {
+    "going": { "publicSlugs": ["..."], "hiddenCount": N },
+    "interested": { "publicSlugs": ["..."], "hiddenCount": M }
+  }
+}
 ```
 
-Migration: members without the field don't break — absence equals empty array.
+The split keeps `/events/[slug]` SSG (no auth read on page). Reveal-on-auth UX (whether hidden names appear after sign-in) is locked at plan-writing per O6. Options: (a) keep SSG with sign-in CTA hint only, (b) add a Dynamic auth-aware roster route, (c) client-side fetch after hydration. Default: (a) — simplest, ships v0.3.
 
-Stale-slug protection (H39): build-time `scripts/build-event-rosters.ts` only includes slugs present in `community/events/`; orphan slugs are filtered. Member profile may temporarily contain a stale slug after an event folder is deleted — no harm done (next save action by the member cleans, or admin can clean via direct roster commit).
+Public visibility posture: `/members/[slug]` directory itself remains public per v0.1.x precedent (D12 amendment); event-attendance is the new finer-grained opt-in.
+
+#### 13.4.8 events_going + events_interested + event_rsvp_visibility fields on member profile
+
+Frontmatter additions to `community/members/<slug>.md`:
+
+```yaml
+events_going: ["2026-06-15-ai-hackathon-kickoff", ...]      # optional, default []
+events_interested: ["2026-07-04-some-other-event", ...]    # optional, default []  (D11 tri-state)
+event_rsvp_visibility: "members_only"                       # optional: "public" | "members_only"; default "members_only" for new RSVPs from v0.3 forward (D12)
+```
+
+Migration: members without these fields don't break — absence equals empty array (slug lists) OR `"members_only"` (visibility default, applied on first write).
+
+**Mutual exclusion invariant (D11):** for any given `eventSlug`, the member is in EITHER `events_going` OR `events_interested`, never both. Server action enforces (§13.4.6 step 4). Plan-writing adds a profile-validator check in `lib/profile-editor.ts` that flags violations at save time.
+
+Stale-slug protection (H39 — extended to both arrays): build-time `scripts/build-event-rosters.ts` only includes slugs present in `community/events/`; orphan slugs are filtered out of both `events_going` and `events_interested` for roster purposes. Member profile may temporarily contain a stale slug after an event folder is deleted — no harm done (next save by the member cleans up).
 
 ### 13.5 Unified /home feed + /this-week strip (L1 + L2)
 
@@ -2034,15 +2062,15 @@ A new row appended to `projects/community-platform/GOTCHAS.md` captures the tran
 
 ### 13.8 Threat model + hardenings (H30–H52)
 
-H30–H52 are the testable invariants every v0.3 code change preserves. Each maps to a `describe("H<n>: …")` block per HANDOFF_PROTOCOL §4. 23 IDs total. Grep verification at DoD:
+H30–H55 are the testable invariants every v0.3 code change preserves. Each maps to a `describe("H<n>: …")` block per HANDOFF_PROTOCOL §4. 26 IDs total (H53–H55 added in chat-17 self-review for modern-platform fold-in: Kudos atomicity + aggregator, PWA manifest). Grep verification at DoD:
 
 ```bash
-grep -rn 'describe("H3[0-9]:\|describe("H4[0-9]:\|describe("H5[0-2]:' \
+grep -rn 'describe("H3[0-9]:\|describe("H4[0-9]:\|describe("H5[0-5]:' \
   projects/community-platform/tests \
   projects/community-platform/lib \
   projects/community-platform/app \
   | sed 's/.*describe("\(H[0-9]\+\):.*/\1/' | sort -u | wc -l
-# Expected: 23
+# Expected: 26
 ```
 
 #### /home unified feed (L1) — H30, H33, H38, H41
@@ -2085,7 +2113,7 @@ grep -rn 'describe("H3[0-9]:\|describe("H4[0-9]:\|describe("H5[0-2]:' \
 |---|---|---|---|
 | **H43** | All rendered titles + excerpts via `SafeHtml` pipeline | `HomeFeed` renders markdown via existing audit boundary (CONSTRAINTS line 20) | `HomeFeed.test.tsx` (script tag in title → escaped) |
 | **H45** | `/this-week` L2 strip empty-state | When feed empty, strip hides (no "Nothing happening" between compose + post list) | `this-week/page.test.tsx` (empty feed scenario) |
-| **H46** | Roster public posture documented | §13.4.7 + this section explicitly note RSVP roster is public (same as /members/[slug]) | Spec § asserts the posture; no separate ADR |
+| **H46** | Roster visibility posture per-member configurable | Per-member `event_rsvp_visibility` profile field (D12); new RSVPs default to `"members_only"` set by `rsvp-event` action on first write; `/members/[slug]` directory remains public per v0.1.x precedent | `rsvp-event.test.ts` (first-RSVP defaults applied); `events.test.ts` (rosters filter by visibility) |
 
 #### GCal V-static — H47, H48, H49
 
@@ -2103,7 +2131,20 @@ grep -rn 'describe("H3[0-9]:\|describe("H4[0-9]:\|describe("H5[0-2]:' \
 | **H51** | New deps pass typecheck + build on clean install | CI runs `pnpm install --frozen-lockfile && pnpm typecheck && pnpm build` on any branch that modifies `package.json` | CI workflow update |
 | **H52** | V-static ICS generator chosen on type-completeness criteria | Plan-writing locks specific package (candidate: `ics`); criteria documented in §13.7.2 | Plan-writing artifact (O1) |
 
-### 13.9 Components / files (~45 touched)
+#### Kudos (D19) — H53, H54
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H53** | `thanks_given` write: SHA-passthrough + idempotent on `(recipient, item_type, item_id)` triple | `thank-status` action uses `client().writeFile({expectedSha})`; pre-check dedup against current `thanks_given` array; returns `already_thanked: true` (no commit) on duplicate | `thank-status.test.ts` (happy-path commit; duplicate triple → already_thanked no-commit; 409 → REFRESH_NEEDED) |
+| **H54** | Kudos aggregator excludes bot commits + non-roster members | `build-kudos-aggregate` filters via `BOT_AUTHORS` (same set as `lib/contributions.ts:18`; H26 pattern) + drops thanks records where giver or recipient is not on current roster | `build-kudos-aggregate.test.ts` (bot author → excluded; non-roster giver/recipient → excluded) |
+
+#### PWA install (D20) — H55
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H55** | `public/manifest.json` valid against W3C Web App Manifest spec | CI test parses manifest; asserts `name`, `short_name`, `start_url`, `display`, `icons[192]`, `icons[512]` present and well-typed | `tests/build-reliability.test.ts` extended with manifest validity assertions |
+
+### 13.9 Components / files (~50 touched)
 
 #### New TS source files (14)
 
@@ -2179,6 +2220,47 @@ grep -rn 'describe("H3[0-9]:\|describe("H4[0-9]:\|describe("H5[0-2]:' \
 |---|---|
 | `proxy.ts` | Add `/home`, `/events`, `/events/[slug]`, `/meetings`, `/api/calendar.ics` to PUBLIC_PATHS if necessary (plan-writing locks per O3, O4) |
 
+#### Chat-17 fold-in additions (Kudos D19 + PWA D20)
+
+**New TS source files (+4 → 18 total):**
+
+| Path | Responsibility | Coverage gate |
+|---|---|---|
+| `app/components/ThankButton.tsx` | `+ Thanks` affordance (client component); state-aware UI; calls thank-status action | **100% (strict-list)** |
+| `app/components/KudosCount.tsx` | Renders "Thanked N times" on /members/[slug] (server component); reads kudos.json | **100% (strict-list)** |
+| `app/actions/thank-status.ts` | Server action; SHA-passthrough write to giver's profile; idempotent on `(recipient, item_type, item_id)` dedup | **100% (strict-list)** |
+| `scripts/build-kudos-aggregate.ts` | Build-time: aggregates giver profiles' `thanks_given` → `lib/__generated__/kudos.json` | 80% |
+
+**New data/config files (+4 → 8 total):**
+
+| Path | Purpose |
+|---|---|
+| `public/manifest.json` | PWA install manifest (D20) |
+| `public/icons/icon-192.png` | PWA 192×192 icon |
+| `public/icons/icon-512.png` | PWA 512×512 icon |
+| `lib/__generated__/kudos.json` | Build-time derived kudos aggregate per recipient |
+
+**Test files (+4 → 16 total):**
+
+| Path | Coverage focus |
+|---|---|
+| `app/components/ThankButton.test.tsx` | **100%.** State transitions (thanked / not-thanked / not-signed-in / self); optimistic UI; duplicate no-op |
+| `app/components/KudosCount.test.tsx` | **100%.** Renders count + recent-givers row; empty state |
+| `app/actions/thank-status.test.ts` | **100%.** SHA-passthrough (H53); idempotent dedup; self-thank rejected; 409 → REFRESH_NEEDED |
+| `scripts/build-kudos-aggregate.test.ts` | Bot-author exclusion (H54); non-roster exclusion (H54) |
+
+**Additional modifications (added to Modified TS files):**
+
+| Path | Change |
+|---|---|
+| `app/layout.tsx` | Add `metadata.manifest = "/manifest.json"` for PWA install (D20) |
+| `app/this-week/page.tsx` | + mount `<ThankButton>` per status post (D19) |
+| `app/meetings/[slug]/page.tsx` | + mount `<ThankButton>` at top of meeting note (D19) |
+| `app/members/[slug]/page.tsx` | + mount `<KudosCount>` component (D19) |
+| `app/projects/[slug]/page.tsx` | Extend `<TopContributors>` rendering to mount `<ThankButton>` per contributor row (D19) |
+| `lib/profile-editor.ts` | Add `thanks_given` schema; validate mutual exclusion (`events_going` ∩ `events_interested` = ∅) per D11 |
+| `scripts/build-snapshot.ts` (or equivalent existing) | + invoke `build-kudos-aggregate.ts` in prebuild pipeline |
+
 ### 13.10 Testing strategy
 
 #### Unit + integration
@@ -2189,7 +2271,7 @@ Per §13.9 — every new source file at 100% strict-list (lines + functions; bra
 
 #### E2E (Playwright)
 
-`e2e/v0-3-discovery.spec.ts` — 8 new scenarios:
+`e2e/v0-3-discovery.spec.ts` — 14 new scenarios (8 v0.3 base + 6 chat-17 fold-in):
 
 1. **Anonymous /home renders feed** — no sign-in; feed surfaces meetings + events + statuses + contributions per D1.
 2. **/this-week strip above compose** — signed in; feed strip appears above status compose box; compose still works.
@@ -2199,6 +2281,12 @@ Per §13.9 — every new source file at 100% strict-list (lines + functions; bra
 6. **Orphan slug graceful** — manually edit a roster profile to include nonexistent event slug; visit member page → orphan filtered.
 7. **Subscribe to calendar (ICS)** — request `/api/calendar.ics` → valid response, correct Content-Type, parses as ICS.
 8. **Add to Calendar button on event detail** — click button → file download with VEVENT for that event.
+9. **Thank a status post (D19)** — sign in as member A; click `+ Thanks` on member B's status post; reload `/members/B` → "Thanked 1 times" after rebuild.
+10. **Self-thank blocked (D19)** — member A's own status post does not render `+ Thanks` button (initialState="self").
+11. **Duplicate-thank dedup (D19)** — member A clicks `+ Thanks` twice on same item; second click no-op (`already_thanked: true`).
+12. **RSVP tri-state transitions (D11)** — member RSVPs Going → Interested (atomic switch) → none → Going; verify profile frontmatter reflects each state.
+13. **RSVP privacy posture (D12)** — new member with default `members_only` RSVPs; verify name appears in hidden count for anonymous viewer (not in public avatar grid).
+14. **PWA install (D20)** — `curl /manifest.json` returns valid JSON with required fields; Lighthouse PWA audit passes; Chrome devtools install prompt fires on `/home`.
 
 Recommend `pnpm e2e --retries=2` for closeout per CONSTRAINTS line 28 (Next 16 cold-start flakes).
 
@@ -2270,3 +2358,159 @@ NONE launch-blocking. Optional:
 - [ ] Tag `community-platform-v0.3.0` pushed.
 - [ ] Production smoke (§13.11.2 step 4) passes.
 - [ ] Memory entry `project_community_platform_v0_3_ship.md` written.
+- [ ] Kudos primitive (D19) tested end-to-end: thank → kudos.json aggregator → /members/[slug] kudos count after rebuild.
+- [ ] RSVP tri-state (D11) validated: Going/Interested/none transitions; mutual exclusion enforced.
+- [ ] Event roster privacy (D12) validated: `members_only` RSVPs hidden from anonymous viewer; reveal-on-auth per O7 default.
+- [ ] PWA install (D20) validated: `/manifest.json` valid; Chrome devtools install prompt fires.
+
+### 13.13 Member-to-member recognition (Kudos) — D19
+
+**Trigger.** Chat-17 self-review (2026-modern lens). Recognition is table-stakes for community platforms; Top Contributors (v0.2) is auto-derived from commits and doesn't capture *intentional* acknowledgment between members.
+
+#### 13.13.1 thanks_given field on member profile
+
+Frontmatter addition to `community/members/<slug>.md`:
+
+```yaml
+thanks_given:                                              # optional, default []
+  - recipient: "anton-safronov"                            # member slug
+    item_type: "status" | "contribution" | "meeting"
+    item_id: "2026-05-19-anton-status-3" | "0123abc..." | "2026-05-19"  # status post id, commit SHA, or meeting date
+    given_at: "2026-05-19T18:23:00Z"                       # ISO 8601
+```
+
+Mutually distinct from `events_going` / `events_interested`; orthogonal to RSVP semantics.
+
+Idempotency: server action enforces unique `(recipient, item_type, item_id)` triples per giver — re-clicking `+ Thanks` on an already-thanked item is a no-op (returns `{ok: true, already_thanked: true}` without committing). Plan-writing locks the dedup mechanism (in-memory set scan vs. profile re-read) per O7.
+
+#### 13.13.2 thank-status server action
+
+`app/actions/thank-status.ts`:
+
+Input: `{recipient: string, item_type: "status" | "contribution" | "meeting", item_id: string, profileSha: string}`.
+
+1. `await auth()` → `session.githubHandle`; resolve giver slug.
+2. Reject if `recipient === giver` (self-thanks blocked; H53).
+3. Reject if `findMemberBySlug(recipient)` returns null (recipient must be on current roster).
+4. Validate `item_id` exists for the `item_type`: status post in content-snapshot, commit SHA reachable, meeting note path resolves. Plan-writing locks validator implementations per O8.
+5. Read giver profile; parse `thanks_given` array.
+6. If `(recipient, item_type, item_id)` already present: return `{ok: true, already_thanked: true}` — no commit.
+7. Append the thanks record (with `given_at = new Date().toISOString()`).
+8. Write via SHA-passthrough (v0.2.2 contract).
+9. On success: `revalidatePath("/members/" + recipient)` + the item's own page.
+10. Log discipline: `{giver, recipient, item_type, item_id, sha, success, error?: code}`. No content logged.
+
+Commit message:
+```
+chore(community): @<giver-gh> thanks @<recipient-gh> for <item_type> "<item_id>"
+
+Co-Authored-By: <giver-gh> <giver-gh@users.noreply.github.com>
+```
+
+#### 13.13.3 Kudos aggregator
+
+`scripts/build-kudos-aggregate.ts` (build-time):
+
+Reads all member profiles' `thanks_given` arrays → produces `lib/__generated__/kudos.json`:
+
+```json
+{
+  "<recipient-slug>": {
+    "total": N,
+    "by_type": {"status": A, "contribution": B, "meeting": C},
+    "recent": [{"giver": "...", "item_type": "...", "item_id": "...", "given_at": "..."}]
+  }
+}
+```
+
+Last 5 thanks shown in `recent`. Bot commits excluded per existing `BOT_AUTHORS` set (H54 — same pattern as H26). Non-roster members (giver or recipient) dropped from aggregation.
+
+#### 13.13.4 ThankButton component
+
+`app/components/ThankButton.tsx` (client component):
+
+```typescript
+interface ThankButtonProps {
+  recipient: string;
+  itemType: "status" | "contribution" | "meeting";
+  itemId: string;
+  initialState: "thanked" | "not-thanked" | "not-signed-in" | "self";
+  profileSha?: string;
+}
+```
+
+States:
+- `"thanked"`: `[♥ Thanked]` active (warm rose); click → no-op (one-shot recognition; re-thanking not supported in v0.3).
+- `"not-thanked"`: `[+ Thanks]` inactive; click → action → optimistic flip to `"thanked"`.
+- `"not-signed-in"`: hidden OR styled `"Sign in to thank"` link → `/login?callbackUrl=<current-url>`.
+- `"self"`: hidden (no self-thank UI surface).
+
+Surface placements (v0.3):
+- Status posts on `/this-week` — `<ThankButton>` next to each post's timestamp.
+- Project contribution rows on `/projects/[slug]` — `<ThankButton>` next to each TopContributor row (item_id = synthetic per-contributor id; plan-writing locks per O8).
+- Meeting notes on `/meetings/[slug]` — single `<ThankButton>` at top of each meeting note (item_id = date).
+
+#### 13.13.5 KudosCount component
+
+`app/components/KudosCount.tsx` (server component):
+
+Renders on `/members/[slug]`:
+- "Thanked N times" pill (link to future `/members/[slug]/kudos` page; not in v0.3 — placeholder href).
+- Optional recent-givers row (3 avatars).
+
+Reads from `lib/__generated__/kudos.json`.
+
+#### 13.13.6 Forward-looking (NOT in v0.3)
+
+- `/members/[slug]/kudos` page showing all kudos received with context (v0.3.1+).
+- Kudos for ADRs / decision contributions (v0.3.1+ — needs `item_id` resolution for ADR scope).
+- Leaderboard / "Top thanked this month" — explicitly excluded per Q4 (no gamification surface).
+
+### 13.14 PWA install — D20
+
+**Trigger.** Chat-17 self-review (2026-modern lens). Platform is mobile-friendly (Lighthouse 99/100 mobile per STATE row `lighthouse_baseline_login`) but not installable. PWA manifest is 1-task ROI for the "modern" signal.
+
+#### 13.14.1 manifest.json
+
+`public/manifest.json` (new):
+
+```json
+{
+  "name": "Warsaw AI Community",
+  "short_name": "Warsaw AI",
+  "description": "Discovery + decisions + ship cadence for the Warsaw AI Community",
+  "start_url": "/home",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
+```
+
+Icons (new): `public/icons/icon-192.png` (192×192) + `public/icons/icon-512.png` (512×512). Plan-writing locks the icon artwork (community logo derivative; plan-writing produces or sources).
+
+#### 13.14.2 Layout link
+
+`app/layout.tsx` extension:
+
+```tsx
+export const metadata = {
+  // ... existing
+  manifest: "/manifest.json",
+};
+```
+
+Next 16 inlines the `<link rel="manifest">` from the `metadata` export — no manual `<head>` work.
+
+#### 13.14.3 NO service worker / offline mode (v0.3 scope)
+
+Deliberate omission. Service workers + offline caching add complexity disproportionate to v0.3 thesis (Discovery+). Members get the install prompt + standalone app launch; content fetching follows Next.js default caching. Offline mode and push notifications are v0.4+ candidates.
+
+#### 13.14.4 Forward-looking (NOT in v0.3)
+
+- Service worker for offline-first reads (v0.4 candidate).
+- Web Push subscriptions for event reminders (v0.4 — pairs with email-digest scope; both wake §6.1).
+- Apple Touch icons + iOS-specific manifest extensions (v0.3.1 if mobile install adoption signals demand).

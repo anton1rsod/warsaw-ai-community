@@ -51,21 +51,24 @@ Write `projects/community-platform/v0.3.0-plan.md` per §13 spec.
 The writing-plans skill will walk through:
 
 1. **Phase decomposition.** Likely 4 phases (mirrors v0.2.0's 4-phase structure):
-   - **Phase 1: Foundation** — `lib/events.ts`, `lib/meetings.ts`, `lib/home-feed.ts`, `lib/ical.ts`, `lib/community-defaults.ts`, `community/community-defaults.yaml`, tsconfig types scope (H50), build scripts (`build-event-rosters.ts`, `build-calendar.ts`, `validate-events-folders.ts`), `ics` npm dep vetting (H52).
-   - **Phase 2: Read surfaces** — `/home` rewrite, `/events` index, `/events/[slug]` detail (without RSVP wiring), `/meetings` index, `/this-week` L2 strip mount, AddToCalendarButton, /api/calendar.ics route.
-   - **Phase 3: Write surface (RSVP L3)** — `app/actions/rsvp-event.ts`, `EventRsvpButton.tsx`, `EventRoster.tsx`, `events_going` profile frontmatter, integration with `EventDetail` page from Phase 2.
-   - **Phase 4: Closeout** — E2E suite (8 scenarios per §13.10), coverage gates, hardenings grep verification (23 IDs), security review, GOTCHAS row 9 commit, ship-day runbook prep.
+   - **Phase 1: Foundation** — `lib/events.ts`, `lib/meetings.ts`, `lib/home-feed.ts`, `lib/ical.ts`, `lib/community-defaults.ts`, `community/community-defaults.yaml`, tsconfig types scope (H50), build scripts (`build-event-rosters.ts`, `build-calendar.ts`, `build-kudos-aggregate.ts`, `validate-events-folders.ts`), `ics` npm dep vetting (H52).
+   - **Phase 2: Read surfaces** — `/home` rewrite, `/events` index, `/events/[slug]` detail (without RSVP wiring), `/meetings` index, `/this-week` L2 strip mount, `AddToCalendarButton`, `/api/calendar.ics` route, `KudosCount` on `/members/[slug]` (read-only side of D19).
+   - **Phase 3: Write surfaces** — RSVP L3 tri-state (`rsvp-event.ts`, `EventRsvpButton.tsx`, `EventRoster.tsx`, `events_going` + `events_interested` + `event_rsvp_visibility` profile fields, mutual-exclusion invariant) AND Kudos D19 (`thank-status.ts`, `ThankButton.tsx` mounts on `/this-week` + `/projects/[slug]` + `/meetings/[slug]`, `thanks_given` profile field, idempotency on `(recipient, item_type, item_id)`).
+   - **Phase 4: PWA + Closeout** — D20 manifest + 192/512 icons + `app/layout.tsx` metadata; Lighthouse PWA audit; E2E suite (14 scenarios per §13.10), coverage gates, hardenings grep verification (26 IDs), security review, GOTCHAS row 9 commit, ship-day runbook prep.
 
-2. **Per-task definition.** Each task: scope, files touched, hardenings tested, coverage gate, exit criteria. Mirror v0.2.0-plan.md structure (3156 lines, 22 tasks).
+2. **Per-task definition.** Each task: scope, files touched, hardenings tested, coverage gate, exit criteria. Mirror v0.2.0-plan.md structure (~28-36 tasks across 4 phases; ~50 files touched — larger than v0.2.0's 22 tasks by design, owing to chat-17 fold-in).
 
 3. **Open spec questions to lock during plan-writing:**
    - **O1: ICS generator package.** Spec proposes `ics` (MIT, npm). Verify type-completeness checklist (§13.7.2) passes; lock specific version.
    - **O2: event-rosters.json storage.** Spec says "plan-writing chooses" — committed (v0.2 precedent for diff visibility) vs gitignored (cleaner repo). Default: committed.
    - **O3: `/home` in PUBLIC_PATHS or auth-gated.** Spec §13.5.3 says anonymous can see `/home`; verify against `proxy.ts` current state; if currently auth-gated, decide whether to relax (publicizes the feed) or keep auth-gated.
-   - **O4: `/api/calendar.ics` in PUBLIC_PATHS.** ICS feed must be publicly subscribable; confirm proxy.ts route allowlist.
+   - **O4: `/api/calendar.ics` in PUBLIC_PATHS.** ICS feed must be publicly subscribable; confirm `proxy.ts` route allowlist.
    - **O5: community-defaults.yaml vs .json.** Spec proposes YAML; .json offers tighter Zod validation. Plan-writing locks.
+   - **O6: EventRoster reveal-on-auth UX** (added chat-17). Spec §13.4.7 default = (a) keep SSG with sign-in CTA hint only. Options: (a) SSG-only, (b) Dynamic auth-aware roster route, (c) client-side fetch post-hydration. Default keeps `/events/[slug]` SSG.
+   - **O7: Kudos dedup mechanism** (added chat-17). Spec §13.13.1 — in-memory set scan during action vs profile re-read on each thank attempt. Default: profile re-read (idempotent semantic; H53).
+   - **O8: item_id resolution for thanks** (added chat-17). Spec §13.13.2 + §13.13.4 — what counts as a status post `item_id`, a project contribution `item_id`, and a meeting note `item_id`. Plan-writing locks validator implementations.
 
-4. **Test-file-per-hardening mapping.** Each H30–H52 ID gets a specific test file + `describe("H<n>:")` block. Plan-writing produces the grep-verifiable contract.
+4. **Test-file-per-hardening mapping.** Each H30–H55 ID gets a specific test file + `describe("H<n>:")` block. Plan-writing produces the grep-verifiable contract (26 IDs total).
 
 5. **Versioning split trigger.** Per §13 header: re-split into v0.3.0 + v0.3.1 if implementation estimate exceeds 50 tasks OR 2 weeks elapsed wall-time. Default split point if forced = (v0.3.0 = meeting + event surfacing + /home + L2 + GCal V-static / v0.3.1 = event RSVP L3).
 
@@ -126,13 +129,13 @@ This chat owns: v0.3.0-plan.md drafted + committed + Draft PR + STATE.md
 update + project memory + chat-19 implementation handoff.
 
 Scope (from §13): Discovery+ v0.3 = meeting surfacing + events surface +
-unified /home feed (D layout) + /this-week strip (L2) + event RSVP (L3) +
-V-static GCal feed. 23 hardenings (H30-H52). ~30 files touched.
+unified /home feed (D layout) + /this-week strip (L2) + event RSVP (L3 tri-state) +
+V-static GCal feed + Kudos D19 + PWA D20. 26 hardenings (H30-H55). ~50 files touched.
 
-Spec §13 produces ~22-28 tasks across 4 phases. Mirror v0.2.0-plan.md structure
-(3156 lines, 22 tasks, 4 phases).
+Spec §13 produces ~28-36 tasks across 4 phases. Mirror v0.2.0-plan.md structure
+(3156 lines, 22 tasks, 4 phases) — slightly bigger due to chat-17 self-review fold-in.
 
-Open questions to lock during plan-writing: O1-O5 per handoff "open spec questions".
+Open questions to lock during plan-writing: O1-O8 per handoff "open spec questions".
 
 Anti-patterns:
 - Don't reopen §13 decisions (Q1-Q6, D1-D18 are brainstorm output).
