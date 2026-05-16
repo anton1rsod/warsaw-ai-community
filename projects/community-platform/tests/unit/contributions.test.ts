@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { computeContributions, type GitCommit } from "@/lib/contributions";
+import {
+  computeContributions,
+  computeProjectContributions,
+  TOP_CONTRIBUTORS_LIMIT,
+  type GitCommit,
+} from "@/lib/contributions";
 
 const commits: GitCommit[] = [
   {
@@ -149,5 +154,146 @@ describe("contributions", () => {
       meetingsAttended: 0,
       statusPosts: 0,
     });
+  });
+});
+
+const baseRoster = [
+  { name: "Anton Safronov", githubHandle: "anton1rsod", slug: "anton-safronov" },
+  { name: "Bob Builder", githubHandle: "bobthebuilder", slug: "bob-builder" },
+];
+
+describe("computeProjectContributions", () => {
+  it("buckets per-commit, de-duplicating files in the same project", () => {
+    const commits: GitCommit[] = [
+      {
+        sha: "a1",
+        author: "anton1rsod",
+        date: "2026-01-01T00:00:00Z",
+        files: [
+          "projects/foo/a.md",
+          "projects/foo/b.md",
+          "projects/foo/c.md",
+        ],
+      },
+    ];
+    const result = computeProjectContributions({ commits, roster: baseRoster });
+    expect(result.foo).toEqual([{ handle: "anton1rsod", commits: 1 }]);
+  });
+
+  it("counts a single commit once per distinct project touched", () => {
+    const commits: GitCommit[] = [
+      {
+        sha: "a1",
+        author: "anton1rsod",
+        date: "2026-01-01T00:00:00Z",
+        files: ["projects/foo/a.md", "projects/bar/b.md"],
+      },
+    ];
+    const result = computeProjectContributions({ commits, roster: baseRoster });
+    expect(result.foo).toEqual([{ handle: "anton1rsod", commits: 1 }]);
+    expect(result.bar).toEqual([{ handle: "anton1rsod", commits: 1 }]);
+  });
+
+  it("sorts contributors desc by commit count and truncates to TOP_CONTRIBUTORS_LIMIT", () => {
+    expect(TOP_CONTRIBUTORS_LIMIT).toBe(5);
+
+    // 6 contributors; only top 5 should appear.
+    const roster = Array.from({ length: 6 }, (_, i) => ({
+      name: `User ${i}`,
+      githubHandle: `user${i}`,
+      slug: `user-${i}`,
+    }));
+    const commits: GitCommit[] = roster.flatMap((m, i) =>
+      Array.from({ length: i + 1 }, (_, j) => ({
+        sha: `${m.githubHandle}-${j}`,
+        author: m.githubHandle,
+        date: "2026-01-01T00:00:00Z",
+        files: ["projects/foo/a.md"],
+      })),
+    );
+    const result = computeProjectContributions({ commits, roster });
+    expect(result.foo).toHaveLength(5);
+    expect(result.foo?.[0]?.commits).toBe(6); // user5 had 6 commits
+    expect(result.foo?.[4]?.commits).toBe(2); // user1 had 2 commits
+    expect(result.foo?.find((c) => c.handle === "user0")).toBeUndefined();
+  });
+
+  describe("H25: project-slug to commit-path mapping uses current path", () => {
+    it("attributes commits to the project slug from the current path", () => {
+      const commits: GitCommit[] = [
+        {
+          sha: "a1",
+          author: "anton1rsod",
+          date: "2026-01-01T00:00:00Z",
+          files: ["projects/old-name/file.md"],
+        },
+        {
+          sha: "a2",
+          author: "anton1rsod",
+          date: "2026-02-01T00:00:00Z",
+          files: ["projects/new-name/file.md"],
+        },
+      ];
+      const result = computeProjectContributions({
+        commits,
+        roster: baseRoster,
+      });
+      expect(result["old-name"]).toEqual([
+        { handle: "anton1rsod", commits: 1 },
+      ]);
+      expect(result["new-name"]).toEqual([
+        { handle: "anton1rsod", commits: 1 },
+      ]);
+    });
+  });
+
+  describe("H26: bot commits excluded from per-project aggregation", () => {
+    it("ignores warsaw-ai-bot commits even under per-project bucket", () => {
+      const commits: GitCommit[] = [
+        {
+          sha: "bot-1",
+          author: "warsaw-ai-bot",
+          date: "2026-01-01T00:00:00Z",
+          files: ["projects/foo/x.md"],
+        },
+        {
+          sha: "bot-2",
+          author: "warsaw-ai-bot[bot]",
+          date: "2026-01-01T00:00:00Z",
+          files: ["projects/foo/y.md"],
+        },
+      ];
+      const result = computeProjectContributions({
+        commits,
+        roster: baseRoster,
+      });
+      expect(result.foo).toBeUndefined();
+    });
+  });
+
+  it("drops commits authored by handles not on the roster", () => {
+    const commits: GitCommit[] = [
+      {
+        sha: "a1",
+        author: "ghost",
+        date: "2026-01-01T00:00:00Z",
+        files: ["projects/foo/x.md"],
+      },
+    ];
+    const result = computeProjectContributions({ commits, roster: baseRoster });
+    expect(result.foo).toBeUndefined();
+  });
+
+  it("ignores files outside projects/", () => {
+    const commits: GitCommit[] = [
+      {
+        sha: "a1",
+        author: "anton1rsod",
+        date: "2026-01-01T00:00:00Z",
+        files: ["docs/decisions/0001-foo.md", "community/members/bob.md"],
+      },
+    ];
+    const result = computeProjectContributions({ commits, roster: baseRoster });
+    expect(Object.keys(result)).toHaveLength(0);
   });
 });
