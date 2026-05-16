@@ -16,6 +16,69 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.2.0] — 2026-05-16
+
+**Self-service profile editor shipped (B + thin A + GBrain link tag-along).** Members sign in at `/me/edit`, edit `community/members/<slug>.md` body prose with markdown preview, save via `warsaw-ai-bot` with SHA-CAS optimistic locking + single retry. Project pages now surface top-5 contributors derived from git history (bot commits excluded). Optional outbound "Ask GBrain about this project" link on project pages, env-gated by `GBRAIN_BASE_URL`.
+
+### Added
+
+- **Profile editor at `/me/edit`** (spec §12.3) — session-derived slug (D1, cross-user URL structurally impossible); textarea + Preview tab; localStorage drafts client-side only; post-save UX surfaces 60-90s rebuild-lag from `lib/__generated__/content-snapshot.json`. Body-only edits; frontmatter (`name`, `github_handle`, `consented_at`) is read-only.
+- **`/api/preview-markdown`** auth-gated POST route (O1 lock) — same `lib/markdown.ts` + `SafeHtml` pipeline as SSR rendering.
+- **Top-N=5 contributors card on `/projects/[slug]`** (spec §12.4) — per-project aggregation from `git log`, sibling JSON at `lib/__generated__/project-contributions.json` (O2 lock).
+- **Outbound "Ask GBrain about this project" link** on `/projects/[slug]` (spec §12.5) — env-gated by `GBRAIN_BASE_URL` (optional). `target=_blank rel="noopener noreferrer"` (H27 prevents Referer leakage + reverse-tabnabbing). Zero state coupling.
+- **Edit-profile link on `/members/[slug]`** when viewing self — `Edit profile →` next to the Profile heading; `Edit your profile →` in the placeholder when prose is absent.
+
+### Hardenings — H14–H29 (16 IDs, continues v0.1.1's H1–H13)
+
+| ID | Property |
+|---|---|
+| H14 | Profile prose XSS-safe at render — existing `lib/markdown.ts` + `SafeHtml` pipeline; editor adds no parallel HTML-insertion site |
+| H15 | Editor is self-only by construction — session-derived slug; body-supplied slug field ignored |
+| H16 | SHA-CAS optimistic locking on save with single retry |
+| H17 | Member attribution preserved — `Co-Authored-By: <handle> <handle>@users.noreply.github.com` in every save commit |
+| H18 | Profile body size cap 64KB — Zod schema enforced |
+| H19 | Frontmatter integrity across edits — required keys preserved verbatim; missing keys → `frontmatter_corrupt` error (refuses to overwrite) |
+| H20 | Concurrent-edit UX — `refresh_needed` error → "Someone else updated this — refresh" message |
+| H21 | GDPR delete preserved — editor doesn't bypass `/api/me/delete`; deleted file → `/me/edit` redirects to `/consent` (D4) |
+| H22 | Markdown link sanitization — `rehype-sanitize defaultSchema` strips `javascript:` and other unsafe schemes |
+| H23 | Draft data stays local — localStorage only; `fetch` is never called on textarea typing |
+| H24 | Server logs don't leak profile body — log emits only `{slug, sha, success, error?}` |
+| H25 | Project-slug to commit-path mapping uses current path — renamed projects: pre-rename commits stay under old slug |
+| H26 | Bot commits excluded from per-project aggregation |
+| H27 | Referer not leaked to GBrain — `rel="noopener noreferrer"` + `target=_blank` |
+| H28 | Env-gated rendering — `AskGBrainButton` returns `null` when `GBRAIN_BASE_URL` is unset/empty |
+| H29 | Form CSRF protection — Auth.js JWT cookie + same-origin (auth() runs first in saveProfile) |
+
+### Changed
+
+- `lib/contributions.ts` — exports `computeProjectContributions`, `ProjectContribution`, `ProjectContributions`, `TOP_CONTRIBUTORS_LIMIT`.
+- `lib/content-snapshot.ts` — exports `getProjectContributions(slug)`.
+- `lib/env.ts` — accepts optional `GBRAIN_BASE_URL` (`z.string().url().optional()`).
+- `scripts/build-contributions.ts` — writes sibling `project-contributions.json` at build time.
+- `app/projects/[slug]/page.tsx` — renders `<TopContributors>` + `<AskGBrainButton>`.
+- `app/members/[slug]/page.tsx` — renders "Edit profile" link when viewing self.
+
+### Test infrastructure
+
+- `_test-profile-store.ts` + `/api/test-reset-profile` — in-memory SHA-CAS mock for E2E save flow (mirrors `_test-consent-store.ts` pattern).
+- `app/actions/save-profile.ts`, `app/me/edit/page.tsx`, `app/api/me/delete/route.ts` — `isE2EMockActive()` branches for E2E mode (gated on `NEXT_PUBLIC_E2E_MODE === "1"` AND `NODE_ENV !== "production"`).
+
+### Not changed
+
+- `lib/markdown.ts` audit boundary remains the single HTML-insertion site.
+- `proxy.ts` PUBLIC_PATHS — `/me/edit` is authenticated by default (no carve-out).
+- GDPR endpoints (`/api/me/{export,delete}`) — no API change.
+- §6.1 classification rule remains dormant (no DB; v0.3+ scope).
+- Health metric §2 goal 8 — still weekly active posters / total roster.
+
+### Migration / release
+
+- Set `GBRAIN_BASE_URL` on Vercel production + preview if GBrain prod URL is ready. Otherwise leave unset (button silently absent — graceful degradation).
+- See spec §12.9.2 ship-day runbook.
+- Tag: `community-platform-v0.2.0`.
+
+---
+
 ## [0.1.1] — 2026-05-04
 
 **Personal-invitation registration shipped.** Admin mints HMAC-signed `/onboard?token=…` URL → invitee redeems → `warsaw-ai-bot` writes 4 files atomically (roster + git-email-aliases + invitations ledger + member profile). Replaces the manual Telegram-then-PR roster backfill workflow.
