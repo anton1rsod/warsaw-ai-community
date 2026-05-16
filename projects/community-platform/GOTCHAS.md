@@ -112,6 +112,20 @@ To verify, `vercel env ls preview` should show the row, and `vercel env pull --e
 
 ---
 
+## 9. Transitive `@types/*` packages can implicitly fail Vercel builds
+
+**Symptom.** Vercel build error like `Cannot find module 'mod.d.ts'`, or `noImplicitAny` errors on imports from a package whose own `.d.ts` is missing from the published tarball. Local dev passes if `node_modules` cache predates the upstream change. Production / fresh Vercel install fails. Failure mode is silent for weeks — the build error doesn't surface unless you specifically watch deploy notifications.
+
+**Root cause.** Without an explicit `types` field in `tsconfig.json`, TypeScript auto-loads every `@types/*` package found in `node_modules`. Two failure modes observed:
+1. A package declares `"types": "mod.d.ts"` in its own `package.json` but ships no `.d.ts` in the tarball (e.g., `@grammyjs/types@3.26.0` is Deno-targeted; its `"prepare"` script generates types via `deno task build`, which Vercel doesn't run).
+2. A `@types/*` package gets pulled transitively (e.g., `@types/aws-lambda` via `@octokit/oauth-app`) and requires its own entry points that don't resolve.
+
+**Recovery.** Add `"types": ["node"]` to `compilerOptions` in `tsconfig.json`. Explicit `import type` statements still resolve normally; only implicit `@types/*` auto-loading is scoped out. If a specific type package needs auto-loading for the framework (e.g., `vitest/globals`), add it to the array (`["node", "vitest/globals"]`). For a package missing types from its tarball, write an ambient module shim (e.g., `src/types/<pkg>.d.ts` with the minimal surface you actually import) and remove it once upstream ships proper types.
+
+**First observed.** gbrain production builds broken 2026-05-01 → 2026-05-16 (15 days; daily Vercel error notification ignored as noise) via `@grammyjs/types@3.26.0` + transitive `@types/aws-lambda`. Fixed in PR #14 (commit `8eaa6b0`) with shim + tsconfig scope. Same scope-fix applied prophylactically to community-platform in v0.3 per spec §13.7 + H50/H51.
+
+---
+
 ## Meta — when to add a row
 
 A new gotcha earns a row when ALL of:
