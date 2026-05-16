@@ -159,6 +159,28 @@ describe("ProfileEditor", () => {
       const safehtml = screen.getByTestId("safehtml");
       expect(safehtml.innerHTML).toContain("Preview unavailable");
     });
+
+    it("renders 'Click Preview to render.' fallback when fetch rejects synchronously", async () => {
+      // fetchMock.mockRejectedValue causes loadPreview to throw — the finally
+      // block sets previewLoading=false, but previewHtml stays null.
+      // The unhandled rejection from `void loadPreview()` is intentional but
+      // would log to console in jsdom — suppress it.
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        .mockImplementation(() => {});
+      fetchMock.mockRejectedValue(new Error("network down"));
+
+      render(<ProfileEditor {...baseProps} />);
+      const previewTab = screen.getByRole("tab", { name: /preview/i });
+      fireEvent.click(previewTab);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Click Preview to render/i)).toBeInTheDocument();
+      });
+
+      consoleErrorSpy.mockRestore();
+    });
   });
 
   describe("post-save UX (rebuild-lag message)", () => {

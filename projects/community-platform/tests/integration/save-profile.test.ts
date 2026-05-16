@@ -1,5 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type * as GithubAppModule from "@/lib/github-app";
+import { mockProfileStore } from "@/app/actions/_test-profile-store";
 
 vi.mock("@/lib/auth", () => ({
   auth: vi.fn(),
@@ -350,6 +351,65 @@ Body.
       // if cross-origin POST were possible without the cookie, the function
       // would reach readFile before rejecting, which the "not_authenticated"
       // assertion above forbids.
+    });
+  });
+
+  describe("H21: E2E mock branch — isE2EMockActive() path", () => {
+    beforeEach(() => {
+      vi.stubEnv("NEXT_PUBLIC_E2E_MODE", "1");
+      mockProfileStore.reset();
+    });
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      mockProfileStore.reset();
+    });
+
+    it("seeds the store on first save (file doesn't exist yet)", async () => {
+      vi.mocked(auth).mockResolvedValue({ githubHandle: "anton1rsod" } as never);
+      vi.mocked(findMemberByHandle).mockReturnValue({
+        slug: "anton-safronov",
+        githubHandle: "anton1rsod",
+        name: "Anton Safronov",
+      } as never);
+
+      const result = await saveProfile(formData("First save."));
+      expect(result.ok).toBe(true);
+      const entry = mockProfileStore.get("anton-safronov");
+      expect(entry?.body).toBe("First save.");
+    });
+
+    it("CAS-writes on second save with matching SHA", async () => {
+      vi.mocked(auth).mockResolvedValue({ githubHandle: "anton1rsod" } as never);
+      vi.mocked(findMemberByHandle).mockReturnValue({
+        slug: "anton-safronov",
+        githubHandle: "anton1rsod",
+        name: "Anton Safronov",
+      } as never);
+
+      mockProfileStore.seed("anton-safronov", "Original.");
+      const result = await saveProfile(formData("Updated."));
+      expect(result.ok).toBe(true);
+      const entry = mockProfileStore.get("anton-safronov");
+      expect(entry?.body).toBe("Updated.");
+    });
+
+    it("returns refresh_needed when the store's SHA conflicts on both attempts", async () => {
+      vi.mocked(auth).mockResolvedValue({ githubHandle: "anton1rsod" } as never);
+      vi.mocked(findMemberByHandle).mockReturnValue({
+        slug: "anton-safronov",
+        githubHandle: "anton1rsod",
+        name: "Anton Safronov",
+      } as never);
+
+      // Seed the store
+      mockProfileStore.seed("anton-safronov", "Original.");
+      // Override `write` to always reject — simulates persistent CAS conflict
+      const writeSpy = vi.spyOn(mockProfileStore, "write").mockReturnValue(null);
+
+      const result = await saveProfile(formData("Doomed."));
+      expect(result).toEqual({ ok: false, error: "refresh_needed" });
+
+      writeSpy.mockRestore();
     });
   });
 });
