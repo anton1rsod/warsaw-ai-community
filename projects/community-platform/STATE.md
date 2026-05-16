@@ -2,15 +2,16 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-04 (chat-10 follow-ups: C + E + G + H DONE; B partial; D + F in PRs)
+**Last updated**: 2026-05-16 (chat-11 v0.2 brainstorm — spec §12 drafted on branch `chore/community-platform-v0-2-brainstorm`)
 
 ## Snapshot
 
 ```yaml
 last_green: 036695c                # main HEAD — merge of PR #2 (v0.1.1 release)
 last_code_only_green: 399e1a8      # security-reviewer M1+M2 fixes (last code-touching commit)
-phase: "v0.1.1 shipped"
-spec_sha: 740be8e                   # spec §11 + final-pass hardening fixes
+phase: "v0.2 brainstorm"            # spec §12 drafted on chore/community-platform-v0-2-brainstorm; PR pending
+spec_sha: 740be8e                   # spec §11 + final-pass hardening fixes (v0.1.1)
+v0_2_spec_sha: pending              # spec §12 brainstorm output — populated on PR merge
 plan_sha: 2201dd9                   # v0.1.1-plan.md (37 tasks across 3 phases)
 branch: main                        # post-merge; phase-10-followups is now historical
 tests: "475 unit/integration + 26 E2E"
@@ -96,7 +97,9 @@ branch_protection_main: "2026-05-04 — chat-10 Option B; legacy branch-protecti
 
 **Chat 10 handoff:** [`docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-1-1-shipped-followups-handoff.md). Menu of 8 small options (A–H) — Anton picks scope at chat start. **Chat 10 picked everything except A** (B + C + D + E + F + G + H). All seven done or merged-pending in chat 10.
 
-**Chat 11 handoff (DRAFTED):** [`docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md). v0.2 brainstorm scope: project / contribution tracking, profile editor UI, admin/CM-distinct UI, DB-return decision (§6.1). Per HANDOFF_PROTOCOL §8 sub-skill sequence — chat-11 invokes `superpowers:brainstorming`.
+**Chat 11 (IN FLIGHT):** v0.2 brainstorm via `superpowers:brainstorming`. Spec §12 drafted (`projects/community-platform/spec.md` lines 1075-1561, ~486 lines) on branch `chore/community-platform-v0-2-brainstorm`. Locked decisions Q1-Q5 + D1-D9: primary thrust = Profile editor (B) + thin (A) contribution surfacing + GBrain link tag-along; **stays 100% git** (§6.1 dormant); single v0.2.0 release; **16 hardenings H14–H29** (continues §11's H1–H13). PR pending after spec commit.
+
+**Chat 11 handoff:** [`docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md`](../../docs/specs/2026-05-04-community-platform-v0-2-brainstorm-handoff.md).
 
 **Pending follow-ups (mapped to chat-10 options):**
 - **A — Mark Spasonov backfill** (PR #3 open as Draft on `chore/mark-spasonov-backfill`): placeholders `@MARK_TELEGRAM_HANDLE_TBD` + `MARK_GIT_EMAIL_TBD` need real values from Mark out-of-band; mark Ready + merge. **Only chat-10 option NOT picked** — explicit Anton call.

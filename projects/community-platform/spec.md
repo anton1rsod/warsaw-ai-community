@@ -1069,3 +1069,493 @@ PR title: `release(community-platform): v0.1.1 invitation feature`. ~27 files to
 - [ ] Production smoke (§11.7) passes ALREADY-MEMBER path.
 - [ ] Mark Spasonov backfill PR opened (separate from release PR).
 - [ ] First real invitation sent; ledger entry confirmed.
+
+---
+
+## 12. v0.2.0 — Profile editor + contribution surfacing + GBrain link
+
+> **Scope:** v0.2.0 release. 100% git (per §5 + CONSTRAINTS line 10), no DB / KV. §6.1 classification rule stays dormant.
+> **Brainstormed:** 2026-05-16 via `superpowers:brainstorming` (chat 11).
+> **Closes:** §3 v0.1 non-goal *"Full profile editor UI … until the v0.2 editor ships"*; §6.8 GBrain *"Ask GBrain about this project"* link candidate; §11.7 future-migration row *"Self-service member updates (Q6 deferred); new /me/edit surface"*.
+> **Locked decisions:** Q1–Q5 + D1–D9 from chat-11; applied below.
+> **Versioning:** single v0.2.0 ship. Plan-writing (chat 12) has standing authority to re-split into v0.2.0 + v0.2.1 if implementation estimate exceeds 50 tasks OR 2 weeks elapsed wall-time; default split point if forced = (v0.2.0 = editor / v0.2.1 = contribution surfacing + GBrain link).
+> **Hardening ID namespace:** §12 uses **H14–H29** (continues from §11's H1–H13 to avoid cross-section grep collisions).
+
+### 12.1 Locked decisions
+
+| ID | Lock | Decision |
+|---|---|---|
+| Q1 | Primary thrust | (B) Profile editor + thin (A) project contribution surface + GBrain link tag-along |
+| Q2 | DB / KV return | NO. 100% git. §6.1 stays dormant. DB-trigger re-evaluated in v0.3 brainstorm contingent on observed scale/abuse |
+| Q3 | GBrain coupling | Outbound link, env-gated by `GBRAIN_BASE_URL`; no embed; no auth/token coupling |
+| Q4 | Hardenings | H14–H29 (see §12.6) |
+| Q5 | Versioning | Single v0.2.0 ship; plan-writing may re-split per trigger criteria above |
+| D1 | Editor page placement | `/me/edit` — session-derived slug (mirrors `/api/me/{export,delete}`) |
+| D2 | Editor scope | Prose body of `community/members/<slug>.md` ONLY; frontmatter is read-only |
+| D3 | Editor UX | Textarea + Preview tab (existing `lib/markdown.ts` + `SafeHtml`); no rich-text editor library |
+| D4 | File-not-exists edge case | Redirect to `/consent` to re-create stub; editor never auto-creates |
+| D5 | Project page surface | Top-N (N=5) contributors card on `/projects/[slug]` |
+| D6 | GBrain link placement | Header-level button on `/projects/[slug]` |
+| D7 | Health metric (§2 goal 8) | NO change; editor independent of posting cadence |
+| D8 | GDPR (§6.13) | NO endpoint change; `/api/me/export` re-fetches current prose at export time |
+| D9 | Launch-blockers | NONE (unlike v0.1.1 §9 risk 3) |
+
+**§6.1 clarification (forward-looking, applied this brainstorm):** the classification rule's *"drafts → DB territory"* line applies iff drafts must persist *cross-device*. v0.2 profile-editor drafts are single-device by intent (browser localStorage); rule stays dormant. Cross-device draft requirements (e.g., mobile + desktop) become a v0.3 DB-trigger candidate.
+
+### 12.2 Architecture
+
+v0.2.0 extends v0.1 + v0.1.1 surfaces; no new infrastructure. New env var: `GBRAIN_BASE_URL` (optional; controls GBrain link rendering).
+
+```
+┌──────────────────────────────────────────────────┐
+│  Existing v0.1.x surfaces (unchanged)            │
+│  • Auth (Auth.js v5 + GitHub OAuth, JWT)         │
+│  • proxy.ts (manual decode, PUBLIC_PATHS)        │
+│  • lib/markdown.ts + SafeHtml                    │
+│    (audit-bounded HTML-insertion site,           │
+│    CONSTRAINTS line 20)                          │
+│  • lib/github-app.ts (warsaw-ai-bot writer):     │
+│      readFile, writeFile, deleteFile,            │
+│      commitMultipleFiles, getHeadSha             │
+│  • lib/rbac.ts (4-role + isAdmin / isCM)         │
+│  • lib/content-snapshot.ts:                      │
+│      findMemberByHandle, findMemberBySlug,       │
+│      listProjectDetails, getContributions        │
+│  • lib/contributions.ts (4-count per member)     │
+│  • scripts/build-contributions.ts                │
+└─────────────────┬────────────────────────────────┘
+                  │
+                  ▼ v0.2.0 additions
+┌──────────────────────────────────────────────────┐
+│  /me/edit  (new ƒ Dynamic route)                 │
+│  • server component: derives slug from session   │
+│  • renders ProfileEditor (client component)      │
+│  • Save → server action saveProfile() → bot      │
+│    writeFile with HEAD-CAS retry                 │
+│  • Draft persistence: localStorage only          │
+└──────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────┐
+│  /projects/[slug]  (extended page)               │
+│  • TopContributors (build-time derived)          │
+│  • AskGBrainButton (env-gated; renders iff       │
+│    GBRAIN_BASE_URL set)                          │
+└──────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────┐
+│  /members/[slug]  (extended page)                │
+│  • "Edit profile" link rendered when isSelf      │
+│    (existing line 39 derivation)                 │
+└──────────────────────────────────────────────────┘
+```
+
+Three architectural pillars (analog to §11.1):
+
+1. **Editor is self-only by construction.** `/me/edit` derives `slug` from `session.githubHandle` → `slugify()` (existing `lib/slug.ts` helper; single-source per `lib/roster.ts:4` import) — never from URL, never from request body. Cross-user edit structurally impossible (H15). Same pattern v0.1 took for `/api/me/{export,delete}` (§6.13).
+2. **`warsaw-ai-bot` remains the only privileged writer.** Editor reuses existing `lib/github-app.ts:writeFile()` for the single-file commit (no need for `commitMultipleFiles` — only one path mutates per save). `getHeadSha()` provides the CAS anchor; the orchestrator does the single retry on 409.
+3. **No DB; localStorage covers draft autosave.** §6.1 dormancy preserved (Q2). Drafts are intentionally single-device per §12.1 clarification.
+
+**Alternatives considered + rejected:**
+- DB-backed drafts (Q2 → defer to v0.3+; localStorage covers single-device need at v0.2 scale)
+- Rich-text editor library (D3 → textarea + preview tab sufficient; library is audit overhead + bundle weight)
+- Roster-field editing (Telegram, link, focus) in same surface (D2 → roster.md stays governance-PR territory; ADR-able artifact)
+- Inline edit on `/members/[slug]` (D1 → dedicated `/me/edit` keeps cross-user URL impossible)
+- GBrain iframe embed (Q3 → outbound link only; zero state coupling)
+
+### 12.3 Profile editor (B)
+
+#### 12.3.1 Routing
+
+- New route: `app/me/edit/page.tsx`. Authenticated; not in `proxy.ts` `PUBLIC_PATHS` (standard auth gate applies via existing JWT decode + roster check).
+- ƒ Dynamic (server component reads `auth()`).
+- Slug derived: `slugify(session.githubHandle)` via existing `lib/slug.ts:slugify`.
+
+#### 12.3.2 Page behaviors
+
+| Pre-condition | Behavior |
+|---|---|
+| No session | `proxy.ts` redirects to `/login` (existing v0.1) |
+| Session, not on roster | `proxy.ts` redirects to `/no-access` (existing v0.1) |
+| Session, on roster, profile file exists | Render `ProfileEditor` initialized with current body |
+| Session, on roster, profile file MISSING | Redirect to `/consent` (D4) — re-consent re-creates stub via existing `app/actions/consent.ts`; editor never auto-creates files |
+
+#### 12.3.3 ProfileEditor component
+
+`app/components/ProfileEditor.tsx` (client component, `"use client"`).
+
+Three regions:
+
+1. **Edit tab** (default): `<textarea>` with raw markdown. Initial value from server-rendered prop OR localStorage draft if present (draft takes precedence with "Restored draft from <localized time>" banner). Native CSS resize handle.
+2. **Preview tab**: renders body via `renderMarkdownToHtml()` + `SafeHtml` (existing audit pipeline, CONSTRAINTS line 20). On-demand render (tab click), not live. Plan-writing locks the render mechanism: client-side rehype pipeline (no roundtrip) OR `/api/preview-markdown` (server-side; must be auth-gated and session-slug-derived, never body-slug-trusted). Either choice MUST go through the same `lib/markdown.ts` audit boundary.
+3. **Save / Cancel** action row. Save submits to `saveProfile` server action; Cancel reverts to last-saved or localStorage draft.
+
+Draft persistence (H23):
+
+- localStorage key: `warsaw-profile-draft-<slug>` (slug from server-rendered prop, NOT from session — slug is already self-derived server-side).
+- Restore on mount if draft exists; show banner.
+- Save handler clears the draft on success.
+- "Discard draft" button if draft exists; user-explicit clear.
+- Draft data never sent to the server except on Save submission. No autosave-to-server endpoint.
+
+#### 12.3.4 Save server action
+
+`app/actions/save-profile.ts`:
+
+1. `await auth()` → `session.githubHandle` (else `not_authenticated` → generic error; no info leak).
+2. `findMemberByHandle(handle)` → resolve `slug` (else `not_a_member` → generic error; mirrors v0.1.1 consent action).
+3. `SaveProfileSchema.safeParse(formData.get("body"))` → typed error if invalid (H18).
+4. `client().readFile(profilePath(slug))` → captures `{content, sha}`. If `null` (file missing), redirect to `/consent` (D4).
+5. Parse frontmatter from current file (using existing helper in `lib/content-snapshot.ts` or `lib/markdown.ts`; plan-writing locks the helper).
+6. Reject if required keys (`name`, `github_handle`, `consented_at`) missing (H19 — corrupt-file diagnosis path; refuse to save rather than silently rewrite).
+7. Compose new file content: `<original-frontmatter-block>\n\n<new-body>\n`.
+8. Commit message + Co-Authored-By trailer (§12.3.6).
+9. `client().writeFile(profilePath(slug), newContent, {message, expectedSha: <step-4-sha>})`.
+10. On `sha_conflict` (409): re-execute steps 4-7 (re-read file; re-validate frontmatter) → retry once. On second 409, return `REFRESH_NEEDED` error (H20).
+11. On success: `revalidatePath("/members/<slug>")`, `revalidatePath("/members")`. Return `{ok: true, savedAt: <iso8601>}`.
+12. Log discipline (H24): log only `{slug, sha, success: true|false, error?: "code"}`. Never log body content, raw error object, or stack trace contents.
+
+#### 12.3.5 Form schema
+
+```typescript
+// lib/profile-editor.ts
+import { z } from "zod";
+
+export const SaveProfileSchema = z.object({
+  body: z
+    .string()
+    .max(65_536, "Profile body too large (max 64KB)"), // H18 — DoS cap
+});
+
+export type SaveProfileInput = z.infer<typeof SaveProfileSchema>;
+```
+
+Allowed body characters: any UTF-8 string. No additional sanitization at submit time — `lib/markdown.ts` is the audit-bounded sanitization site at **render** time (CONSTRAINTS line 20). Markdown source is intentionally plaintext-stored; rendering is the single audit boundary.
+
+#### 12.3.6 Commit message + attribution
+
+```
+chore(community): update profile prose for @<gh-handle>
+
+Co-Authored-By: <gh-handle> <gh-handle@users.noreply.github.com>
+```
+
+H17 invariant: `Co-Authored-By` trailer includes member's GitHub handle so audit trails recover member-attributed edits (e.g., `git log --grep='@anton1rsod' community/members/`). Bot remains commit author (no commit signing required). Email format `<handle>@users.noreply.github.com` is GitHub's privacy-preserving no-reply convention.
+
+#### 12.3.7 Members page integration
+
+`app/members/[slug]/page.tsx` extension (existing file, lines 33-70 region):
+
+- When `isSelf` (existing derivation at line 39) AND profile body present: render "Edit profile" link to `/me/edit` adjacent to the Profile section heading.
+- When `isSelf` AND profile body absent: replace the current fallback text *"Members can edit `community/members/{slug}.md` directly via git"* (lines 67-69) with "Edit your profile →" link to `/me/edit`. For non-self viewers, the existing fallback text stays unchanged.
+- No other changes to `/members/[slug]/page.tsx`. `force-dynamic` stays (line 22).
+
+### 12.4 Project page contribution aggregation (thin A)
+
+#### 12.4.1 Build-time aggregation extension
+
+`lib/contributions.ts` extension:
+
+```typescript
+export interface ProjectContribution {
+  handle: string;
+  commits: number;
+}
+
+export interface ProjectContributions {
+  // projectSlug → top-N contributors, sorted desc by commits
+  [projectSlug: string]: readonly ProjectContribution[];
+}
+
+export const TOP_CONTRIBUTORS_LIMIT = 5;
+
+export interface ComputeProjectContributionsInput {
+  commits: readonly GitCommit[];
+  roster: readonly RosterMember[];
+}
+
+export function computeProjectContributions(
+  input: ComputeProjectContributionsInput,
+): ProjectContributions { /* ... */ }
+```
+
+Algorithm:
+
+- For each commit, derive the set of distinct project slugs touched: `commit.files.filter(f => f.startsWith("projects/")).map(f => f.split("/")[1]).filter(Boolean)` → de-duplicate to a `Set<string>` per commit (so one commit touching `projects/foo/{a,b,c}.md` counts once for `foo`, not three times).
+- For each (commit, projectSlug) pair, increment `result[projectSlug][handle]` (handle resolved via existing `parseGitLog` + `resolveHandle` chain in `scripts/build-contributions.ts`).
+- After all commits are processed, sort each project's contributor list desc by `commits` and slice to `TOP_CONTRIBUTORS_LIMIT` (D5; N=5).
+- Bot commits excluded via the existing `BOT_AUTHORS` set in `lib/contributions.ts` line 18 (H26).
+- Members not on the current roster are dropped from per-project counts (consistent with `computeContributions`).
+
+`scripts/build-contributions.ts` extension: writes the per-project bucket alongside the existing per-member counts. JSON shape (sibling vs. nested under a sentinel key is a plan-writing choice; example shown nested):
+
+```json
+{
+  "<handle>": { "projectCommits": N, "adrsFiled": N, "meetingsAttended": N, "statusPosts": N },
+  "_projectContributions": {
+    "<projectSlug>": [
+      { "handle": "<gh>", "commits": N }
+    ]
+  }
+}
+```
+
+The `_`-prefixed key segregates the structural field from the member-keyed map without forcing a new file. Plan-writing may instead choose `projects/community-platform/lib/__generated__/project-contributions.json` as a sibling file if cleaner.
+
+#### 12.4.2 TopContributors component
+
+`app/components/TopContributors.tsx`:
+
+```typescript
+interface TopContributorsProps {
+  contributors: readonly ProjectContribution[];
+}
+```
+
+Rendering:
+
+- Section heading "Top contributors" (`<h2>`).
+- Subtext "Derived from git history. Bot commits excluded." (matches `ContributionCard.tsx` pattern at line 20-22).
+- `<ol>` with member name + `@handle` (linked to `/members/<slug>` via slug derived from handle through roster lookup) + commit count.
+- Empty state: "No contributors yet" (when `contributors.length === 0` — possible for a fresh project folder with no committed files).
+
+Surface placement: `app/projects/[slug]/page.tsx` — added as a new section between the project metadata (lines 44-47) and the README section (lines 49+). Contributors appear above-the-fold to reinforce *who's working on what* — the original §1 problem statement.
+
+#### 12.4.3 Caveats
+
+- **H25** — aggregation uses *current* path. Renamed/moved project folders lose their pre-rename commits from the new path's aggregate. Documented as a known limitation; v0.3 may add a `community/projects/renames.yaml` shim if it bites in practice.
+- A commit that touches a single project's files AND top-level paths (e.g., `community/decisions/`) is counted once per project for that commit, not once per file. De-duplication is per (commit, project) pair, not per (commit, file) pair.
+
+### 12.5 GBrain link (Q3 thin tag-along)
+
+#### 12.5.1 AskGBrainButton component
+
+`app/components/AskGBrainButton.tsx`:
+
+```typescript
+interface AskGBrainButtonProps {
+  projectSlug: string;
+}
+```
+
+Rendering:
+
+- Reads `process.env.GBRAIN_BASE_URL` at server-render time (passed via prop from the page server component, NOT read in a client component — keeps env var server-only).
+- If `GBRAIN_BASE_URL` is unset OR empty: component returns `null` (H28).
+- If set: renders `<a>` element with:
+  - `href={\`${GBRAIN_BASE_URL}/?project=${encodeURIComponent(projectSlug)}\`}` (slug URL-encoded)
+  - `target="_blank"`
+  - `rel="noopener noreferrer"` (H27 — no Referer leakage)
+  - Visible text "Ask GBrain about this project →"
+  - Button-styled (matches existing CTA patterns).
+
+Surface placement: `app/projects/[slug]/page.tsx` — header region, immediately beneath the project title + path (lines 44-47 region). High visibility; pairs with the Top Contributors card as the page's two interactive affordances.
+
+#### 12.5.2 Env wiring
+
+`lib/env.ts` extension:
+
+```typescript
+GBRAIN_BASE_URL: z.string().url().optional(),
+```
+
+Optional; absence is the no-render default. Validated only if set (must be parsable URL — guards against `"placeholder"`-class values per GOTCHAS row 1).
+
+Vercel env-var setup (out-of-band, NOT a v0.2 implementation task):
+
+```bash
+# Production (when GBrain prod ships)
+echo "https://<gbrain-prod-url>" | vercel env add GBRAIN_BASE_URL production "" --no-sensitive --yes
+
+# Preview (matches GBrain preview URL or omit)
+echo "https://<gbrain-preview-url>" | vercel env add GBRAIN_BASE_URL preview "" --no-sensitive --yes
+```
+
+GOTCHAS row 8 applies: preview env add requires the empty positional `""` for `gitBranch=null`. CLI must run from repo root (`.vercel/` at root; `rootDirectory=projects/community-platform`).
+
+### 12.6 Threat model and hardenings (H14–H29)
+
+H14–H29 are the testable invariants every code change in v0.2 preserves. Each maps to a `describe("H<n>: …")` block per HANDOFF_PROTOCOL §4. Grep-verifiable at DoD:
+
+```bash
+grep -rn 'describe("H1[4-9]:\|describe("H2[0-9]:' \
+  projects/community-platform/tests \
+  projects/community-platform/lib \
+  projects/community-platform/app \
+  | sed 's/.*describe("\(H[0-9]\+\):.*/\1/' | sort -u | wc -l
+# Expected: 16
+```
+
+#### Profile editor (B) — H14–H24
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H14** | Profile prose XSS-safe at render | Existing `lib/markdown.ts` + `SafeHtml` pipeline (CONSTRAINTS line 20). Editor adds no new HTML-insertion site. | `lib/markdown.test.ts` (existing) + new `ProfileEditor.test.tsx` asserting raw HTML insertion stays gated behind `SafeHtml` (no React unsafe-HTML-injection prop outside the audit pipeline) |
+| **H15** | Editor is self-only by construction | `/me/edit` derives slug from `session.githubHandle` → `slugify()`. Server action does the same. Cross-user URL impossible. | `app/me/edit/page.test.tsx` (session A → slug A, never slug B); `save-profile.test.ts` (body's `slug` field, if present, ignored — session-slug used) |
+| **H16** | SHA-CAS optimistic locking on save | `writeFile({expectedSha})`; orchestrator retries ONCE on 409. | `save-profile.test.ts` (409-once-retry-success path; 409-twice-abort path) |
+| **H17** | Member attribution preserved in audit trail | Commit `Co-Authored-By: <gh-handle> <gh-handle@users.noreply.github.com>` trailer (§12.3.6). | `save-profile.test.ts` (snapshot of commit message format) |
+| **H18** | Profile body size cap (64KB) | `SaveProfileSchema.body.max(65_536)`. | `lib/profile-editor.test.ts` (schema rejects 65_537-byte body; accepts 65_536-byte body) |
+| **H19** | Frontmatter integrity across edits | Server action reads original frontmatter, preserves required keys verbatim; rejects save if required keys absent. | `save-profile.test.ts` (required-keys-present pass; required-keys-missing reject) |
+| **H20** | Concurrent-edit UX | On 409 after retry, return `REFRESH_NEEDED`; UI shows "Someone else updated this — refresh." | `save-profile.test.ts` + ProfileEditor RTL on error message |
+| **H21** | GDPR delete preserved | `/api/me/delete` (existing) still removes the profile file; editor doesn't bypass. | Extend `e2e/gdpr.spec.ts` (existing E2E surface — `/api/me/delete` has no unit test in v0.1.x) with edit-then-delete sequence |
+| **H22** | Markdown link sanitization | Existing `lib/markdown.ts` strips unsafe URI schemes at render time. Editor inherits via pipeline. | `lib/markdown.test.ts` (existing); verify Preview tab uses the same pipeline |
+| **H23** | Draft data stays local | localStorage key only; no server-side draft endpoint; no draft data logged. | `ProfileEditor.test.tsx` (no `fetch` calls on typing; localStorage round-trip works); grep-check for "draft" in server logs at code-review |
+| **H24** | Server logs don't leak profile body | `save-profile` logs only `{slug, sha, success, error?: code}`. Mock logger; assert `body` never appears in log args. | `save-profile.test.ts` (mock logger; spy assertions on every log call) |
+
+#### Project page contribution surface (thin A) — H25–H26
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H25** | Project-slug to commit-path mapping uses current path | `computeProjectContributions` keys by current path; renamed folders' pre-rename commits dropped from the new path. Documented behavior. | `lib/contributions.test.ts` (fixture extended with a rename scenario; assert pre-rename commits NOT in post-rename bucket) |
+| **H26** | Bot commits excluded from per-project aggregation | Same `BOT_AUTHORS` set as existing `computeContributions` (line 18). Verify invariant holds under path-bucket. | `lib/contributions.test.ts` (commit by `warsaw-ai-bot` author with `projects/foo/x.md` → not in `_projectContributions[foo]`) |
+
+#### GBrain link — H27–H28
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H27** | Referer not leaked to GBrain | `rel="noopener noreferrer" target="_blank"` on link element | `AskGBrainButton.test.tsx` (assert rel attribute + target on rendered `<a>`) |
+| **H28** | Env-gated rendering | Component returns `null` when `GBRAIN_BASE_URL` unset/empty | `AskGBrainButton.test.tsx` (env unset → null; env empty string → null; env set → renders) |
+
+#### Cross-cutting — H29
+
+| ID | Invariant | Defender | Test surface |
+|---|---|---|---|
+| **H29** | Form CSRF protection | Auth.js JWT cookie + same-origin (Next.js server-action default). Document chain; test doesn't regress under future Next/Auth upgrade. | `save-profile.test.ts` (integration: cross-origin POST rejected by Next.js boundary) |
+
+### 12.7 Components / files (~25 touched)
+
+#### New TS source files (6)
+
+| Path | Responsibility | Coverage gate |
+|---|---|---|
+| `app/me/edit/page.tsx` | Server component. Resolves slug from session; reads existing profile; handles file-missing → `/consent` redirect. ƒ Dynamic. | 80% |
+| `app/components/ProfileEditor.tsx` | Client component. Textarea + Preview tab; localStorage drafts; save state. | **100% (strict-list)** |
+| `app/actions/save-profile.ts` | Server action. Reads file, preserves frontmatter, writes via warsaw-ai-bot with HEAD-CAS; revalidates. | **100% (strict-list)** |
+| `lib/profile-editor.ts` | Pure helpers: `SaveProfileSchema`, frontmatter-preserving compose, typed error code enum. ~80 lines. | **100% (strict-list)** |
+| `app/components/TopContributors.tsx` | Server-renderable list of contributors per project. | **100% (strict-list)** |
+| `app/components/AskGBrainButton.tsx` | Env-gated outbound link. | **100% (strict-list)** |
+
+#### Modified TS files (7)
+
+| Path | Change |
+|---|---|
+| `lib/contributions.ts` | Add `computeProjectContributions`, `ProjectContributions`, `ProjectContribution`, `TOP_CONTRIBUTORS_LIMIT` exports. |
+| `scripts/build-contributions.ts` | Compute + write extended JSON shape (or sibling file per plan-writing decision). |
+| `lib/content-snapshot.ts` | Surface `getProjectContributions(slug)` consumer helper; extend snapshot JSON type. |
+| `lib/env.ts` | Add `GBRAIN_BASE_URL: z.string().url().optional()`. |
+| `app/members/[slug]/page.tsx` | When `isSelf`, render "Edit profile" link to `/me/edit` (replaces line 67-69 fallback for self viewers). |
+| `app/projects/[slug]/page.tsx` | Add `<TopContributors>` and `<AskGBrainButton>` sections. |
+| `app/api/me/export/route.ts` | (Verify-only — re-fetch profile body at export time per D8; if existing implementation already re-fetches at request time, no diff.) |
+
+#### Test files (8)
+
+| Path | Coverage focus |
+|---|---|
+| `lib/profile-editor.test.ts` | **100%.** Schema, frontmatter preservation, compose snapshot, error-code typing. |
+| `app/actions/save-profile.test.ts` | **100%.** Session derivation, file-missing redirect, CAS happy + 409-once + 409-twice-abort, commit message snapshot, revalidate calls, log discipline. |
+| `app/me/edit/page.test.tsx` | RTL: non-roster → /no-access; roster + file → form; roster + no file → /consent. |
+| `app/components/ProfileEditor.test.tsx` | **100%.** Edit/Preview tab toggle; localStorage restore + clear; save handler; cancel handler; Discard draft button. |
+| `lib/contributions.test.ts` (extension) | `computeProjectContributions` happy, per-commit dedup, bot exclusion (H26), rename caveat (H25), top-N truncation. |
+| `app/components/TopContributors.test.tsx` | **100%.** Empty list; full list; N-truncated list; links to `/members/<slug>`. |
+| `app/components/AskGBrainButton.test.tsx` | **100%.** Env unset → null; env empty string → null; env set → renders with correct attributes. |
+| `e2e/profile-editor.spec.ts` | Playwright: 6 scenarios (§12.8). |
+
+#### Modified data/config files
+
+| Path | Change |
+|---|---|
+| `.env.example` | Add `GBRAIN_BASE_URL=` placeholder with comment ("Leave unset to hide the 'Ask GBrain' button on /projects/[slug] pages"). |
+| `CHANGELOG.md` | v0.2.0 entry. |
+| `STATE.md` | Bump `phase` to "v0.2.0 shipped"; add `last_verified` rows. |
+
+#### Routing + middleware
+
+| Path | Change |
+|---|---|
+| `proxy.ts` | NO change. `/me/edit` is authenticated (standard route handling); not in `PUBLIC_PATHS`. |
+
+### 12.8 Testing strategy
+
+#### Unit tests
+
+Per §12.7 table — every new source file at 100% (strict-list); extensions at ≥80% lines + branches.
+
+**Hardening-specific tests (grep-verifiable):** every H14–H29 has a `describe("H<n>: <invariant>", …)` block in a relevant test file. DoD verifies the grep command in §12.6 returns 16 unique IDs.
+
+#### Integration tests
+
+- `save-profile.test.ts` mocks Octokit (existing `tests/fixtures/repo/` pattern from v0.1.1); asserts full call sequence (`readFile` → frontmatter parse → compose → `writeFile`); covers HEAD-CAS retry once.
+- Build-time integration: `scripts/build-contributions.ts` against a fixture repo with synthetic commits; assert extended JSON shape + correct per-project bucketing.
+
+#### E2E (Playwright)
+
+New scenarios (build on existing v0.1.1 E2E pattern in `e2e/`):
+
+1. **Roster member edits profile** → save → reload `/members/<slug>` → body updated.
+2. **Concurrent edit conflict** — dual-tab; second-save sees `REFRESH_NEEDED` → UI message.
+3. **Discard draft** — type body → navigate away → return → draft restored → click Discard → editor empty → reload → still empty.
+4. **GDPR delete after edit** — edit profile → delete via `GdprPanel` → file removed → next `/me/edit` visit → `/consent` redirect (D4 / H21).
+5. **Project page top contributors** — visit `/projects/community-platform` → see anton1rsod with N commits in Top Contributors section.
+6. **GBrain link gating** — with `GBRAIN_BASE_URL` set in test env, link renders with correct attributes; without env, no link.
+
+Recommend `pnpm e2e --retries=2` for closeout per CONSTRAINTS line 28 (Next 16 cold-start flakes).
+
+#### Coverage targets
+
+Per spec §8 + CONSTRAINTS line 27:
+
+- Overall: 80% lines + branches.
+- Strict-list additions (§12.7): 100% lines; branches ≥80% where defensive branches are unreachable post-guard (same accepted gap as v0.1.1 `lib/invitations.ts` per STATE.md line 37-38).
+
+#### Reviewer agents
+
+Per CONSTRAINTS lines 40-46:
+
+- **`security-reviewer`** runs at end of editor implementation (`save-profile.ts` is a privileged-write surface; warrants explicit audit even if monthly cap is generous).
+- **`typescript-reviewer` + `code-reviewer`** dispatched at v0.2.0 closeout if monthly Claude cap allows; otherwise CONSTRAINTS self-review checklist (lines 50-59) is the standing fallback per Phase 6 pattern.
+
+### 12.9 Migration / release notes
+
+#### 12.9.1 Pre-release tasks
+
+NONE that are launch-blocking (D9). Optional:
+
+- Set `GBRAIN_BASE_URL` on Vercel production + preview if GBrain prod URL is ready by v0.2.0 ship date. Otherwise leave unset — `AskGBrainButton` renders `null`, and the env var can be set later without a platform redeploy.
+- Verify v0.1.1 invitation flow has propagated profile files for 5+ members beyond Anton + Mark (cosmetic — editor still works at any roster size).
+
+#### 12.9.2 Ship-day runbook
+
+1. Merge v0.2.0 PR (chat-12 plan's implementation).
+2. Tag `community-platform-v0.2.0`.
+3. Vercel auto-deploys (existing git-push integration; see GOTCHAS rows 1-2).
+4. Smoke test:
+   - Sign in as Anton → `/me/edit` → save a no-op body → verify commit lands on `main` → `/members/anton-safronov` shows updated body.
+   - `/projects/community-platform` → Top Contributors card renders → Ask GBrain button renders iff `GBRAIN_BASE_URL` set.
+5. Update `STATE.md`: `phase` → "v0.2.0 shipped", new `tag` row, refresh `last_verified` rows.
+6. Append CHANGELOG entry.
+7. Memory entry: `project_community_platform_v0_2_ship.md` with timeline, PR #, tag SHA.
+
+#### 12.9.3 Forward-looking migration notes (v0.3+, NOT in v0.2 scope)
+
+| Trigger | Migration |
+|---|---|
+| Cross-device drafts requested | §6.1 activates; drafts move to KV (per-handle, per-slug, 24h TTL); `ProfileEditor` reads + writes via fetch instead of localStorage |
+| Image uploads in profile prose | New `/api/me/upload` endpoint + Vercel Blob (or similar); H23 extended to "no image data in localStorage" |
+| Telegram handle field-level edit | Roster.md row mutation surface; needs admin/CM workflow (Option C territory) |
+| Rate-limit observed abuse | §6.1 activates; KV per-IP throttle middleware on `save-profile` action |
+| Per-project commit path-history shim | New `community/projects/renames.yaml` consulted by `computeProjectContributions` to merge pre/post-rename commits |
+| Draft autosave for status posts (consistency) | Same draft pattern + storage scope; reusable abstraction |
+| Cross-coupling beyond outbound links (e.g., GBrain Q&A embed) | Architectural ADR before any iframe / SSO / API integration; outbound link is the v0.2 precedent |
+| Admin / CM-distinct UI (Option C deferred from chat-11) | v0.2.1 / v0.3 brainstorm; roster editor, member-ops UI, moderation surfaces |
+
+### 12.10 Definition of Done for v0.2.0
+
+- [ ] All §12 sections committed (this section).
+- [ ] All ~25 files implemented per §12.7.
+- [ ] All 16 hardenings (H14–H29) tested with `H<n>:` prefix; grep (§12.6) returns 16 unique IDs.
+- [ ] Coverage gates met (80% overall, 100% on §12.7 strict-list additions).
+- [ ] E2E green with `--retries=2`.
+- [ ] §12.9.2 ship-day runbook executed.
+- [ ] PR merged to `main`; `CHANGELOG.md`, `STATE.md` updated.
+- [ ] Tag `community-platform-v0.2.0` pushed.
+- [ ] Production smoke (§12.9.2 step 4) passes.
+- [ ] Memory entry `project_community_platform_v0_2_ship.md` written.
