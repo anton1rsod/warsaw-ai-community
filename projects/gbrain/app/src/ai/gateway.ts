@@ -80,12 +80,20 @@ export async function answer(input: AnswerInput): Promise<AiResult> {
 
 /**
  * Embed a query via gemini-embedding-001. 768-dim output.
- * Per spec §3.1.
+ * Per spec §3.1 + ADR-0008. Gemini's default output is 3072 dims (the model's
+ * full Matryoshka-trained size); we explicitly request 768 to match the schema
+ * pin. Truncation is safe: the model is trained such that the first N dims of
+ * the 3072-dim vector are a valid lower-dim representation (MRL).
  */
 export async function embed(text: string): Promise<number[]> {
   const result = await aiEmbed({
     model: getGoogle().embedding("gemini-embedding-001"),
-    value: text
+    value: text,
+    providerOptions: {
+      google: {
+        outputDimensionality: 768
+      }
+    }
   });
   return result.embedding;
 }
