@@ -30,6 +30,7 @@ const PUBLIC_PATHS = new Set<string>(
         "/api/test-reset-status",
         "/api/test-reset-consent",
         "/api/test-reset-invitations",
+        "/api/test-reset-profile",
         "/api/test-mint-expired",
       ],
 );
