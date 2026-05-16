@@ -100,6 +100,9 @@ export function ProfileEditor({
       } else {
         setPreviewHtml("<p>Preview unavailable.</p>");
       }
+    } catch {
+      // Network error / fetch rejection — surface the same fallback as HTTP errors.
+      setPreviewHtml("<p>Preview unavailable.</p>");
     } finally {
       setPreviewLoading(false);
     }
@@ -182,15 +185,13 @@ export function ProfileEditor({
         />
       ) : (
         <div className="mt-3 min-h-[20rem] rounded border p-3">
-          {previewLoading ? (
+          {previewLoading || previewHtml === null ? (
             <p className="text-sm text-neutral-500">Loading preview…</p>
-          ) : previewHtml ? (
+          ) : (
             <SafeHtml
               html={previewHtml}
               className="prose prose-neutral dark:prose-invert max-w-none"
             />
-          ) : (
-            <p className="text-sm text-neutral-500">Click Preview to render.</p>
           )}
         </div>
       )}
