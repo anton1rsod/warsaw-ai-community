@@ -8,8 +8,16 @@ import {
 } from "@/lib/github-app";
 import { parseFrontmatter } from "@/lib/profile-editor";
 import { ProfileEditor } from "@/app/components/ProfileEditor";
+import { mockProfileStore } from "@/app/actions/_test-profile-store";
 
 export const dynamic = "force-dynamic";
+
+function isE2EMockActive(): boolean {
+  return (
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_E2E_MODE === "1"
+  );
+}
 
 function buildClient(): GitHubAppClient {
   return createGitHubApp({
@@ -34,7 +42,23 @@ export default async function MeEditPage(): Promise<React.JSX.Element> {
   }
 
   const path = `community/members/${member.slug}.md`;
-  const file = await buildClient().readFile(path);
+
+  let file: { content: string; sha: string } | null;
+  if (isE2EMockActive()) {
+    const entry = mockProfileStore.get(member.slug);
+    if (!entry) {
+      file = null;
+    } else {
+      // Compose a synthetic file with frontmatter (parseFrontmatter strips it).
+      const frontmatter =
+        `---\nname: ${member.name}\ngithub_handle: ${member.githubHandle}\n` +
+        `consented_at: 2026-01-01T00:00:00.000Z\n---\n\n`;
+      file = { content: frontmatter + entry.body, sha: entry.sha };
+    }
+  } else {
+    file = await buildClient().readFile(path);
+  }
+
   if (!file) {
     redirect("/consent");
   }

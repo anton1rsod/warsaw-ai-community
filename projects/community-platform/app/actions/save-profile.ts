@@ -17,6 +17,14 @@ import {
   type SaveErrorCode,
   type SaveResult,
 } from "@/lib/profile-editor";
+import { mockProfileStore } from "./_test-profile-store";
+
+function isE2EMockActive(): boolean {
+  return (
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_E2E_MODE === "1"
+  );
+}
 
 function profilePath(slug: string): string {
   return `community/members/${slug}.md`;
@@ -55,6 +63,23 @@ async function attemptSave(
   newBody: string,
   handle: string,
 ): Promise<AttemptResult> {
+  if (isE2EMockActive()) {
+    // Extract slug from path: "community/members/<slug>.md"
+    const slug = path
+      .replace("community/members/", "")
+      .replace(".md", "");
+    const current = mockProfileStore.get(slug);
+    if (!current) {
+      // Seed with the new body — simulates first-time save through a
+      // freshly consented member's file. seed() always returns the entry.
+      const seeded = mockProfileStore.seed(slug, newBody);
+      return { kind: "ok", sha: seeded.sha };
+    }
+    const written = mockProfileStore.write(slug, newBody, current.sha);
+    if (!written) return { kind: "conflict" };
+    return { kind: "ok", sha: written.sha };
+  }
+
   const file = await gh.readFile(path);
   if (!file) return { kind: "error", error: "file_missing" };
 
