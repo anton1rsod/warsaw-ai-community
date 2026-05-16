@@ -34,7 +34,7 @@ Don't pre-read 1–6 on every turn. Read by need.
 - `code-review:code-review` — after substantive code changes.
 - `claude-md-management:claude-md-improver` — when CLAUDE.md drifts.
 
-**Don't pattern-match these (wrong domain for this repo):** SEO/blog/ads/copywriting/sales-enablement/CRO/marketing-psychology/social-content/email-sequence/content-strategy/referral-program/churn-prevention/free-tool-strategy/pricing-strategy/ab-test-setup/analytics-tracking/programmatic-seo/site-architecture/schema-markup, and language-stack skills for Django/Laravel/Spring Boot/Kotlin/Rust/Go/C++/Flutter/Perl. **Stack is Next.js + TypeScript only** (community-platform + gbrain).
+**Skill cluster layout** (managed at `~/.claude/`): universal skills live in `~/.claude/skills/` and load every session; domain-specific clusters (marketing/ads/blog/seo/cro) live in `~/.claude/skills-library/` and are **unloaded by default** — symlink them into a project's `.claude/skills/` only when that project actually needs them. **Stack is Next.js + TypeScript only** (community-platform + gbrain), so the marketing library should never be linked here. See `docs/playbooks/claude-skill-clusters.md` for the full layout and per-project activation commands.
 
 ## Conventions
 
