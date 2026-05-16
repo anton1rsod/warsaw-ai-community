@@ -34,7 +34,7 @@ Don't pre-read 1–6 on every turn. Read by need.
 - `code-review:code-review` — after substantive code changes.
 - `claude-md-management:claude-md-improver` — when CLAUDE.md drifts.
 
-**Skill cluster layout** (managed at `~/.claude/`): universal skills live in `~/.claude/skills/` and load every session; domain-specific clusters (marketing/ads/blog/seo/cro) live in `~/.claude/skills-library/` and are **unloaded by default** — symlink them into a project's `.claude/skills/` only when that project actually needs them. **Stack is Next.js + TypeScript only** (community-platform + gbrain), so the marketing library should never be linked here. See `docs/playbooks/claude-skill-clusters.md` for the full layout and per-project activation commands.
+**Skill cluster layout** (managed at `~/.claude/`): universal skills live in `~/.claude/skills/` and load every session; domain-specific clusters (marketing/ads/blog/seo/cro) live in `~/.claude/skills-library/` and are **unloaded by default** — symlink them into a project's `.claude/skills/` only when that project actually needs them. **Stack is Next.js + TypeScript only** (community-platform + gbrain), so the marketing library should never be linked here. See `docs/playbooks/claude-eager-load-surfaces.md` for the full layout (skills + commands) and per-project activation commands.
 
 ## Conventions
 
