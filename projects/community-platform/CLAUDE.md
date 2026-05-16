@@ -24,11 +24,28 @@ Skip `CHANGELOG.md` unless you specifically need history. CHANGELOG is canonical
 
 ## What this project is
 
-`projects/community-platform/` is the Warsaw AI Community's Lite-slice platform — auth + member directory + project / decision / meeting readers + status updates + GDPR mechanisms + admin health metric. v0.1 target: ship a working preview that 19 roster members can use to authenticate, browse community state, and post weekly status updates.
+`projects/community-platform/` is the Warsaw AI Community's Lite-slice platform — auth + member directory + project / decision / meeting readers + status updates + GDPR mechanisms + admin health metric + invitation self-registration. **v0.1.1 shipped 2026-05-04**; v0.2 brainstorm queued (see `STATE.md` §Next chat).
 
-Stack: Next.js 16 + Vercel + GitHub OAuth + GitHub App (`warsaw-ai-bot`) for git writes. Storage: 100% git for v0.1.
+Stack: Next.js 16 + Vercel + GitHub OAuth + GitHub App (`warsaw-ai-bot`) for git writes. Storage: 100% git.
 
-See `README.md` for the project map; see `spec.md` for §1–§10 requirements; see `CONSTRAINTS.md` for what's locked.
+See `README.md` for the project map; see `spec.md` for §1–§11 requirements; see `CONSTRAINTS.md` for what's locked.
+
+## Commands (pnpm, run from this directory)
+
+- `pnpm tsc --noEmit` — typecheck. **Use this, NOT `pnpm build`, while a dev server is running.**
+- `pnpm test` — unit + integration (vitest).
+- `pnpm test:e2e` — Playwright.
+- `pnpm lint`.
+- `pnpm dev` — local Next.js dev server.
+
+## Skill choice (per scope)
+
+- New scope / "should we" / v0.2 features → `superpowers:brainstorming`.
+- Spec → plan transition → `superpowers:writing-plans`.
+- Plan execution (independent tasks) → `superpowers:subagent-driven-development`.
+- Bug / test failure → `superpowers:systematic-debugging`.
+- After substantive code changes → `code-review:code-review`.
+- Before claiming a phase done → `superpowers:verification-before-completion`.
 
 ## Update protocol
 
