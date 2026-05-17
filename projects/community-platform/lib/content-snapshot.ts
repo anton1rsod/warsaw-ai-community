@@ -1,11 +1,12 @@
-import type { RosterMember, MemberProfile } from "@/lib/roster";
-import type { ProjectDetail } from "@/lib/projects";
-import type { Decision } from "@/lib/decisions";
-import type { Meeting } from "@/lib/meetings";
-import type { Contributions, ProjectContribution } from "@/lib/contributions";
-import snapshotJson from "@/lib/__generated__/content-snapshot.json";
-import contributionsJson from "@/lib/__generated__/contributions.json";
-import projectContributionsJson from "@/lib/__generated__/project-contributions.json";
+import type { RosterMember, MemberProfile } from "./roster";
+import type { ProjectDetail } from "./projects";
+import type { Decision } from "./decisions";
+import type { Meeting } from "./meetings";
+import type { Contributions, ProjectContribution } from "./contributions";
+import type { Event } from "./events";
+import snapshotJson from "./__generated__/content-snapshot.json";
+import contributionsJson from "./__generated__/contributions.json";
+import projectContributionsJson from "./__generated__/project-contributions.json";
 
 export interface MemberWithProfile extends RosterMember {
   profile: MemberProfile | null;
@@ -109,8 +110,6 @@ export function getProjectContributions(
 ): readonly ProjectContribution[] {
   return projectContributions[projectSlug] ?? [];
 }
-
-import type { Event } from "./events";
 
 export function listEventsFromSnapshot(): readonly Event[] {
   return ((snapshot as unknown as { events?: readonly Event[] }).events ?? []) as readonly Event[];
