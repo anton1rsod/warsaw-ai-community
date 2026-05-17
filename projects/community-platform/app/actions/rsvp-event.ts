@@ -93,9 +93,14 @@ function commitMessage(
   desired: "going" | "interested" | "none",
   eventSlug: string,
 ): string {
+  // Defense-in-depth: strip CR/LF from session-derived handle before
+  // interpolating into the commit message trailer. GitHub already enforces
+  // alphanumeric+hyphen on login, but the injection boundary should not rely
+  // on an external party's invariant.
+  const safeHandle = handle.replace(/[\r\n]/g, "");
   return (
-    `chore(community): @${handle} RSVP ${desired} "${eventSlug}"\n\n` +
-    `Co-Authored-By: ${handle} <${handle}@users.noreply.github.com>\n`
+    `chore(community): @${safeHandle} RSVP ${desired} "${eventSlug}"\n\n` +
+    `Co-Authored-By: ${safeHandle} <${safeHandle}@users.noreply.github.com>\n`
   );
 }
 
