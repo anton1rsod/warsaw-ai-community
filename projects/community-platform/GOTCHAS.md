@@ -138,6 +138,30 @@ To verify, `vercel env ls preview` should show the row, and `vercel env pull --e
 
 ---
 
+## 11. Vercel Free-tier 100/day deploy rate limit silently swallows merge-triggered auto-deploys
+
+**Symptom.** A `git push` to a Vercel-watched branch (preview or production) succeeds to GitHub but no new deploy appears in `vercel ls`. No build runs, no preview URL, no production alias swap. Production keeps serving the previous deploy. A `pnpm dlx vercel redeploy` / `vercel --prod` attempt returns `Error: Resource is limited - try again in 24 hours (more than 100, code: "api-deployments-free-per-day"). (402)`. The Vercel UI's "Usage / Last 30 days" panel shows ALL resource metrics (Edge Requests, Function Invocations, ISR Writes, Fast Origin Transfer, Fluid CPU, etc.) at 1-2% of monthly cap — looks healthy. The actual rate-limit signal is buried in a small red "Rate Limit Reached" banner bottom-left of the project sidebar: *"Your team exceeded the rate limit for API: Deployments per day (Free)."* Two separate counters: the Usage panel measures monthly resource consumption (totally fine); the rate limit is a daily counter on the `POST /v13/deployments` API that has zero visibility in the Usage tile.
+
+**Root cause.** Vercel Free (Hobby) plan limits new deploy creation to **100 per day per team**, counted by midnight UTC. Every `git push` to a Vercel-watched branch fires exactly one deploy. With two Vercel projects (`warsaw-ai-community-platform` + `warsaw_ai_community_gbrain`) both watching the same monorepo, **each push triggers ~2 deploys in parallel**. A normal feature-development day with subagent-driven shipping (35-task v0.3 release) generates 40+ commits across feature + hotfix branches, easily breaching 100. The 402 is silently absorbed by the GitHub-integration webhook — no email alert, no GitHub PR comment about the failed Vercel build, no notification anywhere except the dashboard banner.
+
+**Recovery.** Three options, in order of preference:
+
+1. **`pnpm dlx vercel promote <preview-url> --yes`** — promotes an already-built preview deploy to production. The build artifact is reused; **no new build runs, so this does NOT count against the 100/day limit.** Pattern used to ship v0.3.1 after the merge auto-deploy was silently rate-limited: `pnpm dlx vercel promote https://warsaw-ai-community-platform-<preview-hash>-anton-9351s-projects.vercel.app --yes` returned `Successfully created new deployment` and the production alias swapped within 30s. **This is the canonical hotfix path when the limit hits.**
+
+2. **Wait for the limit to reset** (midnight UTC). Cheap, but blocks development for hours. Only viable if there's no urgency.
+
+3. **Upgrade to Pro** ($20/mo/member) — raises the limit to 6000/day per team (effectively unlimited at our cadence) and unlocks longer builds, password-protected previews, and better analytics. For this project's velocity (35-task v0.3 + frequent hotfixes), this is the right structural fix once the rate-limit pattern recurs.
+
+**Forward-defense / monitoring.**
+- No reliable real-time API for the daily counter. The red banner is the only signal.
+- Rough proxy: `pnpm dlx vercel ls 2>&1 | grep -E "Ready|Building|Queued" | wc -l` — counts recent deploys (covers ~50 most recent; multiply mental estimate accordingly).
+- Operational habit to delay the limit: **squash trivial fix commits before pushing.** Single-line backfills (e.g., test describe-prefix backfill, regenerated artifact churn, typo fixes) each burn a deploy slot otherwise.
+- Don't rely on PR previews when over the limit. Hit the existing preview URL directly if you need to test before merging.
+
+**First observed.** v0.3.1 hotfix push (2026-05-17, commit `e720268`). The day had already consumed 100 deploys across v0.3.0 implementation (Phases 1-4: ~35 pushes × 2 projects = ~70) + v0.3.1 hotfix branch + an in-flight gbrain hotfix branch + the v0.3.0 PR merge production deploy. The PR #21 merge to main silently no-op'd — `vercel ls` showed no new deploy with a SHA later than the merge, and the production alias kept pointing at the pre-merge build. Diagnosed in ~5 minutes via `pnpm dlx vercel redeploy` → 402 with `api-deployments-free-per-day` error code. Fixed via `vercel promote` of the PR #21 preview (`ljxhqz5ce` → production deploy `ivbncdcvq`), which bypassed the limit and shipped the v0.3.1 markup within 1 minute. Total cost ~30 minutes including the initial confusion about why the smoke kept returning v0.3.0 markup with `age: 1371s` on `x-vercel-cache: HIT`.
+
+---
+
 ## Meta — when to add a row
 
 A new gotcha earns a row when ALL of:
