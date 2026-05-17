@@ -16,6 +16,51 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [Unreleased] — v0.3.0 Phase 1 (Foundation) — 2026-05-17
+
+**Foundation primitives for v0.3 Discovery+ — pure aggregators, build-time scripts, and forward-defenses against build-chain regressions.** No user-facing surface changes yet (Phase 2 ships read surfaces). 11 of 36 v0.3 tasks committed on branch `chore/community-platform-v0-3-impl`. Tests 678/678 green; preview deploy green at SHA `5384dd2`; tsconfig types scoped (H50).
+
+### Added
+
+- **ADR-0012** — v0.3 Discovery+ posture (selected surfaces public). Amends CONSTRAINTS line 12. (Task 1.1)
+- **`lib/community-defaults.ts`** — Zod-validated reader for `community/community-defaults.json` (timezone + meeting/event defaults). O5 = JSON not YAML. (Task 1.2)
+- **`lib/meetings.ts`** — `listMeetings(source)` (sync wrapper, source required per Vercel-tsx constraint) + `groupMeetingsByMonth()`. (Task 1.3) **Strict-list 100%.**
+- **`lib/events.ts`** — `EventSlug` branded type, Zod-validated frontmatter, `parseEventFrontmatter` folder/slug invariant (H44), `filterOrphanSlugs` (H34, H39). (Task 1.4) **Strict-list 100%.**
+- **`lib/home-feed.ts`** — pure `computeHomeFeed()` aggregator with This-Week / Recent bucket logic + 30-day cutoff (H33, H38). (Task 1.5) **Strict-list 100% lines.**
+- **`lib/ical.ts` + `ics` npm dep (3.12.0, MIT, ~7KB)** — RFC 5545 generator via `meetingToIcsEvent` + `eventToIcsEvent` + `generateIcs` (H47, H49). O1 checklist all-green. (Task 1.6) **Strict-list 100%.**
+- **`scripts/build-event-rosters.ts`** — build-time aggregator (orphan filter + visibility split) → `lib/__generated__/event-rosters.json` (H32, H39). (Task 1.7)
+- **`scripts/build-calendar.ts`** — build-time ICS aggregator (cancelled-event exclusion + 30-day cutoff) → `lib/__generated__/calendar.ics`. (Task 1.8)
+- **`scripts/build-kudos-aggregate.ts`** — build-time aggregator (bot+non-roster filter + recent-cap-5 + by_type counts) → `lib/__generated__/kudos.json` (H54). (Task 1.9)
+- **`scripts/validate-events-folders.ts`** — CI guard for `YYYY-MM-DD-slug/` folder pattern (H44). Wired into `.github/workflows/ci.yml`. (Task 1.10)
+- **`tsconfig.json` `types: ["node"]`** — forward-defense against transitive `@types/*` build failures (H50 / Gotcha 9). (Task 1.11)
+- **`tests/unit/build-reliability.test.ts`** — asserts tsconfig types scope + GOTCHAS row 9 documentation invariants (H50).
+- **GOTCHAS row 10** — `@/lib/*` path aliases unresolvable by tsx when imported from inside `lib/`. Recovery: relative imports inside `lib/`; aliases fine elsewhere.
+
+### Fixed
+
+- **Vercel preview deploys broken since Task 1.3 push** — tsx-resolution chicken-and-egg in the prebuild chain. Two fixes shipped:
+  - `lib/content-snapshot.ts` — converted 8 `@/lib/*` imports to relative `./*` (commit `b46af5b`).
+  - `lib/meetings.ts` — removed the `?? listMeetingsFromSnapshot()` default; `listMeetings(source)` now requires explicit source (commit `5384dd2`). Decouples `lib/meetings.ts` from `lib/content-snapshot.ts` to prevent transitive load of the gitignored `content-snapshot.json` during the prebuild script run.
+
+### Verified
+
+- 678/678 tests green (62 test files; up from 575 + 32 E2E at v0.2.2 baseline).
+- Strict-list 100% coverage on all five Phase-1 strict-list files (meetings.ts, events.ts, home-feed.ts, ical.ts, community-defaults.ts).
+- `pnpm tsc --noEmit` green.
+- `pnpm build` green locally (39 pages).
+- Vercel preview build green at `5384dd2` (42s — matches pre-Phase-1 baseline of 40-57s).
+- Hardening grep so far: 13 unique IDs present (H32, H33, H34, H36, H38, H39, H42, H44, H47, H49, H50, H52, H54). H30 partial — landed by Task 2.2 (proxy.ts PUBLIC_PATHS for `/home`).
+
+### Not yet shipped (deferred to chat-20 — Phase 2-4)
+
+- Phase 2 (10 tasks): Read surfaces — `/home` rewrite, `/events`, `/meetings` indexes, `/events/[slug]`, `/this-week` L2 strip, `/api/calendar.ics` route, `KudosCount` component, `AddToCalendarButton`.
+- Phase 3 (9 tasks): Write surfaces — RSVP tri-state, Thanks/Kudos primitive, EventRoster, profile schema extension, security-reviewer dispatch.
+- Phase 4 (6 tasks): PWA + 14 E2E scenarios + coverage verification + reviewer dispatch + CHANGELOG/tag/handoff.
+
+Handoff: `docs/specs/2026-05-17-community-platform-v0-3-phase-2-handoff.md`.
+
+---
+
 ## [0.2.2] — 2026-05-16
 
 **Profile editor SHA passthrough — closes v0.2.0's documented Scenario 2 E2E skip + plugs a production lost-update window.** Client now echoes the SHA loaded at SSR (`/me/edit`) as a `sha` field in the save FormData; `saveProfile` gates writes on that token instead of re-reading at save time. The prior retry-on-409 loop in `saveProfile` silently overwrote concurrent commits — removed.
