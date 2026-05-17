@@ -126,6 +126,18 @@ To verify, `vercel env ls preview` should show the row, and `vercel env pull --e
 
 ---
 
+## 10. `@/lib/*` path aliases unresolvable by tsx when imported *from within* `lib/`
+
+**Symptom.** Vercel preview deploys fast-fail in 6–12s during the `prebuild` step with `Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@/lib' imported from <repo>/projects/community-platform/lib/content-snapshot.ts`. Local `pnpm build` passes (Next bundler tolerates the alias); local `pnpm test` passes (Vitest tolerates it via its own resolver). Only the tsx-executed `pnpm snapshot` / `pnpm contributions` prebuild chain on Vercel surfaces the failure — and only when a new dependency edge causes a `lib/` file to be imported transitively from a tsx-run script.
+
+**Root cause.** When tsx resolves `@/lib/foo` from `scripts/snapshot-content.ts`, the alias resolves cleanly (the file lives outside the `lib/` directory). When tsx resolves the same `@/lib/foo` from `lib/content-snapshot.ts` (i.e., self-referencing back into the directory it lives in), tsx's `resolveTsPaths` falls through to package-resolution and the error message reports `Cannot find package '@/lib'` — treating the alias prefix as a scoped npm package name. The issue is latent until something pulls a `lib/` file into the tsx-script graph; v0.3 Task 1.3 (`lib/meetings.ts` adding `import { listMeetingsFromSnapshot } from "./content-snapshot"`) created exactly that edge, breaking preview deploys silently from Task 1.3 onward until the post-Task-1.11 fix.
+
+**Recovery.** Inside `lib/`, ALWAYS use relative imports (`./roster`, `./events`, `./__generated__/foo.json`) — never the `@/lib/*` alias. The alias is fine from `app/`, `scripts/`, and tests. Pattern: aliases are for crossing directory boundaries; within a directory, relative imports are not only sufficient but required for tsx-build-chain compatibility. Forward-defense: when adding a new lib→lib import or a new build script that imports any `lib/*` file, run `pnpm snapshot` locally to exercise the tsx prebuild path before pushing.
+
+**First observed.** v0.3 Phase 1 push of Task 1.3 (2026-05-17, commit `ee5df9f`) silently broke 11 preview deploys in a row. Surfaced by Vercel email notification, diagnosed via `vercel inspect --logs`, fixed by converting 8 `@/lib/*` imports in `lib/content-snapshot.ts` to relative `./` imports (commit `b46af5b`). The pattern is forward-defending in v0.3 Phase 1 — implementers should not introduce `@/lib/*` imports inside files under `lib/`.
+
+---
+
 ## Meta — when to add a row
 
 A new gotcha earns a row when ALL of:
