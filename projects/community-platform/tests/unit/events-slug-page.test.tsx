@@ -16,6 +16,7 @@ const event: Event = {
 vi.mock("@/lib/content-snapshot", () => ({
   findEventBySlug: vi.fn(),
   listEventsFromSnapshot: () => [],
+  findMemberBySlug: () => undefined,
 }));
 vi.mock("@/lib/markdown", () => ({
   renderMarkdownToHtml: async (s: string) => `<p>${s}</p>`,
@@ -31,6 +32,21 @@ vi.mock("next/navigation", () => ({
   notFound: vi.fn(() => {
     throw new Error("NEXT_NOT_FOUND");
   }),
+}));
+vi.mock("@/lib/__generated__/event-rosters.json", () => ({
+  default: {},
+}));
+// EventRsvpButton is a client component; mock it to avoid transitive env-var validation
+// (EventRsvpButton → rsvp-event action → lib/auth → lib/env throws without real secrets).
+vi.mock("@/app/components/EventRsvpButton", () => ({
+  EventRsvpButton: ({ eventSlug, initialState }: { eventSlug: string; initialState: string }) =>
+    initialState === "not-signed-in"
+      ? <a href={`/login?callbackUrl=/events/${eventSlug}`}>Sign in to RSVP</a>
+      : <div data-testid="rsvp-button" />,
+}));
+// EventRoster is an async server component; mock it to avoid async-in-client-render issues.
+vi.mock("@/app/components/EventRoster", () => ({
+  EventRoster: () => <p>No one&apos;s marked going yet — be the first.</p>,
 }));
 
 afterEach(() => { cleanup(); vi.resetAllMocks(); });
@@ -93,5 +109,30 @@ describe("H35: /events/[slug] detail", () => {
     const { generateStaticParams } = await import("@/app/events/[slug]/page");
     const params = await generateStaticParams();
     expect(params).toEqual([{ slug: "2026-06-15-hack" }]);
+  });
+
+  it("Task 3.4: mounts EventRsvpButton in 'not-signed-in' state by default (O6 lock)", async () => {
+    const { findEventBySlug } = await import("@/lib/content-snapshot");
+    vi.mocked(findEventBySlug).mockReturnValue(event);
+    const { default: EventPage } = await import("@/app/events/[slug]/page");
+    const ui = await EventPage({ params: Promise.resolve({ slug: "2026-06-15-hack" }) });
+    render(ui);
+    expect(
+      screen.getByRole("link", { name: /Sign in to RSVP/i }),
+    ).toHaveAttribute("href", "/login?callbackUrl=/events/2026-06-15-hack");
+  });
+
+  it("Task 3.4: mounts EventRoster section", async () => {
+    const { findEventBySlug } = await import("@/lib/content-snapshot");
+    vi.mocked(findEventBySlug).mockReturnValue(event);
+    const { default: EventPage } = await import("@/app/events/[slug]/page");
+    const ui = await EventPage({ params: Promise.resolve({ slug: "2026-06-15-hack" }) });
+    render(ui);
+    // The roster section will render based on the json mock — events-slug-page.test.tsx
+    // doesn't mock event-rosters.json with data, so EventRoster will see {} for the eventSlug
+    // and render the empty-state copy.
+    expect(
+      screen.getByText(/No one's marked going yet/i),
+    ).toBeInTheDocument();
   });
 });

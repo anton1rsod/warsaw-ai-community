@@ -5,6 +5,8 @@ import { SafeHtml } from "@/app/components/SafeHtml";
 import { AddToCalendarButton } from "@/app/components/AddToCalendarButton";
 import { eventToIcsEvent, generateIcs } from "@/lib/ical";
 import { getDefaults } from "@/lib/community-defaults";
+import { EventRsvpButton } from "@/app/components/EventRsvpButton";
+import { EventRoster } from "@/app/components/EventRoster";
 
 export const dynamic = "force-static";
 
@@ -45,13 +47,16 @@ export default async function EventPage({
         ) : null}
       </header>
 
-      {/* RSVP slot — wired in Task 3.3 (EventRsvpButton) */}
+      {/* O6 lock: SSG-only — page renders at build time with no session context.
+          initialState="not-signed-in" ships the sign-in CTA for all visitors;
+          a future v0.3.1 dynamic variant will derive per-visitor state. */}
+      <EventRsvpButton eventSlug={event.slug} initialState="not-signed-in" />
 
       <article className="prose dark:prose-invert">
         <SafeHtml html={html} />
       </article>
 
-      {/* Roster slot — wired in Task 3.4 (EventRoster) */}
+      <EventRoster eventSlug={event.slug} />
 
       {event.url ? (
         <p className="mt-6 text-sm">
