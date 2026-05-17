@@ -72,6 +72,9 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Validate event folders
+        run: pnpm exec tsx scripts/validate-events-folders.ts
+
       - name: Test with coverage
         run: pnpm test:coverage
 
