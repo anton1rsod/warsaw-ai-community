@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import matter from "gray-matter";
 
 export interface Meeting {
   slug: string;
@@ -7,6 +8,10 @@ export interface Meeting {
   title: string;
   body: string;
   attendees: readonly string[];
+  // v0.3: optional extended frontmatter (parsed from gray-matter)
+  startTime?: string;       // "HH:MM" — falls back to defaults at ICS render time
+  durationMinutes?: number; // positive integer
+  location?: string;
 }
 
 const FILE_RE = /^(\d{4}-\d{2}-\d{2})\.md$/;
@@ -61,14 +66,33 @@ export async function listMeetingsFromDisk(repoRoot: string): Promise<Meeting[]>
     if (!m || !m[1]) continue;
     const date = m[1];
     const filePath = path.join(dir, name);
-    const body = await fs.readFile(filePath, "utf8");
+    const raw = await fs.readFile(filePath, "utf8");
+    const { data, content } = matter(raw);
     const slug = name.replace(/\.md$/, "");
+    const startTime =
+      typeof data.start_time === "string" &&
+      /^([01]\d|2[0-3]):[0-5]\d$/.test(data.start_time)
+        ? data.start_time
+        : undefined;
+    const durationMinutes =
+      typeof data.duration_minutes === "number" &&
+      Number.isInteger(data.duration_minutes) &&
+      data.duration_minutes > 0
+        ? data.duration_minutes
+        : undefined;
+    const location =
+      typeof data.location === "string" && data.location.length > 0
+        ? data.location
+        : undefined;
     meetings.push({
       slug,
       date,
-      title: extractTitle(body, `Weekly meeting — ${date}`),
-      body,
-      attendees: parseAttendees(body),
+      title: extractTitle(content, `Weekly meeting — ${date}`),
+      body: content,
+      attendees: parseAttendees(content),
+      startTime,
+      durationMinutes,
+      location,
     });
   }
 
@@ -88,16 +112,35 @@ export async function readMeeting(
     `${slug}.md`,
   );
   try {
-    const body = await fs.readFile(filePath, "utf8");
+    const raw = await fs.readFile(filePath, "utf8");
+    const { data, content } = matter(raw);
     const m = slug.match(SLUG_RE);
     if (!m || !m[1]) return null;
     const date = m[1];
+    const startTime =
+      typeof data.start_time === "string" &&
+      /^([01]\d|2[0-3]):[0-5]\d$/.test(data.start_time)
+        ? data.start_time
+        : undefined;
+    const durationMinutes =
+      typeof data.duration_minutes === "number" &&
+      Number.isInteger(data.duration_minutes) &&
+      data.duration_minutes > 0
+        ? data.duration_minutes
+        : undefined;
+    const location =
+      typeof data.location === "string" && data.location.length > 0
+        ? data.location
+        : undefined;
     return {
       slug,
       date,
-      title: extractTitle(body, `Weekly meeting — ${date}`),
-      body,
-      attendees: parseAttendees(body),
+      title: extractTitle(content, `Weekly meeting — ${date}`),
+      body: content,
+      attendees: parseAttendees(content),
+      startTime,
+      durationMinutes,
+      location,
     };
   } catch (err: unknown) {
     if (isENOENT(err)) return null;

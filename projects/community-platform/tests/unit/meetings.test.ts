@@ -125,6 +125,62 @@ describe("listMeetingsFromDisk — empty directory", () => {
   });
 });
 
+describe("H36: gray-matter frontmatter parsing", () => {
+  it("parses start_time, duration_minutes, location from frontmatter", async () => {
+    const meetings = await listMeetingsFromDisk(FIXTURE_ROOT);
+    const m = meetings.find((x) => x.slug === "2026-05-01");
+    expect(m).not.toBeUndefined();
+    expect(m?.startTime).toBe("18:00");
+    expect(m?.durationMinutes).toBe(60);
+    expect(m?.location).toBe("Office");
+  });
+
+  it("leaves extended fields undefined when no frontmatter present", async () => {
+    const meetings = await listMeetingsFromDisk(FIXTURE_ROOT);
+    const m = meetings.find((x) => x.slug === "2026-04-24");
+    expect(m).not.toBeUndefined();
+    expect(m?.startTime).toBeUndefined();
+    expect(m?.durationMinutes).toBeUndefined();
+    expect(m?.location).toBeUndefined();
+  });
+
+  it("rejects invalid start_time to undefined", async () => {
+    const os = await import("node:os");
+    const fsm = await import("node:fs/promises");
+    const tmpRoot = await fsm.mkdtemp(path.join(os.tmpdir(), "meetings-fm-"));
+    const weeklyDir = path.join(tmpRoot, "community/meetings/weekly");
+    await fsm.mkdir(weeklyDir, { recursive: true });
+    await fsm.writeFile(
+      path.join(weeklyDir, "2026-06-01.md"),
+      `---\nstart_time: "not-time"\nduration_minutes: -5\n---\n# Meeting\n`,
+    );
+    const result = await listMeetingsFromDisk(tmpRoot);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.startTime).toBeUndefined();
+    expect(result[0]?.durationMinutes).toBeUndefined();
+    await fsm.rm(tmpRoot, { recursive: true, force: true });
+  });
+
+  it("readMeeting parses frontmatter fields", async () => {
+    const m = await readMeeting(FIXTURE_ROOT, "2026-05-01");
+    expect(m).not.toBeNull();
+    expect(m?.startTime).toBe("18:00");
+    expect(m?.durationMinutes).toBe(60);
+    expect(m?.location).toBe("Office");
+    // body should be post-frontmatter content only
+    expect(m?.body).toContain("Weekly meeting — 2026-05-01");
+    expect(m?.body).not.toContain("start_time");
+  });
+
+  it("readMeeting leaves fields undefined when no frontmatter", async () => {
+    const m = await readMeeting(FIXTURE_ROOT, "2026-04-24");
+    expect(m).not.toBeNull();
+    expect(m?.startTime).toBeUndefined();
+    expect(m?.durationMinutes).toBeUndefined();
+    expect(m?.location).toBeUndefined();
+  });
+});
+
 const fixtures: Meeting[] = [
   { date: "2026-05-19", slug: "2026-05-19", title: "Weekly sync", body: "", attendees: [] },
   { date: "2026-05-12", slug: "2026-05-12", title: "Weekly sync", body: "", attendees: [] },
