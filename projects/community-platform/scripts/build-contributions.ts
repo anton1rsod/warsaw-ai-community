@@ -9,7 +9,7 @@ import {
 } from "@/lib/contributions";
 import { readAliases, resolveHandle } from "@/lib/git-email-aliases";
 import { readRoster } from "@/lib/roster";
-import { listMeetings } from "@/lib/meetings";
+import { listMeetingsFromDisk } from "@/lib/meetings";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");
@@ -103,7 +103,7 @@ async function main(): Promise<void> {
   );
   const [roster, meetings, aliases] = await Promise.all([
     readRoster(rosterPath),
-    listMeetings(REPO_ROOT),
+    listMeetingsFromDisk(REPO_ROOT),
     readAliases(aliasesPath),
   ]);
 

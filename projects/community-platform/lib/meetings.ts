@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { listMeetingsFromSnapshot } from "./content-snapshot";
 
 export interface Meeting {
   slug: string;
@@ -42,7 +43,8 @@ export function parseAttendees(body: string): string[] {
     .filter((item) => item.length > 0 && !item.startsWith("<!--"));
 }
 
-export async function listMeetings(repoRoot: string): Promise<Meeting[]> {
+// RENAMED from listMeetings to listMeetingsFromDisk (collision fix — see Task 1.3)
+export async function listMeetingsFromDisk(repoRoot: string): Promise<Meeting[]> {
   const dir = path.join(repoRoot, "community/meetings/weekly");
   let entries: string[];
   try {
@@ -102,4 +104,31 @@ export async function readMeeting(
     if (isENOENT(err)) return null;
     throw err;
   }
+}
+
+/**
+ * Returns meetings reverse-chronological (newest first).
+ * Thin wrapper over content-snapshot so callers don't need to know the snapshot shape.
+ * Pass an explicit `source` array (e.g. in tests) to skip the snapshot lookup.
+ */
+export function listMeetings(source?: readonly Meeting[]): Meeting[] {
+  const meetings = source ?? listMeetingsFromSnapshot();
+  return [...meetings].sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/**
+ * Groups meetings by YYYY-MM key for the /meetings index page.
+ * Map preserves insertion order — pass listMeetings() output for reverse-chrono group order.
+ */
+export function groupMeetingsByMonth(
+  meetings: readonly Meeting[],
+): Map<string, Meeting[]> {
+  const out = new Map<string, Meeting[]>();
+  for (const m of meetings) {
+    const monthKey = m.date.slice(0, 7); // YYYY-MM
+    const bucket = out.get(monthKey) ?? [];
+    bucket.push(m);
+    out.set(monthKey, bucket);
+  }
+  return out;
 }

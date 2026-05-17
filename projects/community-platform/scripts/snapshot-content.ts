@@ -5,7 +5,7 @@ import { readGovernance } from "@/lib/governance";
 import { readRoster, readMemberProfile, readMemberPersona } from "@/lib/roster";
 import { listProjects, readProject } from "@/lib/projects";
 import { listDecisions, readDecision } from "@/lib/decisions";
-import { listMeetings } from "@/lib/meetings";
+import { listMeetingsFromDisk } from "@/lib/meetings";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");
@@ -28,7 +28,7 @@ async function main(): Promise<void> {
       readGovernance({ adminsPath, cmsPath }),
       listProjects(REPO_ROOT),
       listDecisions(REPO_ROOT),
-      listMeetings(REPO_ROOT),
+      listMeetingsFromDisk(REPO_ROOT),
     ]);
 
   const [members, projects, decisions] = await Promise.all([
