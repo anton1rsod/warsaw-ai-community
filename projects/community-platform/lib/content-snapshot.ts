@@ -109,3 +109,13 @@ export function getProjectContributions(
 ): readonly ProjectContribution[] {
   return projectContributions[projectSlug] ?? [];
 }
+
+import type { Event } from "./events";
+
+export function listEventsFromSnapshot(): readonly Event[] {
+  return ((snapshot as unknown as { events?: readonly Event[] }).events ?? []) as readonly Event[];
+}
+
+export function findEventBySlug(slug: string): Event | undefined {
+  return listEventsFromSnapshot().find((e) => e.slug === slug);
+}
