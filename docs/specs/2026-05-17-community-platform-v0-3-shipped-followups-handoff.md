@@ -159,6 +159,7 @@ Pick from menu; "done" depends on scope. Each option has its own DoD:
 - **ADR-0012:** `docs/decisions/0012-community-platform-v0-3-discovery-posture.md`
 - **GOTCHAS row 11:** Vercel 100/day deploy limit + `vercel promote` recovery pattern
 - **Vercel deploy rate-limit status:** EXHAUSTED for 2026-05-17. Resets midnight UTC. Until then, use `vercel promote` for production swaps.
+- **Next chat pre-staged:** `docs/specs/2026-05-17-community-platform-v0-4-ux-ia-brainstorm-handoff.md` — v0.4 UX/IA brainstorm ("organize what's there, NOT redesign"). Starts AFTER chat-21 closes Option A at minimum. 40-question scope envelope.
 
 ---
 
