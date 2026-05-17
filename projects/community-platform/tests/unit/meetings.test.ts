@@ -137,10 +137,8 @@ describe("H36: listMeetings + groupMeetingsByMonth", () => {
     expect(list.map((m) => m.date)).toEqual(["2026-05-19", "2026-05-12", "2026-04-28"]);
   });
 
-  it("listMeetings with no source falls back to snapshot (returns Meeting[])", () => {
-    // Exercises the `source ?? listMeetingsFromSnapshot()` branch (line 115-116)
-    const list = listMeetings();
-    expect(Array.isArray(list)).toBe(true);
+  it("listMeetings with empty source returns empty array", () => {
+    expect(listMeetings([])).toEqual([]);
   });
 
   it("listMeetings sort is stable for equal dates", () => {

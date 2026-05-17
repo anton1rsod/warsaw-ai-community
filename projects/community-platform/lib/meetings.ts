@@ -1,6 +1,5 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { listMeetingsFromSnapshot } from "./content-snapshot";
 
 export interface Meeting {
   slug: string;
@@ -108,12 +107,12 @@ export async function readMeeting(
 
 /**
  * Returns meetings reverse-chronological (newest first).
- * Thin wrapper over content-snapshot so callers don't need to know the snapshot shape.
- * Pass an explicit `source` array (e.g. in tests) to skip the snapshot lookup.
+ * Pass an explicit `source` array (typically `listMeetingsFromSnapshot()` from lib/content-snapshot,
+ * or a fixture in tests). Source is required so this module doesn't transitively load
+ * content-snapshot.ts (GOTCHAS row 10 — that edge breaks the tsx prebuild chain on Vercel).
  */
-export function listMeetings(source?: readonly Meeting[]): Meeting[] {
-  const meetings = source ?? listMeetingsFromSnapshot();
-  return [...meetings].sort((a, b) => b.date.localeCompare(a.date));
+export function listMeetings(source: readonly Meeting[]): Meeting[] {
+  return [...source].sort((a, b) => b.date.localeCompare(a.date));
 }
 
 /**
