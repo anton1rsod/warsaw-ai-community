@@ -2,8 +2,10 @@ import Link from "next/link";
 import { createAppAuth } from "@octokit/auth-app";
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
-import { findMemberByHandle } from "@/lib/content-snapshot";
+import { findMemberByHandle, listMeetingsFromSnapshot, listEventsFromSnapshot } from "@/lib/content-snapshot";
 import { currentWeek } from "@/lib/week";
+import { HomeFeed } from "@/app/components/HomeFeed";
+import { computeHomeFeed } from "@/lib/home-feed";
 import {
   readWeekStatuses,
   type StatusUpdate,
@@ -66,6 +68,14 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
   const handle = session?.githubHandle ?? "";
   const member = handle ? findMemberByHandle(handle) : undefined;
 
+  const feed = computeHomeFeed({
+    meetings: listMeetingsFromSnapshot(),
+    events: listEventsFromSnapshot(),
+    statusPosts: [],
+    contributions: [],
+    now: new Date(),
+  });
+
   const statuses = await fetchStatuses(week);
 
   const mySlug = member?.slug;
@@ -99,6 +109,10 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
           Home
         </Link>
       </header>
+
+      <div className="mt-6">
+        <HomeFeed feed={feed} showRecent={false} />
+      </div>
 
       {member ? (
         <section className="mt-6">
