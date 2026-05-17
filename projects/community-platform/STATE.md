@@ -2,7 +2,7 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-17 (chat-20 v0.3.1 SHIPPED — PR #21 merged to main at `e720268`; tag `community-platform-v0.3.1` pushed; production deploy `ivbncdcvq` Ready (promoted from preview because Vercel Free-tier 100/day build limit was exhausted — `vercel promote` bypasses the limit by reusing the preview build artifact). v0.3.1 hotfix: /home auth-aware header + Members card. Anonymous smoke verified.)
+**Last updated**: 2026-05-18 (chat-22 v0.4 brainstorm CLOSED — Anton-locked 28 blocking + 38 tuning Qs via interactive review; brainstorm-output + chat-23 spec-writing handoff committed to `main` at SHA `4a6855b`. Character lock: PostHog primary + Linear + Claude/Notion accents. Scope lock: Phase A COMMITTED as v0.4.0 + Phase B/C CONDITIONAL on user-test feedback. One ADR (ADR-0014, `/` flip) — ADR-0013 dropped per Anton's hide-PII stance.)
 
 ## Snapshot
 
@@ -15,6 +15,7 @@ v0_2_spec_sha: 95197dc              # spec §12 brainstorm merged via PR #11
 v0_2_plan_sha: e700d19              # v0.2.0-plan.md merged via PR #12
 v0_3_spec_sha: 00faca9              # spec §13 (chat-17) merged via PR #18 at SHA 3bfa5da
 v0_3_plan_sha: "TBD"               # v0.3.0-plan.md still on chore/community-platform-v0-3-plan (separate doc-only merge pending)
+v0_4_brainstorm_sha: 4a6855b        # chat-22 brainstorm-output + chat-23 handoff + V0_5_BACKLOG update + UX baseline screenshots; pushed direct-to-main
 plan_sha: 2201dd9                   # v0.1.1-plan.md (frozen)
 branch: main                        # v0.3.1 merged; hotfix branch deleted locally
 tests: "825 unit/integration + 33 E2E (v0.3.1 adds 3 unit tests for HomeHeader + updated home-page contract)"
@@ -165,6 +166,10 @@ v0_2_2_ship: "2026-05-16 (chat-16) — SHA `7cd87c3`; PR #17 merged to main; tag
 **Chat 20 (DONE — v0.3.0 ready-to-ship):** 24 of 25 remaining v0.3 tasks shipped on `chore/community-platform-v0-3-impl` HEAD `3b012a7`. Phase 2 (10 read surfaces: HomeFeed, /home rewrite + public proxy paths, /meetings index, /meetings/[slug] extension, /events index, /events/[slug] detail, AddToCalendarButton, /this-week L2 strip, /api/calendar.ics, KudosCount). Phase 3 (9 write surfaces: profile-editor v0.3 schema, rsvp-event + EventRsvpButton + EventRoster, thank-status + ThankButton + 3-surface mounts, /members/[slug] extension, security-reviewer dispatch). Phase 4 (Task 4.1 PWA manifest + Task 4.3 coverage gate + Task 4.5 CHANGELOG/STATE). Task 4.2 (14 Playwright E2E scenarios) **deferred to v0.3.1** — unit/integration coverage carries v0.3.0 safety net; v0.2.2's 33 E2E scenarios still exercise auth + consent + profile + roster flows that v0.3 inherits unchanged. **Production smoke + tag push await PR merge** (Anton-side per CHANGELOG smoke section).
 
 **Chat 20 → Chat-21 handoff:** [`docs/specs/2026-05-17-community-platform-v0-3-shipped-followups-handoff.md`](../../docs/specs/2026-05-17-community-platform-v0-3-shipped-followups-handoff.md). Chat 21 owns v0.3.1 follow-ups: E2E suite (Task 4.2 deferred), brand-asset PWA icons, dynamic viewer-state on /projects + /meetings ThankButton mounts, typescript-reviewer + code-reviewer dispatch.
+
+**Chat 22 (DONE):** v0.4 brainstorm via `superpowers:brainstorming`. Brainstorm-output at [`docs/specs/2026-05-17-community-platform-v0-4-brainstorm-output.md`](../../docs/specs/2026-05-17-community-platform-v0-4-brainstorm-output.md) (~1180 lines) merged to main at SHA `4a6855b`. Anton-locked all 28 blocking + 38 tuning Qs via interactive review. Character: PostHog primary + Linear + Claude/Notion accents (NOT Lobste.rs / dev.to / Slack-as-chat). Scope: Phase A COMMITTED + Phase B/C CONDITIONAL on user-test feedback. One ADR (ADR-0014, `/` flip) — ADR-0013 dropped per Anton's hide-PII stance. 12 hardenings (H56-H62 + H64-H68). Office-hours sharpening + manipulation-risk audit + PII/RBAC threat-model preview applied inline (per user request).
+
+**Chat 22 → Chat-23 handoff:** [`docs/specs/2026-05-18-community-platform-v0-4-spec-writing-handoff.md`](../../docs/specs/2026-05-18-community-platform-v0-4-spec-writing-handoff.md). Chat 23 owns: MANDATORY 30-min user-test session with 2 existing members + 1 prospective member BEFORE spec lock + spec §14 writing via `superpowers:spec-writer` + ADR-0014 drafting + `design-shotgun` for visual locks (O1/O2/O3/O7/O12) + lock the 14 open questions (O1-O14) + draft chat-24 plan-writing handoff.
 
 **Pending follow-ups (mapped to chat-10 options):**
 - **A — Mark Spasonov backfill** (PR #3 open as Draft on `chore/mark-spasonov-backfill`): placeholders `@MARK_TELEGRAM_HANDLE_TBD` + `MARK_GIT_EMAIL_TBD` need real values from Mark out-of-band; mark Ready + merge. **Only chat-10 option NOT picked** — explicit Anton call.
