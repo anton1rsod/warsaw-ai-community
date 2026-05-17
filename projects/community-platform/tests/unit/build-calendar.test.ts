@@ -10,7 +10,18 @@ const DEFAULTS: CommunityDefaults = {
   events: { defaultStartTime: "18:00", defaultDurationMinutes: 120, defaultLocation: "TBD" },
 };
 
-function makeEvent(overrides: Partial<Event> & { slug: string; date: string; title: string }): Event {
+function makeEvent(overrides: {
+  slug: string;
+  date: string;
+  title: string;
+  status?: "scheduled" | "cancelled" | "completed";
+  body?: string;
+  startTime?: string;
+  durationMinutes?: number;
+  location?: string;
+  host?: string;
+  url?: string;
+}): Event {
   return EventSchema.parse({ body: "", status: "scheduled", ...overrides });
 }
 
