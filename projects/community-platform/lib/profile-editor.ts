@@ -89,3 +89,83 @@ export function hasRequiredFrontmatter(data: FrontmatterRecord): boolean {
     (k) => typeof data[k] === "string" && (data[k] as string).length > 0,
   );
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// v0.3 frontmatter extensions — RSVP + Thanks.
+//
+// `parseFrontmatter` / `serializeFrontmatter` / `composeProfile` v0.2 surfaces
+// stay unchanged. v0.3 callers use `parseProfileFrontmatter` for typed access
+// and `composeProfile` (existing) for serialization.
+// ───────────────────────────────────────────────────────────────────────────
+
+export const ThanksRecordSchema = z.object({
+  recipient: z.string().min(1),
+  item_type: z.enum(["status", "contribution", "meeting"]),
+  item_id: z.string().min(1),
+  given_at: z.string().datetime(),
+});
+
+export type ThanksRecord = z.infer<typeof ThanksRecordSchema>;
+
+export const ProfileFrontmatterSchema = z
+  .object({
+    events_going: z.array(z.string()).default([]),
+    events_interested: z.array(z.string()).default([]),
+    event_rsvp_visibility: z.enum(["public", "members_only"]).default("members_only"),
+    thanks_given: z.array(ThanksRecordSchema).default([]),
+  })
+  .passthrough(); // preserve v0.2 fields (name, github_handle, etc.) verbatim
+
+export type ProfileFrontmatter = z.infer<typeof ProfileFrontmatterSchema>;
+
+export function parseProfileFrontmatter(content: string): {
+  fm: ProfileFrontmatter;
+  body: string;
+} {
+  const parsed = parseFrontmatter(content);
+  const fm = ProfileFrontmatterSchema.parse(parsed.data);
+  return { fm, body: parsed.body };
+}
+
+/**
+ * D11 (spec §13.4.3): For any event slug, member is in EITHER events_going OR
+ * events_interested — never both. Server actions enforce on every write via
+ * reconcileArrays(); this validator surfaces violations during parse/test
+ * fixtures so we never persist a violating profile.
+ */
+export function validateProfileInvariants(
+  fm: Partial<ProfileFrontmatter>,
+): void {
+  const going = new Set(fm.events_going ?? []);
+  for (const slug of fm.events_interested ?? []) {
+    if (going.has(slug)) {
+      throw new Error(
+        `Profile invariant violation (D11): event slug "${slug}" present in both events_going and events_interested`,
+      );
+    }
+  }
+}
+
+/**
+ * D19 (spec §13.13.4): Derive the ThankButton's initial state for the visitor
+ * looking at a given (recipient, item_type, item_id) triple.
+ *
+ * - viewer not signed in → "not-signed-in" (renders sign-in CTA)
+ * - viewer === recipient → "self" (component returns null — no self-thank)
+ * - viewer's profile already has the triple → "thanked" (idempotent display)
+ * - otherwise → "not-thanked" (clickable)
+ */
+export function deriveThankInitialState(
+  viewerSlug: string | undefined,
+  recipient: string,
+  itemType: "status" | "contribution" | "meeting",
+  itemId: string,
+  viewerProfile: ProfileFrontmatter | undefined,
+): "thanked" | "not-thanked" | "not-signed-in" | "self" {
+  if (!viewerSlug) return "not-signed-in";
+  if (viewerSlug === recipient) return "self";
+  const has = (viewerProfile?.thanks_given ?? []).some(
+    (t) => t.recipient === recipient && t.item_type === itemType && t.item_id === itemId,
+  );
+  return has ? "thanked" : "not-thanked";
+}

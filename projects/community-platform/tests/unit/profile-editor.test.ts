@@ -6,6 +6,11 @@ import {
   composeProfile,
   hasRequiredFrontmatter,
   REQUIRED_FRONTMATTER_KEYS,
+  parseProfileFrontmatter,
+  validateProfileInvariants,
+  deriveThankInitialState,
+  ProfileFrontmatterSchema,
+  ThanksRecordSchema,
   type SaveErrorCode,
 } from "@/lib/profile-editor";
 
@@ -185,5 +190,155 @@ describe("hasRequiredFrontmatter", () => {
         consented_at: "2026-01-01T00:00:00.000Z",
       }),
     ).toBe(false);
+  });
+});
+
+describe("v0.3: ProfileFrontmatterSchema (D11, D19, O8)", () => {
+  it("parses events_going + events_interested as string arrays", () => {
+    const yaml = `---
+events_going:
+  - 2026-06-15-hack
+events_interested:
+  - 2026-07-04-other
+event_rsvp_visibility: members_only
+---
+body
+`;
+    const { fm } = parseProfileFrontmatter(yaml);
+    expect(fm.events_going).toEqual(["2026-06-15-hack"]);
+    expect(fm.events_interested).toEqual(["2026-07-04-other"]);
+    expect(fm.event_rsvp_visibility).toBe("members_only");
+  });
+
+  it("defaults all v0.3 fields when missing", () => {
+    const { fm } = parseProfileFrontmatter("---\nname: Anton\n---\n");
+    expect(fm.events_going).toEqual([]);
+    expect(fm.events_interested).toEqual([]);
+    expect(fm.event_rsvp_visibility).toBe("members_only");
+    expect(fm.thanks_given).toEqual([]);
+  });
+
+  it("preserves v0.2 fields (passthrough)", () => {
+    const yaml = `---
+name: Anton
+github_handle: anton1rsod
+consented_at: "2026-05-01T00:00:00Z"
+---
+body
+`;
+    const { fm } = parseProfileFrontmatter(yaml);
+    expect((fm as unknown as { name: string }).name).toBe("Anton");
+    expect((fm as unknown as { github_handle: string }).github_handle).toBe("anton1rsod");
+  });
+
+  it("parses thanks_given as ThanksRecord array", () => {
+    const yaml = `---
+thanks_given:
+  - recipient: bob
+    item_type: status
+    item_id: 2026-W19/bob
+    given_at: "2026-05-12T10:00:00Z"
+---
+body
+`;
+    const { fm } = parseProfileFrontmatter(yaml);
+    expect(fm.thanks_given).toHaveLength(1);
+    expect(fm.thanks_given[0]).toMatchObject({
+      recipient: "bob",
+      item_type: "status",
+      item_id: "2026-W19/bob",
+    });
+  });
+
+  it("ThanksRecordSchema rejects invalid item_type", () => {
+    expect(() =>
+      ThanksRecordSchema.parse({
+        recipient: "bob",
+        item_type: "invalid",
+        item_id: "x",
+        given_at: "2026-05-12T10:00:00Z",
+      }),
+    ).toThrow();
+  });
+
+  it("ProfileFrontmatterSchema is exported and callable", () => {
+    const result = ProfileFrontmatterSchema.safeParse({});
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("H40 / D11: validateProfileInvariants (mutual exclusion)", () => {
+  it("rejects slug present in both events_going AND events_interested", () => {
+    expect(() =>
+      validateProfileInvariants({
+        events_going: ["2026-06-15-hack"],
+        events_interested: ["2026-06-15-hack"],
+      }),
+    ).toThrow(/mutual exclusion|both/i);
+  });
+
+  it("accepts non-overlapping arrays", () => {
+    expect(() =>
+      validateProfileInvariants({
+        events_going: ["2026-06-15-hack"],
+        events_interested: ["2026-07-04-other"],
+      }),
+    ).not.toThrow();
+  });
+
+  it("accepts empty arrays / undefined", () => {
+    expect(() => validateProfileInvariants({})).not.toThrow();
+    expect(() => validateProfileInvariants({ events_going: [], events_interested: [] })).not.toThrow();
+  });
+});
+
+describe("H53 / D19: deriveThankInitialState", () => {
+  it("returns 'not-signed-in' when viewerSlug is undefined", () => {
+    expect(deriveThankInitialState(undefined, "bob", "status", "x", undefined)).toBe("not-signed-in");
+  });
+
+  it("returns 'self' when viewerSlug === recipient", () => {
+    expect(deriveThankInitialState("alice", "alice", "status", "x", undefined)).toBe("self");
+  });
+
+  it("returns 'thanked' when viewer profile contains the exact triple", () => {
+    const profile = {
+      events_going: [],
+      events_interested: [],
+      event_rsvp_visibility: "members_only" as const,
+      thanks_given: [
+        { recipient: "bob", item_type: "status" as const, item_id: "x", given_at: "2026-05-12T10:00:00Z" },
+      ],
+    };
+    expect(deriveThankInitialState("alice", "bob", "status", "x", profile)).toBe("thanked");
+  });
+
+  it("returns 'not-thanked' when viewer profile has no matching triple", () => {
+    const profile = {
+      events_going: [],
+      events_interested: [],
+      event_rsvp_visibility: "members_only" as const,
+      thanks_given: [],
+    };
+    expect(deriveThankInitialState("alice", "bob", "status", "x", profile)).toBe("not-thanked");
+  });
+
+  it("returns 'not-thanked' when viewerProfile is undefined but viewer is signed in", () => {
+    expect(deriveThankInitialState("alice", "bob", "status", "x", undefined)).toBe("not-thanked");
+  });
+
+  it("triple match requires ALL three fields (recipient, item_type, item_id)", () => {
+    const profile = {
+      events_going: [],
+      events_interested: [],
+      event_rsvp_visibility: "members_only" as const,
+      thanks_given: [
+        { recipient: "bob", item_type: "status" as const, item_id: "x", given_at: "2026-05-12T10:00:00Z" },
+      ],
+    };
+    // Different item_type → not thanked.
+    expect(deriveThankInitialState("alice", "bob", "contribution", "x", profile)).toBe("not-thanked");
+    // Different item_id → not thanked.
+    expect(deriveThankInitialState("alice", "bob", "status", "y", profile)).toBe("not-thanked");
   });
 });
