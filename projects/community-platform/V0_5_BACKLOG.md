@@ -39,10 +39,74 @@
 
 ---
 
-## From chat-22 brainstorm (TBA)
+## From chat-22 brainstorm
 
-> Chat-22 brainstorm will append "good idea, not v0.4" items here as they surface during the questionnaire walkthrough. Categories likely: features beyond IA scope, brand work beyond v0.4 envelope, search beyond initial scope, native-app considerations, real-time messaging, etc.
+### Strategic open questions (placement TBD per [[feedback_ia_defer_future_placement]])
+
+- **Community Skills + Tools + Reps directory** (option (iii) framing: combined member-capability + tool-stack + referrer surface). v0.5+ strategic feature aligned with marketplace-of-skills long-term ambition. Anton confirmed defer 2026-05-17. Placement TBD — could land under `/handbook` OR own top-nav slot OR `/members` extension. Re-evaluate at v0.5 brand+structure pass.
+
+- **Personas v2** — external git repos per member + own pages (`/members/[slug]/<persona-id>`) + sharing model (cross-member granting) + refresh button from active external git repo. ~1-2 weeks of external-repo plumbing on top of route + UI work. Out of v0.4 envelope. v0.4 keeps PersonaPanel v0.2 as-is. CI slug-folder integrity check (H68) is the v0.4 prerequisite. Re-evaluate v0.5+ when persona-builder skill matures.
+
+- **Academy linking** (internal + external course material). v0.5+ strategic feature. Anton's long-term vision per chat-22. Placement TBD — under `/handbook` OR own top-nav slot OR external linking only. Re-evaluate v0.5+ when first Academy content lands.
+
+- **GBrain Q&A integration with cmd-K command palette** — semantic search across meetings + events + projects + decisions + members. v0.5+ strategic feature. Catalog too small for v0.4. Anton confirmed defer. Placement TBD — under `/handbook` OR cmd-K palette anywhere OR own `/ask` route. Re-evaluate v0.5+ when GBrain Q&A surface is production-ready.
+
+- **AI moderation / onboarding / support bots**. v0.5+ candidate; Anton confirmed implement intent in chat-22. Could live in Telegram OR platform OR both. Re-evaluate v0.5+ design discussion.
+
+### Privacy-flip deferrals (each requires its own ADR when re-evaluated)
+
+- **`/decisions` + `/decisions/[slug]` anonymous flip** (the proposed-but-dropped ADR-0013 from chat-22). Anton's "hide all possible PII" stance in chat-22 deferred this. Markdown still public in git repo for transparency-curious anonymous viewers. Re-evaluate v0.5+ subject to PII audit task: grep `docs/decisions/*.md` for member-identifying fragments + sanitize. ADRs are sanitized governance memory per ADR-0001; flip should be safe post-audit.
+
+- **`/members` + `/members/[slug]` anonymous flip**. Per-member opt-in privacy collection (~2 wks of out-of-band work) needed. Re-evaluate v0.5+ post member opt-in collection.
+
+- **`/projects` + `/projects/[slug]` anonymous flip**. Refs individual contributors + git handles; privacy review needed. Re-evaluate v0.5+ once project showcase patterns settle.
+
+### v0.4-deferred features (placement clearer)
+
+- **Search via cmd-K command palette (GBrain-powered)** — catalog too small for v0.4; v0.5+ feature paired with GBrain Q&A integration above.
+
+- **Dark mode** — token system foundation (CSS variables) ships in v0.4 Phase A; design pass (200+ contrast pairs + toggle UX) → v0.5+ after structure proves stable.
+
+- **Full brand identity** — v0.4 locks wordmark + warm amber accent + tokens; full brand pass (logo mark + illustration system + custom motion + extended palette + mascot/character decision) → v0.5+ design pass.
+
+- **Polish localization** — EN-only v0.4 with `lib/i18n/strings.ts` structure prepared; `next-intl` swap + `messages/pl.json` translation work → v0.5+ with community PL contributors.
+
+- **Member-profile activity feed** — dropped from v0.4 per Q5.6 lock (pure PostHog team-page only). Defer to v0.5+ with explicit anti-comparison design pass.
+
+- **Storybook component documentation** — <30 shared components in v0.4 + RTL tests + on-page usage suffice. Re-evaluate v0.6+ if multi-dev onboarding becomes friction.
+
+- **Analytics (Plausible cookieless option)** — first-impression friction; community scale doesn't justify yet. Re-evaluate v0.5+ with traffic justification + GDPR/DPA review.
+
+- **Member photo upload UI** — GitHub avatar suffices for v0.4; upload adds storage cost + moderation question + image-format validation. Re-evaluate v0.6+ if a member requests + storage decision lands.
+
+- **Onboarding tour (interactive)** — empty-state hints + existing `/consent` + `/onboard` flow suffice. Re-evaluate v0.6+ if first-time UX metrics show drop-off.
+
+- **Lobste.rs-style invite-tree visibility** — manipulation-risk audit flagged this as status-signaling. Defer to v0.5+ once 20+ invitations accumulate AND with anti-manipulation design pass.
+
+- **`/about` content depth** — v0.4 Phase C ships a thin `/about` (charter pointer + roadmap link); full editorial → v0.5+ if anonymous → apply conversion lags.
+
+- **3-level IA breadcrumbs** — v0.4 IA is shallow (2 levels: index → detail). Re-evaluate v0.6+ if entity nesting deepens.
+
+- **Per-language language switcher in footer** — slot reserved in v0.4 footer but empty. Re-evaluate v0.5+ with next-intl.
+
+- **Editorial photography for detail page heroes** — full-bleed hero requires asset library we lack. Re-evaluate v0.6+ optional.
+
+- **Bottom tab bar mobile nav** — v0.4 ships hamburger (preserves scroll real estate). Re-evaluate v0.6+ only if mobile traffic dominates + member feedback supports.
+
+### Conditional v0.4 phases (decided post Phase A user-test)
+
+- **Phase B of v0.4** — detail-page template upgrades (Q3.2 + Q5.6 + Q5.7 + Q5.8): unified 3-variant template family + PostHog team-page member profile + Luma-style event detail + project portfolio framing with per-project Decisions section. ~15 files, ~1 wk. Decided AFTER Phase A v0.4.0 ships + 30-min user-test session findings. If not activated → Phase B work absorbed into v0.5 cycle.
+
+- **Phase C of v0.4** — brand visual + RSS + illustrations: 1-2 Notion-style illustrated touches + `/about` page + RSS feeds (`/feed/meetings.xml` + `/feed/events.xml`). ~10 files, ~3-4 days. Decided AFTER Phase A + Phase B reception. If not activated → Phase C work absorbed into v0.5 cycle.
+
+### Hardenings deferred from v0.4
+
+- **H63 (originally proposed)** — `/decisions` anonymous render hardening. DROPPED from v0.4 per Q6.1 A1 lock. Re-introduce when `/decisions` flip ADR is re-evaluated v0.5+.
+
+### Manipulation-resistance v0.5+ items
+
+- Any feature that introduces gamification, streaks, leaderboards, scarcity framing, or notification pressure MUST come with an explicit anti-manipulation design review pass before ship. Applies to: Lobste.rs invite tree, persona showcase comparison, AI moderation bots that punish inactivity, Academy completion streaks, etc.
 
 ---
 
-*Drafted 2026-05-17 in chat-21-prep close-out alongside v0.4 brainstorm scaffold. Lives at `projects/community-platform/V0_5_BACKLOG.md` per "lean handoffs + deferred items get a home" convention.*
+*Updated 2026-05-18 with chat-22 brainstorm deferrals. Original scaffold drafted 2026-05-17 in chat-21-prep close-out. Lives at `projects/community-platform/V0_5_BACKLOG.md` per "lean handoffs + deferred items get a home" convention.*
