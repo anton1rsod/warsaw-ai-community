@@ -9,7 +9,7 @@ interface UrlBlobApi {
 
 const FAKE_ICS = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR\r\n";
 
-describe("AddToCalendarButton (D16)", () => {
+describe("H46: AddToCalendarButton (D16 — single-event ICS download)", () => {
   let originalCreate: UrlBlobApi["createObjectURL"];
   let originalRevoke: UrlBlobApi["revokeObjectURL"];
   let createCalls = 0;

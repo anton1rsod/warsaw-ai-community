@@ -8,7 +8,7 @@ beforeEach(() => {
   vi.resetModules();
 });
 
-describe("H48: /api/calendar.ics route", () => {
+describe("H37 + H48: /api/calendar.ics route (public ICS subscribe)", () => {
   it("returns text/calendar with cache headers + body", async () => {
     const { readFile } = await import("node:fs/promises");
     vi.mocked(readFile).mockResolvedValue(
