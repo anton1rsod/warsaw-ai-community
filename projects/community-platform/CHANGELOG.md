@@ -16,6 +16,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.3.1] — 2026-05-17
+
+**Hotfix.** `/home` auth-aware header (anonymous Sign-in CTA + signed-in `Your week / Members / Edit profile · @handle / Sign out`) + restored Members card. `/home` flipped from `force-static` to dynamic per-request rendering. H30 hardening amended ("anonymous accessible" rather than "no `auth()` read"). PR #21 merged at `e720268`; tag `community-platform-v0.3.1` pushed.
+
+### Added
+
+- **`app/components/HomeHeader.tsx`** — auth-aware top-right nav surface; anonymous shows Sign-in CTA; signed-in shows `Your week / Members / Edit profile · @handle / Sign out`. 3 unit tests for the auth-state-derived render contract.
+
+### Changed
+
+- **`app/home/page.tsx`** — dropped `export const dynamic = "force-static"` to enable per-request `auth()` read for HomeHeader. Restored Members card in the 5-card nav grid (was dropped during v0.3.0 layout pass).
+- **H30 amended in spec §13** — discovery posture for `/home` reads "anonymous accessible" rather than "no `auth()` read." Original wording over-constrained the hardening — surfaces can be anonymous-accessible AND read `auth()` to enrich the signed-in experience.
+
+### Verified
+
+- 825/825 unit/integration tests green (v0.3.1 adds 3 unit tests for HomeHeader + updated home-page contract).
+- Production deploy `ivbncdcvq` (promoted from PR #21 preview via `pnpm dlx vercel promote --yes` because Vercel Free-tier 100/day deploy quota was exhausted — see GOTCHAS row 11).
+- Anonymous `/home` smoke green: 200 with `cache-control: private, no-cache, no-store` (page now dynamic per request); markup contains `aria-label="Account"`, `aria-label="Sections"` (5-card nav grid), `href="/login">Sign in` (anonymous CTA), `href="/members">Members` (restored card), and all 5 nav cards (Events / Meetings / Members / Projects / Decisions).
+- Signed-in `/home` smoke green 2026-05-17 by Anton (chat-21 prep, Option A from chat-20 follow-ups menu): top-right Account section shows `Your week / Members / Edit profile · @anton1rsod / Sign out`; each link routes correctly; `Sign out` returns anonymous `/home` with `Sign in` CTA top-right.
+
+---
+
 ## [0.3.0] — 2026-05-17
 
 **Discovery+ release.** Anonymous `/home` unified activity feed + `/events` + `/meetings` indexes + read-only detail pages + `/this-week` L2 strip + V-static GCal `/api/calendar.ics` + RSVP tri-state (Going / Interested / none, mutually exclusive) + Kudos primitive (♥ Thanks) on status/contribution/meeting items + PWA installability via manifest + 192/512 icons.
