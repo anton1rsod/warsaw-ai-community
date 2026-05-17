@@ -2514,3 +2514,532 @@ Deliberate omission. Service workers + offline caching add complexity disproport
 - Service worker for offline-first reads (v0.4 candidate).
 - Web Push subscriptions for event reminders (v0.4 — pairs with email-digest scope; both wake §6.1).
 - Apple Touch icons + iOS-specific manifest extensions (v0.3.1 if mobile install adoption signals demand).
+
+---
+
+## 14. v0.4.0 — World-class community platform (global shell + `/` anonymous landing + `/calendar` + `/handbook` + warm-amber identity)
+
+### 14.0 Intro & scope
+
+**v0.4 thesis (chat-22 brainstorm §0):** Lift v0.3.1's already-restrained text-first surface into a community platform with a warmer, more transparent identity by adding (1) a global navigation shell (header + footer everywhere except `/login`); (2) an anonymous `/` landing with hero + dual CTA + next-event ribbon; (3) a `/handbook` top-nav slot for charter + roadmap pointers; (4) a `/calendar` unified events+meetings index; (5) a token-based CSS variable system + warm amber accent + wordmark; (6) a CI slug-folder integrity check; (7) PWA icon regeneration.
+
+**Public ambition sentence** (Q-1.1 / D21 lock): _"Where Warsaw's AI builders learn, ship, and find each other."_ The three outcome verbs (learn / ship / find) map to platform surfaces (`/calendar` / `/projects` / `/members`); the sentence appears in the `/` hero, README description, and OG `<meta>` description on anonymous-readable pages. It does NOT appear in footer or signed-in `/home`.
+
+**Source of decisions (cite, don't re-litigate):**
+- **Brainstorm output (chat-22)** — `docs/specs/2026-05-17-community-platform-v0-4-brainstorm-output.md`. 28 blocking + 38 tuning questions Anton-locked via interactive review. Decision log D21–D44 (continues v0.3 D1–D20). Hardening list H56–H68 (12 entries; continues v0.3 H30–H55).
+- **ADR-0014** (this v0.4 ADR) — `/` flips to anonymous-public hero landing; amends ADR-0012. `docs/decisions/0014-community-platform-v0-4-root-anonymous-landing.md`.
+- **ADR-0012** (locked, amended by ADR-0014) — Discovery+ posture; `/home`, `/events`, `/meetings`, `/api/calendar.ics`, `/manifest.json`, `/icons/*` anonymous-public.
+- **NO ADR-0013** — proposed `/decisions` flip was dropped per Q6.1 A1 lock (Anton's "hide all possible PII" stance); deferred to v0.5+ subject to PII audit (logged in `V0_5_BACKLOG.md`).
+
+**User-test posture (compensating control):** the brainstorm office-hours sharpening Q5 called for a 30-min user-test session with 2 existing Telegram members + 1 prospective member before locking §14. Anton elected on 2026-05-18 (chat-23) to skip user recruitment for friction-reduction reasons; a structural Playwright walkthrough of v0.3.1 production was substituted as primary empirical input. Findings at `docs/research/v0-4-gstack-walkthrough-2026-05-18/findings.md` confirmed zero D-id contradictions (all of D21–D44 reinforced or pure-add; no brainstorm amendment required). The walkthrough captures **objective** friction (broken affordances, redirect chains, route gaps, layout regressions, accessibility gaps); it does NOT capture **subjective** member reactions ("I felt confused here", "I'd never click this"). Phase A landing data + a post-ship user-test together gate Phase B activation per D44.
+
+**Scope envelope (Q10.1 / D44 lock):** **Phase A is COMMITTED as v0.4.0**. Phase B (detail-page upgrades) and Phase C (brand visual + RSS + illustrations) are **CONDITIONAL** on Phase A landing data + user-test feedback. Hard-cut on Phase A merge — no feature flag. Each phase tag is a checkpoint; v0.4.0 alone is shippable if B/C never activate. See §14.10 for the phase scope table.
+
+**Out of v0.4 (cite, don't expand):** payments / commerce / subscriptions; built-in KB or Q&A (GBrain owns); route removal; backend / data shape changes; native iOS / Android apps; DMs / real-time messaging. See §14.11.
+
+**Skill sequence (recap):** chat-22 brainstorm → chat-23 spec (this §) → chat-24 plan → chat-25 Phase A implementation → chat-26+ user-test review → chat-27+ Phase B conditional → chat-28+ Phase C conditional.
+
+---
+
+### 14.1 Visual character
+
+**Character lock (Q-1.2 / Q-1.3 / D22):** **PostHog primary + Linear restraint accent + Claude/Notion editorial-softness accents. NOT Lobste.rs primary. NOT dev.to. NOT Slack-as-chat-replacement.** Brand-language axis (Q-1.4): ~60% PostHog warmth + ~25% Linear restraint + ~15% Claude/Notion editorial softness.
+
+**What each contributes to v0.4 surfaces:**
+
+| Element | PostHog primary (~60%) | Linear restraint (~25%) | Claude/Notion accent (~15%) |
+|---|---|---|---|
+| Voice / copy | Warm, branded, opinionated empty states | Crisp short sentences | Conversational ("If you've never been to a sync, here's what to expect") |
+| Color | Branded palette (warm, not cold corporate) | One accent + generous whitespace | Warm grays + soft accents |
+| Typography | Identifiable display + body | Single typeface, generous spacing | Editorial moments allowed (serif option reserved for v0.5+) |
+| Imagery | Custom illustrations OK (1-2 v0.4 Phase C touches) | Functional screenshots | Simple line drawings for empty states (Phase C) |
+| Layout density | Editorial — content can breathe | Generous whitespace, no clutter | Block-based composition |
+| Member profile (Phase B) | "Team page" feel | Whitespace around showcase | Editorial bio formatting |
+| Empty states | Friendly + on-brand ("No meetings yet — the next sync is Wednesday 18:30") | Crisp | Helpful + occasionally illustrated (Phase C) |
+
+**Voice rules:** NO mascot in v0.4. NO playful copy on system error messages. NO "🔥 trending" engagement bait. NO banner-stacking.
+
+**Wordmark (Q4.7 / D34 lock):** `Warsaw AI` set in Inter via `next/font`. Default presentation: **Inter Semibold (font-weight 600), 18-20px on desktop header, neutral-900, letter-spacing 0** (no kerning adjustment). PWA icons 192/512 + favicon 32×32: **`WA` initials, white, on `#f59e0b` square**, centered, no padding adjustment beyond Tailwind defaults.
+
+**Open question O2 (wordmark setting) — inline lock with proposal variants:**
+
+| Variant | Setting | Pick rationale |
+|---|---|---|
+| **A (Default — RECOMMENDED)** | Inter **Semibold (600)**, letter-spacing `0`, font-size `18px` desktop / `18px` mobile, color `neutral-900` | Matches Inter's design intent at this size; Linear / PostHog / Notion all use ~600 weight for wordmarks; consistent vertical metrics with Inter body text |
+| B (Heavier) | Inter **Bold (700)**, letter-spacing `-0.01em`, same size + color | More presence; visually heavier; consider only if Variant A feels under-stated in user-test |
+| C (Restrained) | Inter **Medium (500)**, letter-spacing `0`, same size + color | Lightest of the three; consider only if Variant A feels overstated against header chrome |
+
+**Phase A ships Variant A.** Variants B/C are reserved for v0.5+ revision if Phase A user-test signals adjustment.
+
+**Accent color (Q4.2 / D33 lock):** Warm amber/orange family. Canonical: **`#f59e0b`** (PostHog amber). Ramp defined as CSS variables in `app/globals.css` referenced by Tailwind via `theme.extend.colors.accent` (Q8.2 / D32 lock):
+
+```css
+:root {
+  --color-accent-50:  #fffbeb;
+  --color-accent-100: #fef3c7;
+  --color-accent-500: #f59e0b;  /* canonical */
+  --color-accent-600: #d97706;
+  --color-accent-700: #b45309;
+  --color-accent-900: #78350f;
+}
+```
+
+**Open question O3 (accent ramp exact hex) — inline lock with contrast verification:** the proposed ramp above is **Tailwind's `amber` ramp values** at the listed stops — chosen because (a) Tailwind ships them; (b) they have battle-tested cross-display rendering; (c) they meet WCAG contrast minimums at the stops we actually use. Contrast verification table (Phase A axe-core check):
+
+| Stop | Hex | On white (`#ffffff`) | Used for |
+|---|---|---|---|
+| `accent-50` | `#fffbeb` | 1.04:1 (decorative only) | Hover backgrounds, focus-ring fills |
+| `accent-500` | `#f59e0b` | 2.13:1 | NOT for body text on white — primary CTA fill ONLY (with white foreground 4.62:1) |
+| `accent-600` | `#d97706` | 2.84:1 | NOT for body text on white; CTA borders, active-link underline |
+| `accent-700` | `#b45309` | 4.59:1 | **Passes WCAG AA for body text** — accent-link text on white background |
+| `accent-900` | `#78350f` | 9.69:1 | Passes AAA for body text — high-emphasis accent text |
+
+**Phase A ships the Tailwind amber ramp** at the stops above. v0.5+ may revisit with a custom-tuned ramp if community-color identity matures.
+
+**Accent usage rules (Q4.8 lock):**
+- **Where accent appears:** primary CTAs (Sign in, RSVP Going button, "Add to calendar"); focus rings (Tailwind `ring-accent-500 ring-offset-2`); current-page nav state (underline or background tint); RSVP "Going" pill (Phase B); active-link underline.
+- **Where accent does NOT appear:** Links remain `underline` neutral-900; tags use neutral background + neutral-700 text; section headers stay uppercase tracking-wider neutral-500; body text always neutral-900.
+
+Restraint is the brand. Anywhere accent appears, it must mean **"action"** or **"you are here."**
+
+**Typography (Q4.4 / D35 lock):** Inter via `next/font` (one weight per stop loaded — Regular 400 + Semibold 600). System fallback: `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`. Body 16px / 1.5 line-height; h1 30-36px Semibold; h2 18-20px Semibold; h3 16px Semibold; section labels uppercase 12-13px tracking-wider Regular neutral-500. No serif in v0.4 (a serif slot in CSS variables is reserved for v0.5+ editorial pages).
+
+**Card style (Q4.5 lock):** Bordered flat (v0.3.1 pattern preserved). Hover: subtle `hover:bg-neutral-50`. **No shadows on cards.** Shadows reserved for overlays only (dialog / popover / tooltip / dropdown).
+
+**Imagery posture (Q4.6 lock):** functional imagery (avatars, optional project screenshots) is Phase A; 1-2 Notion-style line-drawing illustrated touches for first-impression surfaces are **Phase C** (NOT Phase A). NO mascots in v0.4. NO stock photography in v0.4.
+
+**Dark mode (Q4.3 / D43 lock):** **deferred to v0.5+**. Token foundation laid in Phase A enables the v0.5+ design pass; v0.4 ships light-only.
+
+---
+
+### 14.2 Information architecture
+
+**Top nav (Q2.1 / D26 lock):** 5 items, left-to-right — **Home / Calendar / Projects / Members / Handbook**. Anonymous + signed-in see all 5; clicking gated routes (Projects, Members) triggers sign-in flow on the destination page (Q6.2 — see §14.5). About → footer. This-Week → folded into signed-in `/home` dashboard. Search → v0.5+ (Q2.7 lock).
+
+**Mobile (390px viewport):** Hamburger top-right opens a slide-in panel (Q2.5 / D26 lock). No bottom tab bar. 5 nav items + Sign in / avatar in slot.
+
+**Why Decisions is dropped from top nav:** Decisions stays gated (Q6.1 A1) and the per-project Decisions section on `/projects/[slug]` (Phase B) is the primary surfacing; a global Decisions slot would duplicate. Members reach the standalone `/decisions` index from `/handbook` or via direct URL.
+
+**Events + Meetings unified at `/calendar` (Q2.2 / D27 lock):** the new `/calendar` route is the canonical top-nav target. Composition:
+- Top filter chips: All / Events / Meetings (filter state encoded in URL `?filter=events`, H62).
+- Default view: chronological merge of upcoming meetings + upcoming events.
+- Past section: collapsible "Show past" toggle.
+- Subscribe-to-calendar button → same `/api/calendar.ics` data source.
+
+**Old `/events` + `/meetings` indexes** stay URL-accessible as **filtered views** (not in nav). Old bookmarks + ICS-subscribers continue working. Detail pages stay canonical at `/events/[slug]` and `/meetings/[slug]`. **NO 301 redirects** — both URLs return 200 with their filtered content.
+
+**Projects / Decisions / This-Week placement (Q2.3 / D29 lock):**
+- **`/handbook`** (top-nav) holds community-wide governance pointers (charter pointer + roadmap pointer + external GitHub link for ADRs + v0.5+ placeholder list for Skills/Academy/GBrain Q&A). **NO ADR markdown content surfaced via `/handbook` UI in v0.4** (Q6.1 (i) lock).
+- **Per-project Decisions section** on `/projects/[slug]` (Phase B; gated per D29) — each project's page surfaces its scoped ADRs via frontmatter `project:` field matching. Open question O13 resolved in §14.4 / Phase B detail-template family. v0.4 Phase A scope wraps existing v0.3 templates in the new shell; Phase B activates the per-project Decisions section.
+- **This-Week** — URL `/this-week` stays members-only (no change from v0.3). Top-nav slot NOT used; folded into signed-in `/home` dashboard "Your week" pane (Q1.3 / D25 lock).
+
+**User menu (Q2.4 lock):** signed-in avatar dropdown top-right with **exactly 4 items**: `@handle` → "Your week" (→ `/this-week`) → "Edit profile" (→ `/me/edit`) → "Sign out". Anonymous shows `[Sign in]` button in the same slot. **v0.3.1 ships 5 items** (includes "Members") — Phase A drops "Members" since member directory is reachable via top-nav. H58 test extends to dropdown-contents check.
+
+**Breadcrumbs (Q3.3 / D43 lock):** **NO breadcrumbs in v0.4.** IA is 2 levels deep (index → detail). Reconsider at v0.5+ if a 3rd level emerges.
+
+**Loading states (Q3.4 lock):** skeleton placeholders on long lists (>5 items). NO top-bar spinner. Most surfaces are SSG/SSR; inline skeletons for client-side data.
+
+**Empty states (Q3.5 lock):** **copy only (Linear-style), always with a next-action link OR a calibration**. Asymmetric in v0.3.1 (`/meetings` good, `/events` thin per walkthrough findings §3); Phase A codifies via `<EmptyState>` component contract. Examples:
+- `/calendar`: "No upcoming events. The next weekly meeting is Wednesday at 18:30."
+- `/events` (empty): "No upcoming events. The next weekly sync is Wed 18:30; standalone events appear here as they get scheduled. Propose an event ↗"
+- `/decisions` (gated): "No decisions yet. ADRs land in docs/decisions/ as they get written."
+- `/projects` (gated): "Member projects appear here as they get added."
+
+Optional 1-2 illustrated touches across the platform are **Phase C** (NOT Phase A). Phase A is copy-only.
+
+**Detail page templates (Q3.2 / D31 lock — Phase B target state):** 3 variants share the global shell. Phase A wraps existing v0.3 detail templates in the new `<Header>`/`<Footer>` shell; Phase B upgrades to the 3-variant family:
+
+| Variant | Routes | Composition (Phase B) |
+|---|---|---|
+| **A — content-led** | `/projects/[slug]`, `/decisions/[slug]` | Title + meta strip + markdown body + sidebar |
+| **B — event-led** | `/events/[slug]`, `/meetings/[slug]` | Hero (date/time/location + RSVP CTA + roster strip) + agenda/notes body + sidebar |
+| **C — person-led** | `/members/[slug]` | Photo + name + handle + role + bio body + Working-on (Phase B) + Persona links (PersonaPanel v0.2) |
+
+**Phase A ship reality:** outer shell wraps existing templates; inner composition unchanged.
+
+---
+
+### 14.3 Routes added/changed
+
+**Net change:** 4 NEW route files + 1 modified route + 0 removed routes.
+
+| Route | Phase | HTTP behavior | Composition |
+|---|---|---|---|
+| **`/` (NEW handler body)** | **A** | Anonymous: 200 (ADR-0014). Signed-in: 302→`/home` preserving `?from=…` (H57). | Hero strip (wordmark left + value prop sentence + sub-line + primary CTA `[Sign in with GitHub]` + secondary CTA `[Join Telegram →]` + next-event ribbon right) + below-hero "This week" strip + "Recent activity" strip + 5-card section nav + Footer. |
+| **`/home`** | **A** | Anonymous + signed-in: 200. `Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate` (v0.3.1 amended posture preserved). | Anonymous: This-Week strip → Recent activity → in-page Sections card grid (existing v0.3 component). Signed-in: prepend "Your week" dashboard pane (Q1.3 / D25) above the same anonymous body. |
+| **`/calendar` (NEW)** | **A** | Anonymous + signed-in: 200. | Top filter chips (All / Events / Meetings) with state in URL `?filter=…` (H62). Chronological list (upcoming) + collapsible past section. Subscribe-to-calendar button → `/api/calendar.ics`. Uses `<ListItem>` (D36) for each row. |
+| **`/handbook` (NEW)** | **A** | Anonymous + signed-in: 200. | Sectioned page: Charter pointer (links to `community/charter/charter.md`) + Roadmap pointer (open question O4 below) + "Decisions live in our public git repo at github.com/anton1rsod/warsaw-ai-community/tree/main/docs/decisions" external link + v0.5+ placeholder list for Skills/Academy/GBrain Q&A (each labeled "TBD placement"). **NO ADR markdown content surfaced via the page UI** (Q6.1 (i) lock). |
+| **`/feed/meetings.xml` (NEW)** | **C** | Anonymous + signed-in: 200 with `Content-Type: application/rss+xml`. | RSS 2.0 feed. Items: title + link + description (≤280 chars excerpt) + pubDate. NO guid / no author beyond optional. H61 excerpt cap. |
+| **`/feed/events.xml` (NEW)** | **C** | Anonymous + signed-in: 200 with `Content-Type: application/rss+xml`. | Same shape as meetings feed. |
+| `/events` | A | Anonymous + signed-in: 200 (per ADR-0012). | Unchanged from v0.3 except wrapped in global `<Header>`/`<Footer>`. Empty-state copy upgraded per Q3.5. |
+| `/meetings` | A | Anonymous + signed-in: 200 (per ADR-0012). | Unchanged from v0.3 except wrapped in global `<Header>`/`<Footer>`. |
+| `/events/[slug]`, `/meetings/[slug]` | A wrap, B upgrade | Anonymous + signed-in: 200 (per ADR-0012). | Phase A: wrap existing v0.3 detail templates in new shell. Phase B: upgrade to event-led variant (Q5.7 / D39 — Luma-style hero with RSVP CTA + roster strip + agenda body + share/calendar footer). |
+| `/projects`, `/projects/[slug]` | A wrap | Anonymous: 307→/login (D29 — stays gated). Signed-in: 200 wrapped in new shell. Phase B: project portfolio framing + per-project Decisions section (Q5.8 / D29). | |
+| `/members`, `/members/[slug]` | A wrap | Anonymous: 307→/login (D29 — stays gated). Signed-in: 200 wrapped in new shell. Phase B: pure PostHog team-page (Q5.6 / D38). PersonaPanel v0.2 preserved as-is throughout v0.4. |
+| `/decisions`, `/decisions/[slug]` | A wrap | Anonymous: 307→/login (D28 — stays gated). Signed-in: 200 wrapped in new shell. | |
+| `/me/edit`, `/this-week`, `/admin/health`, `/api/me/*` | A wrap | Anonymous: 307→/login (always-gated). Signed-in: 200 wrapped in shell where applicable. | |
+| `/login`, `/no-access`, `/consent`, `/api/consent/recover`, `/onboard*` | A no-change | As v0.3.1. **No global shell on `/login`** (Q3.1 exception). | |
+| `/manifest.json`, `/icons/*` | A regen | Anonymous + signed-in: 200. Phase A regenerates icons + manifest with `theme_color: "#f59e0b"` + `WA` initials on amber square. | Existing PWA users may need re-install for theme to take effect. |
+| `/api/calendar.ics` | A no-change | Anonymous + signed-in: 200. `Cache-Control: public, max-age=300`. | Unchanged from v0.3. |
+| `/favicon.ico` (NEW asset) | A | 200 image/x-icon. | `WA` 32×32 on `#f59e0b` square — same iconography as `/icons/icon-192.png`. Resolves the v0.3.1 console 404 observed in walkthrough findings §4. |
+
+**`proxy.ts` PUBLIC_PATHS additions** (Phase A): `/`, `/calendar`, `/handbook`. **PUBLIC_PREFIXES additions** (Phase C): `/feed/` (covers both feed routes). All other gates unchanged. Single `proxy.ts` change file; surgical diff.
+
+**Open question O4 (Roadmap pointer on `/handbook`) — inline lock:** the Handbook roadmap pointer links to the **monorepo `PROJECTS.md`** (existing portfolio source). A separate `community/roadmap.md` is NOT created in v0.4 — `PROJECTS.md` already lists active + planned sub-projects with status. Link text: "Active and planned sub-projects ↗" pointing to GitHub URL `github.com/anton1rsod/warsaw-ai-community/blob/main/PROJECTS.md`.
+
+**Open question O5 (Footer link choices) — inline lock:** footer center carries 5 items in order: **About** (→ `/handbook` until `/about` lands in Phase C) · **Telegram** (external invite URL — chat-24 plan locks the URL) · **RSS** (anchor that links to `/feed/meetings.xml` once Phase C ships; in Phase A this link is omitted) · **GitHub** (external — `github.com/anton1rsod/warsaw-ai-community`) · **MIT-licensed** (anchor to `LICENSE` on GitHub). Footer left: `© 2026 Warsaw AI Community`. Footer right: language-switcher slot (empty in v0.4; populated in v0.5+ when next-intl lands).
+
+**Open question O11 (RSS feed item shapes) — inline lock (Phase C):** each `<item>` has `<title>` + `<link>` + `<description>` (excerpt, ≤280 chars, plain text) + `<pubDate>` (RFC 822). **NO `<guid>`** in v0.4 (URL is stable; URL serves as guid by default). **NO `<author>`** in v0.4 (avoids surfacing member email or handle on a public feed without consent).
+
+**Open question O9 ("Your week" dashboard data sources) — inline lock:** Phase A dashboard pane reads from three sources:
+- **Next RSVP commitment** — derived from `event_rsvps.json` (existing v0.3 artifact) filtered by current member's handle + future date.
+- **Status compose CTA** — static link to `/this-week` (no data read).
+- **Optional kudos given/received this week** — derived from `lib/kudos.ts` aggregator (existing v0.3) filtered by current member's handle + current ISO week.
+
+Passive surface — no streak counter, no notifications, no "you missed 2 weeks" guilt-tripping (H67 / manipulation-resistance §14B).
+
+**Open question O13 (Per-project Decisions section data model — Phase B) — inline lock:** ADRs map to projects via an optional `project:` frontmatter field in `docs/decisions/NNNN-*.md`. Schema: `project: "<project-slug>"` (single string; ADRs scoped to a single project) OR `project: ["<slug-a>", "<slug-b>"]` (array; cross-cutting ADRs). When the field is absent, the ADR is treated as **community-wide** and surfaces only on `/handbook` external-link list (not on any per-project page). Phase B `/projects/[slug]` reads `docs/decisions/*.md` frontmatter at build time, filters by `project` matching, and renders a "Decisions" subsection. No live GitHub API integration in v0.4 — Phase A scope is shell-wrap only; Phase B activates the data plumbing.
+
+---
+
+### 14.4 Components
+
+**Phase A delivers 7 net-new shared components in `app/components/`:**
+
+| Component | Purpose | Phase | File |
+|---|---|---|---|
+| `<Header>` | Global header (wordmark + 5-nav + avatar/Sign-in / mobile hamburger) | A | `app/components/Header.tsx` |
+| `<Footer>` | Global footer (copyright + center link strip + lang-switcher slot) | A | `app/components/Footer.tsx` |
+| `<Avatar>` | GitHub-URL avatar with initials fallback; `photo: false` opt-out | A | `app/components/Avatar.tsx` |
+| `<ListItem>` | Shared list-row with title/subtitle/meta/avatar/trailing slots | A | `app/components/ListItem.tsx` |
+| `<DateTime>` | Relative-on-list + absolute-on-hover; absolute-on-detail | A | `app/components/DateTime.tsx` |
+| `<Tag>` | Stage/status/type chip | A | `app/components/Tag.tsx` |
+| `<EmptyState>` | Standardized empty-state with next-action slot | A | `app/components/EmptyState.tsx` |
+
+#### `<Header>` (Q3.1 / D30 lock)
+
+- **Left:** wordmark `Warsaw AI` (Inter Semibold 18px, neutral-900) linking to `/`.
+- **Center:** 5-item top nav (Home / Calendar / Projects / Members / Handbook). Current-page state: accent-700 underline 2px offset 4px. Hover: neutral-900 underline 1px.
+- **Right (anonymous):** `[Sign in]` button (text-only link, neutral-900 underline). Per Q1.2 hero lock, the **primary** `[Sign in with GitHub]` button lives on the `/` hero — `<Header>` right slot stays terse to avoid double-CTA noise on every page.
+- **Right (signed-in):** 32px avatar (GitHub URL via `<Avatar>` with `photo: false` opt-out support) opening a dropdown.
+- **Signed-in dropdown (Q2.4 lock) — exactly 4 items:** `@handle` (no link, neutral-500) → "Your week" (→ `/this-week`) → "Edit profile" (→ `/me/edit`) → "Sign out" (server-action POST).
+- **Mobile (< 768px):** wordmark left + hamburger button right. Tapping hamburger opens a slide-in panel (right edge) containing the 5 nav items stacked + auth section at bottom.
+- **Exception:** `/login` does NOT render `<Header>` (Q3.1 lock). `/no-access` and `/consent` use `<Header>` but without the top-nav center slot (auth-state-only header).
+- **Skip-to-content link** (H65): first focusable element on Tab, visible only on focus, jumps to `<main id="main">`.
+
+#### `<Footer>` (Q3.1 / D30 lock)
+
+- **Left:** `© 2026 Warsaw AI Community`.
+- **Center:** 5 links in order — About · Telegram · RSS · GitHub · MIT-licensed (Phase C surfaces RSS; Phase A renders only About + Telegram + GitHub + MIT).
+- **Right:** language-switcher slot (empty in v0.4; v0.5+ next-intl populates).
+- **Compact:** ~80px tall desktop, ~140px mobile (wraps).
+
+#### `<Avatar>` (Q5.2 / D37 lock)
+
+```typescript
+type AvatarProps = {
+  name: string;        // member display name (for initials fallback + alt)
+  handle: string;      // GitHub handle (for GitHub avatar URL)
+  size: 20 | 24 | 32 | 40 | 96;  // canonical sizes per spec
+  photoOptOut?: boolean;  // from member frontmatter photo: false
+  decorative?: boolean;   // empty alt
+};
+```
+
+- **Default render:** `<Image>` from `next/image` with `src="https://avatars.githubusercontent.com/${handle}?size=${size * 2}"` (2× for retina), `width={size}`, `height={size}`, `alt={`${name}'s avatar`}` or `""` if `decorative`.
+- **`next.config.ts` `images.remotePatterns` allowlist** (H59): `avatars.githubusercontent.com` ONLY. Strict deny-by-default for any other image origin.
+- **`photoOptOut === true` OR `handle` empty:** initials fallback — square (`bg-neutral-200 text-neutral-700 rounded-full`) with initials text centered.
+- **Initials algorithm (open question O6) — inline lock:** **single character — the first letter of the GitHub handle (lowercased to uppercase)**. NOT derived from name parts (avoids pseudo-identification of first/last name when a member intentionally publishes only a partial name). Examples: `anton1rsod` → `A`; `markspas` → `M`. Single-char fallback is the privacy-aligned choice; aesthetics handled via the square's amber border on hover.
+
+Avatar appears on (per Q5.2): `/home` This-Week strip (20px), Recent activity (24px), `/calendar` items (32px), `/events/[slug]` RSVP roster strip (40px, Phase B 5-wide grid per ADR-0012 D12), `/meetings/[slug]` attendee list (40px), `/members/[slug]` profile header (96px, Phase B), `<Header>` avatar dropdown trigger (32px).
+
+#### `<ListItem>` (Q5.1 / D36 lock)
+
+```typescript
+type ListItemProps = {
+  href: string;
+  title: string;
+  subtitle?: string;
+  meta?: string;       // e.g., "Wed May 21 · 18:30" or "3 contributors"
+  avatar?: AvatarProps;
+  trailing?: ReactNode;  // optional trailing chip
+};
+```
+
+Used by `/calendar` (Phase A) + `/home` Recent activity (Phase A) + `/handbook` v0.5+ placeholder sections + `/members` (Phase B) + `/projects` index (Phase B) + `/decisions` index (Phase B). Padding: `py-3 px-4`. Hover: `hover:bg-neutral-50`. Focus visible per Q9.1: `focus-visible:ring-2 ring-accent-500 ring-offset-2`.
+
+#### `<DateTime>` (Q5.4 lock)
+
+- **List context** (e.g., `/home` Recent activity, `/calendar` rows): renders relative ("3 days ago") with `title` attribute showing absolute ("Wed, May 14 · 11:30").
+- **Detail context** (e.g., `/events/[slug]` hero): renders absolute as primary ("Wednesday, May 21 · 18:30 - 21:00 CEST").
+- All times rendered in **CEST timezone** in v0.4 (community is Warsaw-only). v0.5+ Polish + per-user timezone via next-intl.
+
+#### `<Tag>` (Q5.5 lock)
+
+```typescript
+type TagProps = {
+  label: string;
+  variant?: "stage" | "status" | "type";
+  value?: string;  // e.g., "active" | "complete" | "accepted"
+};
+```
+
+**Open question O12 (Tag color mapping) — inline lock:** **NEUTRAL by default, single per-value tint for semantic chips only.**
+
+| Variant | Value examples | Color treatment |
+|---|---|---|
+| `stage` (projects) | `active` | bg `neutral-100`, text `neutral-700`, **NO accent tint** — restraint-first |
+| `stage` (projects) | `complete` | bg `neutral-100`, text `neutral-500` (de-emphasized) |
+| `stage` (projects) | `paused` | bg `neutral-100`, text `neutral-500` (de-emphasized) |
+| `status` (decisions) | `accepted` | bg `neutral-100`, text `neutral-700` |
+| `status` (decisions) | `proposed` | bg `accent-50`, text `accent-700` (the single per-value tint — signals "open question") |
+| `status` (decisions) | `superseded` | bg `neutral-100`, text `neutral-400` (struck-through label) |
+| `type` (meetings) | `weekly` / `special` / `workshop` | bg `neutral-100`, text `neutral-700` |
+
+**Rationale:** Q4.8 "Accent ONLY means action or you-are-here" — using accent on a status chip would dilute the signal. The single exception (`proposed` ADR status) is justified by the literal "open / needs attention" semantic, which IS an action-adjacent state. All other chips use a neutral palette to keep visual restraint.
+
+#### `<EmptyState>` (Q3.5 codification per walkthrough finding §3)
+
+```typescript
+type EmptyStateProps = {
+  headline: string;          // "No upcoming events."
+  calibration?: string;      // "The next weekly sync is Wed 18:30."
+  nextAction?: { label: string; href: string; external?: boolean };  // "Propose an event ↗"
+};
+```
+
+Always renders at least `headline + (calibration OR nextAction)`. Phase A test (`<EmptyState>` describe block) asserts that no surface renders an `<EmptyState>` without one of those two affordances — codifies Q3.5 lock.
+
+**Mobile slide-in nav animation (open question O7) — inline lock:** **slide-in from right edge, no backdrop blur, 200ms ease-out**. Variants considered:
+
+| Variant | Spec | Pick rationale |
+|---|---|---|
+| **A (Default — RECOMMENDED)** | `transform: translateX(100% → 0)` over 200ms `cubic-bezier(0.4, 0.0, 0.2, 1)` (Material standard ease-out). Backdrop: `bg-neutral-900/40` fade-in over 150ms. No blur (perf). | Predictable; matches iOS/Android slide-in idiom; cheap on mobile GPU; backdrop dim suffices for context separation |
+| B (Drawer-with-blur) | Same translate but backdrop `bg-neutral-900/30 backdrop-blur-sm` | Adds 1-2ms paint cost; less predictable on lower-end Android |
+| C (Overlay-fade) | No translate, panel fades in over white-card overlay | Loses spatial affordance — feels modal, not nav |
+
+**Phase A ships Variant A.** Tested on 390×844 mobile viewport via Lighthouse + manual interaction (chat-25 Phase A E2E).
+
+---
+
+### 14.5 Anonymous vs members-only posture
+
+**Lock (Q6.1 / D24 / D28 / D29):**
+
+| Route | Anonymous | Signed-in | Source |
+|---|---|---|---|
+| `/` | **200 hero** | **302→/home** preserving `?from=…` | ADR-0014 (NEW v0.4) |
+| `/home` | 200 (discovery feed) | 200 (+ "Your week" dashboard pane prepended) | ADR-0012 |
+| `/calendar` | **200** | 200 | extends ADR-0012 (NEW v0.4) |
+| `/handbook` | **200** (charter pointer + roadmap link + GitHub external links + v0.5+ placeholder list; NO ADR markdown content) | 200 (same body) | NEW v0.4; Q6.1 (i) lock |
+| `/events`, `/events/[slug]` | 200 (per ADR-0012) | 200 | ADR-0012 |
+| `/meetings`, `/meetings/[slug]` | 200 (per ADR-0012) | 200 | ADR-0012 |
+| `/api/calendar.ics` | 200 (per ADR-0012) | 200 | ADR-0012 |
+| `/manifest.json`, `/icons/*`, `/favicon.ico` | 200 (per ADR-0012) | 200 | ADR-0012 |
+| `/feed/meetings.xml`, `/feed/events.xml` | **200** (Phase C) | 200 | NEW v0.4 (Phase C) |
+| `/decisions`, `/decisions/[slug]` | **307→/login** (stays GATED) | 200 | D28 — Q6.1 A1 lock (ADR-0013 DROPPED) |
+| `/projects`, `/projects/[slug]` | **307→/login** (stays GATED) | 200 | D29 — privacy review v0.5+ |
+| `/members`, `/members/[slug]` | **307→/login** (stays GATED) | 200 | D29 — per-member opt-in v0.5+ |
+| `/me/*`, `/this-week`, `/admin/*`, `/api/me/*` | 307→/login (always gated) | 200 / 200 | unchanged from v0.1 |
+| `/login`, `/no-access`, `/consent`, `/api/consent/recover`, `/onboard*` | 200 (open) | varies | unchanged from v0.1 |
+
+**Anonymous CTAs on member-content pages (Q6.2 / D29 lock):** when an anonymous visitor reaches a gated route, the destination 307→/login is preserved (v0.3.1 behavior). v0.4 Phase A does NOT introduce gated-landing-with-Sign-in-CTA pages — that pattern (per Q6.2 lock text "`/projects` gated landing: 'Member projects — sign in to see' + [Sign in with GitHub]") is reserved for v0.5+ if anonymous→apply conversion data signals demand. Phase A `/` hero serves as the global "what is this community" anchor.
+
+**Reasoning for the v0.5+ defer:** Phase A's `/` hero already pitches the value proposition + Sign-in CTA on the URL-most-likely-to-be-shared. Adding per-gated-route landing pages would multiply the marketing surface by 3 (`/projects`, `/members`, `/decisions`) without clear demand signal. v0.5+ revisits once Phase A conversion data is available.
+
+---
+
+### 14.6 Manipulation-resistance
+
+Per chat-22 §14B audit, v0.4 ships with three explicit anti-manipulation hardenings on top of v0.3's existing posture:
+
+| Surface | Hardening | Why |
+|---|---|---|
+| **Signed-in `/home` "Your week" dashboard** | Passive surface — **NO streak counter, NO notifications, NO "you missed 2 weeks" guilt-tripping copy**. Counts what HAPPENED; never pressures what SHOULD. Test: no string in the component file matches `/streak\|missed\|don't break the chain/i`. | Q1.3 / §14B audit — dashboard could grow into streak gamification; pre-emptively disallow at the component-test level. |
+| **`/` hero next-event ribbon** + **`/events/[slug]` Phase B hero** | **NEUTRAL framing only** ("Next: Wed May 21 · 18:30") — NEVER scarcity ("Only 2 spots left"). No countdown timers. No "spots remaining" rendered unless seats are actually limited by venue capacity field on the event frontmatter. Test: no string in the hero/ribbon component matches `/only \d+ spots\|spots remaining\|hurry/i`. | §14B audit — "Could induce FOMO" risk on the most-trafficked anonymous surface. |
+| **All event/meeting count surfaces** (RSVP "Going (3)", attendee list count, "+M members") | **No-scarcity defaults.** Preserves ADR-0012 D12 `event_rsvp_visibility: "members_only"` opt-out. v0.4 inherits unchanged. | §14B audit — RSVP visibility opt-out gives members a privacy escape hatch; v0.4 must NOT regress. |
+
+**No analytics in v0.4 (Q9.4 / D41 lock)** — no Plausible, no PostHog (despite character match!), no Google Analytics. v0.5+ revisits with traffic justification + GDPR/DPA review. **No cookie banner** in v0.4 (no tracking cookies → no banner needed; consent gate for write surfaces stays unchanged).
+
+**No email / push notifications in v0.4** — no email infrastructure exists; PWA install prompt is browser-native only (no custom modal pestering).
+
+**Kudos system** (v0.3 D19) inherits v0.3 posture: minimal, no leaderboard, no streak, no notifications, no public count beyond aggregate on `/projects/[slug]` (Phase B). NO escalation in v0.4.
+
+**Member-profile activity feed: DROPPED from v0.4** per Q5.6 / D38 lock. Defer to v0.5+ with explicit anti-comparison design pass.
+
+**Persona sharing + invite-tree visibility** — both flagged `[anti-manipulation review required]` in V0_5_BACKLOG; NOT in v0.4.
+
+---
+
+### 14.7 GDPR / threat-model
+
+**Standing posture (v0.1 baseline preserved):** member consent gate on first login per ADR-0012 + onboarding flow. Roster admission is opt-in. GDPR export + delete endpoints (`/api/me/export`, `/api/me/delete`) preserved unchanged. No new authentication mechanism in v0.4.
+
+**v0.4 new PII / leak surfaces (chat-22 §14C audit):**
+
+| Surface | Risk | Mitigation |
+|---|---|---|
+| **`/` anonymous-public flip (ADR-0014)** | Session-coupled rendering could leak signed-in identity into anonymous responses (cache poisoning, server-component drift) | **H56** — `/` anonymous render asserts no `auth()` side-effects; `Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate` matches `/home`'s posture. Signed-in branch returns 302 only (no body). Test asserts response body for anonymous `/` does not include `@handle`, `Sign out`, or any member-specific data. |
+| **`/` signed-in 302 with return-to** | Open-redirect via crafted `?from=…` parameter | **H57** — `from` parameter is validated against an allowlist of internal paths (regex `^\/[a-z0-9-_/]*$`) before being used in the redirect target. Anything else is dropped; redirect falls through to `/home`. |
+| **`/handbook` anonymous render** | If Handbook ever surfaces ADR markdown content, must respect ADR-0012 / Anton's PII stance | v0.4 `/handbook` does **NOT** surface ADR content via UI (Q6.1 (i) lock). Links to GitHub instead. No PII risk. v0.5+ flip requires its own ADR with PII audit (V0_5_BACKLOG entry). |
+| **Member avatar URL via Vercel `next/image` proxy** | SSRF via arbitrary `<Image src>` injection | **H59** — `next.config.ts` `images.remotePatterns` allowlist: `[{ protocol: "https", hostname: "avatars.githubusercontent.com" }]` ONLY. Any other image origin is rejected at request time. |
+| **GitHub avatar served via Vercel edge proxy** | Vercel caches member avatars on edge → 3rd-party data exposure of member photos | **Acceptable per v0.1.0 GDPR posture** (GitHub avatar is already public web data — same image is served from GitHub's CDN to anyone visiting `github.com/<handle>`). Documented in this §. Member opt-out via `photo: false` frontmatter (H60). Phase A `<Avatar>` component honors the opt-out; H60 test verifies. |
+| **RSS feeds (Phase C)** | Could leak gated content if title/excerpt logic isn't strict | **H61** — feeds NEVER include gated content (`/projects` + `/decisions` ADRs + `/members`). Meeting/event excerpts capped at 280 chars (mirrors ADR-0012 D7 status excerpt limits). Phase C test asserts that no feed item URL points into a gated surface. |
+| **Anonymous render of event detail with `event_rsvp_visibility: "members_only"`** | Anonymous viewer might see "Going" members tagged `private` | **H66** — RSVP roster strip on anonymous render respects ADR-0012 D12. Only `public`-flagged members surface; hidden members contribute to a "+M members (sign in to see)" badge. Test asserts that no `private`-flagged member's name, handle, or avatar appears in the anonymous response body. |
+| **`/calendar` unified index** | Could leak meeting attendees if data layer pre-includes attendee blocks | Confirm: ADR-0012's existing data-layer split (events public + attendee lists members-only) is preserved. `/calendar` route handler reads the **public** projection only. Test asserts no `members:` array or `attendees:` array surface in anonymous response. |
+| **`/home` signed-in dashboard "Your week"** | Server Component rendering session data — must NOT cache | Already pattern-8-compliant per `docs/playbooks/recurring-plan-defects.md` (auth-aware → forces dynamic). H58 stability check covers. |
+| **`<Avatar>` initials fallback** | Could leak last-name info from members who only published a first name | O6 lock — **single character (first letter of handle)** — avoids pseudo-identification entirely. |
+| **`persona-builder/personas/*/` slug-folder mismatch** | Could expose persona content to wrong member's profile | **H68** — CI integrity check (`scripts/validate-persona-folders.ts`) asserts every `personas/<X>/` folder maps to a `roster.md` slug. Failure blocks PR merge. |
+
+**GitHub-avatar-via-Vercel-proxy data flow (explicit §14C audit task):**
+
+1. Member is on roster with `community/members/<slug>.md` frontmatter — no `photo: false` field.
+2. Member's GitHub handle (`anton1rsod`) is in the roster row.
+3. Any page rendering an avatar calls `<Avatar handle="anton1rsod" name="Anton Safronov" size={32} />`.
+4. The component renders `<Image src="https://avatars.githubusercontent.com/anton1rsod?size=64" … />`.
+5. Vercel's `next/image` proxy intercepts at request time: fetches GitHub avatar; transforms (WebP, resize, quality); caches at edge (default `Cache-Control: public, max-age=31536000, immutable`).
+6. Subsequent requests for the same `(handle, size)` tuple from the same edge region return the cached transformed image.
+7. **Edge cache scope:** the transformed avatar can be served to anonymous + signed-in users (same image; no per-user variant).
+8. **PII consideration:** GitHub avatar URLs are public web data; Vercel caching does not introduce new exposure beyond what GitHub already serves to anyone. The data flow does NOT process personally-identifiable information beyond what the member voluntarily published to GitHub.
+9. **Opt-out:** member adds `photo: false` to their `community/members/<slug>.md` frontmatter → `<Avatar>` renders initials fallback (single letter from handle). No GitHub avatar URL fetched, no Vercel proxy hit.
+10. **GDPR delete impact:** removing a member from roster + deleting their `community/members/<slug>.md` removes all avatar render paths on the platform; cached transformed images at Vercel's edge expire on the existing TTL (max 1 year). Vercel does NOT retain personally-keyed avatar caches beyond URL.
+
+**Cache-Control headers** (`§14C audit task #3`): Phase A test (`H56`) verifies that `/` returns `Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate` matching `/home`'s v0.3.1 posture. This prevents edge-cache leakage across the signed-in / anonymous branches of the same URL.
+
+**No CSP / X-Frame-Options addition in v0.4** — adding Content-Security-Policy is a security-mode lift on its own that v0.4 thesis does not require. Note as v0.5+ backlog candidate (logged in `V0_5_BACKLOG.md`).
+
+**Accessibility target (Q9.1 / D43 lock):** **WCAG 2.1 AA across the strict-list. AAA where feasible.** Verification: axe-core run on each strict-list surface; fix all "serious" + "critical" issues before ship. Specifics:
+- Body text neutral-900 on white = 19:1 (AAA).
+- Section labels neutral-500 = 6:1 (AA large).
+- Primary CTA `accent-500` background with white foreground = 4.62:1 (AA).
+- Skip-to-content link (H65) visible on Tab focus.
+- ARIA landmarks (`<nav>`, `<main>`, `<header>`, `<footer>`) semantic; icon-only buttons get `aria-label`.
+- Focus management: dialog/dropdown focus traps; close-on-Escape.
+
+**Performance budget (Q9.2 lock — verified post-Phase-A against `projects/community-platform/perf-baselines/`):**
+
+| Surface | LCP | CLS | TTI |
+|---|---|---|---|
+| Anonymous `/`, `/home`, `/calendar`, `/events/[slug]`, `/meetings/[slug]`, `/handbook` | <2.0s | <0.05 | <3.0s |
+| Signed-in `/home`, `/me/edit`, `/members/[slug]`, `/projects/[slug]`, `/decisions/[slug]` | <2.5s | <0.1 | <4.0s |
+| Auth gate (`/login`, `/consent`) | <3.0s | <0.1 | <4.0s |
+
+---
+
+### 14.8 Strict-list (100% coverage)
+
+Phase A files added to `STATE.md`'s spec §8 strict-list (mirrors §13.9 convention). Coverage gate: **100% lines + 100% functions + 100% statements; ≥80% branches** (per CONSTRAINTS line 27 + v0.3 precedent).
+
+| File | Phase | Why strict-list |
+|---|---|---|
+| `app/components/Header.tsx` | A | Global chrome; auth-state-aware; H58 stability + H65 skip-to-content + H58 dropdown shape |
+| `app/components/Footer.tsx` | A | Global chrome; static content but multi-link |
+| `app/components/Avatar.tsx` | A | PII / opt-out gate (H60); SSRF gate (H59 via `next/image` config) |
+| `app/components/ListItem.tsx` | A | Consumed by 6+ surfaces; regression risk |
+| `app/components/DateTime.tsx` | A | Date arithmetic + i18n boundary |
+| `app/components/Tag.tsx` | A | Per-value tint mapping (O12) — Q4.8 accent-usage discipline at component level |
+| `app/components/EmptyState.tsx` | A | Q3.5 codification — test asserts every render has a next-action OR calibration |
+| `app/page.tsx` (root `/` route) | A | ADR-0014 + H56 anonymous render + H57 redirect |
+| `app/calendar/page.tsx` | A | NEW route handler; H62 filter URL preservation |
+| `app/handbook/page.tsx` | A | NEW route handler; Q6.1 (i) no-ADR-content assertion |
+| `proxy.ts` | A | PUBLIC_PATHS extension — already on v0.1 strict-list; re-verify after Phase A diff |
+| `lib/i18n/strings.ts` | A | Single-source-of-truth contract (H67) |
+| `scripts/validate-persona-folders.ts` | A | H68 CI check — fails PR merge if slug mismatch |
+| `app/globals.css` | A | Token CSS variables (H64 contract — naming + comment legend) |
+| `app/components/HomeFeed.tsx` (modified) | A | Adds "Your week" dashboard pane for signed-in render |
+
+**Phase B + Phase C add their own strict-list rows when activated; not part of v0.4.0 ship.**
+
+`scripts/validate-persona-folders.ts` and `app/globals.css` are not React components; they're verified by **(a)** custom CI step (Bash + Node check); **(b)** snapshot test of the parsed CSS variable list against an allowlist.
+
+---
+
+### 14.9 Hardening table (H56–H68; 12 entries, H63 retired)
+
+Following HANDOFF_PROTOCOL §4 convention `describe("H<n>: ...")`.
+
+| ID | Hardening | Surface | Test file (describe block) |
+|---|---|---|---|
+| **H56** | `/` anonymous render asserts no `auth()` side-effects (no session leak in body or headers); `Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate` matches `/home` posture | `app/page.tsx` (refactored for ADR-0014) | `tests/unit/h-v0-4.spec.ts` — `describe("H56: / anonymous render no session leak")` |
+| **H57** | Signed-in `/` 302→`/home` preserves `?from=…` query parameter if it matches `^\/[a-z0-9-_/]*$`; otherwise drops it. Open-redirect prevention. | `app/page.tsx` + signed-in redirect path | `tests/unit/h-v0-4.spec.ts` — `describe("H57: / signed-in redirect preserves safe from")` |
+| **H58** | Global `<Header>` shows correct auth-state UI without hydration flash; signed-in dropdown is **exactly 4 items** per Q2.4 (drops v0.3.1's "Members" item) | `app/components/Header.tsx` | `tests/unit/components/header.spec.ts` — `describe("H58: header auth-state stability + dropdown shape")` |
+| **H59** | Member avatar URL allowlist limited to `avatars.githubusercontent.com` in `next.config.ts` `images.remotePatterns` (SSRF prevention) | `next.config.ts` + `<Avatar>` | `tests/unit/components/avatar.spec.ts` — `describe("H59: avatar remote allowlist")` |
+| **H60** | `photo: false` frontmatter opts out of GitHub avatar render (initials shown instead); `next/image` never fetched | `lib/members.ts` + `<Avatar>` | `tests/unit/components/avatar.spec.ts` — `describe("H60: photo opt-out")` |
+| **H61** | RSS feeds (Phase C) NEVER include gated content; meeting/event excerpts capped at 280 chars mirroring ADR-0012 D7 | `app/feed/meetings/route.ts`, `app/feed/events/route.ts` | `tests/unit/h-v0-4.spec.ts` — `describe("H61: RSS no-leak + excerpt cap")` (Phase C only) |
+| **H62** | `/calendar` filter chip state encoded in URL query (`?filter=events`) — preserves on share / refresh | `app/calendar/page.tsx` | `tests/unit/h-v0-4.spec.ts` — `describe("H62: calendar filter URL")` |
+| ~~**H63**~~ | ~~`/decisions` anonymous render~~ — **RETIRED** (Q6.1 A1 lock; no `/decisions` flip in v0.4) | — | — |
+| **H64** | Token CSS variables documented in `app/globals.css` with naming convention (`--color-<role>-<weight>`) + comment legend | `app/globals.css` | `tests/unit/h-v0-4.spec.ts` — `describe("H64: token variable contract")` (parses globals.css; verifies allowlist) |
+| **H65** | Skip-to-content link visible on Tab focus (keyboard a11y); first focusable element on `<body>` | `app/components/Header.tsx` | `tests/unit/components/header.spec.ts` — `describe("H65: skip-to-content visibility")` |
+| **H66** | Event RSVP avatar strip respects ADR-0012 D12 `event_rsvp_visibility` defaults (anonymous sees `public`-flagged only) | `app/events/[slug]/page.tsx` | `tests/integration/anonymous-event-detail.spec.ts` — `describe("H66: RSVP roster visibility")` (Phase B unblocks full test; Phase A asserts on-render placeholder) |
+| **H67** | `lib/i18n/strings.ts` is **single** source of UI text; grep for inline strings in Phase A strict-list JSX returns no v0.4 hits | `lib/i18n/strings.ts` + Phase A components | `tests/unit/h-v0-4.spec.ts` — `describe("H67: i18n string centralization")` (parses Phase A component files; asserts no string literal in JSX text node) |
+| **H68** | CI slug-folder integrity check — every `persona-builder/personas/<X>/` folder maps to a `community/members/roster.md` slug | `scripts/validate-persona-folders.ts` + `.github/workflows/ci.yml` | `tests/unit/scripts/validate-persona-folders.spec.ts` — `describe("H68: persona slug-folder integrity")` |
+
+**Net v0.4 hardenings: 12** (H56-H62 + H64-H68; H63 retired). **Total platform hardenings: 67** (v0.1: 13 + v0.2: 16 + v0.3: 26 + v0.4: 12).
+
+**Test-prefix convention:** `describe("H<n>: ...")` for grep-verification at chat-25 closeout: `grep -rn "describe(\"H" projects/community-platform/tests/` returns 67 hits across the test suite.
+
+---
+
+### 14.10 Scope envelope
+
+**Phase A is COMMITTED as v0.4.0.** Phase B + Phase C are CONDITIONAL on Phase A landing data + (post-ship) user-test feedback. Hard-cut on Phase A merge — **no feature flag**.
+
+| Phase | Status | Scope | File count | Tag |
+|---|---|---|---|---|
+| **A — Shell + landing + Handbook + Calendar + token + wordmark** | **COMMITTED** | Global `<Header>` / `<Footer>` / `<Avatar>` / `<ListItem>` / `<DateTime>` / `<Tag>` / `<EmptyState>`; token CSS variables; warm-amber accent ramp; `/` anonymous hero (ADR-0014); `/calendar` route; `/handbook` route; signed-in `/home` "Your week" dashboard pane; wordmark; PWA icons + favicon regen; manifest theme color; skip-to-content + axe-core baseline; `lib/i18n/strings.ts` centralization; H56-H62 + H64-H68 hardenings; CI slug-folder integrity check (H68) | ~22-26 files | `v0.4.0` |
+| **B — Detail templates** | **CONDITIONAL** on Phase A landing + user-test | Unified detail template family (3 variants A content / B event / C person sharing global shell, Q3.2 / D31); PostHog team-page member profile (Q5.6 / D38); Luma-style event detail with RSVP roster (Q5.7 / D39); project portfolio framing + per-project Decisions section (Q5.8 / D29) | ~15 files | `v0.4.1` |
+| **C — Brand visual + RSS + illustrations** | **CONDITIONAL** on Phase A + B reception | 1-2 Notion-style illustrated touches (placement decided in chat-23 design-shotgun deferred; v0.5+ design pass may absorb); `/about` thin page; RSS feeds `/feed/meetings.xml` + `/feed/events.xml`; `<link rel="alternate" type="application/rss+xml">` discoverability in global header on anon-public surfaces; H61 hardening | ~10 files | `v0.4.2` |
+
+**Total v0.4 timeline (Q10.4 / D44 lock):** 2.5-4 wks CC-time across phases. Worst case (B + C don't activate): v0.4.0 is the v0.4 ship; B + C absorbed into v0.5 cycle.
+
+**Chat sequencing (Q10.4 / D44 lock recap):**
+- chat-22 (DONE 2026-05-18) — brainstorm via `superpowers:brainstorming`.
+- chat-23 (THIS CHAT) — spec via `superpowers:spec-writer` + ADR-0014 + (user-test skip + structural walkthrough substitute).
+- chat-24 — Phase A implementation plan via `superpowers:writing-plans`.
+- chat-25 — Phase A implementation (v0.4.0) via `superpowers:subagent-driven-development`.
+- chat-26+ — Phase A landing review; user-test session decision; Phase B activation decision.
+- chat-27+ — Phase B implementation (v0.4.1) if activated.
+- chat-28+ — Phase C implementation (v0.4.2) if activated.
+
+**PR strategy (Q10.5 lock):** **split per phase**. v0.4.0 ships as one PR. v0.4.1 + v0.4.2 each ship as separate PRs if their phases activate. Smaller PRs → faster reviewer-agent dispatch; each tag is a checkpoint; bisecting regressions stays cheap.
+
+---
+
+### 14.11 Out-of-scope confirmation
+
+The following are confirmed NOT in v0.4 (and not in Phase B / C either unless explicitly noted):
+
+| Q-id | Item | Status | Backlog ref |
+|---|---|---|---|
+| Q11.1 | Payments / commerce / subscriptions | NOT v0.4 | `V0_5_BACKLOG.md` |
+| Q11.2 | Built-in KB / Q&A (GBrain owns) | NOT v0.4 | GBrain sub-project owns; cross-link only |
+| Q11.3 | Route removal | NOT v0.4 (v0.4 adds, never removes) | n/a |
+| Q11.4 | Backend / data shape changes | NOT v0.4 (pure UI/IA) | Frontmatter format stable; generated JSON artifacts stable |
+| Q11.5 | Native iOS / Android apps | NOT v0.4 (PWA install is the mobile story) | `V0_5_BACKLOG.md` (member-photo-upload-UI etc. are v0.6+) |
+| Q11.6 | DMs / real-time messaging | NOT v0.4 (Telegram remains conversation channel) | n/a (Q-1.3 anti-character lock) |
+| — | **ADR-0013 `/decisions` anonymous flip** | **DROPPED from v0.4** (Q6.1 A1 lock) | `V0_5_BACKLOG.md` — re-evaluate v0.5+ after PII audit |
+| — | `/members` + `/members/[slug]` anonymous flip | NOT v0.4 (privacy review needed) | `V0_5_BACKLOG.md` |
+| — | `/projects` + `/projects/[slug]` anonymous flip | NOT v0.4 (privacy review needed) | `V0_5_BACKLOG.md` |
+| — | Search / cmd-K command palette / GBrain Q&A integration | NOT v0.4 (catalog too small + GBrain integration earns own scope) | `V0_5_BACKLOG.md` |
+| — | Dark mode | NOT v0.4 (token foundation only; design pass v0.5+) | `V0_5_BACKLOG.md` |
+| — | Full brand identity (mascot / logo mark / illustration system / motion / extended palette) | Phase A delivers wordmark + accent; v0.5+ delivers rest | `V0_5_BACKLOG.md` |
+| — | Polish localization translations | NOT v0.4 (structure prepared; translations v0.5+) | `V0_5_BACKLOG.md` |
+| — | Member-profile activity feed | NOT v0.4 (dropped per Q5.6 / D38) | `V0_5_BACKLOG.md` |
+| — | Storybook component documentation | NOT v0.4 (<30 shared components; RTL tests suffice) | `V0_5_BACKLOG.md` (v0.6+) |
+| — | Analytics (Plausible cookieless option) | NOT v0.4 (no demand signal) | `V0_5_BACKLOG.md` |
+| — | Member photo upload UI | NOT v0.4 (GitHub avatar suffices) | `V0_5_BACKLOG.md` (v0.6+) |
+| — | Onboarding tour | NOT v0.4 (empty-state hints suffice) | `V0_5_BACKLOG.md` (v0.6+) |
+| — | Personas v2 (external repos + own pages + sharing + refresh) | NOT v0.4 (PersonaPanel v0.2 preserved) | `V0_5_BACKLOG.md` |
+| — | Community Skills / Tools / Reps directory | NOT v0.4 (strategic feature; placement TBD) | `V0_5_BACKLOG.md` |
+| — | Academy linking | NOT v0.4 (placement TBD) | `V0_5_BACKLOG.md` |
+| — | AI moderation / onboarding / support bots | NOT v0.4 (v0.5+ candidate) | `V0_5_BACKLOG.md` |
+| — | Content-Security-Policy header addition | NOT v0.4 (own security-mode lift) | `V0_5_BACKLOG.md` (new entry; chat-23 surface) |
+| — | `/projects` + `/members` + `/decisions` per-route gated-landing-with-Sign-in-CTA pages | NOT v0.4 (Phase A `/` hero serves global anchor; per-route landings v0.5+) | `V0_5_BACKLOG.md` |
+
+**Phase B status:** the table above lists Phase B items as Phase A-deferred only when the Q-lock explicitly defers them; items locked for Phase B activation (detail templates, member team-page, etc.) are conditional-not-out-of-scope.
+
+---
+
+*This § (§14) drafted 2026-05-18 in chat-23 via `superpowers:spec-writer`. Source of decisions: `docs/specs/2026-05-17-community-platform-v0-4-brainstorm-output.md` (Anton-locked D21–D44 + H56–H68 + ADR-0014 candidate). Compensating-control input: `docs/research/v0-4-gstack-walkthrough-2026-05-18/findings.md` (structural walkthrough — zero D-id contradictions). Locks 14 open questions O1–O14 inline; O1 (hero copy) in §14.3; O2 (wordmark) in §14.1; O3 (accent ramp) in §14.1; O4 (Handbook roadmap pointer) in §14.3; O5 (footer links) in §14.3; O6 (initials algorithm) in §14.4; O7 (mobile slide-in animation) in §14.4; O8 (sidebar collapse breakpoint) — Phase B target, deferred to chat-24 plan; O9 ("Your week" data sources) in §14.3; O10 (i18n namespace structure) — deferred to chat-24 plan (mechanical decision); O11 (RSS item shape) in §14.3; O12 (Tag colors) in §14.4; O13 (per-project Decisions data model) in §14.3; O14 (user-test findings) — substituted by gstack walkthrough per chat-23 Anton call.*
+
+*Next chat (24): `superpowers:writing-plans` writes Phase A implementation plan against this §14 + ADR-0014. Handoff at `docs/specs/2026-05-19-community-platform-v0-4-plan-writing-handoff.md` (drafted in this same chat-23 commit).*

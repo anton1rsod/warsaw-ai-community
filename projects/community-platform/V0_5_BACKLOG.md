@@ -93,6 +93,12 @@
 
 - **Bottom tab bar mobile nav** — v0.4 ships hamburger (preserves scroll real estate). Re-evaluate v0.6+ only if mobile traffic dominates + member feedback supports.
 
+### Security-mode lifts surfaced during chat-23 spec writing
+
+- **Content-Security-Policy header addition** — chat-23 walkthrough (`docs/research/v0-4-gstack-walkthrough-2026-05-18/findings.md` §7) confirmed v0.3.1 ships no CSP / X-Frame-Options / Referrer-Policy beyond the default Vercel set. Adding CSP is a security-mode lift on its own (requires per-asset origin audit + nonce strategy for inline styles/scripts + Report-Only canary period before enforcement); v0.4 thesis (visual + IA + landing) does not require it. Re-evaluate v0.5+ when a security-mode pass becomes its own scope.
+
+- **`/projects` / `/members` / `/decisions` per-route gated-landing-with-Sign-in-CTA pages** — Q6.2 lock describes a gated-landing pattern ("Member directory — sign in to see profiles" + `[Sign in with GitHub]`) that v0.4 Phase A defers: Phase A `/` hero serves as the global "what is this community" anchor, and adding per-route landings would multiply the marketing surface by 3 without clear demand signal. Re-evaluate v0.5+ once Phase A anonymous→apply conversion data is available.
+
 ### Conditional v0.4 phases (decided post Phase A user-test)
 
 - **Phase B of v0.4** — detail-page template upgrades (Q3.2 + Q5.6 + Q5.7 + Q5.8): unified 3-variant template family + PostHog team-page member profile + Luma-style event detail + project portfolio framing with per-project Decisions section. ~15 files, ~1 wk. Decided AFTER Phase A v0.4.0 ships + 30-min user-test session findings. If not activated → Phase B work absorbed into v0.5 cycle.

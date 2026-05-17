@@ -2,20 +2,21 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-18 (chat-22 v0.4 brainstorm CLOSED — Anton-locked 28 blocking + 38 tuning Qs via interactive review; brainstorm-output + chat-23 spec-writing handoff committed to `main` at SHA `4a6855b`. Character lock: PostHog primary + Linear + Claude/Notion accents. Scope lock: Phase A COMMITTED as v0.4.0 + Phase B/C CONDITIONAL on user-test feedback. One ADR (ADR-0014, `/` flip) — ADR-0013 dropped per Anton's hide-PII stance.)
+**Last updated**: 2026-05-18 (chat-23 v0.4 spec §14 DRAFTED — spec §14 + ADR-0014 + gstack structural walkthrough committed on `chore/community-platform-v0-4-spec`. User-test recruitment SKIPPED per Anton call; structural Playwright walkthrough of v0.3.1 production substituted as compensating control; zero D-id contradictions surfaced — brainstorm-output preserved unchanged. 14 open questions O1–O14 locked inline. PR pending — single PR per chat-22 PR-vs-direct memory exception (spec.md is in CI-trigger path).)
 
 ## Snapshot
 
 ```yaml
 last_green: e720268                 # main HEAD — merge of PR #21 (v0.3.1 — /home auth-aware header hotfix)
 last_code_only_green: a558eb9       # v0.3.1 hotfix commit on fix/community-platform-v0-3-1-home-header
-phase: "v0.3.1 shipped"            # PR #21 merged; tag pushed; production smoke green (anonymous)
+phase: "v0.4 spec drafted"         # chat-23: spec §14 + ADR-0014 + structural walkthrough; v0.3.1 still production tag
 spec_sha: 740be8e                   # spec §11 (v0.1.1) — frozen
 v0_2_spec_sha: 95197dc              # spec §12 brainstorm merged via PR #11
 v0_2_plan_sha: e700d19              # v0.2.0-plan.md merged via PR #12
 v0_3_spec_sha: 00faca9              # spec §13 (chat-17) merged via PR #18 at SHA 3bfa5da
 v0_3_plan_sha: "TBD"               # v0.3.0-plan.md still on chore/community-platform-v0-3-plan (separate doc-only merge pending)
 v0_4_brainstorm_sha: 4a6855b        # chat-22 brainstorm-output + chat-23 handoff + V0_5_BACKLOG update + UX baseline screenshots; pushed direct-to-main
+v0_4_spec_sha: "TBD"               # chat-23 spec §14 (+529 lines) + ADR-0014 + gstack walkthrough findings + V0_5_BACKLOG CSP entry on chore/community-platform-v0-4-spec; PR pending
 plan_sha: 2201dd9                   # v0.1.1-plan.md (frozen)
 branch: main                        # v0.3.1 merged; hotfix branch deleted locally
 tests: "825 unit/integration + 33 E2E (v0.3.1 adds 3 unit tests for HomeHeader + updated home-page contract)"
@@ -170,6 +171,10 @@ v0_2_2_ship: "2026-05-16 (chat-16) — SHA `7cd87c3`; PR #17 merged to main; tag
 **Chat 22 (DONE):** v0.4 brainstorm via `superpowers:brainstorming`. Brainstorm-output at [`docs/specs/2026-05-17-community-platform-v0-4-brainstorm-output.md`](../../docs/specs/2026-05-17-community-platform-v0-4-brainstorm-output.md) (~1180 lines) merged to main at SHA `4a6855b`. Anton-locked all 28 blocking + 38 tuning Qs via interactive review. Character: PostHog primary + Linear + Claude/Notion accents (NOT Lobste.rs / dev.to / Slack-as-chat). Scope: Phase A COMMITTED + Phase B/C CONDITIONAL on user-test feedback. One ADR (ADR-0014, `/` flip) — ADR-0013 dropped per Anton's hide-PII stance. 12 hardenings (H56-H62 + H64-H68). Office-hours sharpening + manipulation-risk audit + PII/RBAC threat-model preview applied inline (per user request).
 
 **Chat 22 → Chat-23 handoff:** [`docs/specs/2026-05-18-community-platform-v0-4-spec-writing-handoff.md`](../../docs/specs/2026-05-18-community-platform-v0-4-spec-writing-handoff.md). Chat 23 owns: MANDATORY 30-min user-test session with 2 existing members + 1 prospective member BEFORE spec lock + spec §14 writing via `superpowers:spec-writer` + ADR-0014 drafting + `design-shotgun` for visual locks (O1/O2/O3/O7/O12) + lock the 14 open questions (O1-O14) + draft chat-24 plan-writing handoff.
+
+**Chat 23 (DONE):** v0.4 spec §14 + ADR-0014 drafted via `superpowers:spec-writer`. User-test recruitment SKIPPED per Anton call 2026-05-18; structural Playwright walkthrough of v0.3.1 production substituted as compensating control at [`docs/research/v0-4-gstack-walkthrough-2026-05-18/findings.md`](../../docs/research/v0-4-gstack-walkthrough-2026-05-18/findings.md) (237 lines + 8 screenshots + 4 a11y snapshots; zero D-id contradictions; brainstorm preserved). Spec.md grew 2516 → 3045 lines (+529). ADR-0014 written at [`docs/decisions/0014-community-platform-v0-4-root-anonymous-landing.md`](../../docs/decisions/0014-community-platform-v0-4-root-anonymous-landing.md). 14 open questions O1–O14 all locked inline in spec §14 (O2/O3/O6/O7/O12 with 2-3 structured variants + recommended pick — design-shotgun skill invocation skipped per friction-reduction posture; Anton picks at review). ADR-0014 amends ADR-0012 (selective discovery posture extended to `/`); ADR-0013 stays dropped. V0_5_BACKLOG gains a Content-Security-Policy entry (chat-23 surface). `chore/community-platform-v0-4-spec` branch off main; PR pending.
+
+**Chat 23 → Chat-24 handoff:** [`docs/specs/2026-05-19-community-platform-v0-4-plan-writing-handoff.md`](../../docs/specs/2026-05-19-community-platform-v0-4-plan-writing-handoff.md) (drafted in this chat-23 commit). Chat 24 owns: Phase A implementation plan via `superpowers:writing-plans` against spec §14 + ADR-0014. Target: ~20-25 tasks across Phase A files. TDD discipline preserved (CONSTRAINTS line 25). 4-phase rollout posture preserved (Phase A committed; B/C conditional on Phase A landing data per D44).
 
 **Pending follow-ups (mapped to chat-10 options):**
 - **A — Mark Spasonov backfill** (PR #3 open as Draft on `chore/mark-spasonov-backfill`): placeholders `@MARK_TELEGRAM_HANDLE_TBD` + `MARK_GIT_EMAIL_TBD` need real values from Mark out-of-band; mark Ready + merge. **Only chat-10 option NOT picked** — explicit Anton call.
