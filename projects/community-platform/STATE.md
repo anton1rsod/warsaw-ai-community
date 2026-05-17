@@ -16,7 +16,7 @@ v0_2_plan_sha: e700d19              # v0.2.0-plan.md merged via PR #12
 v0_3_spec_sha: 00faca9              # spec §13 (chat-17) merged via PR #18 at SHA 3bfa5da
 v0_3_plan_sha: "TBD"               # v0.3.0-plan.md still on chore/community-platform-v0-3-plan (separate doc-only merge pending)
 v0_4_brainstorm_sha: 4a6855b        # chat-22 brainstorm-output + chat-23 handoff + V0_5_BACKLOG update + UX baseline screenshots; pushed direct-to-main
-v0_4_spec_sha: "TBD"               # chat-23 spec §14 (+529 lines) + ADR-0014 + gstack walkthrough findings + V0_5_BACKLOG CSP entry on chore/community-platform-v0-4-spec; PR pending
+v0_4_spec_sha: 971f0d2              # chat-23 spec §14 (+529 lines) + ADR-0014 + gstack walkthrough findings + V0_5_BACKLOG CSP entry on chore/community-platform-v0-4-spec; PR pending
 plan_sha: 2201dd9                   # v0.1.1-plan.md (frozen)
 branch: main                        # v0.3.1 merged; hotfix branch deleted locally
 tests: "825 unit/integration + 33 E2E (v0.3.1 adds 3 unit tests for HomeHeader + updated home-page contract)"
