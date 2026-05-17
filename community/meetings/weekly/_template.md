@@ -1,3 +1,13 @@
+---
+date: YYYY-MM-DD
+title: "Weekly sync"
+# start_time: "18:00"             # optional, HH:MM 24h Europe/Warsaw
+# duration_minutes: 60            # optional
+# location: "Telegram #voice"     # optional
+# host: "github-handle"           # optional
+# attendees: ["github-handle"]    # optional
+---
+
 # Weekly Meetup — YYYY-MM-DD
 
 **Host:** [Name]

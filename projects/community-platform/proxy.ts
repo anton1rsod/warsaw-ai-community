@@ -26,6 +26,12 @@ const PUBLIC_PATHS = new Set<string>(
         "/api/consent/recover",
         "/onboard",
         "/onboard/error",
+        // v0.3 Discovery+ public surfaces (ADR-0012):
+        "/home",
+        "/events",
+        "/meetings",
+        "/api/calendar.ics",
+        "/manifest.json",
       ]
     : [
         "/login",
@@ -41,6 +47,12 @@ const PUBLIC_PATHS = new Set<string>(
         "/api/test-reset-invitations",
         "/api/test-reset-profile",
         "/api/test-mint-expired",
+        // v0.3 Discovery+ public surfaces (ADR-0012):
+        "/home",
+        "/events",
+        "/meetings",
+        "/api/calendar.ics",
+        "/manifest.json",
       ],
 );
 // Any new public-route entry point (e.g. /.well-known/security.txt,
@@ -50,6 +62,10 @@ const PUBLIC_PREFIXES = [
   "/_next",
   "/favicon",
   "/.well-known",
+  // v0.3 Discovery+ prefix surfaces (ADR-0012):
+  "/events/",
+  "/meetings/",
+  "/icons/",
 ] as const;
 
 /**

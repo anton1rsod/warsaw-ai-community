@@ -5,7 +5,13 @@ import { readGovernance } from "@/lib/governance";
 import { readRoster, readMemberProfile, readMemberPersona } from "@/lib/roster";
 import { listProjects, readProject } from "@/lib/projects";
 import { listDecisions, readDecision } from "@/lib/decisions";
-import { listMeetings } from "@/lib/meetings";
+import { listMeetingsFromDisk } from "@/lib/meetings";
+import { main as buildEventRosters } from "./build-event-rosters";
+import { main as buildKudos } from "./build-kudos-aggregate";
+// build-calendar is dynamically imported AFTER content-snapshot.json is written —
+// it transitively loads lib/content-snapshot.ts which imports the JSON at module
+// load time. buildEventRosters + buildKudos read community/*.md directly so they
+// don't share this constraint. See GOTCHAS row 10.
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");
@@ -28,7 +34,7 @@ async function main(): Promise<void> {
       readGovernance({ adminsPath, cmsPath }),
       listProjects(REPO_ROOT),
       listDecisions(REPO_ROOT),
-      listMeetings(REPO_ROOT),
+      listMeetingsFromDisk(REPO_ROOT),
     ]);
 
   const [members, projects, decisions] = await Promise.all([
@@ -80,6 +86,12 @@ async function main(): Promise<void> {
   await mkdir(path.dirname(OUTPUT), { recursive: true });
   await writeFile(OUTPUT, JSON.stringify(snapshot, null, 2) + "\n", "utf-8");
 
+  buildEventRosters();
+  buildKudos();
+  // Dynamic import: build-calendar transitively reads content-snapshot.json, which
+  // only exists after the writeFile above.
+  const { main: buildCalendar } = await import("./build-calendar");
+  buildCalendar();
 
   console.log(
     `[snapshot] wrote ${path.relative(REPO_ROOT, OUTPUT)}\n` +

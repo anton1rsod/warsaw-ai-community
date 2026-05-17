@@ -8,6 +8,7 @@ import {
 } from "@/lib/content-snapshot";
 import { TopContributors } from "@/app/components/TopContributors";
 import { AskGBrainButton } from "@/app/components/AskGBrainButton";
+import { ThankButton } from "@/app/components/ThankButton";
 import { renderMarkdownToHtml } from "@/lib/markdown";
 import { SafeHtml } from "@/app/components/SafeHtml";
 import { env } from "@/lib/env";
@@ -66,6 +67,29 @@ export default async function ProjectPage({
       </div>
 
       <TopContributors contributors={contributors} slugFor={slugFor} />
+
+      {contributors.length > 0 ? (
+        <section className="mt-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+            Recognize contributors
+          </h2>
+          <ul className="mt-2 space-y-1">
+            {contributors.map((c) => (
+              <li key={c.handle} className="flex items-center gap-3 text-sm">
+                <span className="text-neutral-700 dark:text-neutral-300">
+                  @{slugFor(c.handle)}
+                </span>
+                <ThankButton
+                  recipient={slugFor(c.handle)}
+                  itemType="contribution"
+                  itemId={`${slug}:${slugFor(c.handle)}`}
+                  initialState="not-signed-in"
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {rendered.map((s) => (
         <section key={s.title} className="mt-8">

@@ -1,0 +1,13 @@
+{
+  "timezone": "Europe/Warsaw",
+  "meetings": {
+    "defaultStartTime": "18:00",
+    "defaultDurationMinutes": 60,
+    "defaultLocation": "Telegram #voice"
+  },
+  "events": {
+    "defaultStartTime": "18:00",
+    "defaultDurationMinutes": 120,
+    "defaultLocation": "TBD — see event description"
+  }
+}

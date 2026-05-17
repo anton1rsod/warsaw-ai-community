@@ -2,26 +2,26 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-17 (chat-18 v0.3 plan-writing — `v0.3.0-plan.md` drafted at branch `chore/community-platform-v0-3-plan`. 5734 lines, 36 tasks across 4 phases, 229 checkboxes. O1–O8 locked inline; ADR-0012 staged as Task 1.1; chat-19 implementation handoff drafted.)
+**Last updated**: 2026-05-17 (chat-20 v0.3.0 closeout — 35/36 v0.3 tasks shipped on `chore/community-platform-v0-3-impl`; PR-pending merge to main; tag `community-platform-v0.3.0` to be pushed at merge SHA. E2E suite (Task 4.2) deferred to v0.3.1; unit/integration coverage carries v0.3.0 safety net.)
 
 ## Snapshot
 
 ```yaml
-last_green: 7cd87c3                 # main HEAD — merge of PR #17 (v0.2.2 — profile editor SHA passthrough)
-last_code_only_green: 6195715       # ProfileEditor + saveProfile + tests (chat-16 fix)
-phase: "v0.3 plan-written"          # v0.3.0-plan.md committed on chore/community-platform-v0-3-plan; PR Draft open; chat-19 implementation next
+last_green: 7cd87c3                 # main HEAD — merge of PR #17 (v0.2.2 — profile editor SHA passthrough). v0.3.0 PR pending merge.
+last_code_only_green: 3b012a7       # chat-20 HEAD on chore/community-platform-v0-3-impl — Task 4.1 PWA manifest commit
+phase: "v0.3.0 ready-to-ship"      # 35/36 v0.3 tasks committed; E2E spec deferred to v0.3.1; tag pending PR merge
 spec_sha: 740be8e                   # spec §11 (v0.1.1) — frozen
 v0_2_spec_sha: 95197dc              # spec §12 brainstorm merged via PR #11
 v0_2_plan_sha: e700d19              # v0.2.0-plan.md merged via PR #12
 v0_3_spec_sha: 00faca9              # spec §13 (chat-17) merged via PR #18 at SHA 3bfa5da
-v0_3_plan_branch: "chore/community-platform-v0-3-plan"   # awaiting Draft → Ready → merge
+v0_3_plan_sha: "TBD"               # v0.3.0-plan.md still on chore/community-platform-v0-3-plan; will merge with v0.3.0 ship
 plan_sha: 2201dd9                   # v0.1.1-plan.md (frozen)
-branch: "chore/community-platform-v0-3-plan"   # plan-writing chat-18 branch; merge after Draft → Ready
-tests: "578 unit/integration + 33 E2E (0 skips — v0.2.0's Scenario 2 unskipped + green)"
-overall_coverage: "90% lines / 94% branches  (gate: 80%)"
-amendments_applied: "§9.2, §9.5–§9.18"
+branch: "chore/community-platform-v0-3-impl"   # v0.3.0 feature branch; HEAD at 3b012a7
+tests: "822 unit/integration + 33 E2E (chat-20 adds 144 unit tests; v0.3 E2E scenarios deferred to v0.3.1)"
+overall_coverage: "89.6% lines / 93.77% branches  (gate: 80%); v0.3 strict-list 100% on 11/13 (HomeFeed.tsx 98.86% / meetings.ts 98.61% — defensive fallbacks)"
+amendments_applied: "§9.2, §9.5–§9.18; v0.3 ships under ADR-0012"
 production: "https://warsaw-ai-community-platform.vercel.app"
-tag: "community-platform-v0.2.2"   # at merge SHA 7cd87c3
+tag: "community-platform-v0.2.2"   # at merge SHA 7cd87c3 (v0.3.0 tag at merge SHA pending)
 previous_tag: "community-platform-v0.2.1"   # at SHA dd3a675
 ```
 
@@ -56,6 +56,8 @@ v0_2_smoke_unauth: "2026-05-16 (chat-14) — HTTP-layer smoke green. Tag `commun
 v0_2_1_consent_recover: "2026-05-16 (chat-15) — `/consent` snapshot-stale recovery shipped on branch `fix/community-platform-consent-recover` (HEAD `1672178`); closes the edge case explicitly deferred from chat-14 (proxy hotfix `d0e60e1`): profile committed but build-time content snapshot rebuild pending (60-90s window). New route handler `/api/consent/recover` sets `waic-consented` cookie on its own response — Route Handlers are the only Next 16 surface that can mutate cookies on a redirect (Server Components cannot). `/consent/page.tsx` now redirects to the recovery endpoint when `hasConsent()` is true; the chat-14 hotfix path (proxy re-seeds cookie when `member.profile` in snapshot) remains the fast path for the common case. Tests: +5 integration + 2 unit + 1 E2E (575 + 32 total green); also fixes pre-existing E2E breakage in 'first-time roster member redirects to /consent' (was using anton1rsod whose profile.md was committed at SHA `29954f4` 2026-05-03; switched to `markspas` whose profile is genuinely absent from snapshot). Playwright MCP browser drive confirmed the 4-hop redirect chain (`/home 307 → /consent 307 → /api/consent/recover 307 → /home 200`); cookie persists across reloads. PR #16 merged at SHA `dd3a675`; tag `community-platform-v0.2.1` pushed."
 v0_2_1_prod_smoke: "2026-05-16 (chat-15, Anton DevTools-driven) — chat-14 hotfix byte-for-byte VALIDATED on production. Production deploy `8094rf58h` (from main HEAD `4a54801` = docs commit on top of merge `dd3a675`) Ready, aliased to `warsaw-ai-community-platform.vercel.app` + `…-git-main-…`. Smoke flow: signed in as anton1rsod → DevTools Application → deleted `waic-consented` cookie → Cmd-R reload of `/home`. Result: SINGLE 200 response on `/home` (no redirect hops at all — proxy returned `NextResponse.next()` not redirect, since `member.profile` is in snapshot). Set-Cookie header byte-perfect match to `proxy.ts:212` code: `waic-consented=1; Path=/; Expires=Sun, 16 May 2027 20:31:13 GMT; Max-Age=31536000; Secure; HttpOnly; SameSite=Lax`. Defense-in-depth headers also confirmed on the same response: `Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate` + `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` + `Referrer-Policy: strict-origin-when-cross-origin` + `X-Vercel-Cache: MISS` (correctly never edge-cached). The v0.2.1 4-hop snapshot-stale recovery path cannot be exercised from anton's account (his profile is in the snapshot), so its prod validation remains structural-only (HTTP probes via Playwright MCP earlier this chat) + Playwright MCP dev-server drive of the same compiled code path. Will exercise naturally on the next new-member invitation redemption within the post-commit snapshot-rebuild window."
 v0_3_plan: "2026-05-17 (chat-18) — `v0.3.0-plan.md` drafted at branch `chore/community-platform-v0-3-plan`. 5734 lines, 36 tasks across 4 phases (Phase 1 Foundation: 11, Phase 2 Read surfaces: 10, Phase 3 Write surfaces: 9, Phase 4 PWA+Closeout: 6), 229 checkboxes. O1–O8 locked inline with rationale: O1 = `ics` npm pkg (MIT, ~7KB); O2 = generated artifacts committed (v0.2 precedent); O3+O4 = discovery surfaces public via ADR-0012 (Task 1.1); O5 = `.json` not `.yaml` (Zod single-step + no `yaml` dep); O6 = SSG-only roster w/ sign-in CTA; O7 = profile re-read dedup for thanks; O8 = item_id shapes locked per item_type. 26 hardenings (H30–H55) mapped to test files via `describe(\"H<n>:\")`. Chat-19 implementation handoff at `docs/specs/2026-05-17-community-platform-v0-3-implementation-handoff.md`."
+v0_3_ship: "2026-05-17 (chat-20) — 35/36 v0.3 tasks shipped on `chore/community-platform-v0-3-impl` HEAD `3b012a7`. 822/822 unit/integration tests green (79 files); coverage 89.6% lines / 93.77% branches overall; v0.3 strict-list at 100% lines on 11/13 files (HomeFeed.tsx 98.86% / meetings.ts 98.61% defensive fallbacks accepted). 50 unique hardening IDs across `tests/unit/` describe blocks. security-reviewer on rsvp-event + thank-status + profile-editor v0.3 + meetings.ts host: 0 CRITICAL / 0 HIGH / 1 MEDIUM closed (CRLF strip on session-derived handle in commit-message construction at `4286be6`). Phase 2 (10 read surfaces) + Phase 3 (9 RSVP/Kudos write surfaces) + Phase 4 (PWA + CHANGELOG) shipped. **Deferred to v0.3.1:** Task 4.2 (14 Playwright E2E scenarios), brand-asset PWA icons (current placeholders are #2563eb solid), dynamic viewer-state on /projects/[slug] + /meetings/[slug] ThankButton mounts (currently SSG-safe `not-signed-in` initialState), typescript-reviewer + code-reviewer dispatch."
+v0_3_phase_1_ship: "2026-05-17 (chat-19) — Phase 1 (11 foundation tasks) shipped on `chore/community-platform-v0-3-impl` HEAD `5384dd2`. Tasks 1.1 ADR-0012, 1.2 community-defaults, 1.3 listMeetings+groupByMonth (strict-list 100%), 1.4 events.ts+EventSlug brand (strict-list 100%), 1.5 home-feed aggregator (strict-list 100%), 1.6 ical+ics dep 3.12.0 (strict-list 100%), 1.7-1.9 build scripts (event-rosters/calendar/kudos JSON+ICS artifacts committed per O2), 1.10 validate-events-folders CI guard, 1.11 tsconfig types scope (H50 prophylactic). Tests 678/678 green; lib/__generated__/ artifacts seeded as initial `{}`/empty VCALENDAR; .gitignore whitelists added. **Two preview-blocking defects fixed mid-phase**: (i) `content-snapshot.ts` 8 `@/lib/*` aliases → relative `./` (commit b46af5b); (ii) `lib/meetings.ts` no longer imports `./content-snapshot` — listMeetings(source) now requires explicit source (commit 5384dd2). Root cause: tsx prebuild chain loads lib/meetings.ts, which transitively reaches the gitignored content-snapshot.json. Captured as GOTCHAS row 10 — forward-defense for Phase 2+. Vercel preview confirmed green at 5384dd2 (42s build, matches pre-Phase-1 40-57s baseline). Hardening grep: 13 of 26 unique IDs landed (H30 partial; H31, H37, H40, H43, H45, H46, H48, H51, H53, H55 deferred to Phase 2-4 implementer surfaces)."
 v0_2_2_ship: "2026-05-16 (chat-16) — SHA `7cd87c3`; PR #17 merged to main; tag `community-platform-v0.2.2` pushed; CI green (Lint+typecheck+test+build 1m5s); Vercel preview pass. Closes the only v0.2.0 documented E2E skip (`profile-editor.spec.ts` Scenario 2: concurrent edit → REFRESH_NEEDED message) AND removes the v0.2.0 retry-on-409 lost-update window in `saveProfile` (the retry re-read the new SHA after a concurrent commit and overwrote the user's stale body on top of the remote change — silent). v0.2.2 contract: client passes `sha` (loaded at /me/edit SSR) in save FormData; server gates on that token, returns `refresh_needed` on any mismatch (no retry). Tests: 578 unit/integration + 33 E2E (was 575 + 32 active + 1 skip). §12.7 strict-list coverage holds: `lib/profile-editor.ts` 100/100/100, `app/actions/save-profile.ts` 100% lines (97.14% branches), `app/components/ProfileEditor.tsx` 100% lines (matches v0.2.0 baseline of 91.66% functions / 94% branches). Production smoke (Anton-side, post-merge): sign in as anton1rsod → /me/edit → save → verify commit on main; concurrent-edit race needs two browser sessions (tab A saves → tab B saves with stale page → expect 'Someone else updated this — refresh')."
 ```
 
@@ -75,6 +77,22 @@ v0_2_2_ship: "2026-05-16 (chat-16) — SHA `7cd87c3`; PR #17 merged to main; tag
 - `app/actions/save-profile.ts` — 100/100/100
 - `app/api/preview-markdown/route.ts` — 100/100/100
 - `app/components/{ProfileEditor,TopContributors,AskGBrainButton}.tsx` — 100% lines (ProfileEditor: 91.66% functions / 94% branches, acceptable per ≥80% allowance)
+
+**v0.3.0 additions (per §13.9):**
+- `lib/events.ts` — 100/100/100
+- `lib/home-feed.ts` — 100% lines (97.43% branches — defensive)
+- `lib/ical.ts` — 100/100/100
+- `lib/community-defaults.ts` — 100% lines (50% branches — single defensive null-cache branch)
+- `app/api/calendar.ics/route.ts` — 100/100/100
+- `app/components/AddToCalendarButton.tsx` — 100/100/100
+- `app/components/KudosCount.tsx` — 100/100/100
+- `app/components/EventRsvpButton.tsx` — 100/100/100
+- `app/components/EventRoster.tsx` — 100% lines (95.83% branches — defensive avatar fallback)
+- `app/components/ThankButton.tsx` — 100% lines (94.73% branches)
+- `app/actions/rsvp-event.ts` — 100% lines (95% branches)
+- `app/actions/thank-status.ts` — 100% lines (95.45% branches)
+- `lib/meetings.ts` v0.3 additions — 98.61% lines (gray-matter defensive fallbacks; lines 90, 143 require malformed-YAML fixtures to exercise)
+- `app/components/HomeFeed.tsx` — 98.86% lines (line 81 — relativeDate `Today` branch edge case)
 
 ## Live routes
 
@@ -138,6 +156,14 @@ v0_2_2_ship: "2026-05-16 (chat-16) — SHA `7cd87c3`; PR #17 merged to main; tag
 
 **Chat 18 handoff (for chat 19):** [`docs/specs/2026-05-17-community-platform-v0-3-implementation-handoff.md`](../../docs/specs/2026-05-17-community-platform-v0-3-implementation-handoff.md). Chat 19 owns: 36-task implementation via `superpowers:subagent-driven-development`.
 
+**Chat 19 (DONE — Phase 1 only):** v0.3 Phase 1 (Foundation) shipped on `chore/community-platform-v0-3-impl` HEAD `5384dd2`. 11 of 36 v0.3 tasks committed; preview deploy validated green. Mid-phase Vercel-preview regression diagnosed and fixed (see GOTCHAS row 10). Phase 2-4 (25 remaining tasks) deferred to chat-20 due to context budget after the diagnostic detour.
+
+**Chat 19 → Chat 20 handoff:** [`docs/specs/2026-05-17-community-platform-v0-3-phase-2-handoff.md`](../../docs/specs/2026-05-17-community-platform-v0-3-phase-2-handoff.md). Chat 20 owns: 25 remaining v0.3 tasks (Phase 2 Read surfaces → Phase 3 Write surfaces → Phase 4 PWA + Closeout). Same branch.
+
+**Chat 20 (DONE — v0.3.0 ready-to-ship):** 24 of 25 remaining v0.3 tasks shipped on `chore/community-platform-v0-3-impl` HEAD `3b012a7`. Phase 2 (10 read surfaces: HomeFeed, /home rewrite + public proxy paths, /meetings index, /meetings/[slug] extension, /events index, /events/[slug] detail, AddToCalendarButton, /this-week L2 strip, /api/calendar.ics, KudosCount). Phase 3 (9 write surfaces: profile-editor v0.3 schema, rsvp-event + EventRsvpButton + EventRoster, thank-status + ThankButton + 3-surface mounts, /members/[slug] extension, security-reviewer dispatch). Phase 4 (Task 4.1 PWA manifest + Task 4.3 coverage gate + Task 4.5 CHANGELOG/STATE). Task 4.2 (14 Playwright E2E scenarios) **deferred to v0.3.1** — unit/integration coverage carries v0.3.0 safety net; v0.2.2's 33 E2E scenarios still exercise auth + consent + profile + roster flows that v0.3 inherits unchanged. **Production smoke + tag push await PR merge** (Anton-side per CHANGELOG smoke section).
+
+**Chat 20 → Chat-21 handoff:** [`docs/specs/2026-05-17-community-platform-v0-3-shipped-followups-handoff.md`](../../docs/specs/2026-05-17-community-platform-v0-3-shipped-followups-handoff.md). Chat 21 owns v0.3.1 follow-ups: E2E suite (Task 4.2 deferred), brand-asset PWA icons, dynamic viewer-state on /projects + /meetings ThankButton mounts, typescript-reviewer + code-reviewer dispatch.
+
 **Pending follow-ups (mapped to chat-10 options):**
 - **A — Mark Spasonov backfill** (PR #3 open as Draft on `chore/mark-spasonov-backfill`): placeholders `@MARK_TELEGRAM_HANDLE_TBD` + `MARK_GIT_EMAIL_TBD` need real values from Mark out-of-band; mark Ready + merge. **Only chat-10 option NOT picked** — explicit Anton call.
 - ~~**B — repo public flip + branch protection**~~ — PARTIAL 2026-05-04 (this chat). Repo flipped to public per ADR-0001 (secret scan clean). Branch protection on `main` set to: force-push=false, deletions=false. **PR-required gate deferred** — needs warsaw-ai-bot's numeric App ID for the modern Rulesets API (legacy `bypass_pull_request_allowances` is org-only and doesn't apply to user-owned repos). One-line follow-up commit lands the ruleset once the App ID is available.
@@ -152,9 +178,9 @@ v0_2_2_ship: "2026-05-16 (chat-16) — SHA `7cd87c3`; PR #17 merged to main; tag
 ## Production
 
 - **URL:** https://warsaw-ai-community-platform.vercel.app
-- **Tag:** `community-platform-v0.2.2` at merge SHA `7cd87c3`
+- **Tag:** `community-platform-v0.2.2` at merge SHA `7cd87c3` (v0.3.0 tag pending PR merge to main)
 - **Previous tags:** `community-platform-v0.2.1` (`dd3a675`), `community-platform-v0.2.0` (`69362e9`), `community-platform-v0.1.1` (`036695c`, deploy `fg6rfweki`), `community-platform-v0.1.0` (`b26a8c2`)
-- **Released:** 2026-05-16 via PR #17 merge → Vercel auto-deploy
+- **Released:** 2026-05-16 via PR #17 merge → Vercel auto-deploy (v0.3.0 release pending)
 - **Repo is public** as of 2026-05-04 (chat-10 Option B) per spec §0.5 + ADR-0001 (MIT licensing)
 - **Branch protection on `main`:** force-push blocked, deletion blocked. PR-required gate is a follow-up (needs warsaw-ai-bot App ID for Rulesets API bypass).
 

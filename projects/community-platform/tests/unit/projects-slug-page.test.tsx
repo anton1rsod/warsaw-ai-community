@@ -38,6 +38,28 @@ vi.mock("@/app/components/SafeHtml", () => ({
   ),
 }));
 
+vi.mock("@/app/components/ThankButton", () => ({
+  ThankButton: ({
+    recipient,
+    itemType,
+    itemId,
+    initialState,
+  }: {
+    recipient: string;
+    itemType: string;
+    itemId: string;
+    initialState: string;
+  }) => (
+    <span
+      data-testid={`thank-${itemType}-${itemId}`}
+      data-recipient={recipient}
+      data-state={initialState}
+    >
+      [thank]
+    </span>
+  ),
+}));
+
 import {
   findProjectBySlug,
   getProjectContributions,
@@ -89,6 +111,14 @@ describe("/projects/[slug] — TopContributors integration", () => {
     // markspas has no roster match — fall back to handle in the link
     const markLink = screen.getByRole("link", { name: /markspas/i });
     expect(markLink.getAttribute("href")).toBe("/members/markspas");
+
+    // D19 / Task 3.7: "Recognize contributors" section renders ThankButton per contributor
+    expect(screen.getByText(/Recognize contributors/i)).toBeInTheDocument();
+    const antonThank = screen.getByTestId("thank-contribution-community-platform:anton-safronov");
+    expect(antonThank.getAttribute("data-recipient")).toBe("anton-safronov");
+    expect(antonThank.getAttribute("data-state")).toBe("not-signed-in");
+    const markThank = screen.getByTestId("thank-contribution-community-platform:markspas");
+    expect(markThank.getAttribute("data-recipient")).toBe("markspas");
   });
 
   it("renders the 'No contributors yet' placeholder when getProjectContributions returns empty", async () => {

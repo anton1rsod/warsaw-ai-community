@@ -16,3 +16,6 @@ next-env.d.ts
 lib/__generated__/*
 !lib/__generated__/contributions.json
 !lib/__generated__/project-contributions.json
+!lib/__generated__/event-rosters.json
+!lib/__generated__/calendar.ics
+!lib/__generated__/kudos.json

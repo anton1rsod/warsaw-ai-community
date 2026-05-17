@@ -2,8 +2,10 @@ import Link from "next/link";
 import { createAppAuth } from "@octokit/auth-app";
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
-import { findMemberByHandle } from "@/lib/content-snapshot";
+import { findMemberByHandle, listMeetingsFromSnapshot, listEventsFromSnapshot } from "@/lib/content-snapshot";
 import { currentWeek } from "@/lib/week";
+import { HomeFeed } from "@/app/components/HomeFeed";
+import { computeHomeFeed } from "@/lib/home-feed";
 import {
   readWeekStatuses,
   type StatusUpdate,
@@ -20,6 +22,13 @@ import {
   isE2EMode,
   mockStatusActions,
 } from "@/app/actions/_test-status-store";
+import { createGitHubApp } from "@/lib/github-app";
+import {
+  parseProfileFrontmatter,
+  deriveThankInitialState,
+  type ProfileFrontmatter,
+} from "@/lib/profile-editor";
+import { ThankButton } from "@/app/components/ThankButton";
 
 // Dynamic rendering for v0.1 — every request triggers a fresh fetch.
 // Phase 5 ships without ISR because the bot commit + GitHub propagation +
@@ -60,11 +69,42 @@ async function getInstallationToken(): Promise<string> {
   return installation.token;
 }
 
+async function loadViewerProfile(
+  slug: string | undefined,
+): Promise<{ fm: ProfileFrontmatter | undefined; sha: string | undefined }> {
+  if (!slug) return { fm: undefined, sha: undefined };
+  if (isE2EMode()) return { fm: undefined, sha: undefined };
+  try {
+    const client = createGitHubApp({
+      appId: env.GITHUB_APP_ID,
+      privateKey: env.GITHUB_APP_PRIVATE_KEY,
+      installationId: env.GITHUB_APP_INSTALLATION_ID,
+      owner: env.GITHUB_REPO_OWNER,
+      repo: env.GITHUB_REPO_NAME,
+      branch: env.GITHUB_REPO_BRANCH,
+    });
+    const file = await client.readFile(`community/members/${slug}.md`);
+    if (!file) return { fm: undefined, sha: undefined };
+    const { fm } = parseProfileFrontmatter(file.content);
+    return { fm, sha: file.sha };
+  } catch {
+    return { fm: undefined, sha: undefined };
+  }
+}
+
 export default async function ThisWeekPage(): Promise<React.JSX.Element> {
   const week = currentWeek();
   const session = await auth();
   const handle = session?.githubHandle ?? "";
   const member = handle ? findMemberByHandle(handle) : undefined;
+
+  const feed = computeHomeFeed({
+    meetings: listMeetingsFromSnapshot(),
+    events: listEventsFromSnapshot(),
+    statusPosts: [],
+    contributions: [],
+    now: new Date(),
+  });
 
   const statuses = await fetchStatuses(week);
 
@@ -72,6 +112,9 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
   const my = mySlug
     ? (statuses.find((s) => s.slug === mySlug) ?? null)
     : null;
+
+  const { fm: viewerProfile, sha: viewerProfileSha } =
+    await loadViewerProfile(mySlug);
 
   // Strip frontmatter for display: the action layer always emits
   // `---\nweek/author/posted_at\n---\n\n<body>` so the user only sees
@@ -99,6 +142,10 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
           Home
         </Link>
       </header>
+
+      <div className="mt-6">
+        <HomeFeed feed={feed} showRecent={false} />
+      </div>
 
       {member ? (
         <section className="mt-6">
@@ -144,6 +191,21 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
                 >
                   {o.lastModified}
                 </time>
+                <div className="mt-2">
+                  <ThankButton
+                    recipient={o.slug}
+                    itemType="status"
+                    itemId={`${week}/${o.slug}`}
+                    initialState={deriveThankInitialState(
+                      mySlug,
+                      o.slug,
+                      "status",
+                      `${week}/${o.slug}`,
+                      viewerProfile,
+                    )}
+                    profileSha={viewerProfileSha}
+                  />
+                </div>
               </li>
             ))}
           </ul>

@@ -5,12 +5,16 @@ import {
   findMemberBySlug,
   getContributions,
   listMembers,
+  listEventsFromSnapshot,
 } from "@/lib/content-snapshot";
 import { renderMarkdownToHtml } from "@/lib/markdown";
 import { ContributionCard } from "@/app/components/ContributionCard";
 import { GdprPanel } from "@/app/components/GdprPanel";
+import { KudosCount } from "@/app/components/KudosCount";
 import { PersonaPanel } from "@/app/components/PersonaPanel";
 import { SafeHtml } from "@/app/components/SafeHtml";
+import { filterOrphanSlugs, type EventSlug } from "@/lib/events";
+import { ProfileFrontmatterSchema } from "@/lib/profile-editor";
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   return listMembers().map((m) => ({ slug: m.slug }));
@@ -37,6 +41,21 @@ export default async function MemberPage({
   const contributions = getContributions(member.githubHandle);
   const session = await auth();
   const isSelf = session?.githubHandle === member.githubHandle;
+
+  // H34, H39: parse v0.3 frontmatter fields; safeParse so a malformed profile
+  // doesn't crash the page — it just renders no Events section.
+  const parsedProfile = ProfileFrontmatterSchema.safeParse(
+    member.profile?.data ?? {},
+  );
+  const fm = parsedProfile.success ? parsedProfile.data : undefined;
+
+  const knownEventSlugs = new Set<EventSlug>(
+    listEventsFromSnapshot().map((e) => e.slug),
+  );
+  const validGoing = fm ? filterOrphanSlugs(fm.events_going, knownEventSlugs) : [];
+  const validInterested = fm
+    ? filterOrphanSlugs(fm.events_interested, knownEventSlugs)
+    : [];
 
   return (
     <main className="mx-auto max-w-3xl p-8">
@@ -96,6 +115,34 @@ export default async function MemberPage({
           <GdprPanel />
         </div>
       ) : null}
+
+      {validGoing.length + validInterested.length > 0 ? (
+        <section className="mt-8">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+            Events
+          </h2>
+          <ul className="mt-2 space-y-1">
+            {validGoing.map((slug) => (
+              <li key={slug}>
+                <a className="hover:underline" href={`/events/${slug}`}>
+                  ✓ Going — {slug}
+                </a>
+              </li>
+            ))}
+            {validInterested.map((slug) => (
+              <li key={slug}>
+                <a className="hover:underline" href={`/events/${slug}`}>
+                  ★ Interested — {slug}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <section className="mt-6">
+        <KudosCount memberSlug={member.slug} />
+      </section>
     </main>
   );
 }
