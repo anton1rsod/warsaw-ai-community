@@ -159,9 +159,30 @@ describe("proxy", () => {
     expect(res.headers.get("location")).toBeNull();
   });
 
+  describe("v0.3 Discovery+ PUBLIC_PATHS (ADR-0012)", () => {
+    for (const path of ["/home", "/events", "/meetings", "/api/calendar.ics", "/manifest.json"]) {
+      it(`allows ${path} without auth (PUBLIC_PATHS)`, async () => {
+        const { default: proxy } = await import("@/proxy");
+        const req = makeReq(path);
+        const res = await proxy(req as never);
+        expect(res.headers.get("location")).toBeNull();
+        expect(mocks.decodeFn).not.toHaveBeenCalled();
+      });
+    }
+
+    for (const prefix of ["/events/2026-06-15-hack", "/meetings/2026-05-19", "/icons/icon-192.png"]) {
+      it(`allows ${prefix} via PUBLIC_PREFIXES`, async () => {
+        const { default: proxy } = await import("@/proxy");
+        const req = makeReq(prefix);
+        const res = await proxy(req as never);
+        expect(res.headers.get("location")).toBeNull();
+      });
+    }
+  });
+
   it("redirects to /login when no session cookie present", async () => {
     const { default: proxy } = await import("@/proxy");
-    const req = makeReq("/home");
+    const req = makeReq("/this-week");
     const res = await proxy(req as never);
     expect(res.status).toBeGreaterThanOrEqual(300);
     expect(res.status).toBeLessThan(400);
@@ -172,7 +193,7 @@ describe("proxy", () => {
   it("redirects to /login when NEXTAUTH_SECRET is missing", async () => {
     delete process.env.NEXTAUTH_SECRET;
     const { default: proxy } = await import("@/proxy");
-    const req = makeReq("/home", { cookieValue: "any.jwt.value" });
+    const req = makeReq("/this-week", { cookieValue: "any.jwt.value" });
     const res = await proxy(req as never);
     expect(res.headers.get("location")).toMatch(/\/login$/);
     expect(mocks.decodeFn).not.toHaveBeenCalled();
@@ -181,7 +202,7 @@ describe("proxy", () => {
   it("redirects to /login when decode throws an Error (malformed/tampered JWT)", async () => {
     mocks.decodeFn.mockRejectedValue(new Error("malformed"));
     const { default: proxy } = await import("@/proxy");
-    const req = makeReq("/home", { cookieValue: "garbage" });
+    const req = makeReq("/this-week", { cookieValue: "garbage" });
     const res = await proxy(req as never);
     expect(res.headers.get("location")).toMatch(/\/login$/);
   });
@@ -192,7 +213,7 @@ describe("proxy", () => {
     // should still result in a /login redirect, not an unhandled exception.
     mocks.decodeFn.mockRejectedValue("string-not-an-Error");
     const { default: proxy } = await import("@/proxy");
-    const req = makeReq("/home", { cookieValue: "garbage" });
+    const req = makeReq("/this-week", { cookieValue: "garbage" });
     const res = await proxy(req as never);
     expect(res.headers.get("location")).toMatch(/\/login$/);
   });
@@ -200,7 +221,7 @@ describe("proxy", () => {
   it("redirects to /login when decode returns null", async () => {
     mocks.decodeFn.mockResolvedValue(null);
     const { default: proxy } = await import("@/proxy");
-    const req = makeReq("/home", { cookieValue: "expired.jwt" });
+    const req = makeReq("/this-week", { cookieValue: "expired.jwt" });
     const res = await proxy(req as never);
     expect(res.headers.get("location")).toMatch(/\/login$/);
   });
@@ -208,7 +229,7 @@ describe("proxy", () => {
   it("redirects to /login when decoded payload has no githubHandle", async () => {
     mocks.decodeFn.mockResolvedValue({ sub: "user-123" });
     const { default: proxy } = await import("@/proxy");
-    const req = makeReq("/home", { cookieValue: "valid.jwt" });
+    const req = makeReq("/this-week", { cookieValue: "valid.jwt" });
     const res = await proxy(req as never);
     expect(res.headers.get("location")).toMatch(/\/login$/);
   });
@@ -217,7 +238,7 @@ describe("proxy", () => {
     mocks.decodeFn.mockResolvedValue({ githubHandle: "stranger" });
     mocks.findMemberByHandleFn.mockReturnValue(undefined);
     const { default: proxy } = await import("@/proxy");
-    const req = makeReq("/home", { cookieValue: "valid.jwt" });
+    const req = makeReq("/this-week", { cookieValue: "valid.jwt" });
     const res = await proxy(req as never);
     expect(res.headers.get("location")).toMatch(/\/no-access$/);
     expect(mocks.findMemberByHandleFn).toHaveBeenCalledWith("stranger");
@@ -231,7 +252,7 @@ describe("proxy", () => {
       slug: "anton-safronov",
     });
     const { default: proxy } = await import("@/proxy");
-    const req = makeReq("/home", { cookieValue: "valid.jwt" });
+    const req = makeReq("/this-week", { cookieValue: "valid.jwt" });
     const res = await proxy(req as never);
     expect(res.headers.get("location")).toBeNull();
   });
@@ -244,7 +265,7 @@ describe("proxy", () => {
       slug: "anton-safronov",
     });
     const { default: proxy } = await import("@/proxy");
-    const req = makeReq("/home", {
+    const req = makeReq("/this-week", {
       cookieValue: "valid.jwt",
       cookieName: "__Secure-authjs.session-token",
     });
@@ -274,7 +295,7 @@ describe("proxy", () => {
 
     it("redirects authenticated roster member to /consent when consent cookie missing", async () => {
       const { default: proxy } = await import("@/proxy");
-      const req = makeReq("/home", {
+      const req = makeReq("/this-week", {
         cookieValue: "valid.jwt",
         consented: false,
       });
@@ -284,7 +305,7 @@ describe("proxy", () => {
 
     it("admits roster member with consent cookie", async () => {
       const { default: proxy } = await import("@/proxy");
-      const req = makeReq("/home", {
+      const req = makeReq("/this-week", {
         cookieValue: "valid.jwt",
         consented: true,
       });
@@ -300,11 +321,11 @@ describe("proxy", () => {
       expect(mocks.decodeFn).not.toHaveBeenCalled();
     });
 
-    it("redirects unauthenticated /home visit to /login (not /consent)", async () => {
+    it("redirects unauthenticated /this-week visit to /login (not /consent)", async () => {
       // Auth check must precede consent check — an unauthenticated
       // user shouldn't see the consent page first.
       const { default: proxy } = await import("@/proxy");
-      const req = makeReq("/home", { consented: false });
+      const req = makeReq("/this-week", { consented: false });
       const res = await proxy(req as never);
       expect(res.headers.get("location")).toMatch(/\/login$/);
     });
@@ -320,12 +341,12 @@ describe("proxy", () => {
         profile: { data: {}, body: "Some prose." },
       });
       const { default: proxy } = await import("@/proxy");
-      const req = makeReq("/home", {
+      const req = makeReq("/this-week", {
         cookieValue: "valid.jwt",
         consented: false,
       });
       const res = await proxy(req as never);
-      // No redirect — request passes through to /home.
+      // No redirect — request passes through to /this-week.
       expect(res.headers.get("location")).toBeNull();
       // Cookie was set via res.cookies.set on the response.
       const cookieHeader = res.headers.get("set-cookie") ?? "";
@@ -346,7 +367,7 @@ describe("proxy", () => {
         profile: null,
       });
       const { default: proxy } = await import("@/proxy");
-      const req = makeReq("/home", {
+      const req = makeReq("/this-week", {
         cookieValue: "valid.jwt",
         consented: false,
       });
