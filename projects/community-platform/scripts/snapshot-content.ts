@@ -6,6 +6,7 @@ import { readRoster, readMemberProfile, readMemberPersona } from "@/lib/roster";
 import { listProjects, readProject } from "@/lib/projects";
 import { listDecisions, readDecision } from "@/lib/decisions";
 import { listMeetingsFromDisk } from "@/lib/meetings";
+import { main as buildEventRosters } from "./build-event-rosters";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");
@@ -80,6 +81,7 @@ async function main(): Promise<void> {
   await mkdir(path.dirname(OUTPUT), { recursive: true });
   await writeFile(OUTPUT, JSON.stringify(snapshot, null, 2) + "\n", "utf-8");
 
+  buildEventRosters();
 
   console.log(
     `[snapshot] wrote ${path.relative(REPO_ROOT, OUTPUT)}\n` +
