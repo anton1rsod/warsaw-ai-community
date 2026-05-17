@@ -12,6 +12,7 @@ export interface Meeting {
   startTime?: string;       // "HH:MM" — falls back to defaults at ICS render time
   durationMinutes?: number; // positive integer
   location?: string;
+  host?: string;            // member slug of the meeting host; drives ThankButton
 }
 
 const FILE_RE = /^(\d{4}-\d{2}-\d{2})\.md$/;
@@ -84,6 +85,10 @@ export async function listMeetingsFromDisk(repoRoot: string): Promise<Meeting[]>
       typeof data.location === "string" && data.location.length > 0
         ? data.location
         : undefined;
+    const host =
+      typeof data.host === "string" && data.host.length > 0
+        ? data.host
+        : undefined;
     meetings.push({
       slug,
       date,
@@ -93,6 +98,7 @@ export async function listMeetingsFromDisk(repoRoot: string): Promise<Meeting[]>
       startTime,
       durationMinutes,
       location,
+      host,
     });
   }
 
@@ -132,6 +138,10 @@ export async function readMeeting(
       typeof data.location === "string" && data.location.length > 0
         ? data.location
         : undefined;
+    const host =
+      typeof data.host === "string" && data.host.length > 0
+        ? data.host
+        : undefined;
     return {
       slug,
       date,
@@ -141,6 +151,7 @@ export async function readMeeting(
       startTime,
       durationMinutes,
       location,
+      host,
     };
   } catch (err: unknown) {
     if (isENOENT(err)) return null;

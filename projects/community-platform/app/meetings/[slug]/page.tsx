@@ -4,6 +4,7 @@ import { findMeetingBySlug, listMeetingsFromSnapshot } from "@/lib/content-snaps
 import { renderMarkdownToHtml } from "@/lib/markdown";
 import { SafeHtml } from "@/app/components/SafeHtml";
 import { AddToCalendarButton } from "@/app/components/AddToCalendarButton";
+import { ThankButton } from "@/app/components/ThankButton";
 import { meetingToIcsEvent, generateIcs } from "@/lib/ical";
 import { getDefaults } from "@/lib/community-defaults";
 
@@ -35,6 +36,16 @@ export default async function MeetingPage({
         {meeting.location ? <span>· {meeting.location}</span> : null}
         <AddToCalendarButton ics={ics} filename={`${meeting.slug}.ics`} />
       </div>
+      {meeting.host ? (
+        <div className="mt-3">
+          <ThankButton
+            recipient={meeting.host}
+            itemType="meeting"
+            itemId={meeting.slug}
+            initialState="not-signed-in"
+          />
+        </div>
+      ) : null}
       <article className="mt-4">
         <SafeHtml
           html={html}

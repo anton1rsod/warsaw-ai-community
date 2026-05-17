@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+import type { StatusUpdate } from "@/lib/status-reader";
 
 vi.mock("@/lib/auth", () => ({
   auth: vi.fn(async () => ({ githubHandle: "anton1rsod" })),
@@ -30,17 +31,40 @@ vi.mock("@/app/actions/status", () => ({
   editStatus: vi.fn(),
   postStatus: vi.fn(),
 }));
+const mockList = vi.fn((): StatusUpdate[] => []);
 vi.mock("@/app/actions/_test-status-store", () => ({
   isE2EMode: () => true,
-  mockStatusActions: { list: () => [] },
+  mockStatusActions: { list: mockList },
 }));
 vi.mock("@octokit/auth-app", () => ({
   createAppAuth: () => async () => ({ token: "fake" }),
+}));
+vi.mock("@/app/components/ThankButton", () => ({
+  ThankButton: ({
+    recipient,
+    itemType,
+    itemId,
+    initialState,
+  }: {
+    recipient: string;
+    itemType: string;
+    itemId: string;
+    initialState: string;
+  }) => (
+    <span
+      data-testid={`thank-${itemType}-${itemId}`}
+      data-recipient={recipient}
+      data-state={initialState}
+    >
+      [thank]
+    </span>
+  ),
 }));
 
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  mockList.mockReturnValue([]);
 });
 
 describe("D7: /this-week L2 strip (Task 2.8)", () => {
@@ -73,5 +97,31 @@ describe("D7: /this-week L2 strip (Task 2.8)", () => {
     const stripHeaders = container.querySelectorAll("h2.uppercase");
     const stripText = Array.from(stripHeaders).map((h) => h.textContent).join(",");
     expect(stripText).not.toMatch(/THIS WEEK/i);
+  });
+});
+
+describe("H53: ThankButton on /this-week (Task 3.7)", () => {
+  it("renders a ThankButton for each 'other' status post with correct itemId", async () => {
+    const { listMeetingsFromSnapshot, listEventsFromSnapshot } = await import("@/lib/content-snapshot");
+    vi.mocked(listMeetingsFromSnapshot).mockReturnValue([]);
+    vi.mocked(listEventsFromSnapshot).mockReturnValue([]);
+    // Seed two statuses: viewer's own (anton-safronov) + one other (bob)
+    // viewer slug = "anton-safronov" (from findMemberByHandle mock above)
+    mockList.mockReturnValue([
+      { slug: "anton-safronov", body: "---\n---\nmy update", sha: "sha1", lastModified: "2026-05-17" },
+      { slug: "bob", body: "---\n---\nbob update", sha: "sha2", lastModified: "2026-05-17" },
+    ]);
+    const { default: ThisWeekPage } = await import("@/app/this-week/page");
+    const ui = await ThisWeekPage();
+    render(ui);
+    // ThankButton should appear for "bob" (week 2026-W21), not for the viewer's own post
+    const btn = screen.getByTestId("thank-status-2026-W21/bob");
+    expect(btn).toBeInTheDocument();
+    expect(btn.getAttribute("data-recipient")).toBe("bob");
+    // In E2E mode loadViewerProfile returns fm=undefined → deriveThankInitialState → "not-thanked"
+    // (viewerSlug="anton-safronov" is set so it's not "not-signed-in"; thanks_given=[] → not-thanked)
+    expect(btn.getAttribute("data-state")).toBe("not-thanked");
+    // No ThankButton for own post (self → ThankButton returns null)
+    expect(screen.queryByTestId("thank-status-2026-W21/anton-safronov")).not.toBeInTheDocument();
   });
 });
