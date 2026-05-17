@@ -7,6 +7,7 @@
     "snapshot": "tsx scripts/snapshot-content.ts",
     "build-rosters": "tsx scripts/build-event-rosters.ts",
     "build-calendar": "tsx scripts/build-calendar.ts",
+    "build-kudos": "tsx scripts/build-kudos-aggregate.ts",
     "precontributions": "pnpm snapshot",
     "contributions": "tsx scripts/build-contributions.ts",
     "predev": "pnpm contributions",

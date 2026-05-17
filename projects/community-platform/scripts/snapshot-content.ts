@@ -8,6 +8,7 @@ import { listDecisions, readDecision } from "@/lib/decisions";
 import { listMeetingsFromDisk } from "@/lib/meetings";
 import { main as buildEventRosters } from "./build-event-rosters";
 import { main as buildCalendar } from "./build-calendar";
+import { main as buildKudos } from "./build-kudos-aggregate";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");
@@ -84,6 +85,7 @@ async function main(): Promise<void> {
 
   buildEventRosters();
   buildCalendar();
+  buildKudos();
 
   console.log(
     `[snapshot] wrote ${path.relative(REPO_ROOT, OUTPUT)}\n` +
