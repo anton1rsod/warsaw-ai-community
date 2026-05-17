@@ -22,3 +22,32 @@ describe("H50: tsconfig types scope", () => {
     expect(content).toMatch(/## 9\. Transitive `@types\/\*` packages/);
   });
 });
+
+describe("H55: PWA manifest validity (D20)", () => {
+  it("public/manifest.json parses and has required W3C fields", () => {
+    const manifestPath = path.join(__dirname, "..", "..", "public", "manifest.json");
+    const raw = readFileSync(manifestPath, "utf-8");
+    const m = JSON.parse(raw) as {
+      name?: unknown;
+      short_name?: unknown;
+      start_url?: unknown;
+      display?: unknown;
+      icons?: unknown;
+    };
+    expect(typeof m.name).toBe("string");
+    expect(typeof m.short_name).toBe("string");
+    expect(typeof m.start_url).toBe("string");
+    expect(m.display).toBe("standalone");
+    expect(Array.isArray(m.icons)).toBe(true);
+    const sizes = (m.icons as { sizes: string }[]).map((i) => i.sizes);
+    expect(sizes).toContain("192x192");
+    expect(sizes).toContain("512x512");
+  });
+
+  it("icon files exist at the manifest-referenced paths", () => {
+    const dir = path.join(__dirname, "..", "..", "public", "icons");
+    // readFileSync throws if missing — wrap in expect.
+    expect(() => readFileSync(path.join(dir, "icon-192.png"))).not.toThrow();
+    expect(() => readFileSync(path.join(dir, "icon-512.png"))).not.toThrow();
+  });
+});
