@@ -16,9 +16,89 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
-## [Unreleased] — v0.3.0 Phase 1 (Foundation) — 2026-05-17
+## [0.3.0] — 2026-05-17
 
-**Foundation primitives for v0.3 Discovery+ — pure aggregators, build-time scripts, and forward-defenses against build-chain regressions.** No user-facing surface changes yet (Phase 2 ships read surfaces). 11 of 36 v0.3 tasks committed on branch `chore/community-platform-v0-3-impl`. Tests 678/678 green; preview deploy green at SHA `5384dd2`; tsconfig types scoped (H50).
+**Discovery+ release.** Anonymous `/home` unified activity feed + `/events` + `/meetings` indexes + read-only detail pages + `/this-week` L2 strip + V-static GCal `/api/calendar.ics` + RSVP tri-state (Going / Interested / none, mutually exclusive) + Kudos primitive (♥ Thanks) on status/contribution/meeting items + PWA installability via manifest + 192/512 icons.
+
+35 of 36 v0.3 tasks shipped (E2E spec deferred to v0.3.1 — unit + integration coverage carries the safety net). Tests 822/822 green. Coverage: 89.6% lines / 93.77% branches overall (gate 80%); v0.3 strict-list at 100% lines on 11 of 13 files (HomeFeed.tsx 98.86% / meetings.ts 98.61% — the remaining lines are defensive frontmatter fallbacks accepted per the v0.1+v0.2 strict-list precedent). 50 unique hardening IDs grep-verified across `tests/unit/`.
+
+### Added
+
+- **ADR-0012** — v0.3 Discovery+ posture amendment to CONSTRAINTS line 12 (selected surfaces public). (Task 1.1)
+- **`/home`** — public SSG unified activity feed via `HomeFeed` (This Week + Recent, D layout per spec §13.3). H30 (no `auth()` read), H33 (per-section empty states), H43 (XSS via escapeHtml). (Tasks 2.1, 2.2)
+- **`/events`** — public SSG index, Upcoming + Past sections, count badges from build-time roster (H35). (Task 2.5)
+- **`/events/[slug]`** — public SSG detail page, extended frontmatter render (startTime/duration/location/host), `<AddToCalendarButton>`, cancelled banner, RSVP slot + roster slot wired in Phase 3 (H35). (Tasks 2.6, 3.4)
+- **`/meetings`** — public SSG index, month-grouped reverse-chrono list, ICS subscribe link in header (H36). (Task 2.3)
+- **`/meetings/[slug]`** — extended frontmatter render (startTime/duration/location) + `<AddToCalendarButton>` + ThankButton (host) (H36). (Tasks 2.4, 3.7)
+- **`/this-week` L2 strip** — `<HomeFeed showRecent={false}>` mounted above status compose; hidden entirely when This Week empty (H45). (Task 2.8)
+- **`/api/calendar.ics`** — public Route Handler serving build-time aggregate ICS; `Content-Type: text/calendar; charset=utf-8`, public/300s cache headers (H37, H48). (Task 2.9)
+- **`<AddToCalendarButton>`** — client download component; Blob+ObjectURL flow with cleanup in `finally` (H46, H48). Strict-list 100%. (Task 2.7)
+- **`<KudosCount>`** — read-only D19 display component; "♥ Thanked N times" pill + recent givers from `lib/__generated__/kudos.json` (H51). Strict-list 100%. (Task 2.10)
+- **RSVP tri-state write surface** — `<EventRsvpButton>` client UI + `rsvp-event` server action; SHA-passthrough write contract (v0.2.2 idiom); mutual exclusion reconciliation per D11; visibility default `members_only` on first RSVP (H31, H37, H40, H46). Strict-list 100% on both files. (Tasks 3.2, 3.3)
+- **`<EventRoster>` server component** — Going + Interested sub-rosters with hidden-count CTA (D10, D12, H32). Wired into `/events/[slug]`. (Task 3.4)
+- **Thanks/Kudos write surface** — `<ThankButton>` client UI + `thank-status` server action; idempotent dedup on `(recipient, item_type, item_id)` (O7); self-thank blocked + non-roster recipient blocked + 409 = `REFRESH_NEEDED` (H53). Item_id validators per O8: status regex / contribution `projectSlug:contributorSlug` / meeting `findMeetingBySlug`. Strict-list 100% on both files. (Tasks 3.5, 3.6, 3.7)
+- **`lib/profile-editor.ts` v0.3 schema** — `ProfileFrontmatterSchema` (+ `.passthrough()` to preserve v0.2 fields), `ThanksRecordSchema`, `parseProfileFrontmatter`, `validateProfileInvariants` (D11 mutual exclusion), `deriveThankInitialState` (D19 viewer-aware state). Existing v0.2 signatures (`parseFrontmatter`, `serializeFrontmatter`, `composeProfile`) unchanged. (Task 3.1)
+- **`/members/[slug]` v0.3 additions** — events_going / events_interested render (orphan-filtered via `filterOrphanSlugs` per H34, H39) + `<KudosCount>`. (Task 3.8)
+- **PWA installability** — `public/manifest.json` (start_url `/home`, display standalone, theme #2563eb), 192/512 PNG placeholder icons (#2563eb solid; replace with brand asset in v0.3.1), `app/layout.tsx` `metadata.manifest` link (D20, H55). (Task 4.1)
+- **Library primitives, build scripts, generated artifacts** — `lib/events.ts`, `lib/home-feed.ts`, `lib/ical.ts`, `lib/community-defaults.ts`, `lib/meetings.ts` host/startTime/duration/location extension; `scripts/build-event-rosters.ts`, `build-calendar.ts`, `build-kudos-aggregate.ts`, `validate-events-folders.ts`; `lib/__generated__/{event-rosters,kudos}.json` + `calendar.ics` (seeded empty/baseline).
+- **Community config** — `community/community-defaults.json` (timezone Europe/Warsaw, meeting + event default times); `community/events/_template/README.md`.
+- **`tsconfig.json` `types: ["node"]`** — forward-defense against transitive `@types/*` build failures (H50, Gotcha 9 pre-empt).
+- **`tests/unit/build-reliability.test.ts`** — invariants for tsconfig types scope, GOTCHAS row 9 documentation, and PWA manifest validity (H50, H55).
+- **`ics` npm dep** (3.12.0, MIT, ~7KB) — V-static ICS generator (O1 selection per spec §13.7.2).
+
+### Changed
+
+- **`proxy.ts` PUBLIC_PATHS + PUBLIC_PREFIXES** — extended for v0.3 Discovery+ surfaces per ADR-0012: `/home`, `/events`, `/meetings`, `/api/calendar.ics`, `/manifest.json` added to PUBLIC_PATHS; `/events/`, `/meetings/`, `/icons/` added to PUBLIC_PREFIXES (both production + non-production scopes).
+- **`tests/unit/proxy.test.ts`** — 17 `/home` auth-gate tests migrated to `/this-week` (still gated); new v0.3 describe block asserts the 5 new PUBLIC_PATHS + 3 new PUBLIC_PREFIXES.
+- **`app/home/page.tsx`** — rewritten; v0.1 role-display dropped; mounts `<HomeFeed>` from SSG-computed feed data.
+- **`app/this-week/page.tsx`** — mounts `<HomeFeed showRecent={false}>` strip above compose + ThankButton per "others" row (viewer-derived state via `parseProfileFrontmatter` + `deriveThankInitialState`).
+- **`app/projects/[slug]/page.tsx`** — "Recognize contributors" section with ThankButton per row (SSG-safe `initialState="not-signed-in"`; dynamic viewer-state derivation deferred to v0.3.1).
+- **`app/members/[slug]/page.tsx`** — Events section (filtered v0.3 fields) + `<KudosCount>`.
+- **`lib/meetings.ts`** — Meeting interface gains optional `startTime`, `durationMinutes`, `location`, `host`; `listMeetingsFromDisk` + `readMeeting` parse them from gray-matter frontmatter with type guards.
+- **CONSTRAINTS line 12** — amended to reference ADR-0012 (members-only with discovery surface exception).
+
+### Fixed
+
+- **Vercel preview deploys broken since Phase 1 Task 1.3 push** — tsx-resolution chicken-and-egg in the prebuild chain. Two fixes shipped:
+  - `lib/content-snapshot.ts` — converted 8 `@/lib/*` imports to relative `./*` (commit `b46af5b`).
+  - `lib/meetings.ts` — `listMeetings(source)` now requires explicit source arg to decouple it from `lib/content-snapshot.ts` (commit `5384dd2`).
+  - GOTCHAS row 10 documents the pattern for future ops.
+- **Security review (Task 3.9)** — `rsvp-event` + `thank-status` commit messages now strip CR/LF from session-derived handle before interpolation. Defense-in-depth (GitHub enforces alphanumeric+hyphen, but the injection boundary should not rely on an external party's invariant). 0 CRITICAL / 0 HIGH / 1 MEDIUM closed.
+
+### Verified
+
+- 822/822 unit/integration tests green (79 test files).
+- Coverage: **89.6% lines / 93.77% branches** overall (gate: 80%); strict-list at 100% on 11/13 v0.3 files (HomeFeed.tsx 98.86% / meetings.ts 98.61% — defensive frontmatter fallbacks accepted per v0.1+v0.2 precedent).
+- `pnpm tsc --noEmit` clean.
+- Pre-push smoke (`rm content-snapshot.json && pnpm snapshot && pnpm tsc --noEmit`) clean.
+- Hardening grep: **50 unique IDs** across `tests/unit/` (`describe("H<n>:")` blocks). v0.3 IDs landed: H30, H31, H32, H33, H35, H36, H37, H38, H39, H40, H42, H43, H44, H46, H47, H48, H49, H50, H51, H53, H54 (21 of 26; H34 + H41 + H45 + H52 + H55 covered via `it()` blocks or indirect tests).
+- security-reviewer on rsvp-event + thank-status + profile-editor v0.3 additions + meetings.ts host extension: **0 CRITICAL / 0 HIGH / 1 MEDIUM** (closed in `4286be6`).
+
+### Deferred to v0.3.1
+
+- **`e2e/v0-3-discovery.spec.ts`** — Task 4.2 (14 Playwright scenarios). Unit + integration coverage on every surface carries the v0.3.0 safety net. The 33 v0.2.2 E2E scenarios still pass and exercise the auth + consent + profile-editor + roster flows that v0.3 inherits unchanged.
+- **Brand-asset PWA icons** — current 192/512 PNGs are solid #2563eb placeholders. Replace when a community brand asset lands.
+- **Dynamic viewer-state derivation on `/projects/[slug]` + `/meetings/[slug]`** — ThankButton ships `initialState="not-signed-in"` everywhere (sign-in CTA visible to anonymous; signed-in users see "+ Thanks" but click is currently a no-op without dynamic profile load). `/this-week` already supports the full viewer-derived flow.
+- **typescript-reviewer + code-reviewer dispatch** — security-reviewer ran on the write surfaces (the security-relevant scope). Broader code-quality review carried by per-task spec-compliance reviews + CONSTRAINTS self-review checklist.
+
+### Production smoke (Anton-side, post-merge)
+
+1. Anonymous: visit `/home` → activity feed renders without redirect to `/login`.
+2. Anonymous: `/events`, `/meetings` index pages → 200, content renders.
+3. Anonymous: `GET /api/calendar.ics` → 200, `Content-Type: text/calendar`, body begins `BEGIN:VCALENDAR`.
+4. Signed in: visit `/events/<slug>` → click Going → reload → expect "✓ Going" persists; the commit message on `community/members/<slug>.md` includes `Co-Authored-By: <handle>`.
+5. Signed in: visit `/this-week`, click "+ Thanks" on someone else's post → expect "♥ Thanked" persistence on reload; verify commit on main.
+6. Chrome DevTools → Application → Manifest: parsed, install prompt available on `/home`.
+
+---
+
+## [0.3.0-foundation-archive] — 2026-05-17 (Phase 1 only, superseded)
+
+> Phase 1 foundation primitives originally shipped under an `[Unreleased]` block at chat-19 closeout. Superseded by the v0.3.0 entry above which consolidates Phases 1–4. Preserved here for traceability of the mid-ship state.
+
+11 of 36 v0.3 tasks shipped at chat-19 HEAD `5384dd2`: ADR-0012, community-defaults, listMeetings+groupByMonth, events reader + EventSlug brand, home-feed aggregator, ical + ics dep, build-event-rosters, build-calendar, build-kudos-aggregate, validate-events-folders CI guard, tsconfig types scope. 13 unique hardening IDs (H32, H33, H34, H36, H38, H39, H42, H44, H47, H49, H50, H52, H54).
+
+Two preview-blocking defects fixed mid-phase: (i) `content-snapshot.ts` `@/lib/*` → relative imports (`b46af5b`); (ii) `lib/meetings.ts` `listMeetings(source)` decouple (`5384dd2`). Captured as GOTCHAS row 10.
 
 ### Added
 
