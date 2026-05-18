@@ -2,10 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: light dark; }
+/*
+ * Token CSS variable contract (v0.4 / H64):
+ *   --color-<role>-<weight>
+ *
+ * `role`   : "accent" (warm amber, PostHog brand-language anchor)
+ *          | "neutral" (foundation slot — Phase A renders light-only; v0.5+ dark-mode overrides land here)
+ * `weight` : Tailwind ramp stop (50/100/500/600/700/900)
+ *
+ * Tailwind `theme.extend.colors.accent` references these vars so component
+ * authors use the utility class layer (`bg-accent-500`, `text-accent-700`)
+ * without touching CSS-var names directly.
+ *
+ * Accent rules (Q4.8 lock): accent appears ONLY on primary CTAs / focus
+ * rings / current-page nav state / RSVP "Going" pill (Phase B). Links use
+ * neutral underline. Tags use neutral background with neutral-700 text
+ * (except `status:proposed` which gets accent-50 bg + accent-700 text per O12).
+ *
+ * Dark-mode posture (Q4.3 / D43): deferred to v0.5+. Token slot is laid in
+ * Phase A so the v0.5+ design pass can override `--color-neutral-*` under a
+ * `@media (prefers-color-scheme: dark)` block without touching components.
+ */
+:root {
+  /* Accent ramp — PostHog amber (Tailwind `amber` stops) */
+  --color-accent-50:  #fffbeb;
+  --color-accent-100: #fef3c7;
+  --color-accent-500: #f59e0b;
+  --color-accent-600: #d97706;
+  --color-accent-700: #b45309;
+  --color-accent-900: #78350f;
+
+  /* Neutral ramp slot — Phase A light only; v0.5+ dark-mode overrides under
+     prefers-color-scheme:dark land here without touching components */
+  --color-neutral-50:  #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-500: #737373;
+  --color-neutral-700: #404040;
+  --color-neutral-900: #171717;
+
+  color-scheme: light;
+}
+
 * { box-sizing: border-box; }
 
 body {
-  @apply m-0 bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100;
-  font-family: system-ui, -apple-system, sans-serif;
+  @apply m-0 bg-white text-neutral-900;
+  /* Inter loaded via next/font in app/layout.tsx; fallback chain below
+     covers the FOIT window + non-FontFace-API browsers. */
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
