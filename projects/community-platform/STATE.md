@@ -2,14 +2,14 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-18 (chat-24 v0.4.0 Phase A plan DRAFTED — `projects/community-platform/v0.4.0-plan.md` (5035 lines, 21 tasks across 4 phases: A.0 Foundation 5, A.1 Components 7, A.2 Routes 5, A.3 Closeout 4) on `chore/community-platform-v0-4-plan` at SHA `42ad76b`. H56-H68 mapped to test files via `describe("H<n>:")` prefix (12 total; H63 retired; H61 deferred to Phase C — 11 active in Phase A). O8 (sidebar collapse) deferred to chat-27+ Phase B brainstorm; O10 (i18n namespace) locked to flat keys with surface prefix. ADR-0014 will flip Proposed → Accepted at Phase A.0.1. PR pending — `*.md`-only commit so `feedback_pr_vs_direct` exception applies, but chat-23 spec PR also pending merge — chat-24 PR may pre-merge or chain.)
+**Last updated**: 2026-05-18 (chat-25 v0.4.0 Phase A READY-TO-SHIP — `chore/community-platform-v0-4-impl` HEAD has 21 plan tasks + 6 amendment commits + 2 reverts. Tests 925/925 green; coverage 88.59% lines / 92.89% branches overall; pnpm build green; pnpm tsc --noEmit green. ADR-0014 Accepted at A.0.1. 11 Phase A hardening IDs grep-verified (H56-H62 + H64-H68 minus H61-Phase-C). PR + tag pending Anton-side merge → `pnpm a11y:baseline` against staging → STATE flip to `v0.4.0 shipped`.)
 
 ## Snapshot
 
 ```yaml
 last_green: e720268                 # main HEAD — merge of PR #21 (v0.3.1 — /home auth-aware header hotfix)
 last_code_only_green: a558eb9       # v0.3.1 hotfix commit on fix/community-platform-v0-3-1-home-header
-phase: "v0.4 plan drafted"         # chat-24: v0.4.0-plan.md on chore/community-platform-v0-4-plan; v0.3.1 still production tag
+phase: "v0.4.0 ready-to-ship"      # chat-25: impl branch has 21 tasks + amendments; PR + tag pending Anton merge
 spec_sha: 740be8e                   # spec §11 (v0.1.1) — frozen
 v0_2_spec_sha: 95197dc              # spec §12 brainstorm merged via PR #11
 v0_2_plan_sha: e700d19              # v0.2.0-plan.md merged via PR #12
@@ -20,9 +20,9 @@ v0_4_spec_sha: 971f0d2              # chat-23 spec §14 (+529 lines) + ADR-0014 
 v0_4_plan_sha: 42ad76b              # chat-24 v0.4.0-plan.md (5035 lines, 21 tasks across 4 phases) on chore/community-platform-v0-4-plan; PR pending
 plan_sha: 2201dd9                   # v0.1.1-plan.md (frozen)
 branch: main                        # v0.3.1 merged; hotfix branch deleted locally
-tests: "825 unit/integration + 33 E2E (v0.3.1 adds 3 unit tests for HomeHeader + updated home-page contract)"
-overall_coverage: "89.6% lines / 93.77% branches  (gate: 80%); v0.3 strict-list 100% on 11/13 (HomeFeed.tsx 98.86% / meetings.ts 98.61% — defensive fallbacks)"
-amendments_applied: "§9.2, §9.5–§9.18; v0.3 ships under ADR-0012; v0.3.1 amends H30 hardening to require anonymous accessibility (not 'no auth() read')"
+tests: "925 unit/integration + 33 E2E (v0.4 adds 100 net new tests including 11 Phase A hardening describes + 7 component test suites + integration H66 stub + i18n strings contract; HomeHeader.test.tsx deleted via A.2.4)"
+overall_coverage: "88.59% lines / 92.89% branches / 92.41% functions / 88.59% statements (gate: 80%); v0.4 strict-list mostly 100% lines (Avatar / Tag / ListItem / DateTime / EmptyState / Footer / AnonymousHero / YourWeekPane); Header.tsx 97.41% lines (signOut form-action body); HeaderMobileMenu.tsx 86.79% lines (useEffect + backdrop client paths); RootShell.tsx 0% (server component reading next/headers — structurally untestable in vitest)"
+amendments_applied: "§9.2, §9.5–§9.18; v0.3 ships under ADR-0012; v0.3.1 amends H30 hardening to require anonymous accessibility (not 'no auth() read'); v0.4 chat-25 added §9.19 (Phase A tests use .test.ts not .spec.ts), §9.20 (i18n test relocated to tests/unit/), §9.21 (A.1.x component tests are .test.tsx for JSX), §9.22 (dd887f3 way-who-are-you revert), §9.23 (h-v0-4.test.ts renamed to .test.tsx for jsdom), §9.24 (A.3.2 H68 collapses to existing persona-folder-slug-consistency.test.ts + describe-prefix backfill)"
 production: "https://warsaw-ai-community-platform.vercel.app"
 tag: "community-platform-v0.3.1"   # at merge SHA e720268; deploy promoted via vercel promote (Free-tier daily build quota exhausted)
 previous_tag: "community-platform-v0.3.0"   # at SHA acb57c5
@@ -180,6 +180,10 @@ v0_2_2_ship: "2026-05-16 (chat-16) — SHA `7cd87c3`; PR #17 merged to main; tag
 **Chat 24 (DONE):** v0.4.0 Phase A plan-writing via `superpowers:writing-plans`. `projects/community-platform/v0.4.0-plan.md` (5035 lines, 21 tasks across 4 phases: A.0 Foundation 5, A.1 Components 7, A.2 Routes 5, A.3 Closeout 4) committed at SHA `42ad76b` on `chore/community-platform-v0-4-plan`. H56-H68 mapped to test files via `describe("H<n>:")` prefix (12 total; H63 retired; H61 deferred to Phase C — 11 active in Phase A). O8 (sidebar collapse breakpoint, Phase B target) DEFERRED to chat-27+ Phase B brainstorm; O10 (i18n namespace structure) LOCKED to flat keys with surface prefix. ADR-0014 flips Proposed → Accepted at Phase A.0.1. Spec-coverage table, placeholder scan, type-consistency walk all clean inline.
 
 **Chat 24 → Chat-25 handoff:** [`docs/specs/2026-05-19-community-platform-v0-4-implementation-handoff.md`](../../docs/specs/2026-05-19-community-platform-v0-4-implementation-handoff.md). Chat 25 owns: 21-task Phase A implementation via `superpowers:subagent-driven-development`. Target PR + tag `community-platform-v0.4.0` at chat-25 closeout.
+
+**Chat 25 (DONE — v0.4.0 READY-TO-SHIP):** 21 plan tasks shipped on `chore/community-platform-v0-4-impl` via `superpowers:subagent-driven-development`. Phase A.0 Foundation (5 tasks) + Phase A.1 Components (7 tasks) + Phase A.2 Routes (5 tasks) + Phase A.3 Closeout (4 tasks). 925 unit+integration tests across 94 test files green; coverage 88.59% lines / 92.89% branches overall (gate ≥80%); Phase A strict-list mostly 100% lines (Header.tsx 97.41% / HeaderMobileMenu.tsx 86.79% / RootShell.tsx 0% — known-uncoverable client + next/headers paths accepted per A.1.1 precedent). 11 Phase A hardening IDs grep-verified (H56-H62 + H64-H68 minus H61-Phase-C). Plan amendments §9.19–§9.24 captured the drift: §9.19 `.test.ts` (not `.spec.ts`); §9.20 i18n test relocated to `tests/unit/`; §9.21 component tests `.test.tsx` for JSX; §9.22 dd887f3 way-who-are-you revert; §9.23 h-v0-4.test.ts renamed to `.test.tsx` for jsdom; §9.24 A.3.2 H68 collapses to existing persona-folder-slug-consistency.test.ts + describe-prefix backfill. ADR-0014 Accepted at A.0.1. **PR + tag + STATE flip to `shipped` pending Anton merge.** Reviewer-agent dispatch + axe-core E2E deferred to staging.
+
+**Chat 25 → Chat-26 handoff:** [`docs/specs/2026-05-19-community-platform-v0-4-shipped-followups-handoff.md`](../../docs/specs/2026-05-19-community-platform-v0-4-shipped-followups-handoff.md). Chat 26 owns v0.4.x follow-ups menu — 8 options (PWA textured icons / YourWeekPane data wire-up / HomeFeed→DateTime migration / reviewer-agent dispatch / H56 Cache-Control staging E2E / Phase B activation gate decision / typescript-reviewer tech-debt sweep / __generated__/*.json drift cleanup). Anton picks at chat start.
 
 **Pending follow-ups (mapped to chat-10 options):**
 - **A — Mark Spasonov backfill** (PR #3 open as Draft on `chore/mark-spasonov-backfill`): placeholders `@MARK_TELEGRAM_HANDLE_TBD` + `MARK_GIT_EMAIL_TBD` need real values from Mark out-of-band; mark Ready + merge. **Only chat-10 option NOT picked** — explicit Anton call.

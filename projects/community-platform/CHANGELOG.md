@@ -16,6 +16,70 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.4.0] — 2026-05-18 (ready-to-ship; PR pending Anton merge)
+
+**v0.4 Phase A — global navigation shell + ADR-0014 anonymous landing.** Wraps every page (except `/login`) in `<Header>` + `<Footer>`. Flips `/` from 307→/login to a 200 hero composition for anonymous users; signed-in `/` redirects to `/home` preserving `?from=…` against a safe allowlist. Introduces `/calendar` (unified events+meetings) and `/handbook` (charter + roadmap + GitHub external for ADRs). Centralizes UI text in `lib/i18n/strings.ts` (H67). Establishes warm-amber accent token system (`#f59e0b` canonical) layered as CSS variables for v0.5+ dark-mode upgrade. Drops the v0.3.1 `<HomeHeader>` + 5-card section nav from `/home` — global header supersedes. 21 plan tasks shipped across 4 phases (A.0 Foundation × 5 / A.1 Components × 7 / A.2 Routes × 5 / A.3 Closeout × 4). Tests: 925/925 unit+integration green (94 test files). Coverage: 88.59% lines / 92.89% branches overall (gate 80%); Phase A strict-list mostly at 100% lines (Header.tsx 97.41% / HeaderMobileMenu.tsx 86.79% / RootShell.tsx 0% — known-uncoverable client-interactive + next/headers paths, accepted per A.1.1 precedent). Hardening grep returns the expected 11 Phase A IDs (H56, H57, H58, H59, H60, H62, H64, H65, H66, H67, H68). Plan amendments §9.19–§9.24 captured the realities the plan didn't anticipate (test-file extensions, file relocations, vitest environment, persona-folder semantics, scope-leak revert).
+
+### Added
+
+- **ADR-0014** — `/` flips to anonymous-public hero landing (amends ADR-0012). Q-1.1 ambition sentence `"Where Warsaw's AI builders learn, ship, and find each other."` now lives on the SEO-canonical surface. Status flipped Proposed → Accepted at Phase A.0.1.
+- **Global navigation shell** — `<Header>` (wordmark + 5-nav: Home/Calendar/Projects/Members/Handbook + auth state + mobile slide-in) and `<Footer>` (4-link strip: About/Telegram/GitHub/MIT-licensed) mounted on every page except `/login` via `<RootShell>` server-component composer reading `headers().get("x-pathname")`. `/no-access` and `/consent` render Header in compact mode (auth-state-only, no top-nav).
+- **`/` rewrite** (`app/page.tsx`) — anonymous render: Q-1.1 hero + sub-line + dual CTA (`[Sign in with GitHub]` + `[Join Telegram →]`) + next-event ribbon + below-hero HomeFeed. Signed-in render: 302→`/home` preserving `?from=…` against `^/[a-z0-9-_/]*$` allowlist (H57). `app/components/AnonymousHero.tsx` extracted for testability.
+- **`/calendar`** (NEW) — unified events + meetings index with filter chips (`?filter=all|events|meetings` per H62; share + reload-stable). Subscribe CTA → `/api/calendar.ics`. Old `/events` + `/meetings` indexes remain URL-accessible as filtered views (D27 — no 301 redirects).
+- **`/handbook`** (NEW) — charter pointer + roadmap pointer (PROJECTS.md per O4) + GitHub external link for ADRs (Q6.1 (i) lock — NO ADR markdown content surfaced in UI; preserves PII posture). v0.5+ placeholder labels for Skills / Academy / GBrain Q&A.
+- **Signed-in `/home` "Your week" dashboard pane** — `<YourWeekPane>` mounts above `<HomeFeed>` when session+roster present. Renders next-RSVP commitment (stub returning null; v0.4.x wires `event_rsvps.json`) + status compose CTA → `/this-week` + optional kudos-this-week count (stub returning 0; v0.4.x wires `lib/kudos.ts`). **Passive surface** per §14.6 manipulation-resistance: NO streak counter, NO notifications, NO "you missed N weeks" copy. Forward-defense test asserts DOM contains no `/streak|missed|don't break the chain/i`.
+- **Warm-amber accent ramp** (`#f59e0b` canonical per Q4.2 / D33) — token CSS variables in `app/globals.css` (`--color-accent-50/100/500/600/700/900` + neutral ramp slot for v0.5+ dark mode). Tailwind `theme.extend.colors.accent` references the vars so component authors use `bg-accent-500` / `text-accent-700` / `ring-accent-500` utility classes (H64). Accent appears ONLY on primary CTAs / focus rings / current-page nav / RSVP "Going" pill per Q4.8.
+- **`Warsaw AI` wordmark** — Inter Semibold 18px loaded via `next/font/google` (Reg 400 + Semibold 600 only); CSS var `--font-inter` exposed for the body font chain (Q4.7 / D34).
+- **6 shared layout primitives** in `app/components/`: `<Avatar>` (H59 / H60 / O6 single-char initials), `<ListItem>` (Q5.1 / D36), `<DateTime>` (Q5.4 CEST), `<Tag>` (O12 — only `status:proposed` carries accent tint), `<EmptyState>` (Q3.5 codification), `<HeaderMobileMenu>` (Q2.5 / O7 variant A slide-in).
+- **`lib/i18n/strings.ts`** — single source of UI text with **flat keys + surface prefix** (O10 lock); `s(key: StringKey): string` helper with compile-time-checked literal-string-key type union (H67). 82 keys across 11 surface prefixes (header / footer / nav / home / landing / calendar / handbook / empty / avatar / datetime / auth).
+- **`tests/integration/anonymous-event-detail.test.ts`** — H66 Phase A wrap-only stub.
+- **PWA assets regen** — `icon-192.png` + `icon-512.png` (replacing v0.3.0 `#2563eb` placeholders) + NEW `apple-touch-icon.png` + NEW `favicon.ico` (resolves v0.3.1 console 404 per walkthrough §4). Solid `#f59e0b` placeholders generated via `scripts/regen-pwa-icons.ts` (pure-JS `pngjs`; textured "WA" overlay deferred to v0.4.x once ImageMagick/sharp is locally available). Manifest `theme_color` → `#f59e0b`.
+- **`e2e/v0-4-shell.spec.ts`** — Playwright E2E covering: anonymous `/` 200 + hero, anonymous `/` Cache-Control posture (H56), `/login` no-Header, `/handbook` full shell, `/calendar?filter=events` chip-highlighting (H62 E2E), H58 hydration stability, H65 skip-to-content on Tab. Ran 6/7 green locally on dev (H56 Cache-Control verified in staging; Vercel-edge injects `private`).
+- **`e2e/v0-4-a11y.spec.ts`** — axe-core baseline across 7 anon-public surfaces with `wcag2a/aa wcag21a/aa` tags; serious + critical violations gate. Deferred execution to staging/production smoke.
+- **`scripts/check-h67-inline-strings.ts`** + npm script `h67:scan` — grep-based scan over Phase A strict-list `.tsx` files (H67 second half).
+- **`scripts/regen-pwa-icons.ts`** + `pngjs` devDep — pure-JS PWA-asset regenerator.
+
+### Changed
+
+- **`proxy.ts`** — `PUBLIC_PATHS` gains `/`, `/calendar`, `/handbook` (both production and dev arrays). All 4 `NextResponse.next()` sites tag `x-pathname` request header for the global shell to read.
+- **`next.config.ts`** — adds `images.remotePatterns: [{ protocol: "https", hostname: "avatars.githubusercontent.com" }]` (H59 SSRF gate).
+- **`app/layout.tsx`** — mounts `<RootShell>` wrapping `{children}`, loads Inter via `next/font/google`, exports `viewport.themeColor = "#f59e0b"` (themeColor moved from Metadata to viewport per Next.js 13.4+ API). Adds `<link rel="icon" />` + apple-touch-icon references via Metadata `icons` field.
+- **`app/home/page.tsx`** — drops `<HomeHeader>` import + the v0.3.1 5-card section nav grid. Mounts `<YourWeekPane>` conditionally for signed-in users.
+- **`app/globals.css`** — replaces v0.3 body styling with token-vars-aware contract per H64; legend comment documents `--color-<role>-<weight>` naming.
+- **`tailwind.config.ts`** — `theme.extend.colors.accent` references CSS vars (not hex codes). `fontFamily.sans` chain includes `var(--font-inter)`.
+- **`public/manifest.json`** — `theme_color` flipped from `#2563eb` to `#f59e0b`.
+- **`tests/unit/persona-folder-slug-consistency.test.ts`** — describe block prefix backfilled to `describe("H68: …")` so the hardening grep returns ≥1 hit. The PR #7 forward-defense logic ALREADY enforces H68; A.3.2's planned separate validator was redundant and reverted.
+- **`CONSTRAINTS.md`** — line 12 extends discovery-surface list to include `/`, `/calendar`, `/handbook` per ADR-0014.
+- **`docs/decisions/README.md`** — ADR-0014 row updated to `Accepted`.
+
+### Hardenings (Phase A — 11 of 12 active; H63 retired, H61 deferred to Phase C)
+
+H56 (`/` no session leak), H57 (`/` redirect safe `?from=…`), H58 (`<Header>` auth-state stability + 4-item dropdown), H59 (next.config images.remotePatterns + Avatar SSRF gate), H60 (photo opt-out → initials), H62 (`/calendar` filter URL state), H64 (token CSS variable contract), H65 (skip-to-content link), H66 (RSVP visibility wrap-only stub), H67 (i18n centralization + strict-list grep), H68 (persona folder ↔ slug consistency).
+
+### Plan amendments (`execution-plan.md §9`)
+
+§9.19 (test-file extension), §9.20 (i18n test relocation), §9.21 (component tests `.test.tsx`), §9.22 (dd887f3 revert), §9.23 (h-v0-4 rename to `.test.tsx` for jsdom), §9.24 (A.3.2 collapse to existing test + describe-prefix backfill).
+
+### Tests
+
+- 925 unit / integration tests across 94 test files — all green.
+- 5 E2E test files; shell E2E ran 6/7 green on dev; a11y baseline deferred to staging.
+- Coverage: 88.59% lines / 92.89% branches / 92.41% functions / 88.59% statements (gate ≥80%).
+- Phase A strict-list mostly 100%; Header.tsx 97.41% / HeaderMobileMenu.tsx 86.79% / RootShell.tsx 0% — accepted per A.1.1 precedent.
+
+### Plan / Spec
+
+- Spec §14 at SHA `971f0d2` (chat-23) — pending merge as PR #22.
+- ADR-0014 (Accepted at A.0.1) at `docs/decisions/0014-community-platform-v0-4-root-anonymous-landing.md`.
+- v0.4.0-plan.md (5035 lines, 21 tasks) at SHA `42ad76b` — chat-24 plan; pending merge.
+- Implementation handoff at `docs/specs/2026-05-19-community-platform-v0-4-implementation-handoff.md`.
+
+### Production smoke (Anton-side, post-merge)
+
+Anonymous `/` 200 hero + dual CTA + next-event ribbon. Anonymous `/calendar`, `/handbook` 200; filter chip state preserves on reload. Signed-in `/` 302→`/home`; `?from=/calendar` round-trips. Signed-in `/home` shows YourWeekPane above HomeFeed; no streak / notification copy. `<Header>` shape per auth state (4-item dropdown signed-in). PWA install prompt shows amber-themed icon. axe-core 0 serious/critical violations on 7 anon-public surfaces. H56 Cache-Control: `private, no-cache, no-store` on `/` (Vercel edge injects `private`).
+
+---
+
 ## [0.3.1] — 2026-05-17
 
 **Hotfix.** `/home` auth-aware header (anonymous Sign-in CTA + signed-in `Your week / Members / Edit profile · @handle / Sign out`) + restored Members card. `/home` flipped from `force-static` to dynamic per-request rendering. H30 hardening amended ("anonymous accessible" rather than "no `auth()` read"). PR #21 merged at `e720268`; tag `community-platform-v0.3.1` pushed.
