@@ -201,13 +201,16 @@ export default async function proxy(
 
   if (PUBLIC_PATHS.has(pathname)) {
     const res = NextResponse.next();
+    res.headers.set("x-pathname", pathname);
     if (pathname === "/onboard" || pathname === "/onboard/error") {
       return applyOnboardHeaders(res);
     }
     return res;
   }
   if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
+    const res = NextResponse.next();
+    res.headers.set("x-pathname", pathname);
+    return res;
   }
 
   const handle = await getHandleFromRequest(req);
@@ -241,6 +244,7 @@ export default async function proxy(
   if (!consented) {
     if (member.profile) {
       const res = NextResponse.next();
+      res.headers.set("x-pathname", pathname);
       res.cookies.set(CONSENT_COOKIE, "1", {
         httpOnly: true,
         sameSite: "lax",
@@ -253,7 +257,9 @@ export default async function proxy(
     return NextResponse.redirect(new URL("/consent", req.url));
   }
 
-  return NextResponse.next();
+  const res = NextResponse.next();
+  res.headers.set("x-pathname", pathname);
+  return res;
 }
 
 export const config = {
