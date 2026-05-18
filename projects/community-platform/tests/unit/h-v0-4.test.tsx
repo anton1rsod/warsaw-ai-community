@@ -159,3 +159,16 @@ describe("H62: calendar filter URL preservation", () => {
     );
   });
 });
+
+describe("H67: i18n string centralization — strict-list grep (second half)", () => {
+  it("Phase A strict-list components contain no inline JSX text-node strings", async () => {
+    const { scanForInlineStrings } = await import(
+      "@/scripts/check-h67-inline-strings"
+    );
+    const result = scanForInlineStrings(process.cwd());
+    if (!result.ok) {
+      console.error("H67 hits:", JSON.stringify(result.hits, null, 2));
+    }
+    expect(result.ok).toBe(true);
+  });
+});

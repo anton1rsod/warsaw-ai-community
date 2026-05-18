@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "a11y:baseline": "playwright test e2e/v0-4-a11y.spec.ts",
     "snapshot": "tsx scripts/snapshot-content.ts",
     "build-rosters": "tsx scripts/build-event-rosters.ts",
     "build-calendar": "tsx scripts/build-calendar.ts",
@@ -27,6 +28,7 @@
     "pree2e": "pnpm contributions",
     "e2e": "playwright test",
     "e2e:install": "playwright install --with-deps",
+    "h67:scan": "tsx scripts/check-h67-inline-strings.ts",
     "validate-events": "tsx scripts/validate-events-folders.ts",
     "prepare": "cd ../.. && git config core.hooksPath projects/community-platform/.husky || true"
   },
@@ -53,6 +55,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
     "@eslint/js": "^9.39.4",
     "@playwright/test": "^1.59.1",
     "@testing-library/jest-dom": "^6.9.1",
