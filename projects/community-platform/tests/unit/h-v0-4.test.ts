@@ -36,3 +36,25 @@ describe("H64: token variable contract (globals.css)", () => {
     expect(css).toMatch(/--color-<role>-<weight>/);
   });
 });
+
+describe("H59: next.config.ts images.remotePatterns SSRF allowlist", () => {
+  const config = readFileSync(
+    join(process.cwd(), "next.config.ts"),
+    "utf-8",
+  );
+
+  it("declares images.remotePatterns with avatars.githubusercontent.com ONLY", () => {
+    expect(config).toMatch(/images:\s*\{/);
+    expect(config).toMatch(/remotePatterns:\s*\[/);
+    expect(config).toMatch(/hostname:\s*["']avatars\.githubusercontent\.com["']/);
+    expect(config).toMatch(/protocol:\s*["']https["']/);
+  });
+
+  it("does NOT permit any other origin in remotePatterns", () => {
+    // Crude but effective: count `hostname:` declarations in the file.
+    // If Phase A adds a 2nd hostname, this test fails — forcing a deliberate
+    // ADR / threat-model review for the new origin (per §14.7 + V0_5_BACKLOG).
+    const hostnameCount = (config.match(/hostname:/g) || []).length;
+    expect(hostnameCount).toBe(1);
+  });
+});
