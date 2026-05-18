@@ -20,6 +20,8 @@ import {
 const PUBLIC_PATHS = new Set<string>(
   process.env.NODE_ENV === "production"
     ? [
+        // ADR-0014 (v0.4) + extends ADR-0012 (v0.3):
+        "/",                  // ADR-0014 — anonymous hero landing
         "/login",
         "/no-access",
         "/consent",
@@ -30,10 +32,14 @@ const PUBLIC_PATHS = new Set<string>(
         "/home",
         "/events",
         "/meetings",
+        "/calendar",          // ADR-0014 — unified events+meetings index (D27)
+        "/handbook",          // ADR-0014 — charter pointer + roadmap (D26 + Q6.1(i))
         "/api/calendar.ics",
         "/manifest.json",
       ]
     : [
+        // ADR-0014 (v0.4) + extends ADR-0012 (v0.3):
+        "/",
         "/login",
         "/no-access",
         "/consent",
@@ -51,6 +57,8 @@ const PUBLIC_PATHS = new Set<string>(
         "/home",
         "/events",
         "/meetings",
+        "/calendar",
+        "/handbook",
         "/api/calendar.ics",
         "/manifest.json",
       ],
