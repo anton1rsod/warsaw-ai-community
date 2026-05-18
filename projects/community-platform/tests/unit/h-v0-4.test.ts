@@ -1,6 +1,42 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// H56/H57 describe blocks import @/app/page which transitively loads
+// @/lib/auth and @/lib/env. Mock both here (at module scope, hoisted
+// before dynamic imports) so the env-validation guard in lib/env.ts
+// does not fire during unit test collection.
+vi.mock("@/lib/auth", () => ({
+  auth: vi.fn(),
+  signOut: vi.fn(),
+}));
+vi.mock("@/lib/env", () => ({
+  env: {
+    NEXTAUTH_SECRET: "test",
+    NEXTAUTH_URL: "http://localhost:3000",
+    GITHUB_OAUTH_CLIENT_ID: "test",
+    GITHUB_OAUTH_CLIENT_SECRET: "test",
+    GITHUB_APP_ID: "test",
+    GITHUB_APP_PRIVATE_KEY: "test",
+    GITHUB_APP_INSTALLATION_ID: "test",
+    GITHUB_REPO_OWNER: "test",
+    GITHUB_REPO_NAME: "test",
+    COMMUNITY_NAME: "Warsaw AI Community",
+    COMMUNITY_SLUG: "warsaw-ai",
+    INVITE_SECRET: "test",
+  },
+}));
+vi.mock("@/lib/content-snapshot", () => ({
+  findMemberByHandle: vi.fn(),
+  listMeetingsFromSnapshot: vi.fn(() => []),
+  listEventsFromSnapshot: vi.fn(() => []),
+}));
+vi.mock("next/headers", () => ({
+  headers: vi.fn(() => ({ get: vi.fn(() => null) })),
+}));
+vi.mock("next/navigation", () => ({
+  redirect: vi.fn(),
+}));
 
 describe("H64: token variable contract (globals.css)", () => {
   const css = readFileSync(
@@ -56,5 +92,53 @@ describe("H59: next.config.ts images.remotePatterns SSRF allowlist", () => {
     // ADR / threat-model review for the new origin (per §14.7 + V0_5_BACKLOG).
     const hostnameCount = (config.match(/hostname:/g) || []).length;
     expect(hostnameCount).toBe(1);
+  });
+});
+
+describe("H56: / anonymous render no session leak", () => {
+  // Source-level assertion: AnonymousHero.tsx must NOT reference any
+  // auth-session-derived UI tokens. This is a static guard equivalent to
+  // the DOM check — the component is only ever mounted in the anonymous
+  // branch of page.tsx (signedIn === false), so auth tokens must never
+  // appear in its source.
+  const heroSrc = readFileSync(
+    join(process.cwd(), "app", "components", "AnonymousHero.tsx"),
+    "utf-8",
+  );
+
+  it("AnonymousHero source does NOT reference signed-in UI tokens", () => {
+    for (const token of ["Sign out", "Edit profile", "Your week", "signOut", "githubHandle"]) {
+      expect(heroSrc).not.toContain(token);
+    }
+  });
+
+  it("AnonymousHero does NOT import @/lib/auth (no auth dependency)", () => {
+    expect(heroSrc).not.toMatch(/from ["']@\/lib\/auth["']/);
+    expect(heroSrc).not.toMatch(/import.*auth.*from/);
+  });
+});
+
+describe("H57: / signed-in redirect preserves safe from", () => {
+  it("safe path (matches ^/[a-z0-9-_/]*$) is preserved", async () => {
+    const { resolveSafeReturnTo } = await import("@/app/page");
+    expect(resolveSafeReturnTo("/calendar")).toBe("/calendar");
+    expect(resolveSafeReturnTo("/events/2026-05-21-sync")).toBe(
+      "/events/2026-05-21-sync",
+    );
+    expect(resolveSafeReturnTo("/members/anton-safronov")).toBe(
+      "/members/anton-safronov",
+    );
+  });
+
+  it("unsafe input is dropped — falls back to /home", async () => {
+    const { resolveSafeReturnTo } = await import("@/app/page");
+    expect(resolveSafeReturnTo("https://evil.example")).toBe("/home");
+    expect(resolveSafeReturnTo("//evil.example/path")).toBe("/home");
+    expect(resolveSafeReturnTo("javascript:alert(1)")).toBe("/home");
+    expect(resolveSafeReturnTo("/path?query=injected")).toBe("/home");
+    expect(resolveSafeReturnTo("/UPPER")).toBe("/home");
+    expect(resolveSafeReturnTo("../")).toBe("/home");
+    expect(resolveSafeReturnTo(undefined)).toBe("/home");
+    expect(resolveSafeReturnTo("")).toBe("/home");
   });
 });
