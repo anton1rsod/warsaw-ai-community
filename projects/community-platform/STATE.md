@@ -2,14 +2,14 @@
 
 > **Curated index of "right now."** CHANGELOG remains canonical for history; this file is the entry point a fresh chat reads first. Update at every phase closeout, in the same commit as the CHANGELOG entry.
 
-**Last updated**: 2026-05-18 (chat-23 v0.4 spec §14 DRAFTED — spec §14 + ADR-0014 + gstack structural walkthrough committed on `chore/community-platform-v0-4-spec`. User-test recruitment SKIPPED per Anton call; structural Playwright walkthrough of v0.3.1 production substituted as compensating control; zero D-id contradictions surfaced — brainstorm-output preserved unchanged. 14 open questions O1–O14 locked inline. PR pending — single PR per chat-22 PR-vs-direct memory exception (spec.md is in CI-trigger path).)
+**Last updated**: 2026-05-18 (chat-24 v0.4.0 Phase A plan DRAFTED — `projects/community-platform/v0.4.0-plan.md` (5035 lines, 21 tasks across 4 phases: A.0 Foundation 5, A.1 Components 7, A.2 Routes 5, A.3 Closeout 4) on `chore/community-platform-v0-4-plan` at SHA `42ad76b`. H56-H68 mapped to test files via `describe("H<n>:")` prefix (12 total; H63 retired; H61 deferred to Phase C — 11 active in Phase A). O8 (sidebar collapse) deferred to chat-27+ Phase B brainstorm; O10 (i18n namespace) locked to flat keys with surface prefix. ADR-0014 will flip Proposed → Accepted at Phase A.0.1. PR pending — `*.md`-only commit so `feedback_pr_vs_direct` exception applies, but chat-23 spec PR also pending merge — chat-24 PR may pre-merge or chain.)
 
 ## Snapshot
 
 ```yaml
 last_green: e720268                 # main HEAD — merge of PR #21 (v0.3.1 — /home auth-aware header hotfix)
 last_code_only_green: a558eb9       # v0.3.1 hotfix commit on fix/community-platform-v0-3-1-home-header
-phase: "v0.4 spec drafted"         # chat-23: spec §14 + ADR-0014 + structural walkthrough; v0.3.1 still production tag
+phase: "v0.4 plan drafted"         # chat-24: v0.4.0-plan.md on chore/community-platform-v0-4-plan; v0.3.1 still production tag
 spec_sha: 740be8e                   # spec §11 (v0.1.1) — frozen
 v0_2_spec_sha: 95197dc              # spec §12 brainstorm merged via PR #11
 v0_2_plan_sha: e700d19              # v0.2.0-plan.md merged via PR #12
@@ -17,6 +17,7 @@ v0_3_spec_sha: 00faca9              # spec §13 (chat-17) merged via PR #18 at S
 v0_3_plan_sha: "TBD"               # v0.3.0-plan.md still on chore/community-platform-v0-3-plan (separate doc-only merge pending)
 v0_4_brainstorm_sha: 4a6855b        # chat-22 brainstorm-output + chat-23 handoff + V0_5_BACKLOG update + UX baseline screenshots; pushed direct-to-main
 v0_4_spec_sha: 971f0d2              # chat-23 spec §14 (+529 lines) + ADR-0014 + gstack walkthrough findings + V0_5_BACKLOG CSP entry on chore/community-platform-v0-4-spec; PR pending
+v0_4_plan_sha: 42ad76b              # chat-24 v0.4.0-plan.md (5035 lines, 21 tasks across 4 phases) on chore/community-platform-v0-4-plan; PR pending
 plan_sha: 2201dd9                   # v0.1.1-plan.md (frozen)
 branch: main                        # v0.3.1 merged; hotfix branch deleted locally
 tests: "825 unit/integration + 33 E2E (v0.3.1 adds 3 unit tests for HomeHeader + updated home-page contract)"
@@ -175,6 +176,10 @@ v0_2_2_ship: "2026-05-16 (chat-16) — SHA `7cd87c3`; PR #17 merged to main; tag
 **Chat 23 (DONE):** v0.4 spec §14 + ADR-0014 drafted via `superpowers:spec-writer`. User-test recruitment SKIPPED per Anton call 2026-05-18; structural Playwright walkthrough of v0.3.1 production substituted as compensating control at [`docs/research/v0-4-gstack-walkthrough-2026-05-18/findings.md`](../../docs/research/v0-4-gstack-walkthrough-2026-05-18/findings.md) (237 lines + 8 screenshots + 4 a11y snapshots; zero D-id contradictions; brainstorm preserved). Spec.md grew 2516 → 3045 lines (+529). ADR-0014 written at [`docs/decisions/0014-community-platform-v0-4-root-anonymous-landing.md`](../../docs/decisions/0014-community-platform-v0-4-root-anonymous-landing.md). 14 open questions O1–O14 all locked inline in spec §14 (O2/O3/O6/O7/O12 with 2-3 structured variants + recommended pick — design-shotgun skill invocation skipped per friction-reduction posture; Anton picks at review). ADR-0014 amends ADR-0012 (selective discovery posture extended to `/`); ADR-0013 stays dropped. V0_5_BACKLOG gains a Content-Security-Policy entry (chat-23 surface). `chore/community-platform-v0-4-spec` branch off main; PR pending.
 
 **Chat 23 → Chat-24 handoff:** [`docs/specs/2026-05-19-community-platform-v0-4-plan-writing-handoff.md`](../../docs/specs/2026-05-19-community-platform-v0-4-plan-writing-handoff.md) (drafted in this chat-23 commit). Chat 24 owns: Phase A implementation plan via `superpowers:writing-plans` against spec §14 + ADR-0014. Target: ~20-25 tasks across Phase A files. TDD discipline preserved (CONSTRAINTS line 25). 4-phase rollout posture preserved (Phase A committed; B/C conditional on Phase A landing data per D44).
+
+**Chat 24 (DONE):** v0.4.0 Phase A plan-writing via `superpowers:writing-plans`. `projects/community-platform/v0.4.0-plan.md` (5035 lines, 21 tasks across 4 phases: A.0 Foundation 5, A.1 Components 7, A.2 Routes 5, A.3 Closeout 4) committed at SHA `42ad76b` on `chore/community-platform-v0-4-plan`. H56-H68 mapped to test files via `describe("H<n>:")` prefix (12 total; H63 retired; H61 deferred to Phase C — 11 active in Phase A). O8 (sidebar collapse breakpoint, Phase B target) DEFERRED to chat-27+ Phase B brainstorm; O10 (i18n namespace structure) LOCKED to flat keys with surface prefix. ADR-0014 flips Proposed → Accepted at Phase A.0.1. Spec-coverage table, placeholder scan, type-consistency walk all clean inline.
+
+**Chat 24 → Chat-25 handoff:** [`docs/specs/2026-05-19-community-platform-v0-4-implementation-handoff.md`](../../docs/specs/2026-05-19-community-platform-v0-4-implementation-handoff.md). Chat 25 owns: 21-task Phase A implementation via `superpowers:subagent-driven-development`. Target PR + tag `community-platform-v0.4.0` at chat-25 closeout.
 
 **Pending follow-ups (mapped to chat-10 options):**
 - **A — Mark Spasonov backfill** (PR #3 open as Draft on `chore/mark-spasonov-backfill`): placeholders `@MARK_TELEGRAM_HANDLE_TBD` + `MARK_GIT_EMAIL_TBD` need real values from Mark out-of-band; mark Ready + merge. **Only chat-10 option NOT picked** — explicit Anton call.
