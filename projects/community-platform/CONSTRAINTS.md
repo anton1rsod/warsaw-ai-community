@@ -26,8 +26,25 @@ This file is companion to `STATE.md` (current state) and `docs/playbooks/recurri
 - **Surgical edits.** Don't refactor adjacent code. Don't fix things the task didn't ask for. If you spot a defect outside scope, record it in `execution-plan.md §9` for a future chat.
 - **Coverage gates** (spec §8): 80% overall, 100% on the strict-list (canonical list lives in `STATE.md`).
 - **E2E required at closeout** for phases 1, 2, 3, 5, 6, 8 only. Use `pnpm e2e --retries=2` for closeout runs (Next 16 dev-server cold-start flakes — pattern 9 in the defects playbook).
+- **Staging E2E targeting.** Set `PLAYWRIGHT_BASE_URL=https://warsaw-ai-community-platform.vercel.app pnpm e2e <spec>` to run a suite against production (H56 Cache-Control `private` injection is Vercel-edge-only). `playwright.config.ts` skips its `webServer` block when this env var is set so no local dev server is spun up.
 - **Push to origin after every substantive commit.** Project memory `feedback_push_commits` overrides global DO-NOT-push default.
 - **Reviewer-fix commits batched per phase.** One `fix(community-platform): batched reviewer fixes` commit at the end of a phase, not one per finding (project memory `feedback_token_discipline`).
+
+## Generated artifacts (`lib/__generated__/*`)
+
+Per v0.3 O2 lock, these files are checked in for review/diff:
+
+- `content-snapshot.json` (members + projects + decisions + meetings)
+- `contributions.json` + `project-contributions.json` (commits per member / per project, scanned via `git log --all`)
+- `event-rosters.json` + `kudos.json` (RSVP / kudos aggregates)
+- `calendar.ics` (V-static GCal export)
+
+They're rebuilt by `pnpm contributions` → which runs the chained `snapshot` + `build-event-rosters` + `build-kudos-aggregate` + `build-calendar` + `build-contributions` scripts. The chain is wired into `prebuild` / `prelint` / `pretest` / `pretest:coverage` / `pree2e`.
+
+- **Deterministic on identical input.** Two consecutive `pnpm contributions` runs produce byte-identical output.
+- **Data-dependent.** New commits, ADRs, or branches reachable from `git log --all` since the last committed snapshot will reappear as `M`-status drift on every fresh checkout.
+- **Resolution when drift appears:** commit the fresh snapshot. `git checkout --` only postpones drift one rebuild.
+- **Runtime authority:** Vercel production builds always regenerate via `prebuild`, so the committed JSON serves dev/test/review only.
 
 ## Secrets
 

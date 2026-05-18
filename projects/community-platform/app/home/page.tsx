@@ -4,9 +4,12 @@ import {
   listMeetingsFromSnapshot,
   listEventsFromSnapshot,
 } from "@/lib/content-snapshot";
+import type { MemberWithProfile } from "@/lib/content-snapshot";
 import { HomeFeed } from "@/app/components/HomeFeed";
 import { YourWeekPane } from "@/app/components/YourWeekPane";
 import { computeHomeFeed } from "@/lib/home-feed";
+import { computeYourWeek, type YourWeekData } from "@/lib/your-week";
+import kudosJson from "@/lib/__generated__/kudos.json";
 
 /**
  * /home — anonymous discovery feed + signed-in Your week dashboard pane.
@@ -19,6 +22,19 @@ import { computeHomeFeed } from "@/lib/home-feed";
  *
  * Auth-aware → ƒ Dynamic per pattern 8.
  */
+interface KudosEntryShape {
+  total: number;
+  by_type: { status: number; contribution: number; meeting: number };
+  recent: readonly {
+    recipient: string;
+    item_type: "status" | "contribution" | "meeting";
+    item_id: string;
+    given_at: string;
+  }[];
+}
+
+const kudosAggregate = kudosJson as Record<string, KudosEntryShape | undefined>;
+
 function loadFeedData(): ReturnType<typeof computeHomeFeed> {
   return computeHomeFeed({
     meetings: listMeetingsFromSnapshot(),
@@ -29,34 +45,35 @@ function loadFeedData(): ReturnType<typeof computeHomeFeed> {
   });
 }
 
-function nextRsvpForMember(handle: string): { slug: string; title: string; date: string } | null {
-  // Phase A leaves this as a stub returning null — the YourWeekPane
-  // empty-state copy is the user-facing surface. v0.4.x or v0.5 wires
-  // event_rsvps.json aggregation via a separate lib helper.
-  void handle;
-  return null;
-}
-
-function kudosThisWeekFor(handle: string): number {
-  // Same stub pattern — v0.4.x or v0.5 wires the lib/kudos.ts aggregation.
-  void handle;
-  return 0;
+function loadYourWeekData(member: MemberWithProfile): YourWeekData {
+  const profileData = (member.profile?.data ?? {}) as Record<string, unknown>;
+  const rawGoing = profileData.events_going;
+  const goingSlugs = Array.isArray(rawGoing)
+    ? rawGoing.filter((s): s is string => typeof s === "string")
+    : [];
+  const kudosRecent = kudosAggregate[member.slug]?.recent ?? [];
+  return computeYourWeek({
+    goingSlugs,
+    events: listEventsFromSnapshot(),
+    kudosRecent,
+    now: new Date(),
+  });
 }
 
 export default async function HomePage(): Promise<React.JSX.Element> {
   const session = await auth();
   const handle = session?.githubHandle ?? null;
   const member = handle ? findMemberByHandle(handle) : undefined;
-  const signedIn = Boolean(member);
+  const yourWeek = member ? loadYourWeekData(member) : null;
 
   const feed = loadFeedData();
 
   return (
     <main id="main" className="mx-auto max-w-3xl px-4 py-8">
-      {signedIn && handle && (
+      {yourWeek && (
         <YourWeekPane
-          nextRsvp={nextRsvpForMember(handle)}
-          kudosWeekCount={kudosThisWeekFor(handle)}
+          nextRsvp={yourWeek.nextRsvp}
+          kudosWeekCount={yourWeek.kudosWeekCount}
         />
       )}
       <HomeFeed feed={feed} />
