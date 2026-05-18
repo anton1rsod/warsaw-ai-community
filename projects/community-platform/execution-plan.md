@@ -280,6 +280,17 @@ v0.4.0-plan.md consistently spells new Phase A test files as `tests/unit/**/*.sp
 **§9.20 Phase v0.4 A.0.3 (in-execution 2026-05-18) — i18n test lives under tests/unit/ (not co-located with source).**
 v0.4.0-plan.md Task A.0.3 specifies the test at `projects/community-platform/lib/i18n/strings.test.ts` (co-located with the source). vitest.config.ts only includes `tests/unit/**` and `tests/integration/**`, so a co-located test under `lib/` would be silently skipped. The project's 81 existing test files all live under `tests/unit/` or `tests/integration/` — no co-located precedent. Phase A.0.3 implementation lands the test at `projects/community-platform/tests/unit/i18n-strings.test.ts` with `import { ... } from "@/lib/i18n/strings"` (the existing `@/` alias is defined in vitest.config.ts line 5 + tsconfig.json paths). The source file path (`lib/i18n/strings.ts`) and content are unchanged from the plan. Commit `90806c2` (2026-05-18). Same pattern applies to any other Phase A task that specifies a co-located `<source>.test.ts` — relocate to `tests/unit/`.
 
+**§9.21 Phase v0.4 A.1.x (in-execution 2026-05-18) — Phase A component tests are `.test.tsx` (not `.spec.ts`).**
+v0.4.0-plan.md A.1.1–A.1.7 task bodies and the File-structure section spell component test files as `tests/unit/components/<name>.spec.ts` (e.g., `avatar.spec.ts`, `header.spec.ts`, `footer.spec.ts`, `tag.spec.ts`, `date-time.spec.ts`, `list-item.spec.ts`, `empty-state.spec.ts`). Two corrections apply uniformly across all 7 component tasks:
+
+(a) **Extension `.test.tsx` (not `.spec.ts`)** — supersedes §9.19's ts-only correction for component tests. These tests render JSX via `@testing-library/react`'s `render(<Component …/>)`; TypeScript will not parse JSX in a `.ts` file (must be `.tsx`). vitest.config.ts `environmentMatchGlobs` line 8 already maps `tests/unit/**/*.test.tsx` to `jsdom` — exactly the environment RTL needs.
+
+(b) **Directory `tests/unit/components/` is new** — Phase A introduces this subdirectory under `tests/unit/`. No existing test sits there; A.1.1 creates the directory on first commit. The vitest include glob `tests/unit/**/*.test.{ts,tsx}` (line 13) already covers it.
+
+So the canonical locations are: `tests/unit/components/{avatar,tag,date-time,list-item,empty-state,header,footer}.test.tsx`. First catch: A.1.1 (Avatar) landed `tests/unit/components/avatar.test.tsx` at commit `80d3534` (2026-05-18). Subsequent A.1.2–A.1.7 dispatches use the same pattern.
+
+Note: A.1.6 Header's H58 hydration E2E lives separately under `e2e/` (Playwright), not under `tests/unit/`. The Playwright config governs its file naming separately — this amendment only covers vitest-RTL component tests.
+
 ---
 
 ## 10. Multi-chat session division (the question Anton raised)
