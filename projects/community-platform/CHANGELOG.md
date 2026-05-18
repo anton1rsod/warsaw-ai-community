@@ -16,6 +16,41 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.4.1] — 2026-05-18 (chat-26 follow-ups; PR pending Anton review)
+
+**v0.4.x patch — selected follow-ups from chat-25's 8-option menu.** Anton picked the recommended **B + E + H** bundle. Other options (A / C / D / F / G) deferred to chat-27 or v0.5+. Branch: `chore/community-platform-v0-4-1-followups`. Tests: 934/934 unit+integration green (+9). Coverage: 88.69% lines / 92.97% branches (+0.10 / +0.08 vs v0.4.0).
+
+### Added
+
+- **`lib/your-week.ts`** (Option B / O9 wire-up) — pure compute function `computeYourWeek({ goingSlugs, events, kudosRecent, now }) → { nextRsvp, kudosWeekCount }`. Mirrors the home-feed.ts pattern (pure compute lib + I/O glue in page.tsx). Coverage 100% lines / 93.75% branches / 100% functions.
+- **`tests/unit/your-week.test.ts`** — 9 tests covering soonest-upcoming, empty `goingSlugs`, all-past events, today-inclusive boundary, unknown-slug filter, week-boundary kudos count (Mon + Sun edges), empty kudos, Sunday-UTC `dayOfWeek=0` edge case.
+- **`CONSTRAINTS.md` — `Generated artifacts (lib/__generated__/*)` section** (Option H) — documents the deterministic-but-data-dependent regen pattern: artifacts are committed (per v0.3 O2 lock) and rebuilt by `pnpm contributions` via `prebuild` / `prelint` / `pretest` / `pre*` hooks. Drift on every fresh checkout is data-dependent (new commits, ADRs, branches); resolution = commit the fresh snapshot.
+- **`CONSTRAINTS.md` — Staging E2E targeting rule** (Option E) — documents `PLAYWRIGHT_BASE_URL=https://warsaw-ai-community-platform.vercel.app pnpm e2e <spec>` for running suites against production. Required for H56 Cache-Control `private` verification (Vercel-edge-only).
+
+### Changed
+
+- **`app/home/page.tsx`** (Option B) — drops the chat-25 stub functions (`nextRsvpForMember` returning null / `kudosThisWeekFor` returning 0); adds `loadYourWeekData(member)` adapter that reads `member.profile?.data.events_going` (own-profile source — bypasses the `event-rosters.json` aggregate which strips `members_only`-visibility RSVPs into `hiddenCount`, leaving private-visibility members invisible to themselves via the aggregate) and `kudosJson[member.slug]?.recent`. Gating simplified to `{yourWeek && <YourWeekPane …>}` since `yourWeek` non-null implies `member` non-undefined.
+- **`playwright.config.ts`** (Option E) — `BASE_URL` reads `PLAYWRIGHT_BASE_URL` env var with fallback to `http://localhost:${PORT}`; `webServer` block is conditionally omitted when targeting an external URL so no local `pnpm dev` spin-up.
+- **`lib/__generated__/contributions.json` + `project-contributions.json`** (Option H) — synced with fresh values: `anton1rsod` projectCommits 253→301, adrsFiled 12→14 (chat-25/26 closeouts); `community-platform` commits 206→252; `way-who-are-you` (2 commits) surfaces via the scaffold branch preserved per §9.22.
+
+### Verified
+
+- **H56 Cache-Control `private` on Vercel edge** — `e2e/v0-4-shell.spec.ts` 7/7 scenarios green vs `https://warsaw-ai-community-platform.vercel.app` in 2.6s (anonymous `/` hero, H56 cache header, `/login` no-Header, `/handbook` full shell, `/calendar?filter=events` H62, H58 hydration, H65 skip-to-content). Closes the chat-25 deferred staging-only verification.
+
+### Known limitations
+
+- **kudos.recent[] cap** — `lib/your-week.ts.countKudosThisWeek` filters `recent[]` which is capped at 5 most-recent by `build-kudos-aggregate.ts`. A member receiving 6+ kudos in a single ISO week is silently undercounted. Acceptable while community is small (2-3 active members); revisit by emitting per-week buckets in the build script when growth makes this visible.
+
+### Not in this release (deferred to chat-27 or v0.5+)
+
+- A (PWA textured "WA" icons — needs local ImageMagick)
+- C (HomeFeed `relativeDate()` → `<DateTime>` migration — dominated by B's user value at same cost)
+- D (reviewer-agent dispatch — `feedback_token_discipline` says batch with v0.5+ for token efficiency)
+- F (Phase B activation gate — premature day-0 post-ship; needs 7-14 days of landing data + user-test session)
+- G (typescript-reviewer-flagged tech-debt sweep — true nits with no production impact)
+
+---
+
 ## [0.4.0] — 2026-05-18 (ready-to-ship; PR pending Anton merge)
 
 **v0.4 Phase A — global navigation shell + ADR-0014 anonymous landing.** Wraps every page (except `/login`) in `<Header>` + `<Footer>`. Flips `/` from 307→/login to a 200 hero composition for anonymous users; signed-in `/` redirects to `/home` preserving `?from=…` against a safe allowlist. Introduces `/calendar` (unified events+meetings) and `/handbook` (charter + roadmap + GitHub external for ADRs). Centralizes UI text in `lib/i18n/strings.ts` (H67). Establishes warm-amber accent token system (`#f59e0b` canonical) layered as CSS variables for v0.5+ dark-mode upgrade. Drops the v0.3.1 `<HomeHeader>` + 5-card section nav from `/home` — global header supersedes. 21 plan tasks shipped across 4 phases (A.0 Foundation × 5 / A.1 Components × 7 / A.2 Routes × 5 / A.3 Closeout × 4). Tests: 925/925 unit+integration green (94 test files). Coverage: 88.59% lines / 92.89% branches overall (gate 80%); Phase A strict-list mostly at 100% lines (Header.tsx 97.41% / HeaderMobileMenu.tsx 86.79% / RootShell.tsx 0% — known-uncoverable client-interactive + next/headers paths, accepted per A.1.1 precedent). Hardening grep returns the expected 11 Phase A IDs (H56, H57, H58, H59, H60, H62, H64, H65, H66, H67, H68). Plan amendments §9.19–§9.24 captured the realities the plan didn't anticipate (test-file extensions, file relocations, vitest environment, persona-folder semantics, scope-leak revert).
