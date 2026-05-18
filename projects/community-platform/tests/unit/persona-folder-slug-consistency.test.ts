@@ -51,7 +51,7 @@ async function listPersonaFolders(): Promise<string[]> {
   return entries.filter((e) => e.isDirectory()).map((e) => e.name);
 }
 
-describe("persona folder ↔ slug consistency", () => {
+describe("H68: persona folder ↔ slug consistency", () => {
   it("every persona folder name equals slugify(display_name) — or is documented empty-slug exception", async () => {
     const folders = await listPersonaFolders();
     expect(folders.length).toBeGreaterThan(0);
