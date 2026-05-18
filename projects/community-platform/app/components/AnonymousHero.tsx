@@ -41,7 +41,7 @@ export async function AnonymousHero({
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
               href="/login"
-              className="inline-flex items-center rounded bg-accent-500 px-5 py-3 text-sm font-semibold text-white hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2"
+              className="inline-flex items-center rounded bg-accent-500 px-5 py-3 text-sm font-semibold text-neutral-900 hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2"
             >
               {s("landing.signIn")}
             </Link>

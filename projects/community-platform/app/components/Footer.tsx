@@ -65,8 +65,10 @@ export function Footer(): React.JSX.Element {
             </li>
           </ul>
         </nav>
-        <div aria-label="Language" className="text-sm text-neutral-400">
-          {/* v0.5+ next-intl populates this slot */}
+        <div className="text-sm text-neutral-400">
+          {/* v0.5+ next-intl populates this slot; aria-label re-added then with a real
+              labelled control (axe `aria-prohibited-attr`: `aria-label` requires a
+              valid role on a generic `<div>`). */}
         </div>
       </div>
     </footer>
