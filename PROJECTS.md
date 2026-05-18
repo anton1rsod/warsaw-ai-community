@@ -2,7 +2,7 @@
 
 > One-line view of every sub-project the Warsaw AI Community is building. Source of truth: each project's `README.md` + `CHANGELOG.md`.
 
-**Last updated:** 2026-05-17
+**Last updated:** 2026-05-01
 
 ---
 
@@ -13,7 +13,6 @@
 | [GBrain](projects/gbrain/README.md) | `projects/gbrain/` | **Building** — v0.1.2 in flight (branch `gbrain-0.1.2-ask-bundle`) | Anton | E1+E2 done, E3 mostly done. Pending: tuned `ASK_SIMILARITY_THRESHOLD`, six day-30 gates, CHANGELOG + tag + ff-merge to `main` | v0.2.0 (real-channel soft launch, day 30) |
 | [Persona Builder](persona-builder/README.md) | `persona-builder/` | **Live (v1)** — interview skill + community guides published EN/UK | Anton + members | Personas being created (4 untracked: `dmitry-b`, `heorhii-k`, `maksym-p`, `mark-s`) | Persona DB → feed Community Platform |
 | [Community Platform](projects/community-platform/README.md) | `projects/community-platform/` | **Proposed** — stub scaffolded, **pending brainstorm** | Anton | Locked inputs in `spec.md §0` (four-role access, gamification in scope) | `superpowers:brainstorming` session in next chat |
-| [W.A.Y. — Who Are You?](projects/way-who-are-you/README.md) | `projects/way-who-are-you/` | **Proposed** — stub scaffolded, **pending brainstorm** | Anton | Founder pitch captured in `founder-pitch.md`; product surface, ICP, monetization model TBD | `superpowers:brainstorming` session in next chat |
 
 ## Layout note — `persona-builder/` placement
 
@@ -50,14 +49,14 @@ We use these five status values consistently across projects:
 ## Cross-project dependencies
 
 ```
-Persona Builder ──┬──→ Community Platform (planned)
-                  │
-                  └──→ W.A.Y. (planned, productizes the persona-creation skill)
-GBrain ───────────┬──→ Community Platform
-                  └─→ archive content the platform may surface or query
+Persona Builder ──┐
+                  ├──→ Community Platform (planned)
+GBrain ───────────┘
+   │
+   └─→ archive content the platform may surface or query
 ```
 
-The **Community Platform** is the consolidator of the community's internal surfaces (Persona Builder + GBrain). **W.A.Y.** is a commercial-track product that builds on the same persona-creation primitives — see [`projects/way-who-are-you/CLAUDE.md`](projects/way-who-are-you/CLAUDE.md) for how it relates to (but does not absorb) the community-internal Persona Builder.
+The Community Platform is the consolidator of the other two surfaces; design decisions there should be informed by what Persona Builder and GBrain already produce.
 
 ## Where decisions live
 
