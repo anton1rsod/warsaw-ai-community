@@ -31,7 +31,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ### Verified
 
-- *(post-merge staging E2E pending — Anton runs `PLAYWRIGHT_BASE_URL=https://warsaw-ai-community-platform.vercel.app pnpm e2e e2e/v0-4-a11y.spec.ts` against the Vercel preview deployment of this branch before merge; expected 7/7 green. The corresponding STATE.md `Last verified` row `v0_4_2_a11y_baseline` lands in the closeout commit once staging confirms.)*
+- **Local dev-server a11y baseline — `pnpm e2e e2e/v0-4-a11y.spec.ts` returned 7/7 GREEN in 8.1s** at branch HEAD `173b591`. All 7 surfaces (`/`, `/home`, `/calendar`, `/handbook`, `/login`, `/events`, `/meetings`) cleared axe-core's serious-violations gate. Dev server emits identical DOM to Vercel edge for these static-rendered surfaces (the only edge-injected divergence is the H56 Cache-Control `private` header, which the a11y spec does NOT check), so the local 7/7 is strong evidence the post-merge production E2E will also be 7/7.
+- **Post-merge production gate pending Anton.** Vercel SSO globally protects PR previews on this team (probed: `https://warsaw-ai-community-platform-git-ch-32744e-…vercel.app/` → 401 "Authentication Required"), so the chat-26 `PLAYWRIGHT_BASE_URL=<external>` recipe can only target the production alias — which serves `main`, so the gate naturally fires AFTER the v0.4.2 PR merges. Recipe: `PLAYWRIGHT_BASE_URL=https://warsaw-ai-community-platform.vercel.app pnpm e2e e2e/v0-4-a11y.spec.ts` → expect 7/7 in <10s. STATE.md `v0_4_2_a11y_baseline` already records the local-side gate; refresh that row with prod HEAD SHA + timestamp after the prod run.
 
 ### Not in this release (deferred to chat-28 or v0.5+)
 
