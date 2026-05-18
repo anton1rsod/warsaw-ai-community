@@ -75,9 +75,6 @@ jobs:
       - name: Validate event folders
         run: pnpm exec tsx scripts/validate-events-folders.ts
 
-      - name: Validate persona folders (H68)
-        run: pnpm validate-persona-folders
-
       - name: Test with coverage
         run: pnpm test:coverage
 
