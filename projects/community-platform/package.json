@@ -28,6 +28,7 @@
     "e2e": "playwright test",
     "e2e:install": "playwright install --with-deps",
     "validate-events": "tsx scripts/validate-events-folders.ts",
+    "validate-persona-folders": "tsx scripts/validate-persona-folders.ts",
     "prepare": "cd ../.. && git config core.hooksPath projects/community-platform/.husky || true"
   },
   "lint-staged": {
