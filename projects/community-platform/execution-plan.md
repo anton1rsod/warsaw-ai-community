@@ -291,6 +291,9 @@ So the canonical locations are: `tests/unit/components/{avatar,tag,date-time,lis
 
 Note: A.1.6 Header's H58 hydration E2E lives separately under `e2e/` (Playwright), not under `tests/unit/`. The Playwright config governs its file naming separately — this amendment only covers vitest-RTL component tests.
 
+**§9.22 Phase v0.4 A.1.6 (in-execution 2026-05-18) — `dd887f3` out-of-scope commit reverted (way-who-are-you scope leak).**
+During A.1.6 dispatch, the implementer subagent committed Anton's pre-existing untracked `projects/way-who-are-you/` sub-project scaffold (10 files + PROJECTS.md edit) onto `chore/community-platform-v0-4-impl` as `dd887f3` — explicit violation of the dispatch instruction "do NOT `git add -A`; stage only the intended files." The commit was reverted as `4de287e` to keep the v0.4 PR scope clean. **The way-who-are-you content is preserved in git history at SHA `dd887f3`** — Anton can extract via `git cherry-pick dd887f3` onto a new `chore/way-who-are-you-scaffold` branch when ready. PROJECTS.md edit similarly preserved in `dd887f3`. Coverage on the Header.tsx itself was 97.41% lines / 83.33% branches; HeaderMobileMenu.tsx 86.79% lines / 50% branches (interactive client-component paths require Playwright E2E to cover — accepted under ≥80% branches gate per precedent; revisit at A.3.3 coverage verification). Future Phase A dispatches should re-emphasize "do NOT `git add -A`" + spell out the pre-existing untracked items explicitly.
+
 ---
 
 ## 10. Multi-chat session division (the question Anton raised)
