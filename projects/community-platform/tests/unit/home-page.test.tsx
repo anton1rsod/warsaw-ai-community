@@ -11,19 +11,7 @@ vi.mock("@/lib/env", () => ({
 vi.mock("@/lib/content-snapshot", () => ({
   listMeetingsFromSnapshot: () => [],
   listEventsFromSnapshot: () => [],
-  findMemberByHandle: () => undefined,
-}));
-// HomeHeader is an async server component tested separately in HomeHeader.test.tsx.
-// Mock it here so HomePage renders synchronously without async child suspension.
-vi.mock("@/app/components/HomeHeader", () => ({
-  HomeHeader: () => (
-    <header>
-      <h1>Warsaw AI Community</h1>
-      <nav aria-label="Account">
-        <a href="/login">Sign in</a>
-      </nav>
-    </header>
-  ),
+  findMemberByHandle: vi.fn(),
 }));
 
 afterEach(() => {
@@ -31,8 +19,8 @@ afterEach(() => {
   vi.resetAllMocks();
 });
 
-describe("ADR-0012: /home anonymous accessibility (v0.3.1 — header amended)", () => {
-  it("renders feed + nav for anonymous visitor without throwing or redirecting", async () => {
+describe("ADR-0012: /home anonymous accessibility (v0.4 — HomeHeader dropped)", () => {
+  it("renders feed for anonymous visitor without throwing or redirecting", async () => {
     const { auth } = await import("@/lib/auth");
     vi.mocked(auth).mockResolvedValue(null as never);
     const { default: HomePage } = await import("@/app/home/page");
@@ -40,27 +28,83 @@ describe("ADR-0012: /home anonymous accessibility (v0.3.1 — header amended)", 
     render(ui);
     // Headline ADR-0012 requirement: anonymous render works.
     expect(screen.getByText(/Nothing scheduled this week/i)).toBeInTheDocument();
-    // Anonymous header surfaces sign-in CTA.
-    expect(screen.getByRole("link", { name: /Sign in/i })).toBeInTheDocument();
   });
 
-  it("renders the community name in the header", async () => {
+  it("anonymous render does NOT mount YourWeekPane", async () => {
     const { auth } = await import("@/lib/auth");
     vi.mocked(auth).mockResolvedValue(null as never);
     const { default: HomePage } = await import("@/app/home/page");
     const ui = await HomePage();
     render(ui);
-    expect(screen.getByRole("heading", { level: 1, name: /Warsaw AI Community/ })).toBeInTheDocument();
+    expect(screen.queryByText("Your week")).toBeNull();
   });
 
-  it("nav grid includes Members card (v0.3.1 — restored)", async () => {
+  it("anonymous render does NOT include Sections nav (global Header supersedes)", async () => {
     const { auth } = await import("@/lib/auth");
     vi.mocked(auth).mockResolvedValue(null as never);
     const { default: HomePage } = await import("@/app/home/page");
     const ui = await HomePage();
     render(ui);
-    // Within the page-level Sections nav, Members card is present.
-    const sectionsNav = screen.getByRole("navigation", { name: /Sections/i });
-    expect(sectionsNav).toHaveTextContent(/Members/);
+    expect(screen.queryByRole("navigation", { name: /Sections/i })).toBeNull();
+  });
+});
+
+describe("/home — signed-in Your week pane (Phase A.2.4 / Q1.3 / D25)", () => {
+  it("signed-in render mounts YourWeekPane above HomeFeed", async () => {
+    const { auth } = await import("@/lib/auth");
+    vi.mocked(auth).mockResolvedValue({ githubHandle: "anton1rsod" } as never);
+    const { findMemberByHandle } = await import("@/lib/content-snapshot");
+    vi.mocked(findMemberByHandle).mockReturnValue({
+      slug: "anton-safronov",
+      name: "Anton Safronov",
+      githubHandle: "anton1rsod",
+    } as never);
+    const { default: HomePage } = await import("@/app/home/page");
+    const ui = await HomePage();
+    render(ui);
+    expect(screen.getByText("Your week")).toBeInTheDocument();
+  });
+
+  it("signed-in render still shows the feed", async () => {
+    const { auth } = await import("@/lib/auth");
+    vi.mocked(auth).mockResolvedValue({ githubHandle: "anton1rsod" } as never);
+    const { findMemberByHandle } = await import("@/lib/content-snapshot");
+    vi.mocked(findMemberByHandle).mockReturnValue({
+      slug: "anton-safronov",
+      name: "Anton Safronov",
+      githubHandle: "anton1rsod",
+    } as never);
+    const { default: HomePage } = await import("@/app/home/page");
+    const ui = await HomePage();
+    render(ui);
+    expect(screen.getByText(/Nothing scheduled this week/i)).toBeInTheDocument();
+  });
+
+  it("§14.6 forward-defense: signed-in render DOM has no streak/missed copy", async () => {
+    const { auth } = await import("@/lib/auth");
+    vi.mocked(auth).mockResolvedValue({ githubHandle: "anton1rsod" } as never);
+    const { findMemberByHandle } = await import("@/lib/content-snapshot");
+    vi.mocked(findMemberByHandle).mockReturnValue({
+      slug: "anton-safronov",
+      name: "Anton Safronov",
+      githubHandle: "anton1rsod",
+    } as never);
+    const { default: HomePage } = await import("@/app/home/page");
+    const ui = await HomePage();
+    const { container } = render(ui);
+    expect(container.textContent || "").not.toMatch(
+      /streak|missed|don't break the chain/i,
+    );
+  });
+
+  it("session exists but member not on roster — YourWeekPane NOT mounted", async () => {
+    const { auth } = await import("@/lib/auth");
+    vi.mocked(auth).mockResolvedValue({ githubHandle: "stranger" } as never);
+    const { findMemberByHandle } = await import("@/lib/content-snapshot");
+    vi.mocked(findMemberByHandle).mockReturnValue(undefined);
+    const { default: HomePage } = await import("@/app/home/page");
+    const ui = await HomePage();
+    render(ui);
+    expect(screen.queryByText("Your week")).toBeNull();
   });
 });
