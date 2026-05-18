@@ -37,6 +37,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 - **H56 Cache-Control `private` on Vercel edge** — `e2e/v0-4-shell.spec.ts` 7/7 scenarios green vs `https://warsaw-ai-community-platform.vercel.app` in 2.6s (anonymous `/` hero, H56 cache header, `/login` no-Header, `/handbook` full shell, `/calendar?filter=events` H62, H58 hydration, H65 skip-to-content). Closes the chat-25 deferred staging-only verification.
 
+### Surfaced (NOT fixed in this release — chat-27 Option K)
+
+- **axe-core a11y baseline against production** — `e2e/v0-4-a11y.spec.ts` returned 6 of 7 surfaces FAILING (only `/login`, which doesn't render the global shell, passed). Two distinct serious violations, both pre-existing v0.4.0 regressions: (1) `aria-prohibited-attr` on `<div aria-label="Language">` in the global `<Footer>` (present on all 6 failed surfaces — empty aria-label on a div without a valid role); (2) `color-contrast` on the `/` `Sign in with GitHub` CTA — `text-white` on `bg-accent-500` (`#f59e0b`) is ~1.88:1, fails WCAG AA 4.5:1. Surfaced to chat-27 with a fix recipe (`docs/specs/2026-05-19-community-platform-v0-4-1-shipped-followups-handoff.md` §Option K). NOT fixed in chat-26 per the bundle-scope discipline (B + E + H only).
+
 ### Known limitations
 
 - **kudos.recent[] cap** — `lib/your-week.ts.countKudosThisWeek` filters `recent[]` which is capped at 5 most-recent by `build-kudos-aggregate.ts`. A member receiving 6+ kudos in a single ISO week is silently undercounted. Acceptable while community is small (2-3 active members); revisit by emitting per-week buckets in the build script when growth makes this visible.
