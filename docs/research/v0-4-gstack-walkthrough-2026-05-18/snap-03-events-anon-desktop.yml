@@ -1,0 +1,13 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Events" [level=1] [ref=e4]
+      - link "Subscribe to calendar (ICS)" [ref=e5] [cursor=pointer]:
+        - /url: /api/calendar.ics
+    - generic [ref=e6]:
+      - heading "Upcoming" [level=2] [ref=e7]
+      - paragraph [ref=e8]: No upcoming events.
+    - generic [ref=e9]:
+      - heading "Past" [level=2] [ref=e10]
+      - paragraph [ref=e11]: No past events yet.
+  - alert [ref=e12]

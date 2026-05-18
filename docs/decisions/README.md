@@ -24,3 +24,4 @@ File naming: `NNNN-short-title.md`, zero-padded to 4 digits.
 | [0010](0010-summarize-deferred.md) | `/summarize` command deferred from v0.1.2 (GBrain) | Accepted | 2026-04-26 |
 | [0011](0011-code-graph-layer.md) | Code-graph layer for AI agent context (CodeGraph, MIT) | Accepted | 2026-05-01 |
 | [0012](0012-community-platform-v0-3-discovery-posture.md) | community-platform v0.3 Discovery+ posture — selected surfaces public | Accepted | 2026-05-17 |
+| [0014](0014-community-platform-v0-4-root-anonymous-landing.md) | community-platform v0.4 — `/` flips to anonymous-public hero landing (amends ADR-0012) | Accepted | 2026-05-18 |

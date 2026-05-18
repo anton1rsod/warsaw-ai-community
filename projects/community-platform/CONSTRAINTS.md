@@ -9,7 +9,7 @@ This file is companion to `STATE.md` (current state) and `docs/playbooks/recurri
 - **Lite slice** (spec §3 non-goals). No DM, no kudos, no badges, no GBrain panel in v0.1.
 - **100% git for v0.1.** No DB. Status updates commit to `community/status/YYYY-Wnn/<slug>.md`. The classification rule (§6.1) is documented but dormant until v0.2 introduces a DB.
 - **No "Warsaw" hardcoding** in URLs / schemas / env values. Use `COMMUNITY_NAME` / `COMMUNITY_SLUG`.
-- **Members-only** (with v0.3 amendment per [ADR-0012](../../docs/decisions/0012-community-platform-v0-3-discovery-posture.md)). Roster admission via `community/members/roster.md`. Consent gate on first login. Discovery surfaces (`/home`, `/events`, `/meetings`, `/api/calendar.ics`, `/manifest.json`) are public per ADR-0012.
+- **Members-only** (with v0.3 amendment per [ADR-0012](../../docs/decisions/0012-community-platform-v0-3-discovery-posture.md) and v0.4 extension per [ADR-0014](../../docs/decisions/0014-community-platform-v0-4-root-anonymous-landing.md)). Roster admission via `community/members/roster.md`. Consent gate on first login. Discovery surfaces (`/`, `/home`, `/events`, `/meetings`, `/calendar`, `/handbook`, `/api/calendar.ics`, `/manifest.json`) are public per ADR-0012 + ADR-0014.
 
 ## Stack
 

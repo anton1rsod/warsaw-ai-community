@@ -20,6 +20,8 @@ import {
 const PUBLIC_PATHS = new Set<string>(
   process.env.NODE_ENV === "production"
     ? [
+        // ADR-0014 (v0.4) + extends ADR-0012 (v0.3):
+        "/",                  // ADR-0014 — anonymous hero landing
         "/login",
         "/no-access",
         "/consent",
@@ -30,10 +32,14 @@ const PUBLIC_PATHS = new Set<string>(
         "/home",
         "/events",
         "/meetings",
+        "/calendar",          // ADR-0014 — unified events+meetings index (D27)
+        "/handbook",          // ADR-0014 — charter pointer + roadmap (D26 + Q6.1(i))
         "/api/calendar.ics",
         "/manifest.json",
       ]
     : [
+        // ADR-0014 (v0.4) + extends ADR-0012 (v0.3):
+        "/",
         "/login",
         "/no-access",
         "/consent",
@@ -51,6 +57,8 @@ const PUBLIC_PATHS = new Set<string>(
         "/home",
         "/events",
         "/meetings",
+        "/calendar",
+        "/handbook",
         "/api/calendar.ics",
         "/manifest.json",
       ],
@@ -193,13 +201,16 @@ export default async function proxy(
 
   if (PUBLIC_PATHS.has(pathname)) {
     const res = NextResponse.next();
+    res.headers.set("x-pathname", pathname);
     if (pathname === "/onboard" || pathname === "/onboard/error") {
       return applyOnboardHeaders(res);
     }
     return res;
   }
   if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
+    const res = NextResponse.next();
+    res.headers.set("x-pathname", pathname);
+    return res;
   }
 
   const handle = await getHandleFromRequest(req);
@@ -233,6 +244,7 @@ export default async function proxy(
   if (!consented) {
     if (member.profile) {
       const res = NextResponse.next();
+      res.headers.set("x-pathname", pathname);
       res.cookies.set(CONSENT_COOKIE, "1", {
         httpOnly: true,
         sameSite: "lax",
@@ -245,7 +257,9 @@ export default async function proxy(
     return NextResponse.redirect(new URL("/consent", req.url));
   }
 
-  return NextResponse.next();
+  const res = NextResponse.next();
+  res.headers.set("x-pathname", pathname);
+  return res;
 }
 
 export const config = {
