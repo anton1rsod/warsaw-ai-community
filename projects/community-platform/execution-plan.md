@@ -274,6 +274,9 @@ Plan's Task 5.6 puts the in-memory mock state in module-scope variables. In Next
 **§9.18 Phase 5 (in-execution 2026-05-01) — proxy.ts conditionally admits dev-only public paths.**
 `PUBLIC_PATHS` in `proxy.ts` is now built conditionally on `NODE_ENV`: `/api/test-auth` and `/api/test-reset-status` are public only when `NODE_ENV !== "production"`. The route handlers themselves return 404 in production, but a misconfigured deploy (e.g., `NEXT_PUBLIC_E2E_MODE=1` accidentally shipped) would otherwise leave the dev-only paths unauthenticated. Defense-in-depth: proxy redirects unauthenticated callers to /login *and* the route returns 404. Phase 6 consent middleware will inherit this pattern.
 
+**§9.19 Phase v0.4 A.0.2 (in-execution 2026-05-18) — Phase A test files use `.test.ts` (not `.spec.ts`).**
+v0.4.0-plan.md consistently spells new Phase A test files as `tests/unit/**/*.spec.ts` (A.0.2 H64 aggregate, A.1.1–A.1.7 component tests, A.3.2 validate-persona-folders, A.2.5 anonymous-event-detail integration). The project's `vitest.config.ts` `include` glob is `tests/unit/**/*.test.{ts,tsx}` (line 13) — `.spec.*` files would be silently skipped by the runner. All 81 existing test files use `.test.{ts,tsx}`. Phase A implementation honors the actual vitest contract: ALL new Phase A test files land as `.test.ts` / `.test.tsx`. The plan body's `pnpm test tests/unit/h-v0-4.spec.ts` lines should be read as `tests/unit/h-v0-4.test.ts`. The hardening grep target (plan lines 219-227 + 234-238) is unaffected because it is extension-agnostic (`grep -rn`). First catch: A.0.2 implementer landed `tests/unit/h-v0-4.test.ts` 2026-05-18 (commit `569a7cb`); subsequent A.0.3+ dispatches use `.test.ts` consistently.
+
 ---
 
 ## 10. Multi-chat session division (the question Anton raised)
