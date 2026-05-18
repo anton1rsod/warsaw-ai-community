@@ -1,6 +1,6 @@
 # 0014. community-platform v0.4 — `/` flips to anonymous-public hero landing
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-05-18
 - Amends: [ADR-0012](./0012-community-platform-v0-3-discovery-posture.md) (root path default posture)
 
