@@ -16,6 +16,36 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.4.2] — 2026-05-19 (chat-27 follow-up; PR pending Anton review)
+
+**v0.4.x patch — chat-27 Option K only (a11y baseline regressions).** Closes the chat-26 [0.4.1] "Surfaced" carry-over: 6 of 7 anon-public surfaces had failed `e2e/v0-4-a11y.spec.ts` against production on two pre-existing v0.4.0 serious axe-core violations. Branch: `chore/community-platform-v0-4-2-followups`. Tests: 934/934 unit+integration green (no delta — Footer test passes via the existing `if (slot)` guard authored in v0.4 anticipating this cleanup; AnonymousHero test queries by role/href, never className). Other residual options (A / C / D / F / G / I / J from chat-27's menu) deferred to chat-28 or v0.5+.
+
+### Fixed
+
+- **`aria-prohibited-attr` violation on every anon-public surface** (`app/components/Footer.tsx`) — drop `aria-label="Language"` from the empty `<div>` reserved as a v0.5+ next-intl placeholder. Axe rule: `aria-label` requires a valid role on a generic `<div>`. The slot itself (div + className) stays as the third flex child so `justify-between` keeps positioning the copyright at left and the link strip at center; v0.5 next-intl re-adds the label once a real labelled control mounts in this slot. Unit test `tests/unit/components/footer.test.tsx` "slot exists but is empty in v0.4" continues to pass via its `if (slot)` guard (the v0.4 author hedged for exactly this cleanup).
+- **`color-contrast` violation on `/`** (`app/components/AnonymousHero.tsx`) — primary CTA `bg-accent-500` + `text-white` (~2.15:1; fails WCAG AA 4.5:1) flipped to `bg-accent-500` + `text-neutral-900` (~8.35:1 AAA on base; ~5.63:1 AA on `hover:bg-accent-600`). Preserves D33 "warm amber prominent" intent — the bright amber bg stays dominant; only the text color inverts. Matches the `text-neutral-900` treatment already used elsewhere in this same component (`<aside>` next-event title + `<h1>` headline). Considered and rejected: darker `bg-accent-700` + white text would have required a second hover-color change (`white` on `bg-accent-600` is only ~3.19:1, also AA-fail), so the text-flip is strictly the smaller patch.
+
+### Changed
+
+- **`lib/__generated__/contributions.json` + `project-contributions.json`** — re-synced post-merge of YourWeekPane (chat-26 `11e8a36`) + the v0.4.2 a11y fix; `anton1rsod` projectCommits 305→307; `community-platform` commits 256→258. Mirrors chat-26's `6ba3033` pattern (the snapshot lags real count by 1 — its own commit — per Option H accepted invariant).
+
+### Verified
+
+- **Local dev-server a11y baseline — `pnpm e2e e2e/v0-4-a11y.spec.ts` returned 7/7 GREEN in 8.1s** at branch HEAD `173b591`. All 7 surfaces (`/`, `/home`, `/calendar`, `/handbook`, `/login`, `/events`, `/meetings`) cleared axe-core's serious-violations gate. Dev server emits identical DOM to Vercel edge for these static-rendered surfaces (the only edge-injected divergence is the H56 Cache-Control `private` header, which the a11y spec does NOT check), so the local 7/7 is strong evidence the post-merge production E2E will also be 7/7.
+- **Post-merge production gate pending Anton.** Vercel SSO globally protects PR previews on this team (probed: `https://warsaw-ai-community-platform-git-ch-32744e-…vercel.app/` → 401 "Authentication Required"), so the chat-26 `PLAYWRIGHT_BASE_URL=<external>` recipe can only target the production alias — which serves `main`, so the gate naturally fires AFTER the v0.4.2 PR merges. Recipe: `PLAYWRIGHT_BASE_URL=https://warsaw-ai-community-platform.vercel.app pnpm e2e e2e/v0-4-a11y.spec.ts` → expect 7/7 in <10s. STATE.md `v0_4_2_a11y_baseline` already records the local-side gate; refresh that row with prod HEAD SHA + timestamp after the prod run.
+
+### Not in this release (deferred to chat-28 or v0.5+)
+
+- A (PWA textured "WA" icons — still needs local ImageMagick / sharp).
+- C (HomeFeed `relativeDate()` → `<DateTime context="list">` migration).
+- D (reviewer-agent dispatch — batched with v0.5+ per `feedback_token_discipline`).
+- F (Phase B activation gate — D44 lock requires 7-14 days of post-ship landing data + user-test session before flipping).
+- G (typescript-reviewer-flagged tech-debt sweep).
+- I (Anton-side staging smoke checklist beyond the a11y baseline).
+- J (first real event RSVP to exercise the YourWeekPane data path).
+
+---
+
 ## [0.4.1] — 2026-05-18 (chat-26 follow-ups; PR pending Anton review)
 
 **v0.4.x patch — selected follow-ups from chat-25's 8-option menu.** Anton picked the recommended **B + E + H** bundle. Other options (A / C / D / F / G) deferred to chat-27 or v0.5+. Branch: `chore/community-platform-v0-4-1-followups`. Tests: 934/934 unit+integration green (+9). Coverage: 88.69% lines / 92.97% branches (+0.10 / +0.08 vs v0.4.0).
