@@ -16,6 +16,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.4.3] — 2026-05-19 (chat-27 Option C — HomeFeed → DateTime consolidation; PR pending Anton review)
+
+**v0.4.x refactor — chat-27 Option C from the chat-26 menu.** Consolidates two near-identical `relativeDate()` helpers (HomeFeed.tsx's inline copy + DateTime.tsx's i18n-aware version) into a single `<DateTime context="list">` mount in HomeFeed. Branch: `chore/community-platform-v0-4-2-followup-c-homefeed-datetime`. Tests: 934/934 unit+integration green (zero delta — no date-format strings asserted in any test fixture; HomeFeed.test.tsx and home-feed.test.ts assert on titles/excerpts/authors/structure only).
+
+### Changed
+
+- **`app/components/HomeFeed.tsx`** — drop the v0.3-era inline `relativeDate(iso, now)` helper (was lines 13-26 in v0.4.2); import `<DateTime>` from `./DateTime`; replace the two render sites (`ThisWeekItem` `<div>` body + `RecentItem` trailing `<span>`) with `<DateTime iso={item.date} context="list" />`. Net -14 lines. The two `relativeDate()` implementations were semantically identical (same date math, same string outputs); the only delta the migration introduces is that the output now ships inside `<time dateTime={iso} title={absoluteDate(iso)}>` semantic markup (hover reveals absolute date — pure accessibility upgrade), and the "Today"/"Tomorrow"/"Yesterday"/"d ago" tokens flow through `lib/i18n/strings.ts` (H67-compliant; one canonical source of these strings instead of two).
+
+### Verified
+
+- Targeted suite (`HomeFeed.test.tsx` + `home-feed.test.ts` + `home-page.test.tsx` + `this-week-page.test.tsx`): 41/41 green in 1.3s.
+- Full suite: **934/934 green in 11.56s** — exact same count as v0.4.2 baseline, confirming pure refactor.
+- `tsc --noEmit` + `eslint app/components/HomeFeed.tsx` + `pnpm h67:scan` all green.
+
+### Not in this release (deferred to chat-28 or v0.5+)
+
+- A (PWA textured "WA" icons — confirmed ImageMagick/sharp not locally installed on the chat-27 host: `which magick` / `which convert` / `npm ls sharp` all empty).
+- D (reviewer-agent dispatch — token-heavy; batches better with v0.5+).
+- F (Phase B activation gate — D44 lock requires 7-14 days of post-ship landing data; v0.4.0 shipped 2026-05-18 so window opens earliest 2026-05-25).
+- G (typescript-reviewer tech-debt sweep — true nits, no production impact).
+- I (Anton-side staging smoke checklist — requires signed-in browser session).
+- J (first real event RSVP to exercise YourWeekPane data path — requires Anton to seed an event under `community/events/`).
+- Tag decisions for `community-platform-v0.4.2` and `community-platform-v0.4.3` — Anton's discretion, mirrors chat-26 v0.4.1-tag-bump-optional pattern.
+
+---
+
 ## [0.4.2] — 2026-05-18 (chat-27 follow-up; PR #26 MERGED at SHA `91f772f` 2026-05-18T20:30:50Z; production a11y gate 7/7 GREEN)
 
 **v0.4.x patch — chat-27 Option K only (a11y baseline regressions).** Closes the chat-26 [0.4.1] "Surfaced" carry-over: 6 of 7 anon-public surfaces had failed `e2e/v0-4-a11y.spec.ts` against production on two pre-existing v0.4.0 serious axe-core violations. Branch: `chore/community-platform-v0-4-2-followups`. Tests: 934/934 unit+integration green (no delta — Footer test passes via the existing `if (slot)` guard authored in v0.4 anticipating this cleanup; AnonymousHero test queries by role/href, never className). Other residual options (A / C / D / F / G / I / J from chat-27's menu) deferred to chat-28 or v0.5+.
