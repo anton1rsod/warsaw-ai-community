@@ -85,3 +85,88 @@ describe("composeEventReadme — happy path", () => {
     expect(event.body.trim()).toBe("Body content here.");
   });
 });
+
+describe("composeEventReadme — optional fields", () => {
+  it("omits optional frontmatter keys when input fields are undefined", () => {
+    const out = composeEventReadme({
+      date: "2026-05-28",
+      slug: "2026-05-28-test",
+      title: "Bare Event",
+      status: "scheduled",
+      body: "",
+    });
+
+    expect(out).toMatch(/^date: 2026-05-28$/m);
+    expect(out).toMatch(/^slug: "2026-05-28-test"$/m);
+    expect(out).toMatch(/^title: "Bare Event"$/m);
+    expect(out).toMatch(/^status: "scheduled"$/m);
+
+    expect(out).not.toMatch(/^start_time:/m);
+    expect(out).not.toMatch(/^duration_minutes:/m);
+    expect(out).not.toMatch(/^location:/m);
+    expect(out).not.toMatch(/^host:/m);
+    expect(out).not.toMatch(/^url:/m);
+  });
+});
+
+describe("composeEventReadme — YAML escape", () => {
+  it("escapes embedded double quotes in title", () => {
+    const out = composeEventReadme({
+      date: "2026-05-28",
+      slug: "2026-05-28-test",
+      title: 'A "quoted" event',
+      status: "scheduled",
+      body: "",
+    });
+    const { data } = matter(out);
+    expect((data as { title: string }).title).toBe('A "quoted" event');
+  });
+
+  it("escapes backslashes in location", () => {
+    const out = composeEventReadme({
+      date: "2026-05-28",
+      slug: "2026-05-28-test",
+      title: "Event",
+      location: "C:\\path\\place",
+      status: "scheduled",
+      body: "",
+    });
+    const { data } = matter(out);
+    expect((data as { location: string }).location).toBe("C:\\path\\place");
+  });
+});
+
+describe("H80: body cannot inject second frontmatter block", () => {
+  it("strips standalone triple-dash lines from body", () => {
+    const out = composeEventReadme({
+      date: "2026-05-28",
+      slug: "2026-05-28-test",
+      title: "Event",
+      status: "scheduled",
+      body: "---\nmalicious: true\n---\nLegit body.",
+    });
+
+    const { data, content } = matter(out);
+    expect((data as Record<string, unknown>).malicious).toBeUndefined();
+    expect((data as { title: string }).title).toBe("Event");
+    expect(content).toContain("malicious: true");
+    expect(content).toContain("Legit body.");
+  });
+});
+
+describe("composeEventReadme — empty body", () => {
+  it("emits parseable README with empty body", () => {
+    const out = composeEventReadme({
+      date: "2026-05-28",
+      slug: "2026-05-28-test",
+      title: "Event",
+      status: "scheduled",
+      body: "",
+    });
+    const { data, content } = matter(out);
+    expect((data as { title: string }).title).toBe("Event");
+    // gray-matter preserves the trailing blank line after the closing `---`
+    // as `"\n"`; we assert the content is structurally empty (trim-equivalent).
+    expect(content.trim()).toBe("");
+  });
+});
