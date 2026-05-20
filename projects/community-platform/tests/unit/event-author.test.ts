@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { deriveEventSlug } from "@/lib/event-author";
+import matter from "gray-matter";
+import {
+  parseEventFrontmatter,
+  normalizeEventFrontmatter,
+} from "@/lib/events";
+import {
+  composeEventReadme,
+  deriveEventSlug,
+} from "@/lib/event-author";
 
 describe("deriveEventSlug — happy path", () => {
   it("kebab-cases title and prepends date", () => {
@@ -41,5 +49,39 @@ describe("deriveEventSlug — edge cases", () => {
 
   it("returns degenerate `<date>-` when title yields empty slug", () => {
     expect(deriveEventSlug("2026-06-01", "—")).toBe("2026-06-01-");
+  });
+});
+
+describe("composeEventReadme — happy path", () => {
+  it("emits YAML that round-trips through parseEventFrontmatter", () => {
+    const out = composeEventReadme({
+      date: "2026-05-28",
+      slug: "2026-05-28-test",
+      title: "Test Event",
+      startTime: "19:00",
+      durationMinutes: 120,
+      location: "Grzybowska 85a, Warsaw",
+      host: "anton1rsod",
+      url: "https://example.com/event",
+      status: "scheduled",
+      body: "Body content here.",
+    });
+
+    const { data, content } = matter(out);
+    const event = parseEventFrontmatter("2026-05-28-test", {
+      ...normalizeEventFrontmatter(data as Record<string, unknown>),
+      body: content,
+    });
+
+    expect(event.date).toBe("2026-05-28");
+    expect(event.slug).toBe("2026-05-28-test");
+    expect(event.title).toBe("Test Event");
+    expect(event.startTime).toBe("19:00");
+    expect(event.durationMinutes).toBe(120);
+    expect(event.location).toBe("Grzybowska 85a, Warsaw");
+    expect(event.host).toBe("anton1rsod");
+    expect(event.url).toBe("https://example.com/event");
+    expect(event.status).toBe("scheduled");
+    expect(event.body.trim()).toBe("Body content here.");
   });
 });
