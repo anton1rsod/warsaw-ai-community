@@ -113,6 +113,37 @@ export const strings = {
 
   // ─── auth.* (shared) ────────────────────────────────────────────────────
   "auth.signInWithGitHub": "Sign in with GitHub",
+
+  // ─── event.create.* (v0.5; /admin/events/new route + form) ─────────────
+  "event.create.heading": "New event",
+  "event.create.intro":
+    "Commit a new event to the community calendar. Subscribers see updates within 5 minutes.",
+  "event.create.field.title": "Title",
+  "event.create.field.date": "Date",
+  "event.create.field.startTime": "Start time",
+  "event.create.field.duration": "Duration (min)",
+  "event.create.field.location": "Location",
+  "event.create.field.host": "Host (GitHub handle)",
+  "event.create.field.url": "URL (optional)",
+  "event.create.field.slug": "Slug",
+  "event.create.field.body": "Body (markdown)",
+  "event.create.slug.hint": "Leave blank to auto-derive from title + date.",
+  "event.create.preview.show": "Preview",
+  "event.create.preview.hide": "Hide preview",
+  "event.create.preview.loading": "Loading…",
+  "event.create.preview.failed": "Preview failed.",
+  "event.create.submit.idle": "Create event",
+  "event.create.submit.pending": "Creating…",
+  "event.create.error.notAuthorized":
+    "You are not authorized to create events.",
+  "event.create.error.invalidInput":
+    "Some fields look invalid. Check the form and try again.",
+  "event.create.error.invalidSlug":
+    "That slug isn't a valid YYYY-MM-DD-kebab form.",
+  "event.create.error.slugExists": "An event with that slug already exists.",
+  "event.create.error.internalError": "Something went wrong. Try again.",
+  "event.create.error.unknown": "Unknown error.",
+  "event.create.error.requestFailed": "Request failed. Try again.",
 } as const;
 
 export type StringKey = keyof typeof strings;

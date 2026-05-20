@@ -41,7 +41,7 @@ export type CreateEventResult =
         | "internal_error";
     };
 
-function buildClient() {
+function buildClient(): ReturnType<typeof createGitHubApp> {
   return createGitHubApp({
     appId: env.GITHUB_APP_ID,
     privateKey: env.GITHUB_APP_PRIVATE_KEY,
@@ -77,7 +77,7 @@ export async function createEvent(
     host: readField(formData, "host"),
     url: readField(formData, "url"),
     slug: readField(formData, "slug"),
-    body: formData.get("body") ?? "",
+    body: readField(formData, "body") ?? "",
   };
   const parsed = CreateEventInputSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "invalid_input" };
@@ -107,6 +107,8 @@ export async function createEvent(
   try {
     const { data, content } = matter(readmeContent);
     parseEventFrontmatter(slug, {
+      // gray-matter types .data as { [key: string]: any }; the narrowing cast
+      // is safe because normalizeEventFrontmatter accepts any string-keyed bag.
       ...normalizeEventFrontmatter(data as Record<string, unknown>),
       body: content,
     });
@@ -133,6 +135,9 @@ export async function createEvent(
     return { ok: false, error: "internal_error" };
   }
 
+  // H79 fan-out: every surface that renders event data. `/` surfaces the next
+  // upcoming event via AnonymousHero (v0.4.5+); the rest are direct event-data
+  // routes (index, detail, /home weekly view, ICS feed).
   revalidatePath("/events");
   revalidatePath(`/events/${slug}`);
   revalidatePath("/home");

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { CreateEventResult } from "@/app/actions/create-event";
 import { deriveEventSlug } from "@/lib/event-author";
 import { SafeHtml } from "@/app/components/SafeHtml";
+import { s } from "@/lib/i18n/strings";
 
 export interface EventFormDefaults {
   readonly startTime: string;
@@ -23,11 +24,11 @@ const ERROR_LABELS: Record<
   Exclude<CreateEventResult, { ok: true }>["error"],
   string
 > = {
-  not_authorized: "You are not authorized to create events.",
-  invalid_input: "Some fields look invalid. Check the form and try again.",
-  invalid_slug: "That slug isn't a valid YYYY-MM-DD-kebab form.",
-  slug_exists: "An event with that slug already exists.",
-  internal_error: "Something went wrong. Try again.",
+  not_authorized: s("event.create.error.notAuthorized"),
+  invalid_input: s("event.create.error.invalidInput"),
+  invalid_slug: s("event.create.error.invalidSlug"),
+  slug_exists: s("event.create.error.slugExists"),
+  internal_error: s("event.create.error.internalError"),
 };
 
 const DEFAULT_BODY =
@@ -63,7 +64,9 @@ export function EventForm({
         credentials: "same-origin",
       });
       if (!res.ok) {
-        setPreviewHtml('<p class="text-red-700">Preview failed.</p>');
+        setPreviewHtml(
+          `<p class="text-red-700">${s("event.create.preview.failed")}</p>`,
+        );
         return;
       }
       const data: { html?: string } = await res.json();
@@ -85,10 +88,10 @@ export function EventForm({
       if (result.ok) {
         router.push(`/events/${result.slug}`);
       } else {
-        setError(ERROR_LABELS[result.error] ?? "Unknown error.");
+        setError(ERROR_LABELS[result.error] ?? s("event.create.error.unknown"));
       }
     } catch {
-      setError("Request failed. Try again.");
+      setError(s("event.create.error.requestFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -96,7 +99,7 @@ export function EventForm({
 
   return (
     <form onSubmit={onSubmit} className="mt-6 space-y-4">
-      <Field id="title" label="Title" required>
+      <Field id="title" label={s("event.create.field.title")} required>
         <input
           id="title"
           name="title"
@@ -109,7 +112,7 @@ export function EventForm({
         />
       </Field>
 
-      <Field id="date" label="Date" required>
+      <Field id="date" label={s("event.create.field.date")} required>
         <input
           id="date"
           name="date"
@@ -122,7 +125,7 @@ export function EventForm({
       </Field>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field id="startTime" label="Start time">
+        <Field id="startTime" label={s("event.create.field.startTime")}>
           <input
             id="startTime"
             name="startTime"
@@ -131,7 +134,7 @@ export function EventForm({
             className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
           />
         </Field>
-        <Field id="durationMinutes" label="Duration (min)">
+        <Field id="durationMinutes" label={s("event.create.field.duration")}>
           <input
             id="durationMinutes"
             name="durationMinutes"
@@ -144,7 +147,7 @@ export function EventForm({
         </Field>
       </div>
 
-      <Field id="location" label="Location">
+      <Field id="location" label={s("event.create.field.location")}>
         <input
           id="location"
           name="location"
@@ -155,7 +158,7 @@ export function EventForm({
         />
       </Field>
 
-      <Field id="host" label="Host (GitHub handle)">
+      <Field id="host" label={s("event.create.field.host")}>
         <input
           id="host"
           name="host"
@@ -166,7 +169,7 @@ export function EventForm({
         />
       </Field>
 
-      <Field id="url" label="URL (optional)">
+      <Field id="url" label={s("event.create.field.url")}>
         <input
           id="url"
           name="url"
@@ -175,7 +178,7 @@ export function EventForm({
         />
       </Field>
 
-      <Field id="slug" label="Slug">
+      <Field id="slug" label={s("event.create.field.slug")}>
         <input
           id="slug"
           name="slug"
@@ -185,12 +188,10 @@ export function EventForm({
           onChange={(e) => setSlugOverride(e.target.value)}
           className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 font-mono text-sm"
         />
-        <p className="mt-1 text-xs text-gray-500">
-          Leave blank to auto-derive from title + date.
-        </p>
+        <p className="mt-1 text-xs text-gray-500">{s("event.create.slug.hint")}</p>
       </Field>
 
-      <Field id="body" label="Body (markdown)">
+      <Field id="body" label={s("event.create.field.body")}>
         <textarea
           id="body"
           name="body"
@@ -210,16 +211,11 @@ export function EventForm({
           className="rounded border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50 disabled:opacity-50"
         >
           {previewLoading
-            ? "Loading…"
+            ? s("event.create.preview.loading")
             : previewHtml !== null
-              ? "Hide preview"
-              : "Preview"}
+              ? s("event.create.preview.hide")
+              : s("event.create.preview.show")}
         </button>
-        {previewHtml !== null ? (
-          <span className="text-xs text-gray-600">
-            Sanitized server-side via /api/preview-markdown
-          </span>
-        ) : null}
       </div>
 
       {previewHtml !== null ? (
@@ -236,7 +232,9 @@ export function EventForm({
         disabled={submitting}
         className="rounded bg-gray-900 px-4 py-2 font-medium text-white disabled:opacity-50"
       >
-        {submitting ? "Creating…" : "Create event"}
+        {submitting
+          ? s("event.create.submit.pending")
+          : s("event.create.submit.idle")}
       </button>
 
       {error ? (

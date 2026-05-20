@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { isAdmin } from "@/lib/content-snapshot";
 import { getDefaults } from "@/lib/community-defaults";
+import { s } from "@/lib/i18n/strings";
 import { EventForm } from "@/app/components/EventForm";
 import { createEvent } from "@/app/actions/create-event";
 
@@ -16,11 +17,8 @@ export default async function AdminEventsNewPage(): Promise<React.JSX.Element> {
 
   return (
     <main className="mx-auto max-w-prose p-6">
-      <h1 className="text-2xl font-semibold">New event</h1>
-      <p className="mt-2 text-sm text-gray-700">
-        Commit a new event to the community calendar. Subscribers see updates
-        within 5 minutes.
-      </p>
+      <h1 className="text-2xl font-semibold">{s("event.create.heading")}</h1>
+      <p className="mt-2 text-sm text-gray-700">{s("event.create.intro")}</p>
       <EventForm
         action={createEvent}
         defaults={{

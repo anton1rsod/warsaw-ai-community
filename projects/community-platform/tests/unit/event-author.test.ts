@@ -137,7 +137,7 @@ describe("composeEventReadme — YAML escape", () => {
 });
 
 describe("H80: body cannot inject second frontmatter block", () => {
-  it("strips standalone triple-dash lines from body", () => {
+  it("gray-matter ignores second frontmatter block in body (parse-semantics defense)", () => {
     const out = composeEventReadme({
       date: "2026-05-28",
       slug: "2026-05-28-test",

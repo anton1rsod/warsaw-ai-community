@@ -28,8 +28,8 @@ export function composeEventReadme(input: EventAuthorInput): string {
   if (input.location) {
     lines.push(`location: ${quoteYamlString(input.location)}`);
   }
-  if (input.host) lines.push(`host: "${input.host}"`);
-  if (input.url) lines.push(`url: "${input.url}"`);
+  if (input.host) lines.push(`host: ${quoteYamlString(input.host)}`);
+  if (input.url) lines.push(`url: ${quoteYamlString(input.url)}`);
   lines.push(`status: "${input.status}"`);
   lines.push("---");
   lines.push("");
