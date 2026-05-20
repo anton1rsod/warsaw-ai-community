@@ -16,7 +16,54 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
-## [0.4.4] — 2026-05-20 (chat-28 Option D — reviewer-agent dispatch on v0.4.0–v0.4.3 surfaces; PR #30 PRE-MERGE at branch SHA `b47be47`; merge SHA TBD)
+## [0.4.5] — 2026-05-20 (chat-29 I+J bundle — first real event seed surfaces + fixes v0.3.0 silent regression; PR #31 MERGED at SHA `78cb58e`; tag `community-platform-v0.4.5` pushed; prod smoke green)
+
+**Anton-confirmed chat-29 compound pick (I+J) expanded mid-chat into a v0.3.0 silent-regression fix.** Original scope: seed first real event (`community/events/2026-05-21-meetup-4/` — AI Community Meetup #4, 2026-05-21 19:00 Europe/Warsaw at Grzybowska 85a, Warsaw) and exercise the YourWeekPane data path. Recon surfaced that `scripts/snapshot-content.ts` never wired `community/events/` into `content-snapshot.json` — all 20+ consumers of `listEventsFromSnapshot()` (`/events`, `/events/[slug]`, `/api/calendar.ics`, `/home`, `/this-week`, RSVP write surface, YourWeekPane, AnonymousHero "Next event") returned `[]` always since v0.3.0 ship 2026-05-17. The empty-state path rendered correctly because no events were ever committed, so the silent regression survived 3 days (v0.3.0 → v0.4.4) until the first real event commit surfaced it.
+
+### Fixed (root-cause regression)
+
+- **`scripts/snapshot-content.ts`** — read `community/events/` into the snapshot via new `listEventsFromDisk(REPO_ROOT)`. Promise.all + snapshot object key + log line. Mirrors the meetings precedent (line 8 + 31-38 pattern).
+- **`lib/events.ts`** — add `listEventsFromDisk(repoRoot: string): Promise<Event[]>` (+~50 LOC). Reads each event folder's `README.md`, normalizes snake_case frontmatter (`start_time` → `startTime`, `duration_minutes` → `durationMinutes`) to camelCase Event field names, coerces YAML auto-parsed `Date` objects back to ISO date strings (js-yaml's DEFAULT_SCHEMA converts unquoted `date: 2026-05-21` to a Date), validates via existing `parseEventFrontmatter` (Zod `EventSchema` + folder/slug match). Sort ascending by date. ENOENT-safe for missing `community/events/` dir and missing per-folder `README.md`. Mirrors `lib/meetings.ts`'s `listMeetingsFromDisk` pattern exactly.
+- **`lib/content-snapshot.ts`** — add `events: readonly Event[]` field to `ContentSnapshot` interface (now structurally complete vs the bag-of-other-entities shape). Drop the defensive `((snapshot as unknown as { events?: readonly Event[] }).events ?? [])` cast in `listEventsFromSnapshot` — direct `snapshot.events` read. The snapshot const cast moves from `as ContentSnapshot` to `as unknown as ContentSnapshot` (with explaining comment) because JSON.parse cannot preserve Zod brand markers (`EventSlug` is `string & BRAND<"EventSlug">`). Runtime values are real branded strings because they pass through `EventSchema.parse` during snapshot generation, but the type system can't prove it across the JSON-roundtrip boundary. Other entity types (RosterMember/ProjectDetail/Decision/Meeting) avoid this because they don't use Zod-branded slugs.
+
+### Added
+
+- **`tests/unit/events-from-disk.test.ts`** — 11 new unit tests using `mkdtemp` fixtures for isolation. Coverage: missing dir → `[]`, empty dir → `[]`, single event with minimal frontmatter (Date coercion path), snake_case → camelCase mapping, `_template` folder skip, non-directory entry skip, ascending date sort across multiple events, folder/slug mismatch throws (H44 propagation), missing required fields throws (Zod), `status` field default + override (cancelled/completed), subfolder files (`artifacts/`) ignored.
+- **`community/events/2026-05-21-meetup-4/README.md`** — first real event committed to the public repo. Frontmatter: `date`, `slug`, `title`, `start_time: "19:00"`, `duration_minutes: 120`, `location: "Grzybowska 85a, Warsaw"`, `host: anton1rsod`, `status: scheduled`. Body: 4-item agenda (Persona setup / NDA signing / Idea round / Validation skill) + when/where. Public-safe (no `@`-handles, no private Telegram channel links) per CLAUDE.md member-consent operating principle.
+- **`projects/community-platform/V0_5_BACKLOG.md`** — new section `## From chat-29 (first real event seed — 2026-05-20)` with Option β entry: `/admin/events/new` admin event-creation UI as the v0.5+ candidate that surfaced from this exercise. Pattern precedent: `/admin/invite` (chat-9). ~1 wk dev + tests + ADR for write-permission model. Member-proposed events (Option γ) explicitly deferred — too large for backlog one-liner; needs own brainstorm (governance, permissions, spam risk, moderation flow).
+
+### Verified
+
+- **CI**: `Lint, typecheck, test, build` PASS in 1m22s on PR #31. Vercel previews complete (warsaw-ai-community-platform + warsaw_ai_community_gbrain).
+- **Tests**: 946/946 unit+integration green (935 prior + 11 new). `pnpm tsc --noEmit` clean. `pnpm lint` clean.
+- **Generated artifacts regenerated locally + committed** per CONSTRAINTS.md `Generated artifacts` section discipline:
+  - `lib/__generated__/calendar.ics`: 0 → 1 `VEVENT` block for Meetup #4. `DURATION:PT120M`. (Build-host TZ caveat below.)
+  - `lib/__generated__/contributions.json` + `project-contributions.json`: prebuild drift (+1 commit each, from `pnpm contributions` runs during test gate).
+  - `lib/__generated__/content-snapshot.json` is gitignored; Vercel regenerates via `prebuild` → `contributions` → `precontributions` → `snapshot`.
+- **Prod HTTP smoke (curl, post-merge)** vs `https://warsaw-ai-community-platform.vercel.app`:
+  - `/api/calendar.ics` → HTTP/2 200 with `text/calendar; charset=utf-8`, `cache-control: public, max-age=300`, `x-vercel-cache: MISS`, **1 `BEGIN:VEVENT` block** for Meetup #4. (Timezone caveat below.)
+  - `/events` index → HTTP/2 200 with `Upcoming`, `2026-05-21`, `AI Community | Meetup #4` markers present in markup. First real event now surfaces in the Upcoming section.
+  - `/` AnonymousHero → HTTP/2 200; `aria-label="Next event"` slot now reads `AI Community | Meetup #4` + `2026-05-21` instead of the prior `"No upcoming events — next weekly sync is Wednesday at 18:30."` empty-state. The clean before/after observable promised at chat-29 start landed.
+  - `/events/2026-05-21-meetup-4/` (with trailing slash) → HTTP/2 308 → `/events/2026-05-21-meetup-4` (Next.js trailing-slash redirect; normal behavior).
+
+### Known caveat — chat-30 Option A (v0.4.6 hotfix candidate)
+
+- **ICS timezone bug** — `lib/__generated__/calendar.ics` on production emits `DTSTART:20260521T190000Z` (19:00 UTC = 21:00 Europe/Warsaw CEST), but the intended event time is 19:00 Warsaw = 17:00 UTC = `DTSTART:20260521T170000Z` (which is what `pnpm snapshot` produced locally on the chat-29 author's CEST machine). Root cause: `lib/ical.ts`'s `dateToIcsParts(dateISO, hhmm)` returns a 5-element `[y, mo, d, hh, mm]` tuple that the `ics` package interprets as the **build host's local timezone**. Vercel builds run UTC → tuple gets serialized as UTC literal; my local CEST → tuple gets shifted by -2h to UTC. **User impact: anyone subscribed to `/api/calendar.ics` via their calendar app sees the meetup at 21:00 Warsaw instead of 19:00 Warsaw.** Wide enough impact to warrant a v0.4.6 hotfix before tomorrow's 19:00 meetup. Recommended fix shape: use the `ics` package's `startInputType` + emit a TZID-aware VEVENT (`startInputType: 'local'` + `TZID:Europe/Warsaw` block) OR pre-convert Warsaw local to UTC explicitly using a TZ-aware library. Same bug affects `meetingToIcsEvent` (line 29 of `lib/ical.ts`) — meetings would have the same problem once any meeting is scheduled. Captured as chat-30 handoff Option A. Anti-pattern note: the bug was carried by v0.3.0 (chat-19, 2026-05-17) but only surfaced now because zero events existed in any prior build.
+
+### Not in this release (deferred to chat-30+)
+
+- **Anton-side I+J completion (signed-in flow smoke + first RSVP)** — chat-29 closed the data-path validation HTTP-side (events visible on `/events`, `/api/calendar.ics`, AnonymousHero), but the actual member RSVP that exercises YourWeekPane "next RSVP" remains pending Anton's browser session. Chat-30 handoff Option B.
+- **A** (PWA textured "WA" icons — still blocked on tooling per chat-26/27/28; offline designer pass needed).
+- **F** (Phase B activation gate — window opens 2026-05-25; needs 7d landing data post-window).
+- **M** (Vercel preview-protection bypass token — recommend SKIP unless feature requires pre-merge edge-behavior verification).
+
+### Note on commit hygiene
+
+- **PR #30 v0.4.4 merge** — confirmed `community-platform-v0.4.4` tag at SHA `5c6ac94e` (PR #30 merge commit). Updates the `[0.4.4]` header's `merge SHA TBD` notation (stale at chat-28 closeout since `d9eaeda` was authored on the branch pre-merge); kept the header's PRE-MERGE text untouched per "don't retroactively rewrite history" hygiene, but the v0.4.4 ship is canonically the `5c6ac94` merge commit.
+
+---
+
+## [0.4.4] — 2026-05-20 (chat-28 Option D — reviewer-agent dispatch on v0.4.0–v0.4.3 surfaces; PR #30 MERGED at SHA `5c6ac94` 2026-05-20; tag `community-platform-v0.4.4` pushed)
 
 **v0.4.x patch — chat-28 Option L tag bumps + Option D reviewer-fix bundle.** Three parallel reviewer agents (security + typescript + code-quality) ran on the 18 code files changed in the `e720268..main` (v0.3.1 → v0.4.3) diff range. 25 findings returned across the three lanes; cross-lane convergence triage applied (e.g., HomeFeed `escapeHtml` flagged by ALL THREE reviewers = high-confidence bug). 14 findings applied; 4 intentionally skipped (1 false positive, 3 design-call deferrals). Branch: `chore/community-platform-v0-4-3-reviewer-fixes`. Tests: **935/935 unit+integration green** (was 934 chat-26 baseline + 1 new escapeHtml-removal regression test).
 
