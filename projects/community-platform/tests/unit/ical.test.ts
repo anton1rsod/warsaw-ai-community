@@ -22,6 +22,7 @@ describe("H47: ICS output is RFC 5545 valid", () => {
         uid: "meeting-2026-05-19",
         title: "Weekly sync",
         start: [2026, 5, 19, 18, 0],
+        tz: "Europe/Warsaw",
         duration: { minutes: 60 },
         location: "Telegram #voice",
       },
@@ -48,6 +49,7 @@ describe("H47: ICS output is RFC 5545 valid", () => {
         uid: "event-2026-06-15-hackathon",
         title: "Hackathon",
         start: [2026, 6, 15, 18, 0],
+        tz: "Europe/Warsaw",
         duration: { minutes: 120 },
         description: "Annual AI hackathon",
         url: "https://example.com/hackathon",
@@ -132,6 +134,131 @@ describe("branch coverage: parseHHMM and dateToIcsParts failure paths", () => {
   });
 });
 
+describe("v0.4.6: ICS DTSTART output is TZ-independent (build-host-agnostic)", () => {
+  // Root cause of the bug closed by these tests: lib/ical.ts dateToIcsParts
+  // returned naive [y, mo, d, hh, mm] tuples which the `ics` package
+  // interpreted as the build host's local timezone. Vercel builds in UTC,
+  // dev machines build in CEST/CET; same source → divergent DTSTART output.
+  // Fix: IcsEvent gains an explicit `tz` field; generateIcs converts
+  // wall-clock + tz → UTC tuple via Intl.DateTimeFormat (TZ-database-aware,
+  // DST-correct) and emits with `startInputType: 'utc'`.
+
+  function withTz<T>(tz: string, fn: () => T): T {
+    const original = process.env.TZ;
+    process.env.TZ = tz;
+    try {
+      return fn();
+    } finally {
+      if (original === undefined) {
+        delete process.env.TZ;
+      } else {
+        process.env.TZ = original;
+      }
+    }
+  }
+
+  it("Meetup #4 DTSTART is byte-identical under TZ=UTC and TZ=Europe/Warsaw", () => {
+    const meetup4: IcsEvent = {
+      uid: "event-2026-05-21-meetup-4",
+      title: "AI Community | Meetup #4",
+      start: [2026, 5, 21, 19, 0],
+      tz: "Europe/Warsaw",
+      duration: { minutes: 120 },
+      location: "Grzybowska 85a, Warsaw",
+    };
+
+    const icsUnderUtc = withTz("UTC", () => generateIcs([meetup4]));
+    const icsUnderWarsaw = withTz("Europe/Warsaw", () => generateIcs([meetup4]));
+
+    const dtstartUtc = icsUnderUtc.match(/^DTSTART:.*$/m)?.[0];
+    const dtstartWarsaw = icsUnderWarsaw.match(/^DTSTART:.*$/m)?.[0];
+
+    expect(dtstartUtc).toBeDefined();
+    expect(dtstartUtc).toBe(dtstartWarsaw);
+    // 19:00 Warsaw CEST = 17:00 UTC on 2026-05-21 (CEST = UTC+2 in May).
+    expect(dtstartUtc).toBe("DTSTART:20260521T170000Z");
+  });
+
+  it("winter event respects CET offset (UTC+1, not CEST UTC+2) on UTC build host", () => {
+    // 2026-01-15 19:00 Warsaw CET = 18:00 UTC. Tests DST-aware conversion:
+    // the offset must reflect that mid-January is outside CEST.
+    // Wrapped in TZ=UTC to simulate the Vercel build host context — the bug
+    // manifests precisely there. A CEST dev machine would coincidentally
+    // produce correct output without the fix, masking the regression.
+    const winterEvent: IcsEvent = {
+      uid: "event-2026-01-15-winter",
+      title: "Winter sync",
+      start: [2026, 1, 15, 19, 0],
+      tz: "Europe/Warsaw",
+      duration: { minutes: 60 },
+    };
+    const ics = withTz("UTC", () => generateIcs([winterEvent]));
+    expect(ics).toMatch(/^DTSTART:20260115T180000Z$/m);
+  });
+
+  it("UTC tz produces identity conversion (wall-clock = UTC instant) on UTC build host", () => {
+    const ev: IcsEvent = {
+      uid: "evt-utc",
+      title: "Pure UTC event",
+      start: [2026, 7, 4, 12, 30],
+      tz: "UTC",
+      duration: { minutes: 60 },
+    };
+    const ics = withTz("UTC", () => generateIcs([ev]));
+    expect(ics).toMatch(/^DTSTART:20260704T123000Z$/m);
+  });
+
+  it("eventToIcsEvent wires tz from defaults onto the IcsEvent", () => {
+    const ev = eventToIcsEvent(
+      {
+        date: "2026-05-21",
+        slug: EventSlugSchema.parse("2026-05-21-meetup-4"),
+        title: "AI Community | Meetup #4",
+        body: "",
+        status: "scheduled",
+        startTime: "19:00",
+        durationMinutes: 120,
+        location: "Grzybowska 85a\\, Warsaw",
+      },
+      DEFAULTS,
+    );
+    expect(ev.tz).toBe("Europe/Warsaw");
+    // start stays as wall-clock; conversion happens at generateIcs boundary.
+    expect(ev.start).toEqual([2026, 5, 21, 19, 0]);
+  });
+
+  it("meetingToIcsEvent wires tz from defaults onto the IcsEvent", () => {
+    const m = meetingToIcsEvent(
+      { date: "2026-05-19", slug: "2026-05-19", title: "Weekly sync", body: "", attendees: [] },
+      DEFAULTS,
+    );
+    expect(m.tz).toBe("Europe/Warsaw");
+  });
+
+  it("custom tz on defaults flows through eventToIcsEvent", () => {
+    const tokyoDefaults: CommunityDefaults = {
+      ...DEFAULTS,
+      timezone: "Asia/Tokyo",
+    };
+    const ev = eventToIcsEvent(
+      {
+        date: "2026-05-21",
+        slug: EventSlugSchema.parse("2026-05-21-meetup-4"),
+        title: "AI Community | Meetup #4",
+        body: "",
+        status: "scheduled",
+        startTime: "19:00",
+        durationMinutes: 120,
+      },
+      tokyoDefaults,
+    );
+    expect(ev.tz).toBe("Asia/Tokyo");
+    // 19:00 Tokyo (UTC+9, no DST) = 10:00 UTC same day.
+    const ics = withTz("UTC", () => generateIcs([ev]));
+    expect(ics).toMatch(/^DTSTART:20260521T100000Z$/m);
+  });
+});
+
 describe("generateIcs defensive error paths (mocked ics)", () => {
   // Spy on the real createEvents to simulate error conditions.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -156,6 +283,7 @@ describe("generateIcs defensive error paths (mocked ics)", () => {
       uid: "x",
       title: "X",
       start: [2026, 5, 19, 18, 0],
+      tz: "UTC",
       duration: { minutes: 60 },
     }])).toThrow(/ical: createEvents failed/);
   });
@@ -170,6 +298,7 @@ describe("generateIcs defensive error paths (mocked ics)", () => {
       uid: "x",
       title: "X",
       start: [2026, 5, 19, 18, 0],
+      tz: "UTC",
       duration: { minutes: 60 },
     }])).toThrow(/ical: createEvents failed/);
   });
@@ -183,6 +312,7 @@ describe("generateIcs defensive error paths (mocked ics)", () => {
       uid: "x",
       title: "X",
       start: [2026, 5, 19, 18, 0],
+      tz: "UTC",
       duration: { minutes: 60 },
     }])).toThrow(/ical: createEvents returned non-string value/);
   });

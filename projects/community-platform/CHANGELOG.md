@@ -16,6 +16,42 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.4.6] — 2026-05-20 (chat-30 Option A — ICS timezone hotfix; PR #pending; tag `community-platform-v0.4.6` pending)
+
+**Pre-meetup deadline hotfix.** Closes the v0.4.5 Known caveat: `/api/calendar.ics` on production emitted `DTSTART:20260521T190000Z` (treated as 19:00 UTC = 21:00 Warsaw CEST) instead of the intended `DTSTART:20260521T170000Z` (17:00 UTC = 19:00 Warsaw). User impact: ICS subscribers seeing the meetup 2 hours late. Root cause analysis is in `[0.4.5] § Known caveat` — the `ics` package's default `startInputType: 'local'` interpreted the wall-clock tuple as the build host's local time, and Vercel runs UTC.
+
+### Fixed
+
+- **`lib/ical.ts`** — `IcsEvent` gains a required `tz: string` field (IANA timezone). New `wallClockInTzToUtcParts` helper uses `Intl.DateTimeFormat({timeZone: tz})` (V8 ICU bundle → full IANA TZ database, DST-aware, no `process.env.TZ` dependence) to convert wall-clock `[y, mo, d, h, m]` → UTC tuple. `generateIcs` now passes `startInputType: "utc"` so the `ics` package no longer applies host-local conversion. `meetingToIcsEvent` and `eventToIcsEvent` populate `tz` from `defaults.timezone` automatically — the same fix covers both event and meeting paths (both call `dateToIcsParts`, both now wired through the new conversion at the `generateIcs` boundary).
+
+### Added
+
+- **`tests/unit/ical.test.ts`** — new describe block `v0.4.6: ICS DTSTART output is TZ-independent (build-host-agnostic)` (+6 tests, +1 `withTz` helper). Coverage:
+  - **Byte-identical TZ-independence**: `withTz("UTC")` and `withTz("Europe/Warsaw")` runs against the Meetup #4 fixture produce identical `DTSTART:20260521T170000Z`. Canonical regression guard — pre-fix it failed because the two host TZs produced divergent output.
+  - **DST awareness**: a winter event (`2026-01-15 19:00 Europe/Warsaw`) emits `DTSTART:20260115T180000Z` (CET = UTC+1), not the CEST +2h offset. Wrapped in `withTz("UTC")` to force Vercel build-host context (a CEST dev machine would coincidentally produce correct output without the fix, masking the regression).
+  - **UTC identity**: `tz: "UTC"` events produce wall-clock = UTC literal (no shift).
+  - **Foreign TZ flow**: `tz: "Asia/Tokyo"` (UTC+9, no DST) on `eventToIcsEvent` flows through and produces `DTSTART:20260521T100000Z` for a 19:00 Tokyo wall-clock.
+  - **Wiring**: `eventToIcsEvent` and `meetingToIcsEvent` populate `tz` from `CommunityDefaults.timezone`.
+
+### Verified
+
+- **Tests**: 952/952 unit+integration green (was 946 + 6 new). `pnpm tsc --noEmit` clean. `pnpm lint` clean.
+- **Generated artifact**: `lib/__generated__/calendar.ics` regenerated locally — `DTSTART:20260521T170000Z` (DTSTAMP-only diff committed; the DTSTART value was coincidentally correct pre-fix on a CEST host but wrong on Vercel UTC). Empirical TZ-independence confirmed: `TZ=UTC pnpm tsx scripts/build-calendar.ts` produces identical `DTSTART` line.
+
+### Verified post-merge (prod smoke — PENDING)
+
+- **`/api/calendar.ics` on production** must emit `DTSTART:20260521T170000Z` after PR merge + Vercel rebuild. Section to be back-filled with `curl` evidence at chat-30 closeout.
+
+### Surface contract change
+
+- **`IcsEvent.start` semantics**: stays as wall-clock tuple `[YYYY, M, D, H, m]`. Previously implicitly "wall-clock in the build host's TZ"; now "wall-clock in the `tz` field" — conversion to UTC happens at the `generateIcs` boundary. Callers using `meetingToIcsEvent`/`eventToIcsEvent` (all production callers — `app/meetings/[slug]/page.tsx`, `app/events/[slug]/page.tsx`, `scripts/build-calendar.ts`) need no change; tests that construct `IcsEvent` literals directly must now include `tz`.
+
+### Not in this release
+
+- TZID-aware VEVENT emission (Option 1 in the chat-30 handoff). The `ics` package's TZID support is limited; pre-converting to UTC produces the same calendar-app behavior (subscribers see correct local time on their device) with simpler output and no `BEGIN:VTIMEZONE` block to maintain. If a future case needs to preserve "this is at 19:00 Warsaw" semantics in the wire format (e.g., users relocating mid-event between TZs), revisit.
+
+---
+
 ## [0.4.5] — 2026-05-20 (chat-29 I+J bundle — first real event seed surfaces + fixes v0.3.0 silent regression; PR #31 MERGED at SHA `78cb58e`; tag `community-platform-v0.4.5` pushed; prod smoke green)
 
 **Anton-confirmed chat-29 compound pick (I+J) expanded mid-chat into a v0.3.0 silent-regression fix.** Original scope: seed first real event (`community/events/2026-05-21-meetup-4/` — AI Community Meetup #4, 2026-05-21 19:00 Europe/Warsaw at Grzybowska 85a, Warsaw) and exercise the YourWeekPane data path. Recon surfaced that `scripts/snapshot-content.ts` never wired `community/events/` into `content-snapshot.json` — all 20+ consumers of `listEventsFromSnapshot()` (`/events`, `/events/[slug]`, `/api/calendar.ics`, `/home`, `/this-week`, RSVP write surface, YourWeekPane, AnonymousHero "Next event") returned `[]` always since v0.3.0 ship 2026-05-17. The empty-state path rendered correctly because no events were ever committed, so the silent regression survived 3 days (v0.3.0 → v0.4.4) until the first real event commit surfaced it.
