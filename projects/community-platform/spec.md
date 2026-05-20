@@ -3043,3 +3043,242 @@ The following are confirmed NOT in v0.4 (and not in Phase B / C either unless ex
 *This § (§14) drafted 2026-05-18 in chat-23 via `superpowers:spec-writer`. Source of decisions: `docs/specs/2026-05-17-community-platform-v0-4-brainstorm-output.md` (Anton-locked D21–D44 + H56–H68 + ADR-0014 candidate). Compensating-control input: `docs/research/v0-4-gstack-walkthrough-2026-05-18/findings.md` (structural walkthrough — zero D-id contradictions). Locks 14 open questions O1–O14 inline; O1 (hero copy) in §14.3; O2 (wordmark) in §14.1; O3 (accent ramp) in §14.1; O4 (Handbook roadmap pointer) in §14.3; O5 (footer links) in §14.3; O6 (initials algorithm) in §14.4; O7 (mobile slide-in animation) in §14.4; O8 (sidebar collapse breakpoint) — Phase B target, deferred to chat-24 plan; O9 ("Your week" data sources) in §14.3; O10 (i18n namespace structure) — deferred to chat-24 plan (mechanical decision); O11 (RSS item shape) in §14.3; O12 (Tag colors) in §14.4; O13 (per-project Decisions data model) in §14.3; O14 (user-test findings) — substituted by gstack walkthrough per chat-23 Anton call.*
 
 *Next chat (24): `superpowers:writing-plans` writes Phase A implementation plan against this §14 + ADR-0014. Handoff at `docs/specs/2026-05-19-community-platform-v0-4-plan-writing-handoff.md` (drafted in this same chat-23 commit).*
+
+## 15. v0.5.0 — Admin event-creation UI (`/admin/events/new`)
+
+### 15.0 Intro & scope
+
+v0.5.0 ships one tier of one feature: **admin-only direct-commit event creation via web form**. The git-only workflow used in chat-29 to seed `community/events/2026-05-21-meetup-4/` works fine at the desktop but fails as a mobile / away-from-desktop path (~5 min friction per event in the GitHub.com web editor for multi-file commits). v0.5.0 replaces that with ~30 sec of typing.
+
+**Three-tier scope decomposition** (chat-31 brainstorm seed §2):
+
+| Tier | What it does | Ships in | Trigger to re-evaluate |
+|---|---|---|---|
+| **1 — CREATE-ONLY** | `/admin/events/new` form → one new `community/events/<slug>/README.md` commit | **v0.5.0 (this spec section)** | n/a — scope-locked |
+| 2 — CREATE + EDIT | + `/admin/events/<slug>/edit` form (SHA-gated) | v0.5.1 | Anton reports mobile edit friction |
+| 3 — FULL LIFECYCLE | + status flip (cancel / complete) | v0.5.2 or later | First real cancellation + git-only flow inadequate |
+
+Tier 2 and tier 3 are **explicitly deferred per [[feedback_ia_defer_future_placement]]** — they do not pre-commit any surface in v0.5.0 (separate `<EventEditForm>` later, not a polymorphic `<EventForm mode="create"|"edit">`).
+
+**Source of design rationale:** [`docs/specs/2026-05-20-community-platform-v0-5-admin-events-new-brainstorm.md`](../../docs/specs/2026-05-20-community-platform-v0-5-admin-events-new-brainstorm.md) (chat-31 brainstorm seed). This §15 locks the contract; the seed retains the rationale and tradeoff narrative.
+
+### 15.1 Surface (page + form + action + lib)
+
+Single admin-only surface, 4 new files (~7 net including tests).
+
+**`app/admin/events/new/page.tsx` (Server Component, ~30 lines):**
+
+- `export const dynamic = "force-dynamic";` (matches `/admin/invite:8`; required because `auth()` runs per-request)
+- Reads `auth()`; if `!session?.githubHandle` → `redirect("/login")`
+- If `!isAdmin(session.githubHandle)` → `redirect("/home")`
+- Reads `getDefaults().events` from `lib/community-defaults.ts` (current `defaultStartTime="18:00"`, `defaultDurationMinutes=120`, `defaultLocation="TBD — see event description"`)
+- Renders `<EventForm action={createEvent} defaults={{ startTime, durationMinutes, location, host: session.githubHandle, today: new Date().toISOString().slice(0,10) }} />`
+
+**`app/components/EventForm.tsx` (Client Component, ~150 lines):**
+
+- `"use client"` controlled inputs
+- Fields: title (required, max 200), date (`<input type="date">` required), startTime (`<input type="time">`), durationMinutes (number 1-600), location, host (pre-fills session handle), url (URL validation client-side), slug (optional override; placeholder shows live-derived value), body (monospace textarea, ~12 rows, pre-fills from sanitized `_template/README.md` content)
+- "Preview" button → fetches `/api/preview-markdown?body=<body>` → renders HTML below textarea (re-uses v0.2 preview infra)
+- "Create event" submit → calls action
+- On success: client-side `router.push("/events/" + result.slug)`
+- Error inline below submit; form input preserved on error
+
+**`app/actions/create-event.ts` (Server Action, ~120 lines):**
+
+- `"use server"`
+- Re-verify RBAC (no-session ∪ not-admin collapse → single `"not_authorized"` error per H69)
+- Zod-validate FormData via `CreateEventInputSchema` (title min 1 max 200, date YYYY-MM-DD regex, body max 50_000 bytes per H76, etc.)
+- Compute slug: explicit `slug` field if provided; else `deriveEventSlug(date, title)` from lib
+- Validate slug via `EventSlugSchema` from `lib/events.ts` (kebab + calendar-valid date per H71/H77)
+- Snapshot pre-existence guard via `listEventsFromSnapshot()` per H70
+- Compose README content via `composeEventReadme()`; round-trip-parse via gray-matter + `normalizeEventFrontmatter` + `parseEventFrontmatter` per H72; refuse on parse failure
+- GitHub pre-existence guard: `gh.readFile(path)` must return null per H78 (defense-in-depth vs stale snapshot)
+- Commit via `gh.writeFile(path, content, { message })` (no `sha` → new file semantics; `WriteOptions.sha?: string` is optional per `lib/github-app.ts:21`); CRLF strip handle per H73
+- `revalidatePath` fan-out per H79: `/events`, `/events/<slug>`, `/home`, `/`, `/api/calendar.ics`
+- Returns discriminated union `{ ok: true; slug } | { ok: false; error: "not_authorized" | "invalid_input" | "slug_exists" | "invalid_slug" | "internal_error" }`
+
+**`lib/event-author.ts` (Pure, ~80 lines):**
+
+- `composeEventReadme(input: EventAuthorInput): string` — emits snake_case frontmatter block matching the `_template/README.md` shape (`date`, `slug`, `title`, optional `start_time`, optional `duration_minutes`, optional `location`, optional `host`, optional `url`, `status` — always emitted, hard-coded "scheduled" per H75), followed by sanitized body (leading `---\n` stripped per H80)
+- `deriveEventSlug(date: string, title: string): string` — `<date>-<slug(title)>` with NFKD-strip + lowercase + kebab + 60-char title-suffix cap
+
+**Type contract:**
+
+```typescript
+export interface EventAuthorInput {
+  date: string;
+  slug: string;
+  title: string;
+  startTime?: string;
+  durationMinutes?: number;
+  location?: string;
+  host?: string;
+  url?: string;
+  status: "scheduled" | "cancelled" | "completed";
+  body: string;
+}
+```
+
+(`status` accepts all three even though v0.5.0 only writes `"scheduled"` — the type is shared with tier 3 deferral; the action's H75 hard-codes the value.)
+
+**Dependency (Phase 0 of v0.5.0-plan.md):** `lib/events.ts` `normalizeEventFrontmatter` is currently `function`-scope private (line 84). Export it: `export function normalizeEventFrontmatter(...)`. 1-character edit; no import cycle (events.ts doesn't import from event-author.ts).
+
+### 15.2 Auth + RBAC contract
+
+Two boundaries enforce admin-only:
+
+1. **Page** (`app/admin/events/new/page.tsx`) — Server Component reads `auth()` + `isAdmin()`; redirects on fail. UX-only boundary.
+2. **Action** (`app/actions/create-event.ts`) — Server Action re-verifies `auth()` + `isAdmin()`; collapses both no-session and not-admin into single `"not_authorized"` error. **The real RBAC boundary.**
+
+The collapse closes the RBAC oracle (security-reviewer M2 finding from chat-9 mint-invitation): direct POST to the action endpoint without admin session must return identical error whether or not the caller is signed in. Cf. `app/actions/mint-invitation.ts:34-40`.
+
+`isAdmin()` is defined in `lib/content-snapshot.ts` and reads the `admin: true` flag from `community/members/<slug>.md` roster files. Already shipped v0.1.1 + used by `/admin/invite` + `/admin/health`.
+
+### 15.3 Frontmatter contract
+
+The composed README must round-trip through `parseEventFrontmatter` cleanly. Composition rules:
+
+| Field | Required | Source | YAML emission |
+|---|---|---|---|
+| `date` | yes | form `date` (YYYY-MM-DD) | unquoted: `date: 2026-05-28` |
+| `slug` | yes | derived or override | quoted: `slug: "2026-05-28-foo-bar"` |
+| `title` | yes | form `title` | quoted + escaped: `title: "Foo \"bar\" baz"` |
+| `start_time` | optional | form `startTime` (HH:MM) | quoted if present: `start_time: "19:00"` |
+| `duration_minutes` | optional | form `durationMinutes` (int 1-600) | unquoted int if present |
+| `location` | optional | form `location` | quoted if present |
+| `host` | optional | form `host` (defaults to `session.githubHandle`) | quoted if present |
+| `url` | optional | form `url` (URL) | quoted if present |
+| `status` | yes | **hard-coded server-side to `"scheduled"` per H75** | quoted: `status: "scheduled"` |
+
+Body is appended after closing `---\n\n`. Leading `---\n` is stripped from body per H80 (prevents second frontmatter block injection).
+
+### 15.4 Hardenings H69-H80
+
+Twelve numbered hardenings; each maps 1:1 to a `describe("H<n>:")` test block.
+
+| ID | Hardening | Enforced at | Test surface |
+|---|---|---|---|
+| **H69** | RBAC oracle defense — collapse no-session ∪ not-admin into single `"not_authorized"` error | `create-event.ts` (RBAC guard) | `create-event-action.test.ts` |
+| **H70** | Slug collision (snapshot-level) — refuse if `listEventsFromSnapshot().some(e => e.slug === slug)` | `create-event.ts` (post-Zod, pre-compose) | `create-event-action.test.ts` |
+| **H71** | Slug shape — `EventSlugSchema` (kebab + calendar-valid date) per `lib/events.ts:6-24` | `create-event.ts` (Zod safeParse) | `create-event-action.test.ts` + structural in `events.test.ts` |
+| **H72** | Round-trip parse — composed README re-parses via gray-matter + `normalizeEventFrontmatter` + `parseEventFrontmatter` | `create-event.ts` (post-compose, pre-commit) | `create-event-action.test.ts` |
+| **H73** | CRLF strip on session-derived handle in commit message + Co-Authored-By trailer | `create-event.ts` (commitMessage construction) | `create-event-action.test.ts` (precedent: `rsvp-event.ts:100`) |
+| **H74** | Path constructed server-side — admin cannot inject arbitrary path; `EventSlugSchema` rejects `..` / `/` / non-kebab | `create-event.ts` (after slug validation) | `create-event-action.test.ts` |
+| **H75** | Status hard-coded `"scheduled"` server-side; form does not expose status field | `event-author.ts composeEventReadme` | `event-author.test.ts` + `create-event-action.test.ts` |
+| **H76** | Body size cap 50 KB — `body.length > 50_000` → Zod fail → `"invalid_input"` | `create-event.ts CreateEventInputSchema` | `create-event-action.test.ts` |
+| **H77** | Date Zod regex + calendar validity — `^\d{4}-\d{2}-\d{2}$` + `EventSlugSchema.refine` catches non-calendar dates (e.g. `2026-02-31`) | `create-event.ts` (Zod + slug refine) | `create-event-action.test.ts` |
+| **H78** | GitHub-level pre-existence guard — `gh.readFile(path)` must return null before `writeFile` (defense-in-depth vs stale snapshot from H70) | `create-event.ts` (pre-commit) | `create-event-action.test.ts` (mocked client) |
+| **H79** | Revalidate fan-out — on commit success, revalidate `/events`, `/events/<slug>`, `/home`, `/`, `/api/calendar.ics` (5 paths) | `create-event.ts` (post-commit) | `create-event-action.test.ts` (revalidatePath call assertions) |
+| **H80** | Body frontmatter injection guard — `composeEventReadme` strips leading `---\n` from body before append | `event-author.ts composeEventReadme` | `event-author.test.ts` |
+
+**Risk surface coverage:**
+
+- **Authorization:** H69
+- **Input validation:** H70, H71, H76, H77
+- **Output integrity:** H72, H75, H80
+- **Path / injection:** H73, H74, H78
+- **Reactivity:** H79
+
+Hardening density (12 / 1 surface) matches v0.1.1 invitation feature density (13 / 1 surface) because admin write to canonical content + ICS fan-out has comparable risk shape.
+
+### 15.5 Testing & coverage
+
+**Unit — `tests/unit/event-author.test.ts`:**
+
+- `composeEventReadme` happy path with all fields → string round-trips through gray-matter + `parseEventFrontmatter` cleanly
+- `composeEventReadme` optional-fields-omitted → frontmatter omits them (matches `_template/README.md` shape of bare keys, not commented-out)
+- `composeEventReadme` H75 — even if `status` param is `"cancelled"`, output is **NOT** the test target since the type is shared; tier-1 H75 is enforced at the *action* layer (action only ever passes `"scheduled"`)
+- `composeEventReadme` H80 guard — body starting with `---\nmalicious: true\n---\n` → composed README has only one frontmatter block
+- `composeEventReadme` YAML escape — multi-line title, embedded `"`, embedded `\` all round-trip cleanly
+- `deriveEventSlug` happy path — `"AI Community | Meetup #5"` + `"2026-05-28"` → `"2026-05-28-ai-community-meetup-5"`
+- `deriveEventSlug` edge cases — empty title (degenerate `<date>-`; rejected downstream by `EventSlugSchema`), unicode accents (NFKD strips), >60-char title (suffix capped), double-spaces, leading/trailing whitespace, Polish characters
+
+**Coverage target — `lib/event-author.ts`:** 100% lines + 100% branches (pure functions; achievable).
+
+**Integration — `tests/unit/create-event-action.test.ts`** (mocked `GitHubAppClient`):
+
+12 `describe("H<n>:")` blocks, one per hardening. Each block tests:
+
+- The hardening fires for the violation case (e.g., H69 — direct call without session → `"not_authorized"`; H70 — snapshot contains slug → `"slug_exists"`; H72 — mock `parseEventFrontmatter` to throw → `"invalid_input"`)
+- The happy path passes through the hardening (e.g., H69 with admin session proceeds; H79 success-path triggers 5 revalidatePath calls)
+
+**Coverage target — `app/actions/create-event.ts`:** 100% lines + ≥80% branches (defensive `"internal_error"` fallbacks acceptable per v0.1+v0.2+v0.3 strict-list precedent).
+
+**E2E:** **Deferred to v0.5.1** per O6 lock (matches v0.3 precedent of deferring 14 scenarios to v0.4). E2E happy path commits to git; needs sandbox-repo env override (or full GitHub App mock at route level) — not a v0.5 MVP scope decision.
+
+**§15 strict-list (additions to spec §8 strict-list):**
+
+- `lib/event-author.ts` — 100/100/100
+- `app/actions/create-event.ts` — 100% lines (≥80% branches accepted for `internal_error` defensive paths)
+
+### 15.6 ADR-0015 reference
+
+[`docs/decisions/0015-admin-write-permissions-for-events.md`](../../docs/decisions/0015-admin-write-permissions-for-events.md) — **Accepted 2026-05-20** at v0.5 spec lock (chat-31). Matches ADR-0014 precedent of "Accepted at spec lock, not deferred to ship" — the ADR records the *decision*, which is locked here; v0.5.0 implementation is the *consequence*, recorded in CHANGELOG when it ships.
+
+**Decision:** Admin-only direct commit via warsaw-ai-bot. Member-proposed events with admin moderation deferred to a future ADR (own brainstorm — governance, permissions, spam risk, moderation flow; v1.0+ candidate per chat-29 V0_5_BACKLOG entry).
+
+**Rationale (one-paragraph):** matches every other write surface in this codebase (profile, RSVP, thanks, consent — all direct commits, no PRs). PR-based admin writes would add round-trip latency without value (admin reviewing their own PR is theater). Audit trail = git commit history + warsaw-ai-bot bot identity + Co-Authored-By trailer for the admin's GitHub handle. Manipulation-resistance: admin pool size ≤3 and `isAdmin()` list lives in `community/members/<slug>.md` `admin: true` (transparent + auditable).
+
+See ADR-0015 for full Context / Options / Decision / Easier-Harder / Implementation references / Change-control.
+
+### 15.7 Out of v0.5.0 (deferred to v0.5.1+)
+
+- **Tier 2 — `/admin/events/<slug>/edit`** (deferred to v0.5.1; SHA-gated like saveProfile)
+- **Tier 3 — Status flip (cancel/complete)** (deferred to v0.5.2 or later; notification-sensitive)
+- **`/admin/events` index page** (deferred to v0.5.1 when edit form lands; until then admin browses `/events` and uses git for edits)
+- **Image upload** (no event hero image yet in the codebase; v0.6+ if needed)
+- **Recurring event templates** (v0.6+ if cadence stabilizes)
+- **Polish localization of form labels** (paired with v0.5+ next-intl track; v0.5.0 emits EN-only labels via `lib/i18n/strings.ts` structure inherited from v0.4)
+- **Member-proposed events with admin moderation** (own brainstorm; v1.0+ candidate)
+- **`pitch.md` / `outcomes.md` / `artifacts/` editing** (post-event content; out of scope for *creation* UI)
+- **E2E happy-path Playwright scenario** (deferred to v0.5.1 per O6 — needs sandbox-repo decision)
+
+### 15.8 Open questions locked
+
+Twelve open questions from the chat-31 brainstorm seed §8, locked at v0.5 spec lock (chat-31):
+
+| ID | Question | Lock |
+|---|---|---|
+| **O1** | Post-submit destination | **Redirect to `/events/<slug>`** (matches saveProfile pattern; admin sees what they created) |
+| **O2** | Body preview | **Re-use `/api/preview-markdown`** (zero new infra; matches /me/edit pattern) |
+| **O3** | Slug field UX | **Editable text input with placeholder showing live-derived value** (admin sees what they'll commit; one fewer click vs read-only-with-toggle) |
+| **O4** | Body pre-fill | **Yes — pre-fill from sanitized `_template/README.md`** content (mirrors what admin does manually today) |
+| **O5** | Reject past dates | **Allow with UI warning** (back-dating is a real workflow for retroactive write-ups; warn but don't block) |
+| **O6** | E2E happy path | **C — skip for v0.5.0** (matches v0.3 deferral precedent; revisit in v0.5.1 with sandbox-repo decision) |
+| **O7** | `/admin/events` index page | **No for v0.5.0** (deferred to v0.5.1 with edit form) |
+| **O8** | Mobile form layout | **Single column** with native HTML date/time inputs (wizard is overengineering for 8 fields) |
+| **O9** | Live slug derivation in form | **Yes** (client-side; uses `deriveEventSlug` lib; non-blocking) |
+| **O10** | Submit button label | **"Create event"** (user-facing language, not git jargon) |
+| **O11** | Host field default | **`session.githubHandle`** (admin = host by default; admin can override) |
+| **O12** | Audit logging | **Git commit history + warsaw-ai-bot identity + Co-Authored-By trailer** is the audit (no separate audit ledger) |
+
+**Locked-but-marked-for-re-evaluation:**
+- O5 — if mis-typed past dates cause real confusion, switch to "block with override checkbox" in v0.5.1.
+- O6 — sandbox-repo decision for E2E moves with v0.5.1 scope.
+
+### 15.9 Multi-admin slug race (accepted limitation)
+
+H78's `readFile` + `writeFile` pair is **not atomic**. Two admins creating the same slug within ~1 sec → both see `readFile === null` → both call `writeFile` → GitHub returns 422 on the second call → action returns `"internal_error"`. Second admin retries → `readFile` returns non-null → `"slug_exists"`.
+
+**Accepted for v0.5.0** because:
+- Admin pool ≤3; concurrent admin creation is vanishingly rare.
+- Failure mode is non-destructive (second admin's work not silently lost; explicit retry produces clear `"slug_exists"`).
+- Atomic compare-and-create requires `commitMultipleFiles` (multi-file commit API with `expectedHeadSha` per `lib/github-app.ts:33-42`) and a more complex code path; not worth the v0.5.0 scope.
+
+**Re-evaluate** if admin pool grows to ≥5 OR a real race is observed in CHANGELOG (CHANGELOG-tracked, not spec-tracked).
+
+### 15.10 Implementation phases (preview — full plan in `v0.5.0-plan.md`)
+
+- **Phase 0 — Pre-flight** (~½ day) — export `normalizeEventFrontmatter` from `lib/events.ts`; create empty `lib/event-author.ts` stub.
+- **Phase 1 — Pure lib + ADR** (~½ day) — `composeEventReadme` + `deriveEventSlug` + 100% unit tests; draft ADR-0015 (already drafted at v0.5 spec lock — Phase 1 just marks Accepted).
+- **Phase 2 — Server action** (~1 day) — `create-event.ts` with all 12 H-IDs + mocked GitHub client unit tests.
+- **Phase 3 — Page + form** (~1 day) — `page.tsx` + `EventForm.tsx` + integration tests for page+form+action wire-up.
+- **Phase 4 — Reviewer dispatch + closeout** (~½ day) — security-reviewer + typescript-reviewer + code-reviewer dispatch; CHANGELOG [0.5.0]; STATE.md update; tag `community-platform-v0.5.0`.
+
+**Total ~3.5 days** — single-chat-feasible via `superpowers:subagent-driven-development` at implementation time.
+
+---
+
+*This § (§15) drafted 2026-05-20 in chat-31 from the brainstorm seed at `docs/specs/2026-05-20-community-platform-v0-5-admin-events-new-brainstorm.md`. Locks all 12 open questions O1–O12 inline (§15.8) per the seed's recommended defaults; reviewer = Anton-via-Auto-mode "start next recommended phase" approval. ADR-0015 candidate referenced (§15.6); drafted same chat-31 commit. No prior chat-30 dependencies (admin-events-new is independent of v0.4 hotfix surfaces).*
+
+*Next chat: implementation. `superpowers:writing-plans` produces `v0.5.0-plan.md` in the same chat-31 commit; the v0.5.0 implementation chat reads the plan + this §15 + ADR-0015 and runs `superpowers:subagent-driven-development` against 4 phases (~3.5 days). Trigger to start: when v0.5.0 is the highest-leverage scope on the chat menu (typically post-meetup-#4 retro + Phase B gate evaluation 2026-05-25+).*
