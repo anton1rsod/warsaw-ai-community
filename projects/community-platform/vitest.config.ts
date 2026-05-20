@@ -20,6 +20,7 @@ export default defineConfig({
         "app/actions/**/*.ts",
         "app/components/**/*.tsx",
         "app/api/preview-markdown/route.ts",
+        "app/api/event-rsvp-state/route.ts",
         "scripts/**/*.ts",
         "proxy.ts",
       ],

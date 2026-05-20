@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { rsvpEvent } from "@/app/actions/rsvp-event";
 
 type State = "going" | "interested" | "none" | "not-signed-in";
@@ -12,14 +12,61 @@ interface EventRsvpButtonProps {
   profileSha?: string;
 }
 
+interface HydrationResponse {
+  state: "going" | "interested" | "none";
+  profileSha: string;
+}
+
+function isHydrationResponse(v: unknown): v is HydrationResponse {
+  if (typeof v !== "object" || v === null) return false;
+  const o = v as Record<string, unknown>;
+  return (
+    (o.state === "going" || o.state === "interested" || o.state === "none") &&
+    typeof o.profileSha === "string" &&
+    o.profileSha.length > 0
+  );
+}
+
 export function EventRsvpButton({
   eventSlug,
   initialState,
-  profileSha,
+  profileSha: initialSha,
 }: EventRsvpButtonProps): React.JSX.Element {
   const [state, setState] = useState<State>(initialState);
+  const [profileSha, setProfileSha] = useState<string | undefined>(initialSha);
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  // v0.4.7 hydration — /events/[slug] is force-static SSG (O6 lock), so the
+  // server-rendered HTML always ships `initialState="not-signed-in"`. On
+  // mount, a signed-in client recovers the real RSVP state + profileSha
+  // from /api/event-rsvp-state. Anonymous clients receive 401 and stay on
+  // the sign-in CTA. Only fires when we actually need hydration — once we
+  // have a real state from the server (initialState !== "not-signed-in"),
+  // there's nothing to recover.
+  useEffect(() => {
+    if (initialState !== "not-signed-in") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/event-rsvp-state?slug=${encodeURIComponent(eventSlug)}`,
+          { credentials: "same-origin" },
+        );
+        if (!res.ok) return;
+        const data: unknown = await res.json();
+        if (!cancelled && isHydrationResponse(data)) {
+          setState(data.state);
+          setProfileSha(data.profileSha);
+        }
+      } catch {
+        // Network failure or aborted — leave the Sign-in CTA in place.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [eventSlug, initialState]);
 
   if (state === "not-signed-in") {
     return (
