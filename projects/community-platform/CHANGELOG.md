@@ -16,7 +16,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
-## [0.4.3] — 2026-05-19 (chat-27 Option C — HomeFeed → DateTime consolidation; PR pending Anton review)
+## [0.4.3] — 2026-05-19 (chat-27 Option C — HomeFeed → DateTime consolidation; PR #28 MERGED at SHA `52b60a6` 2026-05-19T07:50:43Z; production a11y gate 7/7 GREEN post-deploy)
 
 **v0.4.x refactor — chat-27 Option C from the chat-26 menu.** Consolidates two near-identical `relativeDate()` helpers (HomeFeed.tsx's inline copy + DateTime.tsx's i18n-aware version) into a single `<DateTime context="list">` mount in HomeFeed. Branch: `chore/community-platform-v0-4-2-followup-c-homefeed-datetime`. Tests: 934/934 unit+integration green (zero delta — no date-format strings asserted in any test fixture; HomeFeed.test.tsx and home-feed.test.ts assert on titles/excerpts/authors/structure only).
 
@@ -29,6 +29,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Targeted suite (`HomeFeed.test.tsx` + `home-feed.test.ts` + `home-page.test.tsx` + `this-week-page.test.tsx`): 41/41 green in 1.3s.
 - Full suite: **934/934 green in 11.56s** — exact same count as v0.4.2 baseline, confirming pure refactor.
 - `tsc --noEmit` + `eslint app/components/HomeFeed.tsx` + `pnpm h67:scan` all green.
+- **Post-merge production a11y E2E re-run — `PLAYWRIGHT_BASE_URL=https://warsaw-ai-community-platform.vercel.app pnpm e2e e2e/v0-4-a11y.spec.ts` returned 7/7 GREEN in 3.5s** against production HEAD `52b60a6`. Confirms zero axe regression from the `<time>` element addition (axe doesn't flag `<time dateTime title>` markup, even with the new `title` hover-reveal pattern).
+- **Visual probe blocked by empty feed.** The HomeFeed migration is structurally undetectable in prod HTML right now because `event-rosters.json` is `{}` (no events on prod yet) — `Nothing scheduled` / `No recent activity` empty states render instead of `<time>` elements. Verified by tests + CI + prod a11y rather than by prod HTML diff. Option J (first real event RSVP) would exercise the path end-to-end.
 
 ### Not in this release (deferred to chat-28 or v0.5+)
 
