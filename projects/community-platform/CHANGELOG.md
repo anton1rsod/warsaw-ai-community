@@ -16,6 +16,43 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.4.7] — 2026-05-20 (chat-30 Option B unblock — EventRsvpButton client-side hydration; PR #33 MERGED at SHA `2852827`; tag `community-platform-v0.4.7` pushed; prod hydration probe green; signed-in RSVP click PENDING Anton's browser test)
+
+**Pre-meetup deadline hotfix #2.** Closes the chat-30 Option B blocker discovered during Playwright reconnaissance: signed-in members could not click "Going" on `/events/2026-05-21-meetup-4` — the page showed "Sign in to RSVP" instead, and clicking bounced to `/login` (no global Header), making it look like a logout. Session cookie was actually intact; the button was an SSG stub for every visitor.
+
+**Root cause**: `/events/[slug]` is `force-static` SSG (v0.3.0 O6 lock) — page HTML ships with `EventRsvpButton initialState="not-signed-in"` for every visitor. Per `EventRsvpButton.tsx`, that state renders an `<a href="/login?callbackUrl=…">` element, not a button. Chat-20 (v0.3.0 ship row) flagged this gap as deferred: *"dynamic viewer-state on `/projects/[slug]` + `/meetings/[slug]` ThankButton mounts (currently SSG-safe `not-signed-in` initialState)"*. The events page inherited the same gap. Now closed for events; meetings will follow the same pattern when needed.
+
+### Fixed
+
+- **`app/components/EventRsvpButton.tsx`** — client-side hydration. On mount, when `initialState === "not-signed-in"`, the component fetches `/api/event-rsvp-state?slug=…` and swaps `state` + `profileSha` from the response. Defensive `isHydrationResponse` type guard rejects null, missing fields, wrong state enum, or empty profileSha so API schema drift can't crash or render a half-state. Anonymous visitors receive 307 (proxy) → fetch resolves not-ok → button stays on the Sign-in CTA.
+
+### Added
+
+- **`app/api/event-rsvp-state/route.ts` (new)** — auth-gated GET handler. Reads the signed-in viewer's profile via GitHub App, derives RSVP state from `events_going` / `events_interested`, returns `{ state, profileSha }`. Response codes: 401 not_authenticated, 403 not_a_member, 400 invalid_slug, 404 event_not_found, 500 internal_error. `Cache-Control: private, no-store` so the user-specific payload is never edge-cached. Strict-list 100/100/100/100 (65/65 lines, 21/21 branches).
+- **`tests/unit/event-rsvp-state.test.ts` (new, 11 tests)** — auth gates, slug validation (missing / malformed / calendar-invalid / not-in-snapshot), state derivation from frontmatter (`events_going` → `going`, `events_interested` → `interested`, neither → `none`), `readFile === null → internal_error`, Cache-Control header assertion.
+- **`tests/unit/EventRsvpButton.test.tsx` (+9 tests, +1 `realFetch` save/restore)** — mount-time fetch with `same-origin` credentials; state-flip to active Going on 200; inactive Going + Interested on `state: "none"`; post-hydration click uses the hydrated profileSha (not the missing prop); 401 keeps the Sign-in CTA; network failure keeps the Sign-in CTA; null body keeps the Sign-in CTA; malformed payload keeps the Sign-in CTA; no double hydration when `initialState !== "not-signed-in"`. Branches restored to 41/41.
+- **`vitest.config.ts`** — new route added to `coverage.include` (matches `app/api/preview-markdown/route.ts` precedent).
+
+### Verified
+
+- **Tests**: 972/972 unit+integration green (was 952 v0.4.6 baseline + 11 new route + 9 new hydration). `pnpm tsc --noEmit` clean. `pnpm lint` clean. CI Lint+typecheck+test+build PASS in 1m13s pre-merge.
+- **Coverage**: `app/api/event-rsvp-state/route.ts` at 100/100/100/100 (65/65 lines, 21/21 branches); `app/components/EventRsvpButton.tsx` branches at 41/41 (restored after the defensive guards).
+- **Prod hydration probe (Playwright, anonymous)**: navigated to `/events/2026-05-21-meetup-4`; network panel confirms the new client bundle fired `GET /api/event-rsvp-state?slug=2026-05-21-meetup-4` on mount, received 307 (proxy redirect to /login because no session), client correctly early-exited and kept the Sign-in CTA. Proves the v0.4.7 client code is shipped + the wiring is intact.
+
+### Verified post-merge (signed-in flow — PENDING Anton's browser)
+
+- **Signed-in RSVP click**: Anton signs in as `anton1rsod` → navigates to `/events/2026-05-21-meetup-4` → expects "Sign in to RSVP" for ~100-300ms (SSG render before hydration), then Going + Interested toggle buttons appear. Click Going → expects optimistic green ✓ Going + server-action commit on main updating `community/members/anton1rsod/profile.md events_going` + prebuild surfaces `event-rosters.json` entry. STATE row to be back-filled with browser-side evidence after the test.
+
+### Trade-off documented
+
+- **Brief flicker (~100-300ms)** where signed-in users see "Sign in to RSVP" before the button hydrates to Going/Interested. Acceptable for v0.4.7 hotfix; mitigation deferred to v0.5 (skeleton placeholder via `useState<undefined>` for the loading state).
+
+### Why this over `force-dynamic` on the page
+
+- Keeps the event page cacheable for anonymous visitors (the ADR-0012 / ADR-0014 discovery posture). Only signed-in users pay the small round-trip on mount. Same pattern reusable for `/meetings/[slug]` ThankButton + `/projects/[slug]` viewer-state surfaces in v0.5+.
+
+---
+
 ## [0.4.6] — 2026-05-20 (chat-30 Option A — ICS timezone hotfix; PR #32 MERGED at SHA `9f6d1a6`; tag `community-platform-v0.4.6` pushed; prod smoke green)
 
 **Pre-meetup deadline hotfix.** Closes the v0.4.5 Known caveat: `/api/calendar.ics` on production emitted `DTSTART:20260521T190000Z` (treated as 19:00 UTC = 21:00 Warsaw CEST) instead of the intended `DTSTART:20260521T170000Z` (17:00 UTC = 19:00 Warsaw). User impact: ICS subscribers seeing the meetup 2 hours late. Root cause analysis is in `[0.4.5] § Known caveat` — the `ics` package's default `startInputType: 'local'` interpreted the wall-clock tuple as the build host's local time, and Vercel runs UTC.
