@@ -81,7 +81,12 @@ describe("create-event — happy path", () => {
 
     expect(result).toEqual({ ok: true, slug: "2026-05-28-meetup-5" });
     expect(writeFile).toHaveBeenCalledTimes(1);
-    const [path, content, opts] = writeFile.mock.calls[0];
+    const firstCall = writeFile.mock.calls[0] as [
+      string,
+      string,
+      { message: string },
+    ];
+    const [path, content, opts] = firstCall;
     expect(path).toBe("community/events/2026-05-28-meetup-5/README.md");
     expect(content).toContain('title: "Meetup #5"');
     expect(content).toContain('status: "scheduled"');
@@ -244,7 +249,11 @@ describe("H73: CRLF strip on session-derived handle", () => {
     await createEvent(fd({ title: "Z", date: "2026-05-28", body: "" }));
 
     expect(writeFile).toHaveBeenCalledTimes(1);
-    const [, , opts] = writeFile.mock.calls[0];
+    const [, , opts] = writeFile.mock.calls[0] as [
+      string,
+      string,
+      { message: string },
+    ];
     const msg = (opts as { message: string }).message;
     expect(msg).toContain("@eviluser create");
     expect(msg).not.toContain("evil\r\n");
@@ -263,7 +272,11 @@ describe("H75: status hardcoded server-side", () => {
     await createEvent(data);
 
     expect(writeFile).toHaveBeenCalledTimes(1);
-    const [, content] = writeFile.mock.calls[0];
+    const [, content] = writeFile.mock.calls[0] as [
+      string,
+      string,
+      { message: string },
+    ];
     expect(content as string).toContain('status: "scheduled"');
     expect(content as string).not.toContain('status: "cancelled"');
   });
