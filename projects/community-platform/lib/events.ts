@@ -1,3 +1,6 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+import matter from "gray-matter";
 import { z } from "zod";
 
 const EventSlugRegex = /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])-([a-z0-9]+(?:-[a-z0-9]+)*)$/;
@@ -71,4 +74,64 @@ export function filterOrphanSlugs(
     }
   }
   return out;
+}
+
+const SNAKE_TO_CAMEL_KEYS: readonly (readonly [string, string])[] = [
+  ["start_time", "startTime"],
+  ["duration_minutes", "durationMinutes"],
+];
+
+function normalizeEventFrontmatter(
+  data: Record<string, unknown>,
+): Record<string, unknown> {
+  const snakeKeys = new Set(SNAKE_TO_CAMEL_KEYS.map(([snake]) => snake));
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (snakeKeys.has(key)) continue;
+    out[key] = value;
+  }
+  for (const [snake, camel] of SNAKE_TO_CAMEL_KEYS) {
+    if (snake in data && !(camel in out)) {
+      out[camel] = data[snake];
+    }
+  }
+  if (out.date instanceof Date) {
+    out.date = out.date.toISOString().slice(0, 10);
+  }
+  return out;
+}
+
+export async function listEventsFromDisk(repoRoot: string): Promise<Event[]> {
+  const eventsDir = path.join(repoRoot, "community", "events");
+  let entries: Awaited<ReturnType<typeof fs.readdir>> extends infer T ? T : never;
+  try {
+    entries = await fs.readdir(eventsDir, { withFileTypes: true });
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw err;
+  }
+
+  const events: Event[] = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    if (entry.name.startsWith("_")) continue;
+    const readmePath = path.join(eventsDir, entry.name, "README.md");
+    let raw: string;
+    try {
+      raw = await fs.readFile(readmePath, "utf-8");
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") continue;
+      throw err;
+    }
+    const { data, content } = matter(raw);
+    const normalized = {
+      ...normalizeEventFrontmatter(data as Record<string, unknown>),
+      body: content,
+    };
+    const event = parseEventFrontmatter(entry.name, normalized);
+    events.push(event);
+  }
+
+  events.sort((a, b) => a.date.localeCompare(b.date));
+  return events;
 }
