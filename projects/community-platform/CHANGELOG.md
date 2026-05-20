@@ -16,7 +16,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
-## [0.4.6] — 2026-05-20 (chat-30 Option A — ICS timezone hotfix; PR #pending; tag `community-platform-v0.4.6` pending)
+## [0.4.6] — 2026-05-20 (chat-30 Option A — ICS timezone hotfix; PR #32 MERGED at SHA `9f6d1a6`; tag `community-platform-v0.4.6` pushed; prod smoke green)
 
 **Pre-meetup deadline hotfix.** Closes the v0.4.5 Known caveat: `/api/calendar.ics` on production emitted `DTSTART:20260521T190000Z` (treated as 19:00 UTC = 21:00 Warsaw CEST) instead of the intended `DTSTART:20260521T170000Z` (17:00 UTC = 19:00 Warsaw). User impact: ICS subscribers seeing the meetup 2 hours late. Root cause analysis is in `[0.4.5] § Known caveat` — the `ics` package's default `startInputType: 'local'` interpreted the wall-clock tuple as the build host's local time, and Vercel runs UTC.
 
@@ -38,9 +38,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - **Tests**: 952/952 unit+integration green (was 946 + 6 new). `pnpm tsc --noEmit` clean. `pnpm lint` clean.
 - **Generated artifact**: `lib/__generated__/calendar.ics` regenerated locally — `DTSTART:20260521T170000Z` (DTSTAMP-only diff committed; the DTSTART value was coincidentally correct pre-fix on a CEST host but wrong on Vercel UTC). Empirical TZ-independence confirmed: `TZ=UTC pnpm tsx scripts/build-calendar.ts` produces identical `DTSTART` line.
 
-### Verified post-merge (prod smoke — PENDING)
+### Verified post-merge (prod smoke — GREEN)
 
-- **`/api/calendar.ics` on production** must emit `DTSTART:20260521T170000Z` after PR merge + Vercel rebuild. Section to be back-filled with `curl` evidence at chat-30 closeout.
+- **`/api/calendar.ics` on production** — `curl -sIS https://warsaw-ai-community-platform.vercel.app/api/calendar.ics` returns `HTTP/2 200` + `content-type: text/calendar; charset=utf-8` + `cache-control: public, max-age=300` + `x-vercel-cache: MISS` (correctly never edge-cached on this fresh deploy at SHA `9f6d1a6`). Body emits `DTSTART:20260521T170000Z` — the corrected 17:00 UTC = 19:00 Warsaw CEST literal. The 300s public-cache TTL means any subscriber who already pulled the buggy version auto-recovers within 5 minutes; no manual action needed from members. CI green (Lint+typecheck+test+build PASS in 1m26s) pre-merge.
 
 ### Surface contract change
 
