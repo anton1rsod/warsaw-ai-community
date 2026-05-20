@@ -1,6 +1,7 @@
-import { describe, it, expect, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { Event } from "@/lib/events";
+import type * as GitHubAppModule from "@/lib/github-app";
 
 const event: Event = {
   date: "2026-06-15",
@@ -13,10 +14,33 @@ const event: Event = {
   location: "Office",
 };
 
+const mockAuth = vi.fn();
+const mockReadFile = vi.fn();
+const mockFindMemberByHandle = vi.fn();
+
+vi.mock("@/lib/auth", () => ({ auth: () => mockAuth() }));
+vi.mock("@/lib/env", () => ({
+  env: {
+    GITHUB_APP_ID: "x",
+    GITHUB_APP_PRIVATE_KEY: "x",
+    GITHUB_APP_INSTALLATION_ID: "x",
+    GITHUB_REPO_OWNER: "anton1rsod",
+    GITHUB_REPO_NAME: "warsaw-ai-community",
+    GITHUB_REPO_BRANCH: "main",
+  },
+}));
+vi.mock("@/lib/github-app", async () => {
+  const actual = await vi.importActual<typeof GitHubAppModule>("@/lib/github-app");
+  return {
+    ...actual,
+    createGitHubApp: () => ({ readFile: mockReadFile }),
+  };
+});
 vi.mock("@/lib/content-snapshot", () => ({
   findEventBySlug: vi.fn(),
   listEventsFromSnapshot: () => [],
   findMemberBySlug: () => undefined,
+  findMemberByHandle: (h: string) => mockFindMemberByHandle(h),
 }));
 vi.mock("@/lib/markdown", () => ({
   renderMarkdownToHtml: async (s: string) => `<p>${s}</p>`,
@@ -36,14 +60,25 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/__generated__/event-rosters.json", () => ({
   default: {},
 }));
-// EventRsvpButton is a client component; mock it to avoid transitive env-var validation
-// (EventRsvpButton → rsvp-event action → lib/auth → lib/env throws without real secrets).
+// EventRsvpButton is a client component; capture props for v0.4.8 assertions
+// and render a minimal anon-vs-signed-in surface for the existing render tests.
+const eventRsvpButtonCalls: { eventSlug: string; initialState: string; profileSha?: string }[] = [];
 vi.mock("@/app/components/EventRsvpButton", () => ({
-  EventRsvpButton: ({ eventSlug, initialState }: { eventSlug: string; initialState: string }) =>
-    initialState === "not-signed-in"
-      ? <a href={`/login?callbackUrl=/events/${eventSlug}`}>Sign in to RSVP</a>
-      : <div data-testid="rsvp-button" />,
+  EventRsvpButton: (props: { eventSlug: string; initialState: string; profileSha?: string }) => {
+    eventRsvpButtonCalls.push(props);
+    return props.initialState === "not-signed-in"
+      ? <a href={`/login?callbackUrl=/events/${props.eventSlug}`}>Sign in to RSVP</a>
+      : <div data-testid="rsvp-button" data-state={props.initialState} data-sha={props.profileSha ?? ""} />;
+  },
 }));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  eventRsvpButtonCalls.length = 0;
+  // Default: anonymous viewer (preserves existing test behavior).
+  mockAuth.mockResolvedValue(null);
+  mockFindMemberByHandle.mockReturnValue(undefined);
+});
 // EventRoster is an async server component; mock it to avoid async-in-client-render issues.
 vi.mock("@/app/components/EventRoster", () => ({
   EventRoster: () => <p>No one&apos;s marked going yet — be the first.</p>,
@@ -105,6 +140,10 @@ describe("H35: /events/[slug] detail", () => {
     vi.doMock("@/lib/content-snapshot", () => ({
       findEventBySlug: vi.fn(),
       listEventsFromSnapshot: () => [{ slug: "2026-06-15-hack", date: "2026-06-15", title: "x", body: "", status: "scheduled" }],
+      // Preserve dynamic wiring so v0.4.8 tests downstream can still
+      // configure auth/profile per test via the same shared mocks.
+      findMemberByHandle: (h: string) => mockFindMemberByHandle(h),
+      findMemberBySlug: () => undefined,
     }));
     const { generateStaticParams } = await import("@/app/events/[slug]/page");
     const params = await generateStaticParams();
@@ -120,6 +159,91 @@ describe("H35: /events/[slug] detail", () => {
     expect(
       screen.getByRole("link", { name: /Sign in to RSVP/i }),
     ).toHaveAttribute("href", "/login?callbackUrl=/events/2026-06-15-hack");
+  });
+
+  it("v0.4.8: signed-in member with no prior RSVP gets initialState='none' + profileSha", async () => {
+    const { findEventBySlug } = await import("@/lib/content-snapshot");
+    vi.mocked(findEventBySlug).mockReturnValue(event);
+    mockAuth.mockResolvedValue({ githubHandle: "anton1rsod" });
+    mockFindMemberByHandle.mockReturnValue({ slug: "anton-safronov", name: "Anton" });
+    mockReadFile.mockResolvedValue({
+      content: "---\nname: Anton\n---\n",
+      sha: "sha-abc",
+      path: "community/members/anton-safronov.md",
+    });
+    const { default: EventPage } = await import("@/app/events/[slug]/page");
+    const ui = await EventPage({ params: Promise.resolve({ slug: "2026-06-15-hack" }) });
+    render(ui);
+    const lastCall = eventRsvpButtonCalls.at(-1);
+    expect(lastCall?.initialState).toBe("none");
+    expect(lastCall?.profileSha).toBe("sha-abc");
+  });
+
+  it("v0.4.8: signed-in member with going RSVP gets initialState='going' + profileSha", async () => {
+    const { findEventBySlug } = await import("@/lib/content-snapshot");
+    vi.mocked(findEventBySlug).mockReturnValue(event);
+    mockAuth.mockResolvedValue({ githubHandle: "anton1rsod" });
+    mockFindMemberByHandle.mockReturnValue({ slug: "anton-safronov", name: "Anton" });
+    mockReadFile.mockResolvedValue({
+      content: "---\nname: Anton\nevents_going:\n  - 2026-06-15-hack\n---\n",
+      sha: "sha-def",
+      path: "x",
+    });
+    const { default: EventPage } = await import("@/app/events/[slug]/page");
+    const ui = await EventPage({ params: Promise.resolve({ slug: "2026-06-15-hack" }) });
+    render(ui);
+    const lastCall = eventRsvpButtonCalls.at(-1);
+    expect(lastCall?.initialState).toBe("going");
+    expect(lastCall?.profileSha).toBe("sha-def");
+  });
+
+  it("v0.4.8: signed-in member with interested RSVP gets initialState='interested' + profileSha", async () => {
+    const { findEventBySlug } = await import("@/lib/content-snapshot");
+    vi.mocked(findEventBySlug).mockReturnValue(event);
+    mockAuth.mockResolvedValue({ githubHandle: "anton1rsod" });
+    mockFindMemberByHandle.mockReturnValue({ slug: "anton-safronov", name: "Anton" });
+    mockReadFile.mockResolvedValue({
+      content: "---\nname: Anton\nevents_interested:\n  - 2026-06-15-hack\n---\n",
+      sha: "sha-ghi",
+      path: "x",
+    });
+    const { default: EventPage } = await import("@/app/events/[slug]/page");
+    const ui = await EventPage({ params: Promise.resolve({ slug: "2026-06-15-hack" }) });
+    render(ui);
+    const lastCall = eventRsvpButtonCalls.at(-1);
+    expect(lastCall?.initialState).toBe("interested");
+  });
+
+  it("v0.4.8: signed-in but not a roster member falls back to 'not-signed-in' (defensive)", async () => {
+    const { findEventBySlug } = await import("@/lib/content-snapshot");
+    vi.mocked(findEventBySlug).mockReturnValue(event);
+    mockAuth.mockResolvedValue({ githubHandle: "stranger" });
+    mockFindMemberByHandle.mockReturnValue(undefined);
+    const { default: EventPage } = await import("@/app/events/[slug]/page");
+    const ui = await EventPage({ params: Promise.resolve({ slug: "2026-06-15-hack" }) });
+    render(ui);
+    const lastCall = eventRsvpButtonCalls.at(-1);
+    expect(lastCall?.initialState).toBe("not-signed-in");
+    expect(lastCall?.profileSha).toBeUndefined();
+    expect(mockReadFile).not.toHaveBeenCalled();
+  });
+
+  it("v0.4.8: signed-in member but readFile returns null falls back to 'not-signed-in' (defensive — degrade gracefully on GitHub API failure)", async () => {
+    const { findEventBySlug } = await import("@/lib/content-snapshot");
+    vi.mocked(findEventBySlug).mockReturnValue(event);
+    mockAuth.mockResolvedValue({ githubHandle: "anton1rsod" });
+    mockFindMemberByHandle.mockReturnValue({ slug: "anton-safronov", name: "Anton" });
+    mockReadFile.mockResolvedValue(null);
+    const { default: EventPage } = await import("@/app/events/[slug]/page");
+    const ui = await EventPage({ params: Promise.resolve({ slug: "2026-06-15-hack" }) });
+    render(ui);
+    const lastCall = eventRsvpButtonCalls.at(-1);
+    expect(lastCall?.initialState).toBe("not-signed-in");
+  });
+
+  it("v0.4.8: page exports force-dynamic (no longer force-static — Header needs request-time auth)", async () => {
+    const mod = await import("@/app/events/[slug]/page");
+    expect((mod as { dynamic?: string }).dynamic).toBe("force-dynamic");
   });
 
   it("Task 3.4: mounts EventRoster section", async () => {
