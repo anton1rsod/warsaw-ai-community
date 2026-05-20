@@ -6,6 +6,7 @@ import { readRoster, readMemberProfile, readMemberPersona } from "@/lib/roster";
 import { listProjects, readProject } from "@/lib/projects";
 import { listDecisions, readDecision } from "@/lib/decisions";
 import { listMeetingsFromDisk } from "@/lib/meetings";
+import { listEventsFromDisk } from "@/lib/events";
 import { main as buildEventRosters } from "./build-event-rosters";
 import { main as buildKudos } from "./build-kudos-aggregate";
 // build-calendar is dynamically imported AFTER content-snapshot.json is written —
@@ -28,13 +29,14 @@ async function main(): Promise<void> {
     "community/governance/community-managers.md",
   );
 
-  const [roster, governance, projectSummaries, decisionSummaries, meetings] =
+  const [roster, governance, projectSummaries, decisionSummaries, meetings, events] =
     await Promise.all([
       readRoster(rosterPath),
       readGovernance({ adminsPath, cmsPath }),
       listProjects(REPO_ROOT),
       listDecisions(REPO_ROOT),
       listMeetingsFromDisk(REPO_ROOT),
+      listEventsFromDisk(REPO_ROOT),
     ]);
 
   const [members, projects, decisions] = await Promise.all([
@@ -81,6 +83,7 @@ async function main(): Promise<void> {
     projects,
     decisions,
     meetings,
+    events,
   };
 
   await mkdir(path.dirname(OUTPUT), { recursive: true });
@@ -100,7 +103,8 @@ async function main(): Promise<void> {
       `  CMs: ${governance.communityManagers.length}\n` +
       `  projects: ${projects.length}\n` +
       `  decisions: ${decisions.length}\n` +
-      `  meetings: ${meetings.length}`,
+      `  meetings: ${meetings.length}\n` +
+      `  events: ${events.length}`,
   );
 }
 

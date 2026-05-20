@@ -115,4 +115,12 @@
 
 ---
 
-*Updated 2026-05-18 with chat-22 brainstorm deferrals. Original scaffold drafted 2026-05-17 in chat-21-prep close-out. Lives at `projects/community-platform/V0_5_BACKLOG.md` per "lean handoffs + deferred items get a home" convention.*
+## From chat-29 (first real event seed — 2026-05-20)
+
+### Admin event-creation UI
+
+- **`/admin/events/new` form for event-creation via UI** — surfaced chat-29 when seeding the first real event (`community/events/2026-05-21-meetup-4/`). Currently events are git-commit-only: drop a folder under `community/events/YYYY-MM-DD-slug/`, push, Vercel rebuilds. Works fine for desktop+repo workflow; mobile event-creation requires GitHub.com web editor with multi-file commits (~5 min friction per event). **Suggested shape:** admin-only form (pattern precedent: `/admin/invite` shipped chat-9) that commits the event folder via warsaw-ai-bot GitHub App (same write pattern as `saveProfile`, `rsvp-event`). ~1 wk dev + tests + ADR for write-permission model (who-can-author-events: admin-only initially, member-proposed-with-moderation later). **Re-evaluate:** v0.5+ once cadence reaches 1+ events/wk and mobile event-authoring becomes felt friction. Member-proposed events (with admin moderation) is a larger v1.0+ candidate — needs its own brainstorm (governance, permissions, spam risk, moderation flow); defer until a member requests + cadence justifies.
+
+---
+
+*Updated 2026-05-20 with chat-29 admin event-creation UI deferral. Updated 2026-05-18 with chat-22 brainstorm deferrals. Original scaffold drafted 2026-05-17 in chat-21-prep close-out. Lives at `projects/community-platform/V0_5_BACKLOG.md` per "lean handoffs + deferred items get a home" convention.*

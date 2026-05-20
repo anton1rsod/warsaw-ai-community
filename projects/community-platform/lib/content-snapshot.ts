@@ -23,9 +23,16 @@ export interface ContentSnapshot {
   projects: readonly ProjectDetail[];
   decisions: readonly Decision[];
   meetings: readonly Meeting[];
+  events: readonly Event[];
 }
 
-export const snapshot: ContentSnapshot = snapshotJson as ContentSnapshot;
+// `as unknown as ContentSnapshot` — JSON.parse cannot preserve Zod brand markers
+// (EventSlug is `string & BRAND<"EventSlug">`), but events go through Zod parse
+// in scripts/snapshot-content.ts before serialization, so runtime values are
+// real branded strings. The cast bridges the JSON-roundtrip gap. Other entity
+// types (RosterMember/ProjectDetail/Decision/Meeting) avoid this because they
+// don't use Zod branded slugs.
+export const snapshot: ContentSnapshot = snapshotJson as unknown as ContentSnapshot;
 
 function normalize(handle: string): string {
   return handle.replace(/^@/, "").toLowerCase().trim();
@@ -112,7 +119,7 @@ export function getProjectContributions(
 }
 
 export function listEventsFromSnapshot(): readonly Event[] {
-  return ((snapshot as unknown as { events?: readonly Event[] }).events ?? []) as readonly Event[];
+  return snapshot.events;
 }
 
 export function findEventBySlug(slug: string): Event | undefined {
