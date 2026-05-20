@@ -16,6 +16,44 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.4.8] — 2026-05-20 (chat-30 — flip /events/[slug] to force-dynamic; closes SSG-Header anomaly; PR #34 MERGED at SHA `6ddee8d`; tag `community-platform-v0.4.8` pushed; prod dynamic-page probe green; signed-in flow PENDING Anton's browser test)
+
+**Second SSG limitation surfaced by Anton's chat-30 dogfooding.** After v0.4.7 successfully hydrated the EventRsvpButton client-side (Anton's first RSVP committed to main at `fd6c2e4` — the warsaw-ai-bot wrote `events_going: [2026-05-21-meetup-4]` to his profile), he noticed the Header still showed "Sign in" top-right while the RSVP button worked. Diagnosis: `force-static` on the page propagates to the layout's `<Header />` server component, baking the anon-Header HTML at build time when `auth()` returns null. v0.4.7's hydration could reach the button (client component) but not the Header (server component). Same v0.3.1 deferral as the original RSVP bug — just on a different surface.
+
+**Fix shape**: `/events/[slug]` flipped from `force-static` → `force-dynamic`. Side effect: the Header now reads `auth()` at request time and renders the signed-in chip correctly. Bonus: server-rendering EventRsvpButton with real `initialState` + `profileSha` removes the v0.4.7 hydration flicker on this specific page. The v0.4.7 client hydration stays in place as defense-in-depth.
+
+### Fixed
+
+- **`app/events/[slug]/page.tsx`** — `export const dynamic = "force-dynamic"`. New `loadViewerRsvp(eventSlug)` helper: `auth()` → `findMemberByHandle()` → `gh.readFile("community/members/<slug>.md")` → `parseProfileFrontmatter()` → derive `state` from `events_going`/`events_interested` includes → return `{state, profileSha}`. Returns null on any failure (anon viewer, no roster entry, readFile fails) → button falls back to `"not-signed-in"` and the v0.4.7 hydration kicks in as fallback. Page passes real `initialState` + `profileSha` to EventRsvpButton.
+
+### Added
+
+- **`tests/unit/events-slug-page.test.tsx` (+6 tests)** — signed-in with no/going/interested RSVP all wire correct `initialState` + `profileSha`; signed-in but not-a-roster-member falls back to `"not-signed-in"` without GitHub call; signed-in but `readFile` null also falls back (graceful degrade on API failure); contract guard `expect(page.dynamic).toBe("force-dynamic")` so accidental ISR re-enable fails CI. Pre-existing `vi.doMock` in the `generateStaticParams` test was patched to preserve the dynamic `findMemberByHandle` wiring (so subsequent v0.4.8 tests can configure auth/profile per test through the same shared mocks).
+
+### Verified
+
+- **Tests**: 978/978 unit+integration green (was 972 + 6 new). `pnpm tsc --noEmit` clean. `pnpm lint` clean. CI Lint+typecheck+test+build PASS in 1m20s pre-merge.
+- **Prod dynamic-page probe**: `curl -sIS https://warsaw-ai-community-platform.vercel.app/events/2026-05-21-meetup-4` returns `cache-control: private, no-cache, no-store, max-age=0, must-revalidate` + `x-vercel-cache: MISS` + `age: 0` — same H56 posture as `/home`. Vercel-edge `private` injection confirmed; page is now per-request rendered. Playwright anon-snapshot confirms the page still renders correctly for anonymous visitors (Header "Sign in" + body "Sign in to RSVP" link → /login?callbackUrl).
+
+### Verified post-merge (signed-in flow — PENDING Anton's browser)
+
+- **Header server-renders signed-in chip**: Anton signs in → navigates to `/events/2026-05-21-meetup-4` → expects top-right Account dropdown (not "Sign in") on first paint (no flicker).
+- **EventRsvpButton server-renders Going state**: because Anton already RSVPed in chat-30 v0.4.7 (`fd6c2e4`), his profile has `events_going: [2026-05-21-meetup-4]` → the page now reads this server-side and renders the button as **✓ Going** (active green) on first paint. No client-hydration flicker on this page anymore.
+
+### Trade-offs
+
+- **Per-request render for `/events/[slug]`** (loses anon edge cache). Discovery posture (ADR-0012/0014) is preserved — page still renders identically for anon visitors, just on the dynamic code path. Acceptable at current community scale; if hot, optimize to snapshot-only state (snapshot already carries `member.profile.data.events_going`) + separate SHA fetch on first interaction only.
+- **+1 GitHub API call per signed-in page view** (the `readFile` for SHA). Fine at current scale; ~50-200ms latency per view.
+
+### Why this over Header client-hydration
+
+- Smaller code (~30 LOC vs ~150 LOC for client-hydrating the universal Header).
+- Eliminates the flicker on this page entirely (Header AND button render correctly on first paint).
+- Affects only `/events/[slug]` — doesn't change Header behavior on every other page.
+- The Header-anomaly pattern (SSG page + auth-aware Header) would apply to `/projects/[slug]` and `/meetings/[slug]` too — same fix can be cherry-picked there in v0.5 if/when needed.
+
+---
+
 ## [0.4.7] — 2026-05-20 (chat-30 Option B unblock — EventRsvpButton client-side hydration; PR #33 MERGED at SHA `2852827`; tag `community-platform-v0.4.7` pushed; prod hydration probe green; signed-in RSVP click PENDING Anton's browser test)
 
 **Pre-meetup deadline hotfix #2.** Closes the chat-30 Option B blocker discovered during Playwright reconnaissance: signed-in members could not click "Going" on `/events/2026-05-21-meetup-4` — the page showed "Sign in to RSVP" instead, and clicking bounced to `/login` (no global Header), making it look like a logout. Session cookie was actually intact; the button was an SSG stub for every visitor.
