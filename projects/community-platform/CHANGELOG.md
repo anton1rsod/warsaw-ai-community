@@ -16,6 +16,66 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.4.4] — 2026-05-20 (chat-28 Option D — reviewer-agent dispatch on v0.4.0–v0.4.3 surfaces; PR #30 PRE-MERGE at branch SHA `b47be47`; merge SHA TBD)
+
+**v0.4.x patch — chat-28 Option L tag bumps + Option D reviewer-fix bundle.** Three parallel reviewer agents (security + typescript + code-quality) ran on the 18 code files changed in the `e720268..main` (v0.3.1 → v0.4.3) diff range. 25 findings returned across the three lanes; cross-lane convergence triage applied (e.g., HomeFeed `escapeHtml` flagged by ALL THREE reviewers = high-confidence bug). 14 findings applied; 4 intentionally skipped (1 false positive, 3 design-call deferrals). Branch: `chore/community-platform-v0-4-3-reviewer-fixes`. Tests: **935/935 unit+integration green** (was 934 chat-26 baseline + 1 new escapeHtml-removal regression test).
+
+### Fixed (real bugs — would have manifested in production)
+
+- **`app/components/HomeFeed.tsx`** — drop the `escapeHtml(s)` helper that ran HTML-entity encoding BEFORE React's auto-escape on JSX text children, producing double-encoded entities in visible text (e.g., `"O'Brien"` rendered as literal `O&#39;Brien` on screen). The bug was hidden by an empty content snapshot on production (`event-rosters.json` is `{}`); the first real meeting/event/status with a title containing `&`, `<`, `>`, `'`, or `"` would have made it visible. All three reviewer lanes (security LOW, typescript LOW, code-quality MEDIUM) independently flagged this — high-confidence convergence.
+- **`app/page.tsx`** — replace `listEventsFromSnapshot() as unknown as { date: string; slug: string; title: string; body: string }[]` with explicit `.map((e) => ({ date: e.date, slug: e.slug, title: e.title, body: "" }))`. The double-cast hid that v0.4 `Event` records have no `body` field; `home-feed.ts` `eventToFeedItem` calls `e.body.split('\n')` for excerpt extraction, which would have thrown `TypeError: Cannot read properties of undefined (reading 'split')` on the first real event commit. Body genuinely doesn't exist in the v0.4 schema (events are calendar entries, not articles), so `body: ""` yields `excerpt: undefined` downstream (empty-string split returns `[""]` which fails the `.find(l => l.trim())` check) — semantically honest.
+- **`app/components/AnonymousHero.tsx`** — remove unnecessary `async` keyword + change return type from `Promise<React.JSX.Element>` to `React.JSX.Element`. There were zero `await` expressions in the body; Next.js 16's App Router forces async components onto the async render path on every request even when there's no actual async work to do. TypeScript reviewer rated HIGH because of the silent perf degradation under load.
+- **`app/components/DateTime.tsx`** — change `if (!duration) return start;` to `if (duration == null || duration <= 0) return start;`. The pathological `durationMinutes={0}` case (`0` is falsy) silently fell through the no-duration branch instead of being rejected/handled as a data error.
+
+### Changed (type safety + maintainability)
+
+- **`app/components/AnonymousHero.tsx`** — replace `href={... as never}` with `href={... as Route}` (Next 16 typed routes). `as never` widens to the bottom type and silently suppresses all future type errors at the call site.
+- **`app/components/Avatar.tsx`** — change `import { strings }` (raw map; bypasses the `StringKey` union check at call sites) to `import { s }` (typed helper). Export `AvatarSize` type for downstream coupling.
+- **`app/components/ListItem.tsx`** — import `AvatarSize` from `Avatar.tsx` instead of duplicating the `20 | 24 | 32 | 40 | 96` union literal. Prevents the two definitions from drifting if `Avatar` adds a new size.
+- **`app/components/HeaderMobileMenu.tsx`** + **`app/components/Header.tsx`** — drop the unused `signedIn` prop from `HeaderMobileMenuProps` interface, destructuring, and the call site in Header. The prop was destructured as `_signedIn` (acknowledging the suppression) and did nothing — false-contract maintainability hazard.
+- **`app/components/HomeFeed.tsx`** — wire `s("home.thisWeek.heading")` + `s("home.recent.heading")` (H67 compliance — the literal "This Week" / "Recent" strings were hardcoded while the matching i18n keys existed unused). Remove `dark:text-neutral-400` and `dark:divide-neutral-800` Tailwind classes (no `darkMode` key in `tailwind.config.ts`; the classes were either always-inactive or remnants from a copy-paste — code-quality reviewer LOW). The empty-state JSX with embedded anchor links stays inline since `lib/i18n/strings.ts` comment explicitly defers ICU-MessageFormat composition to v0.5+ next-intl.
+- **`app/components/YourWeekPane.tsx`** — wrap `nextRsvp.date` (rendered as raw ISO string `2026-05-28`) in `<DateTime iso={nextRsvp.date} context="list" />` for consistency with the other date surfaces.
+- **`lib/your-week.ts`** — ternary sort comparator `(a.date < b.date ? -1 : a.date > b.date ? 1 : 0)` → `a.date.localeCompare(b.date)`. Idiomatic for `YYYY-MM-DD` ISO strings.
+- **`app/page.tsx`** — add explicit `export const dynamic = "force-dynamic"`. The route was already dynamic in practice (calls `auth()` which reads cookies), but stating the intent makes the H56 `Cache-Control: private` posture regression-proof against future refactors that extract the anonymous branch above the auth check.
+
+### Removed
+
+- **`lib/i18n/strings.ts`** — drop 5 unused keys with no consumers anywhere in the codebase (grep-verified): `home.title`, `home.thisWeek.empty` (didn't match JSX — JSX has embedded anchor link, string did not), `home.recent.empty` (same mismatch), `calendar.past`, `calendar.empty` (no consumer; no Phase-C annotation). `footer.rss` retained (documented as Phase C deferred).
+
+### Added
+
+- **`tests/unit/HomeFeed.test.tsx`** — new regression test `Reviewer-fix regression: no double-encoding (chat-28 escapeHtml removal)` asserting that titles, excerpts, and authors containing `&`, `<`, `>`, `'`, `"` (e.g., `"O'Brien & company <em>"`, `"5 < 10 & 6 > 4"`, `"anton's-handle"`) render with the literal characters in `container.textContent` and NEVER contain `&#39;`, `&amp;`, `&lt;`, `&gt;`, or `&quot;` markers. XSS safety preserved (`querySelector("script")` + `querySelector("em")` both null). The existing H43 test (`script in title is escaped`) used an OR regex that passed regardless of whether `escapeHtml` was present; the new test fails specifically when double-encoding is reintroduced.
+
+### Also (Option L tag bumps)
+
+- Pushed lightweight tags `community-platform-v0.4.2` → `91f772f` (PR #26 merge SHA) and `community-platform-v0.4.3` → `52b60a6` (PR #28 merge SHA) at chat-28 start. Visible on https://github.com/anton1rsod/warsaw-ai-community/releases under the Tags subsection. `gh api repos/anton1rsod/warsaw-ai-community/git/refs/tags/...` round-trips clean on both. Tag-style note: v0.4.0 is annotated (carries `^{}` peeled ref); v0.4.1/2/3 are lightweight. Inconsistency tolerated — chat-25 created v0.4.0 via UI; chat-26/27/28 used CLI lightweight push.
+
+### Skipped (intentional triage)
+
+- **security-reviewer Finding #1 (MEDIUM)** — `proxy.ts:205` x-pathname allegedly missing on `/consent` redirect path. False positive: redirects don't render shells; the subsequent request to `/consent` goes through `proxy.ts` again, hits `PUBLIC_PATHS.has("/consent")` on line 202, and sets `x-pathname` to `/consent` on line 204. Verified by code-read.
+- **typescript-reviewer Finding #3 (MEDIUM)** — kudosJson Zod schema validation. Deferred — broader refactor touching the kudos generation pipeline; v0.5+ scope.
+- **code-reviewer Finding #10 (LOW)** — HomeFeed emoji literals (`📅 🎟 ✍ 🛠`) as inline `TypeIcon` strings. Design call; `aria-hidden="true"` wrapper makes them a11y-correct; v0.5+ next-intl migration concern.
+- **security-reviewer Finding #4 (LOW)** — `app/page.tsx:56` `from` redirect logic sources from Referer query param (unreachable in practice). Design call (remove vs implement properly with current-request `searchParams`); deferred.
+
+### Verified
+
+- `pnpm tsc --noEmit` clean (no output).
+- `pnpm lint` clean (ESLint pass; prelint regenerated `__generated__` artifacts).
+- `pnpm test` **935/935 green across 95 files** in 8.83s (was 934 at chat-26 baseline; +1 from new HomeFeed regression test). One pre-existing jsdom navigation stderr from `AddToCalendarButton.test.tsx` (unrelated; known jsdom limitation when components call `Window.navigate`).
+- `lib/__generated__/contributions.json` + `project-contributions.json` updated by +1 commit count each (anton1rsod's natural drift from chat-26/27 closeouts); committed per chat-26 Option H + CONSTRAINTS.md `Generated artifacts` section discipline.
+- **CI verification (Lint+typecheck+test+build + Vercel preview): in progress at commit time; PR #30 will mark ready post-CI; production a11y E2E re-run scheduled post-merge to confirm zero regression on the chat-27 7/7 baseline.**
+
+### Not in this release (deferred to chat-29 or v0.5+)
+
+- A (PWA textured "WA" icons — still blocked locally on chat-28 host: `which magick` / `which convert` / `npm ls sharp` / `npm ls canvas` all empty. Realistic call: offline designer pass via Figma/Photoshop export → commit PNGs, rather than installing 30MB+ of native binaries as a dev dep for a one-time icon-gen script).
+- F (Phase B activation gate — D44 lock requires 7-day post-ship landing-data window; v0.4.0 shipped 2026-05-18 so window opens 2026-05-25 — chat-29's earliest).
+- I (Anton-side signed-in flow smoke checklist — requires browser session: sign in as `anton1rsod`, verify `/home` YourWeekPane shows real data after RSVP'ing an event, `?from=/calendar` round-trip, dropdown 4-item shape, mobile hamburger).
+- J (first real event RSVP to exercise YourWeekPane data path — Anton seeds `community/events/2026-06-XX-some-meetup/`, commits, redeploys, RSVPs via `/events/<slug>`, confirms YourWeekPane shows next-RSVP commitment. End-to-end loop closure; would also have exercised the `app/page.tsx` event-mapper change in real production HTML).
+- M (Vercel preview-protection bypass token — recommend SKIP unless an upcoming feature needs pre-merge edge-behavior verification; chat-27 production-URL pattern is sufficient as canonical confirmation).
+- Tag decision for `community-platform-v0.4.4` — Anton's discretion post-merge; mirrors v0.4.1/2/3 lightweight tag-push precedent.
+
+---
+
 ## [0.4.3] — 2026-05-19 (chat-27 Option C — HomeFeed → DateTime consolidation; PR #28 MERGED at SHA `52b60a6` 2026-05-19T07:50:43Z; production a11y gate 7/7 GREEN post-deploy)
 
 **v0.4.x refactor — chat-27 Option C from the chat-26 menu.** Consolidates two near-identical `relativeDate()` helpers (HomeFeed.tsx's inline copy + DateTime.tsx's i18n-aware version) into a single `<DateTime context="list">` mount in HomeFeed. Branch: `chore/community-platform-v0-4-2-followup-c-homefeed-datetime`. Tests: 934/934 unit+integration green (zero delta — no date-format strings asserted in any test fixture; HomeFeed.test.tsx and home-feed.test.ts assert on titles/excerpts/authors/structure only).
