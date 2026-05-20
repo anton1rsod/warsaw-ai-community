@@ -2,13 +2,22 @@
 
 **PROTOCOL:** [`projects/community-platform/HANDOFF_PROTOCOL.md`](../../projects/community-platform/HANDOFF_PROTOCOL.md) §3 chat-brief shape (loaded once at start).
 
-**Status (drafted chat-31 closeout, 2026-05-20 — day before meetup):** Chat-31 produced the full pre-implementation pipeline for v0.5.0 in one session — seed → spec §15 → ADR-0015 (Accepted) → `v0.5.0-plan.md` (2447 lines, 35 tasks, ~3.5 days). All docs-only, all direct-to-main pushed. **Chat-31 then continued into v0.5.0 Phase 0+1 execution** on branch `chore/community-platform-v0-5-impl` (per Anton's "continue working today" call); branch HEAD will be updated below at chat-31 actual close.
+**Status (drafted chat-31 closeout, 2026-05-20 — day before meetup):** Chat-31 produced the full pre-implementation pipeline for v0.5.0 AND executed Phases 0+1+2+3 inline (29 of 35 plan tasks). **Draft PR #35** open on branch `chore/community-platform-v0-5-impl`. Phase 4 closeout (reviewer dispatch + CHANGELOG + STATE + tag) remains for chat-32 post-meetup.
 
 | Artifact | Commit |
 |---|---|
 | Brainstorm seed + V0_5_BACKLOG entry | `2b9bcb5` |
 | spec.md §15 + ADR-0015 Accepted + README ADR index | `7c3d46f` |
 | `v0.5.0-plan.md` via `superpowers:writing-plans` | `bc5e97d` |
+| v0.5.0 Phase 0+1+2+3 implementation (9 commits) | `788cccb…e226b49` on branch |
+
+**v0.5.0 implementation state (chat-31 close):**
+- Branch HEAD: `e226b49` (9 commits since main)
+- Tests: **1020/1020** unit+integration green (matches plan target)
+- Coverage: `lib/event-author.ts` 100%/100%; `app/actions/create-event.ts` 100%/86.66%; `app/components/EventForm.tsx` 97.73%/83.87%; `app/admin/events/new/page.tsx` 100%
+- All 12 hardenings H69-H80 covered by `describe("H<n>:")` test blocks
+- Draft PR: https://github.com/anton1rsod/warsaw-ai-community/pull/35
+- **DO NOT MERGE before meetup ends (≥2026-05-21 21:30 Europe/Warsaw)** per plan anti-pattern
 
 **Pending Anton-side before chat-32 starts:** Signed-in flow on v0.4.8 deploy (carried over from chat-30→chat-31 handoff): sign in as `anton1rsod` → `/events/2026-05-21-meetup-4` → expect Header signed-in chip top-right + EventRsvpButton at ✓ Going server-rendered (no flicker). This is the last canonical surface validation before v0.4.x is fully done.
 
@@ -39,16 +48,16 @@ cd "$HOME/Projects/Warsaw AI Comunity" && git fetch && git checkout main && git 
 - `community/members/anton-safronov.md` frontmatter `events_going: [2026-05-21-meetup-4]` (already true; sanity check it didn't get clobbered).
 - Final v0.4.8 signed-in flow validation (the carried-over pending Anton-side check from above): sign in → page → Header signed-in chip + ✓ Going server-rendered.
 
-### Option v0.5 — v0.5.0 admin-events-new execution (READY-TO-EXECUTE; lower priority than N today)
+### Option v0.5 — v0.5.0 Phase 4 closeout (Phases 0-3 DONE in chat-31; merge AFTER meetup)
 
-**~3.5 days, single-chat-feasible via `superpowers:subagent-driven-development`.** All preconditions met by chat-31:
-- Spec locked (§15, `7c3d46f`)
-- ADR-0015 Accepted (same commit)
-- Plan written (`bc5e97d`, 2447 lines, 35 tasks across 5 phases)
-- 12 hardenings H69-H80 mapped 1:1 to test blocks
-- Source-vs-spec verifications already done
+**~½ day.** Phase 4 of the plan remains: security-reviewer + typescript-reviewer + code-reviewer dispatch on the 5 new files (`page.tsx` + `EventForm.tsx` + `create-event.ts` + `event-author.ts` + `events.ts` export edit); then CHANGELOG `[0.5.0]` entry, STATE.md update, squash-merge PR #35, push tag `community-platform-v0.5.0`.
 
-**Branch:** `chore/community-platform-v0-5-impl`. **Recommended trigger:** AFTER Option N completes today + Phase B gate (Option F) is decided 2026-05-25. Premature v0.5.0 start risks under-prioritizing today's meetup. **Acceptable trigger:** if Option N completes early and Anton wants to start Phase 0+1 (the lib-only days; ~½ day each) before Option F window opens.
+**Pre-merge gates:**
+1. Reviewer findings: 0 CRITICAL / 0 HIGH / ≤1 MEDIUM (close inline or accept with comment).
+2. Anton's manual smoke: sign in → /admin/events/new → create test event → verify commit on main with warsaw-ai-bot author + Co-Authored-By trailer → /events/<test-slug> renders → /api/calendar.ics includes new VEVENT within 5 min. **Clean up the test event** post-smoke via git revert.
+3. **Time gate:** ≥2026-05-21 21:30 Europe/Warsaw (post-meetup wind-down) — protects /events/2026-05-21-meetup-4 from mid-build glitches.
+
+**Plan tasks remaining:** 4.1 (security-reviewer), 4.2 (typescript-reviewer), 4.3 (code-reviewer), 4.4 (CHANGELOG), 4.5 (STATE.md + PR title flip from Draft), 4.6 (merge + tag + production smoke).
 
 ### Option F — Phase B activation gate (window opens 2026-05-25)
 
