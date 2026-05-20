@@ -2,7 +2,7 @@
 
 **PROTOCOL:** [`projects/community-platform/HANDOFF_PROTOCOL.md`](../../projects/community-platform/HANDOFF_PROTOCOL.md) §3 chat-brief shape (loaded once at start).
 
-**Status (drafted chat-31 closeout, 2026-05-21 — meetup day):** Chat-31 produced the full pre-implementation pipeline for v0.5.0 in one session — seed → spec §15 → ADR-0015 (Accepted) → `v0.5.0-plan.md` (2447 lines, 35 tasks, ~3.5 days). All docs-only, all direct-to-main pushed.
+**Status (drafted chat-31 closeout, 2026-05-20 — day before meetup):** Chat-31 produced the full pre-implementation pipeline for v0.5.0 in one session — seed → spec §15 → ADR-0015 (Accepted) → `v0.5.0-plan.md` (2447 lines, 35 tasks, ~3.5 days). All docs-only, all direct-to-main pushed. **Chat-31 then continued into v0.5.0 Phase 0+1 execution** on branch `chore/community-platform-v0-5-impl` (per Anton's "continue working today" call); branch HEAD will be updated below at chat-31 actual close.
 
 | Artifact | Commit |
 |---|---|
@@ -30,9 +30,9 @@ cd "$HOME/Projects/Warsaw AI Comunity" && git fetch && git checkout main && git 
 
 ## Chat 32 owns: pick 1-3 options (token discipline)
 
-### Option N — Day-of Meetup #4 verification (TODAY, MANDATORY if ≥1 ICS subscriber attends)
+### Option N — Day-of Meetup #4 verification (2026-05-21 TOMORROW for chat-32; MANDATORY if ≥1 ICS subscriber attends)
 
-**~10 min Anton-driven + 10 min me-driven via Playwright.** Today before 19:00 Europe/Warsaw:
+**~10 min Anton-driven + 10 min me-driven via Playwright.** Before 19:00 Europe/Warsaw on 2026-05-21:
 
 - Subscribers' calendar apps display the event at 19:00 their local time (where their tz currently matches Warsaw — CEST UTC+2). Capture any time-mismatch report as `v0_4_6_ics_subscriber_evidence` STATE row.
 - Prod `/events/2026-05-21-meetup-4` roster: "Going (N total)" where N = `anton1rsod` + any other RSVPs accumulated since `fd6c2e4`.
@@ -94,4 +94,4 @@ A.PWA blocked on host tooling; M Vercel bypass token = recommend SKIP. Don't spe
 
 ---
 
-*Authored 2026-05-21 (chat-31 closeout, meetup day). Anton corrected the date mid-chat — "Not tomorrow, today" — confirming the system-prompt `currentDate` had rolled past midnight Warsaw-local. Chat-32 trigger: whenever today; primary task = Option N before 19:00 Europe/Warsaw.*
+*Authored 2026-05-20 (chat-31 working close, day before meetup; filename retains 2026-05-21 for chat-32 fire-date convention). Anton mid-chat: "no, today is 20. I want to continue working today" — confirming v0.5.0 Phase 0+1 execution begins in chat-31 itself on branch `chore/community-platform-v0-5-impl`, NOT in chat-32. Chat-32 trigger date: 2026-05-21; primary task = Option N before 19:00 Europe/Warsaw + carry-forward of chat-31's v0.5 branch state.*
