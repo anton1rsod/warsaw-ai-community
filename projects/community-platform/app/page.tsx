@@ -20,6 +20,13 @@ import { computeHomeFeed } from "@/lib/home-feed";
  * resolveSafeReturnTo (exported for test ergonomics).
  */
 
+// Explicit force-dynamic: app/page.tsx is already dynamic in practice
+// because it calls auth() (which reads cookies()), but stating the
+// intent here makes the H56 `Cache-Control: private` posture
+// regression-proof against future refactors that extract the anonymous
+// branch into a cached sub-component above the auth check.
+export const dynamic = "force-dynamic";
+
 const SAFE_RETURN_TO = /^\/[a-z0-9\-_/]*$/;
 
 export function resolveSafeReturnTo(input: string | undefined): string {
@@ -58,9 +65,20 @@ export default async function RootPage(): Promise<React.JSX.Element> {
   }
 
   const nextEvent = pickNextEvent();
+  // v0.4 Event records don't carry markdown body (calendar entries, not
+  // articles); supplying body: "" yields excerpt: undefined downstream
+  // in eventToFeedItem (empty-string split returns [""] which fails the
+  // .find(l => l.trim()) check). Replaces the prior `as unknown as ...`
+  // double-cast which would have crashed at runtime if Event ever did
+  // surface a body field with mismatched shape.
   const feed = computeHomeFeed({
     meetings: [],
-    events: listEventsFromSnapshot() as unknown as { date: string; slug: string; title: string; body: string }[],
+    events: listEventsFromSnapshot().map((e) => ({
+      date: e.date,
+      slug: e.slug,
+      title: e.title,
+      body: "",
+    })),
     statusPosts: [],
     contributions: [],
     now: new Date(),

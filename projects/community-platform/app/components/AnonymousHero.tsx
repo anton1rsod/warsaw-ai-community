@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Route } from "next";
 import { s } from "@/lib/i18n/strings";
 import { DateTime } from "@/app/components/DateTime";
 
@@ -27,9 +28,9 @@ interface AnonymousHeroProps {
  * app/page.tsx. The page handler asserts session is null before
  * mounting; no auth-derived state can leak in via props.
  */
-export async function AnonymousHero({
+export function AnonymousHero({
   nextEvent,
-}: AnonymousHeroProps): Promise<React.JSX.Element> {
+}: AnonymousHeroProps): React.JSX.Element {
   return (
     <section className="mx-auto max-w-5xl px-4 py-12">
       <div className="grid gap-8 md:grid-cols-[2fr_1fr] md:items-center">
@@ -70,7 +71,7 @@ export async function AnonymousHero({
                 — {nextEvent.title}
               </p>
               <Link
-                href={`/events/${nextEvent.slug}` as never}
+                href={`/events/${nextEvent.slug}` as Route}
                 className="mt-3 inline-block text-sm text-accent-700 underline"
               >
                 {s("landing.nextEvent.cta")}

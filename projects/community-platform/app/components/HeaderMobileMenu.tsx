@@ -7,7 +7,6 @@ import { s } from "@/lib/i18n/strings";
 
 interface HeaderMobileMenuProps {
   navItems: { href: Route; label: string }[];
-  signedIn: boolean;
 }
 
 /**
@@ -22,7 +21,6 @@ interface HeaderMobileMenuProps {
  */
 export function HeaderMobileMenu({
   navItems,
-  signedIn: _signedIn,
 }: HeaderMobileMenuProps): React.JSX.Element {
   const [open, setOpen] = useState(false);
 
