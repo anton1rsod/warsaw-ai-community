@@ -67,3 +67,53 @@ describe("H43: XSS via SafeHtml pipeline", () => {
     expect(container.textContent).toMatch(/&lt;script&gt;|<script>alert\(1\)<\/script>/);
   });
 });
+
+describe("Reviewer-fix regression: no double-encoding (chat-28 escapeHtml removal)", () => {
+  // Pre-fix bug: HomeFeed.tsx defined an escapeHtml() helper that ran
+  // BEFORE React's auto-escape on JSX text children, producing entity
+  // references in the visible text (e.g., "O'Brien" → "O&#39;Brien"
+  // shown literally on screen). Three reviewer agents (security + ts +
+  // code) caught it. This test would have failed before the fix and
+  // catches any future re-introduction.
+  it("preserves literal special characters across title / excerpt / author surfaces", () => {
+    const data: HomeFeedData = {
+      thisWeek: [
+        {
+          type: "status",
+          slug: "x",
+          title: "O'Brien & company <em>",
+          href: "/x",
+          date: "2026-05-19",
+          author: "user",
+          excerpt: "5 < 10 & 6 > 4",
+        },
+      ],
+      recent: [
+        {
+          type: "contribution",
+          slug: "y",
+          title: "Another's PR & fix",
+          href: "/y",
+          date: "2026-05-18",
+          author: "anton's-handle",
+        },
+      ],
+    };
+    const { container } = render(<HomeFeed feed={data} />);
+    // Literal characters survive in textContent (React auto-escapes for
+    // DOM safety; the visible text is the original).
+    expect(container.textContent).toContain("O'Brien");
+    expect(container.textContent).toContain("Another's PR & fix");
+    expect(container.textContent).toContain("anton's-handle");
+    expect(container.textContent).toContain("5 < 10 & 6 > 4");
+    // Double-encoding markers MUST NOT appear.
+    expect(container.textContent).not.toContain("&#39;");
+    expect(container.textContent).not.toContain("&amp;");
+    expect(container.textContent).not.toContain("&lt;");
+    expect(container.textContent).not.toContain("&gt;");
+    expect(container.textContent).not.toContain("&quot;");
+    // XSS safety preserved: tags in user content remain text, not DOM.
+    expect(container.querySelector("script")).toBeNull();
+    expect(container.querySelector("em")).toBeNull();
+  });
+});

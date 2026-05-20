@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { s } from "@/lib/i18n/strings";
+import { DateTime } from "@/app/components/DateTime";
 
 /**
  * Signed-in `/home` "Your week" dashboard pane — Q1.3 / D25 / O9.
@@ -51,7 +52,7 @@ export function YourWeekPane({
           >
             {nextRsvp.title}
           </Link>{" "}
-          — {nextRsvp.date}
+          — <DateTime iso={nextRsvp.date} context="list" />
         </p>
       ) : (
         <p className="text-sm text-neutral-600">{s("home.yourWeek.empty")}</p>

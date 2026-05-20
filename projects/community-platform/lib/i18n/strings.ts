@@ -44,11 +44,8 @@ export const strings = {
   "nav.handbook": "Handbook",
 
   // ─── home.* (/home route) ───────────────────────────────────────────────
-  "home.title": "Warsaw AI Community",
   "home.thisWeek.heading": "This Week",
-  "home.thisWeek.empty": "Nothing scheduled this week — browse all events.",
   "home.recent.heading": "Recent",
-  "home.recent.empty": "No recent activity. — browse projects.",
   "home.yourWeek.heading": "Your week",
   "home.yourWeek.nextRsvp": "Next event you RSVPed:",
   "home.yourWeek.statusCta": "Post your weekly status →",
@@ -74,9 +71,6 @@ export const strings = {
   "calendar.filter.events": "Events",
   "calendar.filter.meetings": "Meetings",
   "calendar.upcoming": "Upcoming",
-  "calendar.past": "Show past",
-  "calendar.empty":
-    "No upcoming events. The next weekly meeting is Wednesday at 18:30.",
   "calendar.subscribe": "Subscribe to calendar",
 
   // ─── handbook.* (/handbook route) ───────────────────────────────────────

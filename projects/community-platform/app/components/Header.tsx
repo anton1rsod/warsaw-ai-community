@@ -144,7 +144,7 @@ export async function Header({
             </Link>
           )}
           {!compact && (
-            <HeaderMobileMenu navItems={resolvedNavItems} signedIn={signedIn} />
+            <HeaderMobileMenu navItems={resolvedNavItems} />
           )}
         </div>
       </div>

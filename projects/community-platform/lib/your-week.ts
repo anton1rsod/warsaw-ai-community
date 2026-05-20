@@ -66,7 +66,7 @@ function findNextRsvp(input: YourWeekInput): NextRsvp | null {
   const todayISO = input.now.toISOString().slice(0, 10);
   const upcoming = input.events
     .filter((e) => goingSet.has(e.slug) && e.date >= todayISO)
-    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    .sort((a, b) => a.date.localeCompare(b.date));
   const first = upcoming[0];
   if (!first) return null;
   return { slug: first.slug, title: first.title, date: first.date };

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { strings } from "@/lib/i18n/strings";
+import { s } from "@/lib/i18n/strings";
 
 /**
  * Canonical avatar sizes per spec §14.4 (Q5.2):
@@ -21,7 +21,7 @@ import { strings } from "@/lib/i18n/strings";
  * GitHub handle (uppercased). Aesthetics handled via the amber border
  * on hover (Q4.8 — current-page nav state semantic adapted).
  */
-type AvatarSize = 20 | 24 | 32 | 40 | 96;
+export type AvatarSize = 20 | 24 | 32 | 40 | 96;
 
 interface AvatarProps {
   name: string;
@@ -49,7 +49,7 @@ export function Avatar({
       <span
         aria-hidden={decorative ? "true" : undefined}
         aria-label={
-          decorative ? undefined : `${name}${strings["avatar.altSuffix"]}`
+          decorative ? undefined : `${name}${s("avatar.altSuffix")}`
         }
         className="inline-flex items-center justify-center rounded-full bg-neutral-200 text-neutral-700 font-medium"
         style={{ width: size, height: size, fontSize: Math.round(size * 0.42) }}
@@ -63,7 +63,7 @@ export function Avatar({
   return (
     <Image
       src={url}
-      alt={decorative ? "" : `${name}${strings["avatar.altSuffix"]}`}
+      alt={decorative ? "" : `${name}${s("avatar.altSuffix")}`}
       width={size}
       height={size}
       className="inline-block rounded-full"

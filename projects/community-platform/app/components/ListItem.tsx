@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Avatar } from "@/app/components/Avatar";
+import { Avatar, type AvatarSize } from "@/app/components/Avatar";
 
 /**
  * <ListItem> — Q5.1 / D36 shared list-row primitive.
@@ -19,7 +19,7 @@ import { Avatar } from "@/app/components/Avatar";
 interface ListItemAvatar {
   name: string;
   handle: string;
-  size: 20 | 24 | 32 | 40 | 96;
+  size: AvatarSize;
   photoOptOut?: boolean;
 }
 

@@ -52,7 +52,7 @@ function absoluteDate(iso: string): string {
 }
 
 function timeRange(start: string, duration: number | undefined): string {
-  if (!duration) return start;
+  if (duration == null || duration <= 0) return start;
   const [h, m] = start.split(":").map(Number);
   const total = (h ?? 0) * 60 + (m ?? 0) + duration;
   const endH = Math.floor(total / 60) % 24;
