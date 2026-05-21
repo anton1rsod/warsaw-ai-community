@@ -21,6 +21,14 @@ Add admin-only **"+ New event"** button to `/events` page header (top-right). Se
 
 **Why /events and not Header?** Anton's actual discovery path was `/events → (looking for a button) → nothing`. Fixing that exact path is the smallest scope-disciplined move. `/admin/health` and `/admin/invite` have existed since v0.1 / v0.1.1 without discoverability complaints — Anton knows their URLs. Adding an `/admin` landing page or Header chip would pre-commit IA for v0.5.2+ admin features without evidence of need, violating [[feedback_ia_defer_future_placement]].
 
+### Item 1b: `/events` force-dynamic flip (chat-33 plan-write amendment)
+
+`app/events/page.tsx:5` is currently `export const dynamic = "force-static"`. The admin button needs request-time `auth()` to gate visibility — impossible on a build-time-prerendered page. Same fix as chat-30 applied to `/events/[slug]` (see that file's lines 19-23 for the comment-block precedent).
+
+**Fix:** flip `/events/page.tsx` to `force-dynamic` with a comment block mirroring `/events/[slug]/page.tsx:19-23` rationale. Side-benefit: closes the latent Header-flicker bug that's been live since v0.4.7 (anyone signed-in visiting `/events` sees a brief "Sign in" Header chip before client hydration, because SSG of `/events` propagated through the layout).
+
+Surfaced during chat-33 plan-write context sweep; user-locked recommended option.
+
 ### Item 2: EventRoster signed-in wart
 
 `EventRoster.tsx:67-74` renders `+N members (sign in to see)` chip unconditionally when `hiddenCount > 0`. For signed-in viewers this is doubly wrong: (a) the h3 already shows `({total} total)` so the count is duplicate info, and (b) clicking the chip sends them to `/login` when they're already signed in.
@@ -56,15 +64,16 @@ Current state: 4 server actions use `console.warn("[tag] event ...")` / `console
 | O5 | `lib/log.ts` API surface | `log.warn(tag, event, fields?)` + `log.error(tag, event, fields?)` | Splits operational warnings (`.warn`) from real failures (`.error`); matches existing call-site semantics |
 | O6 | Production output format | `[tag] event {...fields}` single-line string with `JSON.stringify(fields)`; callers must pass JSON-serializable fields (primitives, plain objects, arrays) — circular refs / functions / symbols are caller responsibility | grep-friendly; Vercel logs auto-prepend timestamp + region; pino-compatible swap-point later |
 
-## 4. Hardenings H81-H85
+## 4. Hardenings H81-H86
 
 | H-ID | Rule | Surface | Test block |
 |---|---|---|---|
-| H81 | `/events` admin button: RBAC re-check at Server Component render (no client-only gate) | `app/events/page.tsx` | `describe("H81:")` in `tests/unit/events-page.test.tsx` |
+| H81 | `/events` admin button: RBAC re-check at Server Component render (no client-only gate); requires force-dynamic per H86 | `app/events/page.tsx` | `describe("H81:")` in `tests/unit/events-page.test.tsx` |
 | H82 | EventRoster viewer-state read at render-time matches request cookie at render-time (force-dynamic propagates from `/events/[slug]/page.tsx` per chat-30 v0.4.8 fix) | `app/components/EventRoster.tsx` | `describe("H82:")` in `tests/unit/event-roster.test.tsx` |
 | H83 | `safeHandle` valid output post-condition: ≤39 chars AND contains no CRLF (or throws on empty-after-strip per O4) | `lib/handles.ts` | `describe("H83:")` in `tests/unit/handles.test.ts` |
 | H84 | `safeHandle` is idempotent on already-safe input | `lib/handles.ts` | `describe("H84:")` in `tests/unit/handles.test.ts` |
 | H85 | `log.warn` / `log.error` reject empty tag at runtime | `lib/log.ts` | `describe("H85:")` in `tests/unit/log.test.ts` |
+| H86 | `/events` exports `dynamic = "force-dynamic"`; the export is grep-verifiable and prevents accidental revert to force-static | `app/events/page.tsx` | `describe("H86:")` in `tests/unit/events-page.test.tsx` (or a dedicated `tests/unit/events-page-dynamic.test.ts` grep test) |
 
 ## 5. Files touched
 
@@ -83,7 +92,7 @@ Current state: 4 server actions use `console.warn("[tag] event ...")` / `console
 - `app/actions/save-profile.ts` — replace `console.warn` with `log.*` (no safeHandle change — uses different handle source)
 - `app/components/EventRoster.tsx` — add internal `auth()` call; conditional hide of `+N members` chip when signed-in + `hiddenCount > 0`
 - `app/components/EventForm.tsx` — 1-line code comment at line 89 documenting EventSlugSchema as URL-safety defense
-- `app/events/page.tsx` — admin-only "+ New event" button in top-right of page header
+- `app/events/page.tsx` — flip `dynamic` from `"force-static"` → `"force-dynamic"` (item 1b) + admin-only "+ New event" button in top-right of page header (item 1) + cross-reference comment block mirroring `/events/[slug]/page.tsx:19-23`
 - `lib/i18n/strings.ts` — new key: `events.list.newEventButton: "+ New event"` (single key; no other copy changes)
 
 ### Release (2)
@@ -100,7 +109,7 @@ Net new tests:
 - `lib/handles.test.ts` — 8 (happy path, CRLF strip, length cap, empty throw, idempotency, post-conditions H83+H84)
 - `lib/log.test.ts` — 10 (warn + error API, format check, JSON serialization, empty-tag throw H85, optional fields)
 - `EventRoster.test.tsx` — 4 new scenarios (signed-in hides chip; anonymous shows chip; signed-in + 0 hidden = no chip either way; non-signed-in fallback)
-- `events-page.test.tsx` — 3 (admin sees button; member doesn't; anonymous doesn't — H81)
+- `events-page.test.tsx` — 4 (admin sees button; member doesn't; anonymous doesn't — H81; dynamic export grep-verifies force-dynamic — H86)
 - Server-action integration updates — ~5 (re-anchor existing safeHandle/log expectations against new helpers)
 
 Coverage gates (existing 80% line, 80% branch) hold.
