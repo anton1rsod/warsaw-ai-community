@@ -9,6 +9,8 @@ import {
   GitHubAppError,
   type GitHubAppClient,
 } from "@/lib/github-app";
+import { safeHandle as toSafeHandle } from "@/lib/handles";
+import { log } from "@/lib/log";
 import {
   findMemberByHandle,
   findMemberBySlug,
@@ -91,11 +93,10 @@ function commitMessage(
   item_type: ItemType,
   item_id: string,
 ): string {
-  // Defense-in-depth: strip CR/LF from session-derived handle before
-  // interpolating into the commit message trailer. GitHub already enforces
-  // alphanumeric+hyphen on login, but the injection boundary should not rely
-  // on an external party's invariant.
-  const safeHandle = handle.replace(/[\r\n]/g, "");
+  // Defense-in-depth: strip CR/LF + cap at 39 chars via lib/handles. GitHub
+  // already enforces alphanumeric+hyphen + ≤39 char on login, but the
+  // injection boundary should not rely on an external party's invariant.
+  const safeHandle = toSafeHandle(handle);
   return (
     `chore(community): @${safeHandle} thanks @${recipient} for ${item_type} "${item_id}"\n\n` +
     `Co-Authored-By: ${safeHandle} <${safeHandle}@users.noreply.github.com>\n`
@@ -137,9 +138,11 @@ export async function thankStatus(input: ThankInput): Promise<ThankResult> {
 
   // H53: SHA pre-check — defense in depth alongside writeFile sha gate
   if (file.sha !== profileSha) {
-    console.warn(
-      `[thank-status] sha mismatch for ${giver.slug} (loaded=${profileSha}, current=${file.sha})`,
-    );
+    log.warn("thank-status", "sha_mismatch", {
+      slug: giver.slug,
+      loaded: profileSha,
+      current: file.sha,
+    });
     return { ok: false, error: "refresh_needed" };
   }
 
@@ -153,9 +156,12 @@ export async function thankStatus(input: ThankInput): Promise<ThankResult> {
       t.item_id === item_id,
   );
   if (existing) {
-    console.warn(
-      `[thank-status] dedup: ${giver.slug} → ${recipient} ${item_type}:${item_id}`,
-    );
+    log.warn("thank-status", "dedup", {
+      slug: giver.slug,
+      recipient,
+      item_type,
+      item_id,
+    });
     return { ok: true, already_thanked: true };
   }
 
@@ -181,12 +187,12 @@ export async function thankStatus(input: ThankInput): Promise<ThankResult> {
     });
   } catch (err: unknown) {
     if (err instanceof GitHubAppError && err.kind === "sha_conflict") {
-      console.warn(`[thank-status] sha_conflict for ${giver.slug}`);
+      log.warn("thank-status", "sha_conflict", { slug: giver.slug });
       return { ok: false, error: "refresh_needed" };
     }
-    console.error(
-      `[thank-status] writeFile failed: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    log.error("thank-status", "writeFile_failed", {
+      reason: err instanceof Error ? err.message : String(err),
+    });
     return { ok: false, error: "internal_error" };
   }
 
@@ -194,8 +200,11 @@ export async function thankStatus(input: ThankInput): Promise<ThankResult> {
   if (item_type === "meeting") revalidatePath(`/meetings/${item_id}`);
   // status / contribution revalidate handled at page-cache layer
 
-  console.warn(
-    `[thank-status] ${giver.slug} → ${recipient} ${item_type}:${item_id}`,
-  );
+  log.warn("thank-status", "thanked", {
+    slug: giver.slug,
+    recipient,
+    item_type,
+    item_id,
+  });
   return { ok: true };
 }
