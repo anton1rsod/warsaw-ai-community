@@ -81,7 +81,7 @@ const SNAKE_TO_CAMEL_KEYS: readonly (readonly [string, string])[] = [
   ["duration_minutes", "durationMinutes"],
 ];
 
-function normalizeEventFrontmatter(
+export function normalizeEventFrontmatter(
   data: Record<string, unknown>,
 ): Record<string, unknown> {
   const snakeKeys = new Set(SNAKE_TO_CAMEL_KEYS.map(([snake]) => snake));

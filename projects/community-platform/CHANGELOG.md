@@ -16,6 +16,59 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.5.0] — 2026-05-21 (chat-31 + chat-32 — admin event-creation UI ships; spec §15 + ADR-0015 Accepted)
+
+**First admin write-surface on the platform.** Members already have RSVP / profile edit / status post; v0.5.0 adds admin event creation at `/admin/events/new` — bot commits the event folder to git via the GitHub App. Closes a real Anton-side workflow gap: pre-v0.5, creating an event meant ~5 min on the mobile GitHub web editor (frontmatter typos common); the form takes ~30 sec with Zod validation, live slug derivation, and body preview.
+
+Spec authored in chat-31 (§15, +239 lines); ADR-0015 written via `adr-writer` skill at same SHA `7c3d46f` (Accepted at spec lock per the v0.4 ADR-0014 precedent). Plan via `superpowers:writing-plans` at SHA `bc5e97d` (2447 lines, 35 tasks, 5 phases). Phases 0-3 executed inline in chat-31 (9 commits to `e226b49`); Phase 4 reviewer triage in chat-32 (commit `ef71b7a`).
+
+### Added
+
+- **`/admin/events/new`** (`app/admin/events/new/page.tsx`) — admin-only Server Component page (`force-dynamic` + RBAC redirect gate via `auth()` → `isAdmin()`). Non-admins redirect to `/home`; unauth to `/login`. Renders `<EventForm />` with project defaults loaded server-side via `getDefaults()`.
+- **`<EventForm />`** (`app/components/EventForm.tsx`) — controlled client form. Fields: title (required), date (required, today default), startTime, durationMinutes, location, host (default = signed-in admin's handle), url (optional), slug (optional override; live-derived from date+title when blank), body (markdown, 50000-char cap, pre-filled template). Body preview via existing v0.2 `/api/preview-markdown` route + centralized `<SafeHtml />` wrapper (no parallel sanitization surface).
+- **`createEvent` server action** (`app/actions/create-event.ts`) — server action with 12 numbered hardenings (H69-H80), 1:1 test-block mapping. RBAC re-verify before I/O; Zod parse with field-level bounds; slug derivation via `deriveEventSlug` + `EventSlugSchema` (regex + calendar-validity refine); snapshot collision check (`listEventsFromSnapshot()`); round-trip parse safeguard via `parseEventFrontmatter`; CRLF strip on session-derived handle; path constraint (slug-branded → no traversal); status hardcoded `"scheduled"` (tier 3 lifecycle deferred); GitHub-level pre-existence guard (`gh.readFile`); H79 revalidate fan-out across `/events`, `/events/[slug]`, `/home`, `/`, `/api/calendar.ics`.
+- **`lib/event-author.ts`** — pure compose lib. `composeEventReadme(input)` builds YAML frontmatter + markdown body; `deriveEventSlug(date, title)` produces canonical slug (NFKD + lowercase + alphanumeric strip + space-to-dash + dedup + trim + 60-char cap). Zero I/O imports; 100% lines + branches coverage.
+- **`event.create.*` i18n namespace** (`lib/i18n/strings.ts`) — 23 keys for the admin-events-new page + EventForm component. Migrated from inline strings during chat-32 code-reviewer triage (H67 satisfied across all v0.5 surfaces).
+
+### Changed
+
+- **`lib/events.ts`** — exported `normalizeEventFrontmatter` (was function-private; re-used by `create-event.ts` for the H72 round-trip-parse safeguard).
+
+### Security
+
+- **3-lane parallel reviewer dispatch** (chat-32 Tasks 4.1-4.3 on branch HEAD `e226b49`, scope = 5 new files): **0 CRITICAL / 0 HIGH / 6 unique MEDIUM findings**. **5 MEDIUM applied** inline (commit `ef71b7a`): body field via `readField()` helper (security; closes silent File→string coercion); `as Record` cast comment + `buildClient` explicit return type (typescript); page.tsx + EventForm.tsx i18n migration of 21 strings (code; H67); `revalidatePath("/")` H79 doc comment (code). **1 MEDIUM accepted with rationale**: `console.warn`/`console.error` server-action audit pattern matches established convention (save-profile.ts, thank-status.ts, rsvp-event.ts, invitations.ts all use the same `[prefix-tag]` pattern — project-level override of generic TS no-console rule).
+- **All 12 hardenings (H69-H80) grep-verifiable** via `describe("H<n>:")` blocks in `tests/unit/create-event-action.test.ts` + `tests/unit/event-author.test.ts`.
+
+### Tests
+
+- **1020/1020 unit+integration green** (978 v0.4.8 baseline + 42 new across 4 v0.5 test files: 13 event-author + 18 create-event + 4 admin-events-new-page + 5 EventForm + 2 preview).
+- **Coverage**: `lib/event-author.ts` 100% lines / 100% branches; `app/actions/create-event.ts` 100% lines / 86.66% branches; `app/components/EventForm.tsx` 97.73% lines / 83.87% branches; `app/admin/events/new/page.tsx` 100% lines.
+- **E2E happy-path scenario deferred to v0.5.1** per O6 (sandbox-repo decision pending).
+
+### Known limitations
+
+- **Multi-admin slug race** (spec §15.9): two admins creating the same slug within ~1 sec → second sees `internal_error`; retry produces clear `slug_exists`. Acceptable for admin pool ≤3.
+- **Tier 2 (edit existing event) deferred to v0.5.1** per ADR-0015; ships as separate `<EventEditForm />` (NOT polymorphic `<EventForm mode>`).
+- **Tier 3 (status lifecycle: scheduled → cancelled / completed) deferred to v0.5.2** per ADR-0015; ICS-notification-sensitive surface.
+- **Member-proposed events deferred to a future ADR** (own brainstorm; v1.0+ candidate).
+
+### v0.5.1 backlog captured during chat-32 reviewer triage
+
+- `safeHandle` length cap (GitHub 39-char limit currently enforces structurally; add explicit Zod refine for belt-and-suspenders)
+- `encodeURIComponent(result.slug)` defensive in `router.push` (EventSlugSchema regex already excludes URL-unsafe chars; cheap DiD)
+- Structured logger to replace bare `console.error` around octokit error.message wrap (cross-cuts other server actions; defer until a logger lib is chosen)
+
+### Why no separate v0.5 brainstorm chat
+
+Single-chat seed→spec→ADR→plan→Phase-0-3 execution in chat-31 (vs the v0.4 three-chat sequence) because v0.5 surface is smaller: one new route, one new server action, one new component, no design-shotgun, no user-test session (ADR-0015 inherits the v0.2 `/me/edit` + v0.1.1 `/admin/invite` patterns directly). Token discipline per `feedback_token_discipline` memory.
+
+### Verified
+
+- **CI Lint+typecheck+test+build PASS** pre-merge; Vercel community-platform preview SUCCESS; Vercel gbrain co-deploy SUCCESS. PR #35 `mergeStateStatus: CLEAN`.
+- **Anton-side manual smoke on prod** (post-merge): sign in → /admin/events/new → create test event → verify warsaw-ai-bot commit on main + Co-Authored-By trailer + `/events/<test-slug>` renders + `/api/calendar.ics` includes new VEVENT within 5 min → revert test event.
+
+---
+
 ## [0.4.8] — 2026-05-20 (chat-30 — flip /events/[slug] to force-dynamic; closes SSG-Header anomaly; PR #34 MERGED at SHA `6ddee8d`; tag `community-platform-v0.4.8` pushed; prod dynamic-page probe green; signed-in flow PENDING Anton's browser test)
 
 **Second SSG limitation surfaced by Anton's chat-30 dogfooding.** After v0.4.7 successfully hydrated the EventRsvpButton client-side (Anton's first RSVP committed to main at `fd6c2e4` — the warsaw-ai-bot wrote `events_going: [2026-05-21-meetup-4]` to his profile), he noticed the Header still showed "Sign in" top-right while the RSVP button worked. Diagnosis: `force-static` on the page propagates to the layout's `<Header />` server component, baking the anon-Header HTML at build time when `auth()` returns null. v0.4.7's hydration could reach the button (client component) but not the Header (server component). Same v0.3.1 deferral as the original RSVP bug — just on a different surface.
