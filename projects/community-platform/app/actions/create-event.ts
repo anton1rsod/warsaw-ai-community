@@ -13,6 +13,8 @@ import {
   normalizeEventFrontmatter,
 } from "@/lib/events";
 import { composeEventReadme, deriveEventSlug } from "@/lib/event-author";
+import { safeHandle as toSafeHandle } from "@/lib/handles";
+import { log } from "@/lib/log";
 
 const CreateEventInputSchema = z.object({
   title: z.string().min(1).max(200),
@@ -121,7 +123,7 @@ export async function createEvent(
   const file = await gh.readFile(path);
   if (file !== null) return { ok: false, error: "slug_exists" };
 
-  const safeHandle = session.githubHandle.replace(/[\r\n]/g, "");
+  const safeHandle = toSafeHandle(session.githubHandle);
   try {
     await gh.writeFile(path, readmeContent, {
       message:
@@ -129,9 +131,9 @@ export async function createEvent(
         `Co-Authored-By: ${safeHandle} <${safeHandle}@users.noreply.github.com>\n`,
     });
   } catch (err) {
-    console.error(
-      `[create-event] writeFile failed: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    log.error("create-event", "writeFile_failed", {
+      reason: err instanceof Error ? err.message : String(err),
+    });
     return { ok: false, error: "internal_error" };
   }
 
@@ -144,6 +146,6 @@ export async function createEvent(
   revalidatePath("/");
   revalidatePath("/api/calendar.ics");
 
-  console.warn(`[create-event] @${safeHandle} created ${slug}`);
+  log.warn("create-event", "created", { handle: safeHandle, slug });
   return { ok: true, slug };
 }
