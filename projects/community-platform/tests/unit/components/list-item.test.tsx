@@ -37,8 +37,10 @@ describe("ListItem — Q5.1 / D36 props contract", () => {
         avatar={{ name: "Anton", handle: "anton1rsod", size: 32 }}
       />,
     );
-    // Avatar renders an <img> for the GitHub URL (H59-gated by next.config)
-    expect(screen.queryByRole("img")).not.toBeNull();
+    // v0.6 Avatar renders an amber monogram tile (no <img>); presence is
+    // confirmed via the accessible label.
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(screen.getByLabelText("Anton's avatar")).toBeInTheDocument();
   });
 
   it("renders trailing slot as ReactNode", () => {
