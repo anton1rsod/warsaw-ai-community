@@ -16,6 +16,91 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.6.0] — 2026-05-21 (chat-35 — warm-maximalist visual redesign across 4 hero surfaces + shared chrome)
+
+**v0.6 visual redesign** — first deliberate aesthetic identity. Takes v0.4 amber posture (ADR-0014) and pushes to the irreverent edge: warm cream canvas + dark ink chrome + amber rotated tags + Fraunces italic display + JetBrains mono voice. 4 hero surfaces (`/`, `/home`, `/events`, `/events/[slug]`) + shared Header/Footer chrome + 4 new primitives + ~50 new i18n keys + 6 hardenings H87–H92. Spec at `projects/community-platform/spec.md` §16 (chat-34 brainstorm output, locked in PR #37). Plan at `projects/community-platform/v0.6.0-plan.md` (22-task / 6-phase canonical execution).
+
+### Added
+
+- **4 new primitives** at `app/components/`:
+  - `AmberTag.tsx` — `<span class="bg-accent-500 px-[5px] -rotate-[1.5deg] inline-block">{children}</span>`. The signature gesture across hero surfaces.
+  - `MonoLabel.tsx` — uppercase mono lead-in (`// next meetup · in 6h 30m`); `as: "p" | "div" | "span"` prop.
+  - `Pill.tsx` — 3 variants (`going` / `dashed` / `solid`) × 2 modes (anchor / button) via discriminated union. H91 focus-visible parity required (focus-visible classes mirror hover). Extended with `external?: boolean` flag (emits `target="_blank" rel="noopener noreferrer"`).
+  - `EventCard.tsx` — date-badge + title + meta + going-count pill; `hoverLift` + `showRsvpStateChip` opt-ins.
+- **`lib/time-until.ts`** — `formatTimeUntil(dateISO, startTime, now)` returns `"in 30m"` / `"in 6h 30m"` / `"in 2d 4h"` / `"now"`. Used by AnonymousHero + YourWeekPane mono labels.
+- **3 new fonts** via `next/font/google` in `app/layout.tsx`: Fraunces variable (SOFT + WONK axes) + JetBrains Mono (400/700) + Inter (kept from v0.4). `<html>` carries all three CSS variable classes; `display: swap` on each.
+- **Tokens** at `app/globals.css` `:root`: `--color-cream` `#fef6e6` / `--color-cream-deep` `#fdebc9` / `--color-ink` `#1a1a2e` / `--color-dust` `#886c37` (darkened from `#8b6f3a` for AA on cream — see Phase 4.2 below) / `--color-paper` `#ffffff` / `--color-alert` `#dc1f1f`. Accent ramp preserved verbatim.
+- **Tailwind theme** at `tailwind.config.ts`: `theme.extend.colors` adds cream/cream-deep/ink/dust/paper/alert mapped to `var(--color-*)`. `theme.extend.fontFamily.{display,body,voice}` mapped to `var(--font-{fraunces,inter,jetbrains})` with `Georgia` / `system-ui` / `ui-monospace` fallbacks.
+- **~50 new i18n flat keys** in `lib/i18n/strings.ts` under namespaces `hero.anon.*`, `hero.home.*`, `events.index.*`, `events.detail.*`, `empty.*`, `chrome.header.*`, `chrome.footer.*`, `events.card.*` (per v0.4 O10 / H67 flat-keys-with-surface-prefix lock).
+- **Global a11y rules** in `app/globals.css`: `:focus-visible { outline: 2px solid var(--color-accent-500); outline-offset: 2px; }` inside `@layer base`. `@media (prefers-reduced-motion: reduce) { transition / transform / animation: none !important }` global override.
+- **6 new hardenings H87–H92**:
+  - **H87** — Three `next/font/google` fonts with `display: swap`; no FOIT flash; tested at `tests/unit/layout-fonts.test.tsx`.
+  - **H88** — All v0.6 new UI copy via `s(key)`; no hardcoded English in 10 surface files; tested at `tests/unit/i18n-coverage-v0-6.test.ts` (grep guard).
+  - **H89** — EventRsvpButton + EventForm + ProfileEditor functional contracts preserved byte-identical; tested at `tests/unit/v0-6-functional-contract-preservation.test.ts` (source-level grep).
+  - **H90** — Header amber active-page indicator computed server-side from `headers().get('x-pathname')`; no client flicker. Tested at `tests/unit/header-v0-6.test.tsx`.
+  - **H91** — All 4 v0.6 surfaces clear axe-core serious-violations gate; tested at `e2e/v0-6-a11y.spec.ts`. v0.4.2 a11y baseline preserved.
+  - **H92** — WCAG AA 4.5:1 contrast on every v0.6 token pair (ink/cream, ink/cream-deep, ink/paper, ink/amber, cream/ink, dust/cream); tested at `tests/unit/contrast.test.ts`. Drove the `--color-dust` darkening from `#8b6f3a` to `#886c37` (`#8b6f3a` ratio = 4.41:1, just below AA gate; `#886c37` = 4.60:1).
+- **Lighthouse baselines** deferred to Anton-side post-merge validation per v0.4.2 precedent (Vercel team-SSO blocks headless Chrome on PR previews; canonical Lighthouse runs target production).
+
+### Changed
+
+- **`app/components/Header.tsx`** rewritten — dark `bg-ink text-cream` mono strip with `warsaw.ai` lowercase wordmark + nav middots + amber active-page indicator (H90). All v0.4 contracts preserved as a strict SUPERSET: dropdown wiring + `signOut` server-action form + `HeaderMobileMenu` integration + skip-to-content link + `compact` prop + `activePath` prop + `findMemberByHandle()` member lookup. `activePath` prop takes precedence over `headers()`-read pathname when explicitly passed.
+- **`app/components/HeaderMobileMenu.tsx`** restyled — `bg-cream text-ink` panel + `font-voice text-[12px] uppercase` nav. v0.4 H58 useEffect hydration block byte-identical. Active-page indicator wired via prop pass-through from Header (no client-side `usePathname()` hook needed).
+- **`app/components/Footer.tsx`** rewritten — `bg-ink text-cream font-display italic` band with mono-voice link nav. v0.4.2 a11y fix preserved (no `aria-label` on empty divs). Empty placeholder div removed entirely. 4 links: about / telegram / github / license; external links carry `target="_blank" rel="noopener noreferrer"`.
+- **`app/components/AnonymousHero.tsx`** rewritten — composes AmberTag + MonoLabel + Pill. `<h1>` Fraunces italic `Warsaw AI ships in [public.]`. Optional `// tonight` next-event card; sign-in + Telegram CTAs.
+- **`app/components/YourWeekPane.tsx`** rewritten — `Tonight, {firstName}—` on event-day; `This week, {firstName}—` fallback. EventCard composition with `showRsvpStateChip="going"`. `kudosWeekCount` prop kept for backward compat (internally unused; HomeFeed surfaces kudos in v0.6).
+- **`app/components/HomeFeed.tsx`** rewritten (Option B — preserved `feed: HomeFeedData` prop shape) — MonoLabel `// this week · N ships` header + amber border-l ShipCard rows + evergreen empty-state copy. H30/H43 XSS guards + H45 hide-when-empty preserved; chat-28 double-encoding regression suite retained.
+- **`app/components/EventRoster.tsx`** restyled — `grid grid-cols-2 gap-6 text-[11px]` two-column layout. `{ eventSlug }`-only prop signature preserved (reads roster JSON + viewer state internally). H82 (viewer-state at render-time) + H85 (anonymous `+N members (sign in to see)` chip) preserved. New i18n key `events.detail.interestedAnonLabel` (added in Phase 4.6 triage).
+- **`app/components/Avatar.tsx`** restyled to amber monogram tile (`bg-accent-500 text-ink font-voice font-bold`). All photo URL fetches REMOVED — pure initials tile. Numeric `size: AvatarSize` (20/24/32/40/96) prop preserved; `decorative` + `photoOptOut` props preserved in public API (the latter is functionally a no-op in v0.6 since no photo is fetched — H60 satisfied by elimination). `Image` import gone.
+- **`app/components/ListItem.tsx`** restyled — `bg-paper border-l-[3px] border-l-ink` + 0-radii. Full prop API (`href`, `title`, `subtitle`, `meta`, `avatar`, `trailing`) preserved.
+- **`app/components/EmptyState.tsx`** restyled — `font-display italic text-dust text-[13px]` headline. `nextAction` CTA migrated from plain `<Link>` to `<Pill variant="dashed">`; `external?: boolean` adds `target="_blank" rel="noopener noreferrer"`.
+- **`app/components/EventRsvpButton.tsx`** — CLASS NAMES ONLY (9 lines changed, all in `className={}` attributes). v0.4.7 H59 hydration `useEffect` byte-identical; `/api/event-rsvp-state?slug=${encodeURIComponent(eventSlug)}` fetch byte-identical; `isHydrationResponse` type guard intact; `onSubmit` server-action byte-identical. Functional contract verified via H89 grep test.
+- **4 hero surfaces are `force-dynamic`**: `/` + `/home` + `/events` + `/events/[slug]`. The v0.4.8 + v0.5.1 H86 force-dynamic posture extended to `/` and `/home`. Required for Header `x-pathname` active-page indicator (H90) + viewer-state RSVP chip via per-request render.
+- **`lib/your-week.ts` `NextRsvp`** now carries `startTime?` + `location?` through `findNextRsvp`; `app/home/page.tsx` passes `nextRsvp.startTime` to `formatTimeUntil` (Phase 4.6 triage HIGH fix — closes the silent /home EventCard meta-line empty regression).
+- **`lib/i18n/strings.ts`** — 14 orphan keys removed (Phase 4.6 triage MEDIUM): `header.{signIn,yourWeek,editProfile,signOut}` + `footer.*` (6 keys) + `nav.*` (5 keys) — all migrated to `chrome.*` namespace. Also removed dead `events.detail.todaySuffix` (function uses `tonightSuffix` for `diffDays===0`) and duplicate `hero.home.shipsEmpty` (`empty.home.ships` is canonical). `header.skipToContent` / `menu` / `menuClose` / `userMenu` intentionally kept as ARIA strings.
+
+### Preserved
+
+- All v0.4 hardenings H56–H68; v0.5 H69–H80; v0.5.1 H81–H86. Grep-verifiable via `tests/unit/v0-6-functional-contract-preservation.test.ts` source-level guards.
+- v0.4.7 EventRsvpButton hydration + v0.4.8 `/events/[slug]` `force-dynamic` + v0.5.1 H86 `/events` `force-dynamic` postures.
+- `lib/i18n/strings.ts` flat-keys-with-surface-prefix convention (v0.4 O10 / H67).
+- ADR-0014 warm-amber posture (extended; no new ADR).
+- v0.4.2 a11y fix (Footer no `aria-label` on empty divs + AnonymousHero CTA contrast).
+- `lib/markdown.ts` + `SafeHtml.tsx` single sanitization pipeline (CONSTRAINTS line 16); no new HTML insertion paths.
+
+### Security
+
+- **3-lane reviewer dispatch** (Phase 4.6): **0 CRITICAL / 0 HIGH unresolved / 1 HIGH applied** (`lib/your-week.ts` `NextRsvp` missing startTime/location — caused silent /home EventCard meta-line empty regression) **+ 5 MEDIUM applied** (`MONTHS[monthIndex] as string` → `?? "JAN"`; `setState(desiredState as State)` → cast removed; 14 orphan i18n keys removed; dead `events.detail.todaySuffix` + duplicate `hero.home.shipsEmpty` removed; hardcoded `"// interested (sign in to see)"` migrated to `events.detail.interestedAnonLabel`) + 2 INFO accepted (Referer-sourced `from` in `app/page.tsx` — `resolveSafeReturnTo` guard sound, defer rename to v0.6.1; cache-control comment-vs-code gap in `app/page.tsx`). All applied in triage commit `03178eb`.
+
+### Tests
+
+- **1191/1191 unit+integration green** (1047 v0.5.1 baseline + 144 new). Test growth across phases: Phase 0 +16, Phase 1 +64, Phase 2 +21, Phase 3 +22, Phase 4 +22, Phase 4.6 triage -1 (orphan key removal).
+- **4 new primitives** at 100% lines / 100% branches: `AmberTag` / `MonoLabel` / `Pill` / `EventCard`.
+- **6 new hardenings H87–H92** grep-verifiable via `describe(...)` blocks across `tests/unit/layout-fonts.test.tsx`, `header-v0-6.test.tsx`, `event-rsvp-button.test.tsx`, `v0-6-functional-contract-preservation.test.ts`, `i18n-coverage-v0-6.test.ts`, `contrast.test.ts`, `e2e/v0-6-a11y.spec.ts`.
+- `pnpm tsc --noEmit` clean; `pnpm lint` clean; full `pnpm build` green (first build pass after Phase 0.3).
+
+### Known limitations
+
+- **`app/page.tsx` `from` parameter sourced from Referer header** instead of current URL's `?from=` query — semantic mislabelling; `resolveSafeReturnTo` regex guard is sound (rejects `//`, path traversal, percent-encoding); deferred to v0.6.1.
+- **Lighthouse mobile benchmarks not run against PR preview** (Vercel team-SSO blocks headless Chrome; canonical Lighthouse runs target production post-merge per v0.4.2 precedent).
+- **Old `header.*` ARIA-string namespace kept** (4 keys: `skipToContent`, `menu`, `menuClose`, `userMenu`) — intentional, not v0.7 migration backlog.
+- **EventRsvpButton error message** (`text-sm text-red-700 dark:text-red-300`) was outside Phase 3.9 class-swap scope and retains v0.5.x styling.
+- **AddToCalendarButton** retained v0.5.x styling (not in Phase 3 component list); v0.7+ candidate for Pill-variant migration.
+- **`/events` past rows** show `X going` chip via EventCard's contract — spec mockup ambiguous on whether "X went" is desired; punted to Phase 3.5+ review (accepted as-is).
+
+### Spec + plan + handoff
+
+- `projects/community-platform/spec.md` §16 (chat-34 brainstorm output; PR #37 merged at `1d48d06`)
+- `projects/community-platform/v0.6.0-plan.md` (22-task / 6-phase canonical execution plan; PR #37)
+- `docs/specs/2026-05-21-community-platform-v0-6-redesign-brainstorm.md` (visual reference + brainstorm decision log)
+- `docs/specs/2026-05-21-community-platform-v0-6-implementation-handoff.md` (chat-34 → chat-35 handoff)
+
+### Tag
+
+- `community-platform-v0.6.0` at squash-merge SHA.
+
+---
+
 ## [0.5.1] — 2026-05-21 (chat-33 — admin discoverability + EventRoster wart + safeHandle/log libs)
 
 **Post-v0.5.0 polish patch.** Bundles 4 active items + 1 doc-deferred into one PR-required squash-merge. Spec at `docs/specs/2026-05-21-community-platform-v0-5-1-design.md` SHA `29cec8d` (chat-33 brainstorm output, amended mid-plan-write with item 1b + H86 force-dynamic flip). Plan at `projects/community-platform/v0.5.1-plan.md` SHA `5d9c430` (12 tasks across 3 phases).
