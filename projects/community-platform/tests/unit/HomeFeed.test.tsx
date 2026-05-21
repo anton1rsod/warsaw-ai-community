@@ -8,11 +8,31 @@ import type { HomeFeedData } from "@/lib/home-feed";
 const empty: HomeFeedData = { thisWeek: [], recent: [] };
 const full: HomeFeedData = {
   thisWeek: [
-    { type: "meeting", slug: "2026-05-19", title: "Weekly sync", href: "/meetings/2026-05-19", date: "2026-05-19", excerpt: "Discussion of X" },
-    { type: "event", slug: "2026-05-25-near", title: "Near event", href: "/events/2026-05-25-near", date: "2026-05-25" },
+    {
+      type: "meeting",
+      slug: "2026-05-19",
+      title: "Weekly sync",
+      href: "/meetings/2026-05-19",
+      date: "2026-05-19",
+      excerpt: "Discussion of X",
+    },
+    {
+      type: "event",
+      slug: "2026-05-25-near",
+      title: "Near event",
+      href: "/events/2026-05-25-near",
+      date: "2026-05-25",
+    },
   ],
   recent: [
-    { type: "status", slug: "2026-W19/anton", title: "@anton W19", href: "/this-week", date: "2026-05-12", author: "anton1rsod" },
+    {
+      type: "status",
+      slug: "2026-W19/anton",
+      title: "@anton W19",
+      href: "/this-week",
+      date: "2026-05-12",
+      author: "anton1rsod",
+    },
   ],
 };
 
@@ -23,48 +43,96 @@ describe("H30: HomeFeed is server-component pure (no auth read)", () => {
   });
 });
 
-describe("H33: HomeFeed empty states (D4)", () => {
-  it("renders per-section empty message when both buckets empty", () => {
+describe("v0.6 Phase 3.3: MonoLabel header + ship count", () => {
+  it("renders MonoLabel 'this week · N ships' header reflecting thisWeek.length", () => {
+    render(<HomeFeed feed={full} />);
+    expect(
+      screen.getByText(/this week · 2 ships/i),
+    ).toBeInTheDocument();
+  });
+
+  it("renders MonoLabel 'no recent ships' header when feed empty", () => {
     render(<HomeFeed feed={empty} />);
-    expect(screen.getByText(/Nothing scheduled this week/i)).toBeInTheDocument();
-  });
-
-  it("renders only This Week section when showRecent=false", () => {
-    render(<HomeFeed feed={full} showRecent={false} />);
-    expect(screen.queryByText(/RECENT/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/THIS WEEK/i)).toBeInTheDocument();
-  });
-
-  it("H45: hides entire strip when showRecent=false AND thisWeek empty", () => {
-    const { container } = render(<HomeFeed feed={empty} showRecent={false} />);
-    expect(container.textContent).not.toMatch(/THIS WEEK/i);
-    expect(container.textContent).not.toMatch(/Nothing scheduled/i);
+    expect(screen.getByText(/no recent ships/i)).toBeInTheDocument();
   });
 });
 
-describe("H30 + render shape", () => {
-  it("This Week item shows bold title + type icon + relative date + excerpt", () => {
-    render(<HomeFeed feed={full} />);
-    expect(screen.getByText("Weekly sync")).toBeInTheDocument();
-    expect(screen.getByText(/Discussion of X/)).toBeInTheDocument();
+describe("v0.6 Phase 3.3: empty-state copy", () => {
+  it("renders 'Next ship lands when somebody commits' when both buckets empty", () => {
+    render(<HomeFeed feed={empty} />);
+    expect(
+      screen.getByText(/Next ship lands when somebody commits/i),
+    ).toBeInTheDocument();
   });
 
-  it("Recent item shows compact one-liner (no excerpt, plus author)", () => {
+  it("H45: showRecent=false AND thisWeek empty → renders null (no MonoLabel, no empty-state)", () => {
+    const { container } = render(<HomeFeed feed={empty} showRecent={false} />);
+    // H45 guard: entire component returns null when not viable.
+    expect(container.textContent).not.toMatch(/this week ·/i);
+    expect(container.textContent).not.toMatch(/no recent ships/i);
+    expect(container.textContent).not.toMatch(/Next ship lands/i);
+  });
+});
+
+describe("v0.6 Phase 3.3: ship card structure", () => {
+  it("each card has data-feed-card with border-l amber + paper bg", () => {
+    const { container } = render(<HomeFeed feed={full} />);
+    const cards = container.querySelectorAll("[data-feed-card]");
+    expect(cards.length).toBeGreaterThan(0);
+    const card = cards[0];
+    if (!card) throw new Error("expected at least one feed card");
+    expect(card.className).toMatch(/border-l-\[3px\]/);
+    expect(card.className).toMatch(/border-accent-500/);
+    expect(card.className).toMatch(/bg-paper/);
+  });
+
+  it("renders a card per thisWeek item and per recent item (when showRecent=true)", () => {
+    const { container } = render(<HomeFeed feed={full} />);
+    const cards = container.querySelectorAll("[data-feed-card]");
+    // full fixture: 2 thisWeek + 1 recent = 3 cards
+    expect(cards.length).toBe(3);
+  });
+
+  it("showRecent=false hides recent cards but keeps thisWeek cards", () => {
+    const { container } = render(<HomeFeed feed={full} showRecent={false} />);
+    const cards = container.querySelectorAll("[data-feed-card]");
+    expect(cards.length).toBe(2);
+  });
+
+  it("card surfaces include title (linked) and DateTime", () => {
     render(<HomeFeed feed={full} />);
-    expect(screen.getByText("@anton W19")).toBeInTheDocument();
-    expect(screen.getByText(/anton1rsod/)).toBeInTheDocument();
+    expect(screen.getByText("Weekly sync")).toBeInTheDocument();
+    expect(screen.getByText("Near event")).toBeInTheDocument();
+  });
+
+  it("status / contribution cards include author prefix (@handle)", () => {
+    render(<HomeFeed feed={full} />);
+    // Recent status item has author = anton1rsod
+    expect(screen.getByText(/@anton1rsod/i)).toBeInTheDocument();
   });
 });
 
 describe("H43: XSS via SafeHtml pipeline", () => {
-  it("script in title is escaped", () => {
+  it("script in title is escaped (no live <script> in DOM)", () => {
     const xss: HomeFeedData = {
-      thisWeek: [{ type: "status", slug: "x", title: "<script>alert(1)</script>", href: "/x", date: "2026-05-19", author: "x" }],
+      thisWeek: [
+        {
+          type: "status",
+          slug: "x",
+          title: "<script>alert(1)</script>",
+          href: "/x",
+          date: "2026-05-19",
+          author: "x",
+        },
+      ],
       recent: [],
     };
     const { container } = render(<HomeFeed feed={xss} />);
     expect(container.querySelector("script")).toBeNull();
-    expect(container.textContent).toMatch(/&lt;script&gt;|<script>alert\(1\)<\/script>/);
+    // React auto-escape: the angle brackets appear literally in text, not
+    // as an element. Either entity-encoded or as literal text — both fine
+    // for safety; what matters is no executable <script> child.
+    expect(container.textContent || "").toMatch(/<script>alert\(1\)<\/script>|&lt;script&gt;/);
   });
 });
 
@@ -75,7 +143,11 @@ describe("Reviewer-fix regression: no double-encoding (chat-28 escapeHtml remova
   // shown literally on screen). Three reviewer agents (security + ts +
   // code) caught it. This test would have failed before the fix and
   // catches any future re-introduction.
-  it("preserves literal special characters across title / excerpt / author surfaces", () => {
+  it("preserves literal special characters across title / author surfaces", () => {
+    // v0.6 Phase 3.3 note: excerpt is no longer rendered (single-line
+    // ship-card aesthetic drops the secondary body). Title + author are
+    // the only user-facing text surfaces; both must survive without
+    // double-encoding.
     const data: HomeFeedData = {
       thisWeek: [
         {
@@ -85,7 +157,6 @@ describe("Reviewer-fix regression: no double-encoding (chat-28 escapeHtml remova
           href: "/x",
           date: "2026-05-19",
           author: "user",
-          excerpt: "5 < 10 & 6 > 4",
         },
       ],
       recent: [
@@ -105,7 +176,6 @@ describe("Reviewer-fix regression: no double-encoding (chat-28 escapeHtml remova
     expect(container.textContent).toContain("O'Brien");
     expect(container.textContent).toContain("Another's PR & fix");
     expect(container.textContent).toContain("anton's-handle");
-    expect(container.textContent).toContain("5 < 10 & 6 > 4");
     // Double-encoding markers MUST NOT appear.
     expect(container.textContent).not.toContain("&#39;");
     expect(container.textContent).not.toContain("&amp;");

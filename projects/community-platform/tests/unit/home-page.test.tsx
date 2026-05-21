@@ -27,7 +27,10 @@ describe("ADR-0012: /home anonymous accessibility (v0.4 — HomeHeader dropped)"
     const ui = await HomePage();
     render(ui);
     // Headline ADR-0012 requirement: anonymous render works.
-    expect(screen.getByText(/Nothing scheduled this week/i)).toBeInTheDocument();
+    // v0.6 Phase 3.3: HomeFeed renders MonoLabel "no recent ships" header
+    // + evergreen empty-state when no items. Either marker confirms the
+    // feed mounted without throwing.
+    expect(screen.getByText(/no recent ships/i)).toBeInTheDocument();
   });
 
   it("anonymous render does NOT mount YourWeekPane", async () => {
@@ -81,7 +84,8 @@ describe("/home — signed-in Your week pane (Phase A.2.4 / Q1.3 / D25)", () => 
     const { default: HomePage } = await import("@/app/home/page");
     const ui = await HomePage();
     render(ui);
-    expect(screen.getByText(/Nothing scheduled this week/i)).toBeInTheDocument();
+    // v0.6 Phase 3.3: feed-still-mounted assertion via the MonoLabel header.
+    expect(screen.getByText(/no recent ships/i)).toBeInTheDocument();
   });
 
   it("§14.6 forward-defense: signed-in render DOM has no streak/missed copy", async () => {
