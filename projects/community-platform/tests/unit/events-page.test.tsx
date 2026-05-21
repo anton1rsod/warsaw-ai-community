@@ -4,6 +4,10 @@ import type { Event } from "@/lib/events";
 
 vi.mock("@/lib/content-snapshot", () => ({
   listEventsFromSnapshot: vi.fn(),
+  isAdmin: vi.fn(() => false),
+}));
+vi.mock("@/lib/auth", () => ({
+  auth: vi.fn(async () => null),
 }));
 vi.mock("@/lib/__generated__/event-rosters.json", () => ({
   default: {
@@ -96,5 +100,55 @@ describe("H35: /events index", () => {
     const ui = await EventsIndex();
     render(ui);
     expect(screen.getByText(/0 going/)).toBeInTheDocument();
+  });
+});
+
+describe("H81: /events admin button", () => {
+  it("admin sees + New event button when admin session present", async () => {
+    const { listEventsFromSnapshot, isAdmin } = await import(
+      "@/lib/content-snapshot"
+    );
+    const { auth } = await import("@/lib/auth");
+    vi.mocked(listEventsFromSnapshot).mockReturnValue([]);
+    vi.mocked(auth).mockResolvedValue({ githubHandle: "anton1rsod" } as never);
+    vi.mocked(isAdmin).mockReturnValue(true);
+    const { default: EventsIndex } = await import("@/app/events/page");
+    const ui = await EventsIndex();
+    render(ui);
+    const link = screen.queryByRole("link", { name: /\+ New event/ });
+    expect(link).not.toBeNull();
+    expect(link?.getAttribute("href")).toBe("/admin/events/new");
+  });
+
+  it("signed-in non-admin does NOT see button", async () => {
+    const { listEventsFromSnapshot, isAdmin } = await import(
+      "@/lib/content-snapshot"
+    );
+    const { auth } = await import("@/lib/auth");
+    vi.mocked(listEventsFromSnapshot).mockReturnValue([]);
+    vi.mocked(auth).mockResolvedValue({ githubHandle: "regular-member" } as never);
+    vi.mocked(isAdmin).mockReturnValue(false);
+    const { default: EventsIndex } = await import("@/app/events/page");
+    const ui = await EventsIndex();
+    render(ui);
+    expect(screen.queryByRole("link", { name: /\+ New event/ })).toBeNull();
+  });
+
+  it("anonymous viewer does NOT see button", async () => {
+    const { listEventsFromSnapshot } = await import("@/lib/content-snapshot");
+    const { auth } = await import("@/lib/auth");
+    vi.mocked(listEventsFromSnapshot).mockReturnValue([]);
+    vi.mocked(auth).mockResolvedValue(null);
+    const { default: EventsIndex } = await import("@/app/events/page");
+    const ui = await EventsIndex();
+    render(ui);
+    expect(screen.queryByRole("link", { name: /\+ New event/ })).toBeNull();
+  });
+});
+
+describe("H86: /events force-dynamic export", () => {
+  it("re-exports dynamic = 'force-dynamic'", async () => {
+    const mod = await import("@/app/events/page");
+    expect((mod as { dynamic?: string }).dynamic).toBe("force-dynamic");
   });
 });

@@ -1,8 +1,15 @@
-import { listEventsFromSnapshot } from "@/lib/content-snapshot";
+import { listEventsFromSnapshot, isAdmin } from "@/lib/content-snapshot";
 import rostersData from "@/lib/__generated__/event-rosters.json";
 import type { Event } from "@/lib/events";
+import { auth } from "@/lib/auth";
+import { s } from "@/lib/i18n/strings";
 
-export const dynamic = "force-static";
+// v0.5.1 H86: flipped from `force-static` → `force-dynamic`. The page needs
+// request-time `auth()` to (a) gate the admin "+ New event" button via
+// `isAdmin()` (H81) and (b) propagate force-dynamic through the layout so the
+// Header signed-in chip server-renders (same chat-30 fix applied to
+// /events/[slug] — see that file's lines 19-23 for the precedent).
+export const dynamic = "force-dynamic";
 
 interface RosterEntry {
   going: { publicSlugs: string[]; hiddenCount: number };
@@ -36,13 +43,28 @@ export default async function EventsIndex(): Promise<React.JSX.Element> {
   const todayISO = new Date().toISOString().slice(0, 10);
   const { upcoming, past } = splitEvents(events, todayISO);
 
+  // H81: server-side admin gate; runs at request time because of force-dynamic.
+  const session = await auth();
+  const viewerIsAdmin =
+    session?.githubHandle != null && isAdmin(session.githubHandle);
+
   return (
     <main className="mx-auto max-w-3xl p-8">
       <header className="mb-6 flex items-baseline justify-between">
         <h1 className="text-3xl font-semibold">Events</h1>
-        <a className="text-sm underline hover:no-underline" href="/api/calendar.ics">
-          Subscribe to calendar (ICS)
-        </a>
+        <div className="flex items-baseline gap-4">
+          {viewerIsAdmin ? (
+            <a
+              className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
+              href="/admin/events/new"
+            >
+              {s("events.list.newEventButton")}
+            </a>
+          ) : null}
+          <a className="text-sm underline hover:no-underline" href="/api/calendar.ics">
+            Subscribe to calendar (ICS)
+          </a>
+        </div>
       </header>
 
       <section className="mb-8">
