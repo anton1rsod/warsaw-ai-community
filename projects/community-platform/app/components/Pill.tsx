@@ -9,8 +9,8 @@ interface PillCommon {
 
 export type PillProps = PillCommon &
   (
-    | { href: string; type?: never; onClick?: never; disabled?: never }
-    | { type: "button" | "submit"; href?: never; onClick?: () => void; disabled?: boolean }
+    | { href: string; external?: boolean; type?: never; onClick?: never; disabled?: never }
+    | { type: "button" | "submit"; href?: never; external?: never; onClick?: () => void; disabled?: boolean }
   );
 
 const BASE = "px-[11px] py-[4px] inline-block font-voice font-bold text-[10px] transition-colors duration-150";
@@ -24,6 +24,18 @@ const VARIANT: Record<PillVariant, string> = {
 export function Pill(props: PillProps): React.JSX.Element {
   const cls = `${BASE} ${VARIANT[props.variant]}`;
   if ("href" in props && props.href !== undefined) {
+    if (props.external) {
+      return (
+        <a
+          className={cls}
+          href={props.href}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {props.children}
+        </a>
+      );
+    }
     return <a className={cls} href={props.href}>{props.children}</a>;
   }
   return (

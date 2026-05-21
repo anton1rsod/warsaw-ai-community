@@ -5,6 +5,7 @@ import { findMemberByHandle, listEventsFromSnapshot } from "@/lib/content-snapsh
 import { AnonymousHero } from "@/app/components/AnonymousHero";
 import { HomeFeed } from "@/app/components/HomeFeed";
 import { computeHomeFeed } from "@/lib/home-feed";
+import { formatTimeUntil } from "@/lib/time-until";
 
 /**
  * ADR-0014 root route — anonymous-public hero landing (Q1.2) + signed-in
@@ -36,7 +37,14 @@ export function resolveSafeReturnTo(input: string | undefined): string {
   return input;
 }
 
-function pickNextEvent(): { slug: string; title: string; date: string; startTime?: string } | null {
+function pickNextEvent(): {
+  slug: string;
+  title: string;
+  date: string;
+  startTime?: string;
+  location?: string;
+  host?: string;
+} | null {
   const events = listEventsFromSnapshot();
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = events
@@ -49,6 +57,8 @@ function pickNextEvent(): { slug: string; title: string; date: string; startTime
     title: next.title,
     date: next.date,
     startTime: next.startTime,
+    location: next.location,
+    host: next.host,
   };
 }
 
@@ -64,7 +74,11 @@ export default async function RootPage(): Promise<React.JSX.Element> {
     redirect(resolveSafeReturnTo(from));
   }
 
+  const now = new Date();
   const nextEvent = pickNextEvent();
+  const timeUntil = nextEvent
+    ? formatTimeUntil(nextEvent.date, nextEvent.startTime, now)
+    : undefined;
   // v0.4 Event records don't carry markdown body (calendar entries, not
   // articles); supplying body: "" yields excerpt: undefined downstream
   // in eventToFeedItem (empty-string split returns [""] which fails the
@@ -81,12 +95,12 @@ export default async function RootPage(): Promise<React.JSX.Element> {
     })),
     statusPosts: [],
     contributions: [],
-    now: new Date(),
+    now,
   });
 
   return (
     <>
-      <AnonymousHero nextEvent={nextEvent} />
+      <AnonymousHero nextEvent={nextEvent} timeUntil={timeUntil} />
       <section className="mx-auto max-w-3xl px-4">
         <HomeFeed feed={feed} />
       </section>

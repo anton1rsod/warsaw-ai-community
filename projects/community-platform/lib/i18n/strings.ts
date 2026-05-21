@@ -161,7 +161,7 @@ export const strings = {
     "Where Warsaw's AI builders learn, ship, and find each other.",
   "hero.anon.signInCta": "sign in with github",
   "hero.anon.telegramCta": "join telegram",
-  "hero.anon.nextEventMonoFmt": "// next meetup · in {timeUntil}",
+  "hero.anon.nextEventMonoFmt": "// next meetup · {timeUntil}",
   "hero.anon.noNextEventMono": "// no meetup scheduled",
   "hero.anon.tonightLabel": "// tonight",
 
