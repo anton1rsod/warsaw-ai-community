@@ -180,6 +180,7 @@ export async function Header({
             navItems={NAV_ITEMS.map((item) => ({
               href: item.href,
               label: s(item.labelKey),
+              current: isCurrent(item.href, pathname),
             }))}
           />
         )}
