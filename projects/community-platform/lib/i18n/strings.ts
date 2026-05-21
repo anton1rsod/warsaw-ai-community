@@ -147,6 +147,77 @@ export const strings = {
   "event.create.error.internalError": "Something went wrong. Try again.",
   "event.create.error.unknown": "Unknown error.",
   "event.create.error.requestFailed": "Request failed. Try again.",
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // v0.6 visual redesign — Phase 1.5 (H88; chat-35).
+  // Surface-prefixed namespaces: hero.*, events.*, empty.*, chrome.*.
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // ─── hero.anon.* (anon landing hero copy) ───────────────────────────────
+  "hero.anon.taglineLead": "Warsaw AI",
+  "hero.anon.taglineHighlight": "public.",
+  "hero.anon.taglineInfix": "ships in",
+  "hero.anon.subtagline":
+    "Where Warsaw's AI builders learn, ship, and find each other.",
+  "hero.anon.signInCta": "sign in with github",
+  "hero.anon.telegramCta": "join telegram",
+  "hero.anon.nextEventMonoFmt": "// next meetup · in {timeUntil}",
+  "hero.anon.noNextEventMono": "// no meetup scheduled",
+  "hero.anon.tonightLabel": "// tonight",
+
+  // ─── hero.home.* (signed-in /home hero copy) ────────────────────────────
+  "hero.home.weekLabel": "// your week",
+  "hero.home.weekLabelWithEventFmt": "// your week · meetup {timeUntil}",
+  "hero.home.tonightLead": "Tonight,",
+  "hero.home.tonightFallbackLead": "This week,",
+  "hero.home.shipsLabelFmt": "// this week · {count} ships",
+  "hero.home.shipsLabelNone": "// no recent ships",
+  "hero.home.shipsEmpty": "Next ship lands when somebody commits.",
+
+  // ─── events.index.* (/events route chrome) ──────────────────────────────
+  "events.index.title": "Events.",
+  "events.index.upcomingLabel": "// upcoming",
+  "events.index.pastLabel": "// past",
+  "events.index.eventsLabelFmt": "// events · {count} upcoming",
+  "events.index.newEvent": "+ new event",
+  "events.index.subscribeIcs": "subscribe (ICS)",
+
+  // ─── events.detail.* (/events/[slug] route chrome) ──────────────────────
+  "events.detail.monoLeadFmt": "// meetup № {num} · {date} · {time} sharp",
+  "events.detail.goingRosterFmt": "// going ({count})",
+  "events.detail.interestedRosterFmt": "// interested ({count})",
+  "events.detail.tonightSuffix": "tonight.",
+  "events.detail.todaySuffix": "today.",
+  "events.detail.thisWeekSuffix": "this week.",
+
+  // ─── empty.* (v0.6 evergreen empty-state copy) ──────────────────────────
+  "empty.home.nextEvent": "Next meetup lands soon. Watch this strip.",
+  "empty.home.ships": "Next ship lands when somebody commits.",
+  "empty.events.upcoming":
+    "No upcoming meetup scheduled — Telegram has the next signal.",
+  "empty.events.past": "No past events yet.",
+  "empty.eventDetail.going": "Be the first to RSVP.",
+  "empty.eventDetail.interested": "No one's marked interested yet.",
+
+  // ─── chrome.header.* (v0.6 header chrome) ───────────────────────────────
+  "chrome.header.logo": "warsaw.ai",
+  "chrome.header.signIn": "[ sign in ]",
+  "chrome.header.nav.home": "home",
+  "chrome.header.nav.calendar": "calendar",
+  "chrome.header.nav.members": "members",
+  "chrome.header.nav.projects": "projects",
+  "chrome.header.nav.handbook": "handbook",
+  "chrome.header.dropdown.yourWeek": "your week",
+  "chrome.header.dropdown.editProfile": "edit profile",
+  "chrome.header.dropdown.signOut": "sign out",
+
+  // ─── chrome.footer.* (v0.6 footer chrome) ───────────────────────────────
+  "chrome.footer.copyrightFmt": "© {year} Warsaw AI Community",
+  "chrome.footer.builtInPublic": "built in public, MIT",
+  "chrome.footer.about": "about",
+  "chrome.footer.telegram": "telegram",
+  "chrome.footer.github": "github",
+  "chrome.footer.license": "license",
 } as const;
 
 export type StringKey = keyof typeof strings;
