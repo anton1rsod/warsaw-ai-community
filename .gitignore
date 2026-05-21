@@ -46,6 +46,7 @@ htmlcov/
 
 # Claude/agent caches (if any tooling runs locally)
 .claude/local/
+.claude/settings.local.json
 .superpowers/
 .playwright-mcp/
 

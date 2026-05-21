@@ -108,7 +108,7 @@ These ended up in chat history this session and **must be rotated in the next ch
 | `CRON_SECRET` | `rehearsal-debug-bearer-2026-04-26-temporary` | PATCH Vercel env (id `wi3Ota42aI8CpL4s`), trigger fresh build, save new value in Anton's password manager |
 | `TELEGRAM_WEBHOOK_SECRET` | `rehearsal-webhook-secret-2026-04-26-temp` | PATCH Vercel env (id `aUCqQ82wkHhBsikM`), trigger fresh build, then `setWebhook` with the new value |
 | `TELEGRAM_BOT_TOKEN` | (the value Anton pasted from BotFather, now in chat) | Optional — Anton can `/revoke` in `@BotFather` chat (one message) and PATCH the new token into Vercel env (id `RhiygXWpthGOaNWF`) |
-| Vercel API token | `vcp_6IccJBLcypwhNCpj2CAIlpII70LEyh1rfgm4EySIAXkbqyXbzl43CFyh` | DELETE via `https://api.vercel.com/v3/user/tokens/<id>` (list tokens first to find ID), or via `vercel.com/account/tokens` UI |
+| Vercel API token | `<vcp_REDACTED-2026-05-21>` (literal token was here through 2026-05-21; rotated per chat 2026-04-26 plan; string scrubbed forward, not from git history — 25-day public-repo window already elapsed before discovery) | DELETE via `https://api.vercel.com/v3/user/tokens/<id>` (list tokens first to find ID), or via `vercel.com/account/tokens` UI |
 
 The Vercel CLI auth token from earlier was already revoked via `vercel logout`.
 
