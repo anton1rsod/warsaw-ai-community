@@ -9,7 +9,7 @@ describe("v0.6 design tokens — globals.css", () => {
     ["--color-cream",      "#fef6e6"],
     ["--color-cream-deep", "#fdebc9"],
     ["--color-ink",        "#1a1a2e"],
-    ["--color-dust",       "#8b6f3a"],
+    ["--color-dust",       "#886c37"],
     ["--color-paper",      "#ffffff"],
     ["--color-alert",      "#dc1f1f"],
   ])("defines %s as %s", (name, value) => {
