@@ -28,7 +28,7 @@ afterEach(() => {
   vi.resetAllMocks();
 });
 
-describe("EventRoster — H82 viewer-state at render-time", () => {
+describe("H82: EventRoster viewer-state at render-time", () => {
   it("anonymous viewer sees +N (sign in to see) chip when hiddenCount > 0", async () => {
     vi.mocked(auth).mockResolvedValue(null as never);
     const el = await EventRoster({ eventSlug: "with-hidden" });
