@@ -9,6 +9,7 @@ import {
   GitHubAppError,
   type GitHubAppClient,
 } from "@/lib/github-app";
+import { log } from "@/lib/log";
 import {
   SaveProfileSchema,
   parseFrontmatter,
@@ -108,7 +109,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
   // requests are rejected before any state-mutating operation occurs.
   const session = await auth();
   if (!session?.githubHandle) {
-    console.warn("[save-profile]", {
+    log.warn("save-profile", "not_authenticated", {
       success: false,
       error: "not_authenticated",
     });
@@ -120,7 +121,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
   const handle = session.githubHandle;
   const member = findMemberByHandle(handle);
   if (!member) {
-    console.warn("[save-profile]", {
+    log.warn("save-profile", "not_a_member", {
       slug: null,
       success: false,
       error: "not_a_member",
@@ -137,7 +138,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
     expectedSha: formData.get("sha"),
   });
   if (!parsed.success) {
-    console.warn("[save-profile]", {
+    log.warn("save-profile", "invalid_body", {
       slug,
       success: false,
       error: "invalid_body",
@@ -159,7 +160,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
     parsed.data.expectedSha,
   );
   if (attempt.kind === "conflict") {
-    console.warn("[save-profile]", {
+    log.warn("save-profile", "refresh_needed", {
       slug,
       success: false,
       error: "refresh_needed",
@@ -169,7 +170,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
 
   if (attempt.kind === "error") {
     // H24: log only {slug, success, error} — never body content.
-    console.warn("[save-profile]", {
+    log.warn("save-profile", "attempt_error", {
       slug,
       success: false,
       error: attempt.error,
@@ -179,7 +180,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
 
   // H24: log only {slug, sha, success} — body is deliberately omitted.
   // H17: sha in the log provides an audit-trail link to the git commit.
-  console.warn("[save-profile]", {
+  log.warn("save-profile", "saved", {
     slug,
     sha: attempt.sha,
     success: true,
