@@ -138,7 +138,7 @@ describe("H81: /events admin button", () => {
     const { listEventsFromSnapshot } = await import("@/lib/content-snapshot");
     const { auth } = await import("@/lib/auth");
     vi.mocked(listEventsFromSnapshot).mockReturnValue([]);
-    vi.mocked(auth).mockResolvedValue(null);
+    vi.mocked(auth).mockResolvedValue(null as never);
     const { default: EventsIndex } = await import("@/app/events/page");
     const ui = await EventsIndex();
     render(ui);
