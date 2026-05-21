@@ -1,15 +1,16 @@
-import Link from "next/link";
-import type { Route } from "next";
+import React from "react";
+import { AmberTag } from "@/app/components/AmberTag";
+import { MonoLabel } from "@/app/components/MonoLabel";
+import { EventCard } from "@/app/components/EventCard";
 import { s } from "@/lib/i18n/strings";
-import { DateTime } from "@/app/components/DateTime";
 
 /**
- * Signed-in `/home` "Your week" dashboard pane — Q1.3 / D25 / O9.
+ * v0.6 Phase 3.2 — signed-in `/home` "Your week" dashboard pane rewrite.
  *
- * Data sources (O9 lock):
- *   1. Next RSVP commitment — derived from event_rsvps.json by member handle.
- *   2. Status compose CTA — static link to /this-week (no data read).
- *   3. Optional kudos-this-week count — derived from lib/kudos.ts (existing v0.3).
+ * Composes the v0.6 primitives (AmberTag, MonoLabel, EventCard) on top of the
+ * v0.4.1 data layer (computeYourWeek → {nextRsvp, kudosWeekCount}). The
+ * "Tonight," vs "This week," branch is driven by an injected `now` prop so
+ * the runtime clock can't smuggle non-determinism into tests.
  *
  * §14.6 manipulation-resistance: passive surface. NO streak counter, NO
  * notifications, NO "you missed 2 weeks" guilt. Counts what HAPPENED;
@@ -20,57 +21,91 @@ interface NextRsvp {
   slug: string;
   title: string;
   date: string;
+  startTime?: string;
+  location?: string;
 }
 
 interface YourWeekPaneProps {
+  firstName: string;
   nextRsvp: NextRsvp | null;
+  timeUntil?: string;
   kudosWeekCount: number;
+  /** Injectable clock for deterministic tests; defaults to `new Date()`. */
+  now?: Date;
+}
+
+function isSameDayISO(dateISO: string, now: Date): boolean {
+  const parts = dateISO.split("-");
+  const y = parseInt(parts[0] ?? "0", 10);
+  const mo = parseInt(parts[1] ?? "1", 10);
+  const d = parseInt(parts[2] ?? "1", 10);
+  return (
+    now.getFullYear() === y &&
+    now.getMonth() === mo - 1 &&
+    now.getDate() === d
+  );
+}
+
+/** Last up-to-3 words of a title, suffixed with "." for the amber tag. */
+function tailWords(title: string): string {
+  const words = title.trim().split(/\s+/);
+  return words.slice(-3).join(" ") + ".";
 }
 
 export function YourWeekPane({
+  firstName,
   nextRsvp,
-  kudosWeekCount,
+  timeUntil,
+  kudosWeekCount: _kudosWeekCount,
+  now = new Date(),
 }: YourWeekPaneProps): React.JSX.Element {
+  const isToday = nextRsvp ? isSameDayISO(nextRsvp.date, now) : false;
+  const lead = isToday
+    ? s("hero.home.tonightLead")
+    : s("hero.home.tonightFallbackLead");
+  const weekLabel = timeUntil
+    ? s("hero.home.weekLabelWithEventFmt").replace("{timeUntil}", timeUntil)
+    : s("hero.home.weekLabel");
+
   return (
     <section
-      aria-labelledby="your-week-heading"
-      className="mb-8 rounded border border-neutral-200 p-6"
+      aria-labelledby="your-week"
+      className="px-6 py-10 max-w-3xl mx-auto"
     >
-      <h2
-        id="your-week-heading"
-        className="text-xs uppercase tracking-wider text-neutral-500 mb-3"
+      <MonoLabel>{weekLabel}</MonoLabel>
+      <h1
+        id="your-week"
+        className="font-display italic font-black text-[40px] leading-[0.95] text-ink mt-3 tracking-tight"
       >
-        {s("home.yourWeek.heading")}
-      </h2>
+        {lead} {firstName}—
+        {nextRsvp && (
+          <>
+            <br />
+            <AmberTag>{tailWords(nextRsvp.title)}</AmberTag>
+          </>
+        )}
+      </h1>
 
       {nextRsvp ? (
-        <p className="text-neutral-900">
-          {s("home.yourWeek.nextRsvp")}{" "}
-          <Link
-            href={`/events/${nextRsvp.slug}` as Route}
-            className="underline"
-          >
-            {nextRsvp.title}
-          </Link>{" "}
-          — <DateTime iso={nextRsvp.date} context="list" />
-        </p>
+        <div className="mt-6">
+          <EventCard
+            slug={nextRsvp.slug}
+            title={nextRsvp.title}
+            date={nextRsvp.date}
+            startTime={nextRsvp.startTime}
+            location={nextRsvp.location}
+            goingCount={0}
+            showRsvpStateChip="going"
+            hoverLift={false}
+          />
+        </div>
       ) : (
-        <p className="text-sm text-neutral-600">{s("home.yourWeek.empty")}</p>
-      )}
-
-      <p className="mt-3 text-sm">
-        <Link
-          href="/this-week"
-          className="text-accent-700 underline"
-        >
-          {s("home.yourWeek.statusCta")}
-        </Link>
-      </p>
-
-      {kudosWeekCount > 0 && (
-        <p className="mt-3 text-sm text-neutral-600">
-          {s("home.yourWeek.kudosWeek")}: {kudosWeekCount}
-        </p>
+        <div className="mt-6 bg-paper border-[1.5px] border-ink p-4">
+          <MonoLabel>{s("hero.home.weekLabel")}</MonoLabel>
+          <p className="font-display italic text-ink mt-2 text-[14px]">
+            {s("empty.home.nextEvent")}
+          </p>
+        </div>
       )}
     </section>
   );
