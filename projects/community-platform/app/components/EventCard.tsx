@@ -1,4 +1,5 @@
 import React from "react";
+import { s } from "@/lib/i18n/strings";
 
 interface EventCardProps {
   slug: string;
@@ -56,13 +57,13 @@ export function EventCard({
         )}
       </div>
       {showRsvpStateChip === "going" && (
-        <span className="bg-ink text-cream font-voice font-bold text-[9px] px-2 py-1">✓ going</span>
+        <span className="bg-ink text-cream font-voice font-bold text-[9px] px-2 py-1">{s("events.card.goingChip")}</span>
       )}
       {showRsvpStateChip === "interested" && (
-        <span className="border-[1.5px] border-ink text-ink font-voice font-bold text-[9px] px-2 py-1">interested</span>
+        <span className="border-[1.5px] border-ink text-ink font-voice font-bold text-[9px] px-2 py-1">{s("events.card.interestedChip")}</span>
       )}
       {goingCount > 0 && showRsvpStateChip === null && (
-        <span className="bg-ink text-cream font-voice font-bold text-[9px] px-2 py-1">{goingCount} going</span>
+        <span className="bg-ink text-cream font-voice font-bold text-[9px] px-2 py-1">{s("events.card.goingCountFmt").replace("{count}", String(goingCount))}</span>
       )}
     </a>
   );

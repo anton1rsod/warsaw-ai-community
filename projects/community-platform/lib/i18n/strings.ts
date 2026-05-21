@@ -190,6 +190,11 @@ export const strings = {
   "events.detail.todaySuffix": "today.",
   "events.detail.thisWeekSuffix": "this week.",
 
+  // ─── events.card.* (EventCard primitive chips — used across surfaces) ──
+  "events.card.goingChip": "✓ going",
+  "events.card.interestedChip": "interested",
+  "events.card.goingCountFmt": "{count} going",
+
   // ─── empty.* (v0.6 evergreen empty-state copy) ──────────────────────────
   "empty.home.nextEvent": "Next meetup lands soon. Watch this strip.",
   "empty.home.ships": "Next ship lands when somebody commits.",
