@@ -18,30 +18,14 @@
  * static fragments). i18n composition is a v0.5+ next-intl concern.
  */
 export const strings = {
-  // ─── header.* (chrome) ──────────────────────────────────────────────────
-  "header.signIn": "Sign in",
+  // ─── header.* (chrome a11y/aria — actively used by Header + HeaderMobileMenu) ───
+  // v0.6 deprecated header.signIn/yourWeek/editProfile/signOut + footer.* + nav.* —
+  // migrated to chrome.header.*, chrome.header.dropdown.*, chrome.header.nav.*,
+  // chrome.footer.* respectively (Phase 4.6 triage commit).
   "header.skipToContent": "Skip to content",
   "header.menu": "Menu",
   "header.menuClose": "Close menu",
   "header.userMenu": "Account",
-  "header.yourWeek": "Your week",
-  "header.editProfile": "Edit profile",
-  "header.signOut": "Sign out",
-
-  // ─── footer.* (chrome) ──────────────────────────────────────────────────
-  "footer.copyright": "© 2026 Warsaw AI Community",
-  "footer.about": "About",
-  "footer.telegram": "Telegram",
-  "footer.rss": "RSS",
-  "footer.github": "GitHub",
-  "footer.mit": "MIT-licensed",
-
-  // ─── nav.* (top-nav labels) ─────────────────────────────────────────────
-  "nav.home": "Home",
-  "nav.calendar": "Calendar",
-  "nav.projects": "Projects",
-  "nav.members": "Members",
-  "nav.handbook": "Handbook",
 
   // ─── home.* (/home route) ───────────────────────────────────────────────
   "home.thisWeek.heading": "This Week",
@@ -172,7 +156,6 @@ export const strings = {
   "hero.home.tonightFallbackLead": "This week,",
   "hero.home.shipsLabelFmt": "// this week · {count} ships",
   "hero.home.shipsLabelNone": "// no recent ships",
-  "hero.home.shipsEmpty": "Next ship lands when somebody commits.",
 
   // ─── events.index.* (/events route chrome) ──────────────────────────────
   "events.index.title": "Events.",
@@ -187,8 +170,8 @@ export const strings = {
   "events.detail.goingRosterFmt": "// going ({count})",
   "events.detail.interestedRosterFmt": "// interested ({count})",
   "events.detail.tonightSuffix": "tonight.",
-  "events.detail.todaySuffix": "today.",
   "events.detail.thisWeekSuffix": "this week.",
+  "events.detail.interestedAnonLabel": "// interested (sign in to see)",
 
   // ─── events.card.* (EventCard primitive chips — used across surfaces) ──
   "events.card.goingChip": "✓ going",

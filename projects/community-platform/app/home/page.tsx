@@ -87,7 +87,7 @@ export default async function HomePage(): Promise<React.JSX.Element> {
   const firstName = member ? firstNameFromMember(member, handle ?? "") : "";
   const timeUntil =
     yourWeek?.nextRsvp != null
-      ? formatTimeUntil(yourWeek.nextRsvp.date, undefined, now)
+      ? formatTimeUntil(yourWeek.nextRsvp.date, yourWeek.nextRsvp.startTime, now)
       : undefined;
 
   const feed = loadFeedData();

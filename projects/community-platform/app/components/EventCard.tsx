@@ -19,7 +19,7 @@ function parseDateBadge(dateISO: string): { day: string; month: string } {
   const mm = parts[1] ?? "1";
   const dd = parts[2] ?? "1";
   const monthIndex = Math.max(0, Math.min(11, parseInt(mm, 10) - 1));
-  return { day: String(parseInt(dd, 10)), month: MONTHS[monthIndex] as string };
+  return { day: String(parseInt(dd, 10)), month: MONTHS[monthIndex] ?? "JAN" };
 }
 
 export function EventCard({

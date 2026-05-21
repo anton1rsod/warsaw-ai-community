@@ -22,6 +22,8 @@ interface EventLike {
   date: string;
   slug: string;
   title: string;
+  startTime?: string;
+  location?: string;
 }
 
 interface KudosRecent {
@@ -32,6 +34,8 @@ export interface NextRsvp {
   slug: string;
   title: string;
   date: string;
+  startTime?: string;
+  location?: string;
 }
 
 export interface YourWeekInput {
@@ -69,7 +73,13 @@ function findNextRsvp(input: YourWeekInput): NextRsvp | null {
     .sort((a, b) => a.date.localeCompare(b.date));
   const first = upcoming[0];
   if (!first) return null;
-  return { slug: first.slug, title: first.title, date: first.date };
+  return {
+    slug: first.slug,
+    title: first.title,
+    date: first.date,
+    startTime: first.startTime,
+    location: first.location,
+  };
 }
 
 function countKudosThisWeek(input: YourWeekInput): number {

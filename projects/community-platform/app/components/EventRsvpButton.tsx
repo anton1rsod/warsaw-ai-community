@@ -83,7 +83,7 @@ export function EventRsvpButton({
     if (!profileSha) return;
     const prior = state;
     setErrMsg(null);
-    setState(desiredState as State);
+    setState(desiredState);
     startTransition(async () => {
       const r = await rsvpEvent({ eventSlug, desiredState, profileSha });
       if (!r.ok) {

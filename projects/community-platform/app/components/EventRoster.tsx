@@ -77,7 +77,7 @@ export async function EventRoster({
         "{count}",
         String(interestedTotal),
       )
-    : "// interested (sign in to see)";
+    : s("events.detail.interestedAnonLabel");
 
   return (
     <section

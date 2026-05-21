@@ -29,7 +29,6 @@ describe("v0.6 i18n keys (H88)", () => {
       "hero.home.weekLabel",
       "hero.home.tonightLead",
       "hero.home.shipsLabelFmt",
-      "hero.home.shipsEmpty",
     ])("resolves %s", (key) => {
       const v = s(key as Parameters<typeof s>[0]);
       expect(v).toBeTypeOf("string");
