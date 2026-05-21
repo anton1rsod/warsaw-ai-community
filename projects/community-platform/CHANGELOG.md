@@ -16,6 +16,44 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.5.1] — 2026-05-21 (chat-33 — admin discoverability + EventRoster wart + safeHandle/log libs)
+
+**Post-v0.5.0 polish patch.** Bundles 4 active items + 1 doc-deferred into one PR-required squash-merge. Spec at `docs/specs/2026-05-21-community-platform-v0-5-1-design.md` SHA `29cec8d` (chat-33 brainstorm output, amended mid-plan-write with item 1b + H86 force-dynamic flip). Plan at `projects/community-platform/v0.5.1-plan.md` SHA `5d9c430` (12 tasks across 3 phases).
+
+### Added
+
+- **`lib/handles.ts`** — `safeHandle(input: string): string` with CRLF strip + 39-char cap (GitHub username max). Throws on empty-after-strip per O4 (silent empty would produce malformed commits like `chore(events): @ created "slug"`). Hardenings H83 (post-condition: ≤39 chars + no CRLF or throw) + H84 (idempotency on already-safe input).
+- **`lib/log.ts`** — thin structured-logger wrapper around `console.warn` / `console.error`. Format: `[tag] event {...fields}` single-line, JSON-stringified fields (Vercel logs auto-prepend timestamp + region). Empty tag rejected at runtime per H85. O6 contract: callers pass JSON-serializable fields; circular refs / functions / symbols are caller responsibility. Future pino swap is a single-file edit. ~20 LOC, zero deps.
+- **`/events` admin "+ New event" button** — admin-only Server Component button in top-right of `/events` page header. Server-side `isAdmin(session.githubHandle)` gate; non-admins (members) and anonymous viewers see no button. New i18n key `events.list.newEventButton` (`+ New event`). Hardening H81 (RBAC re-check at component render — no client-only gate).
+
+### Changed
+
+- **`/events` page → `force-dynamic`** (item 1b — amended mid-plan-write). Was `force-static`. Required for H81 admin-button request-time gate; side-benefit closes a latent v0.4.7 Header-flicker bug that's been live on `/events` since v0.4.7 (SSG of /events propagated through layout, briefly showing "Sign in" chip to signed-in viewers). Same chat-30 fix pattern applied to `/events/[slug]`. Hardening H86 (grep-verifiable `dynamic = "force-dynamic"` export).
+- **`EventRoster`** — hides `+N members (sign in to see)` chip when viewer is signed-in. The h3 `({total} total)` already conveys count; chip's sole purpose was the sign-up CTA, which is wrong for signed-in viewers. Anonymous viewers continue to see the chip exactly as today. Internal `auth()` call inside async Server Component (per O3); parent `/events/[slug]/page.tsx` force-dynamic propagates, so viewer-state read matches request cookie (H82).
+- **`create-event.ts`, `rsvp-event.ts`, `thank-status.ts`** — consume `safeHandle()` from `lib/handles.ts`; consume `log.warn` / `log.error` from `lib/log.ts`. Three inline `.replace(/[\r\n]/g, "")` sites consolidated.
+- **`save-profile.ts`** — (a) consume `log.warn` from `lib/log.ts` for the 6 audit-log call-sites; (b) **chat-33 reviewer triage HIGH fix**: `commitMessage()` now consumes `safeHandle` from `lib/handles.ts`. The spec originally excluded save-profile from safeHandle migration ("uses different handle source — log migration only"), but the code-reviewer caught that `commitMessage()` interpolates the raw `${handle}` into the git commit body + Co-Authored-By trailer — same injection surface as the 3 other actions. Spec scope oversight; closing here for consistency.
+
+### Deferred (documented in code)
+
+- **Item 4: `encodeURIComponent` slug at `EventForm.tsx:88-91`** — YAGNI. `EventSlugSchema` regex `[a-z0-9-]+` makes URL-unsafe chars structurally impossible. Code comment added in-place: "If the regex relaxes, revisit here."
+
+### Security
+
+- **3-lane parallel reviewer dispatch** (chat-33 Task 3.1 on branch HEAD `cd4d5ba`, scope = full diff): **0 CRITICAL / 0 HIGH unresolved / 1 HIGH applied (save-profile commitMessage migration) + 3 MEDIUM applied** (lib/log.ts narrowing trap inlined; event-roster.test.tsx mock pattern standardized to `vi.mocked()`; events-page.test.tsx H81 added `expect(isAdmin).toHaveBeenCalledWith("anton1rsod")` to close harness gap) + **10 INFO accepted** (handle sanitization, log injection defanged by JSON.stringify, force-dynamic admin gate, viewer-state at render-time, save-profile PII payload preserved, Readonly<Record> correctness, safeHandle string boundary, alias `as toSafeHandle` necessity, EventRoster async signature canonical, tsc clean). All applied in single triage commit `fa248ce`.
+- All 6 hardenings (H81-H86) grep-verifiable via `describe("H<n>:")` blocks across `tests/unit/handles.test.ts`, `tests/unit/log.test.ts`, `tests/unit/event-roster.test.tsx`, `tests/unit/events-page.test.tsx`, `tests/integration/save-profile.test.ts`.
+
+### Tests
+
+- **1047/1047 unit+integration green** (1020 v0.5.0 baseline + 27 new: 10 handles + 8 log + 4 event-roster + 4 events-page admin button + 1 save-profile H83 from chat-33 triage). Coverage gates hold.
+- `lib/handles.ts` 100% lines / 100% branches; `lib/log.ts` 100% lines / 100% branches.
+
+### Known limitations
+
+- Multi-call-site logger migration scope tight to server actions; client-side `console.warn` / `console.error` in components NOT migrated (orthogonal concern; logger is server-action audit pattern).
+- save-profile.ts now goes through `safeHandle` in `commitMessage` but the audit-log payloads still take `handle` (not `safeHandle`) — log payload isn't a commit-injection surface (JSON.stringify defangs newlines per chat-33 security review), so no further migration needed.
+
+---
+
 ## [0.5.0] — 2026-05-21 (chat-31 + chat-32 — admin event-creation UI ships; spec §15 + ADR-0015 Accepted)
 
 **First admin write-surface on the platform.** Members already have RSVP / profile edit / status post; v0.5.0 adds admin event creation at `/admin/events/new` — bot commits the event folder to git via the GitHub App. Closes a real Anton-side workflow gap: pre-v0.5, creating an event meant ~5 min on the mobile GitHub web editor (frontmatter typos common); the form takes ~30 sec with Zod validation, live slug derivation, and body preview.
