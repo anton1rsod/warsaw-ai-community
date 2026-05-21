@@ -86,6 +86,9 @@ export function EventForm({
       const fd = new FormData(e.currentTarget);
       const result = await action(fd);
       if (result.ok) {
+        // v0.5.1 item 4 deferred: EventSlugSchema regex `[a-z0-9-]+` makes
+        // URL-unsafe chars structurally impossible, so encodeURIComponent
+        // here would be dead defense. If the regex relaxes, revisit here.
         router.push(`/events/${result.slug}`);
       } else {
         setError(ERROR_LABELS[result.error] ?? s("event.create.error.unknown"));

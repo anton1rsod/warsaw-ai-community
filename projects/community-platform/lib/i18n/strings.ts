@@ -114,6 +114,9 @@ export const strings = {
   // ─── auth.* (shared) ────────────────────────────────────────────────────
   "auth.signInWithGitHub": "Sign in with GitHub",
 
+  // ─── events.list.* (v0.5.1; /events route surfaces) ────────────────────
+  "events.list.newEventButton": "+ New event",
+
   // ─── event.create.* (v0.5; /admin/events/new route + form) ─────────────
   "event.create.heading": "New event",
   "event.create.intro":

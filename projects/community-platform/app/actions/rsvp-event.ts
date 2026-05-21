@@ -18,6 +18,8 @@ import {
   parseProfileFrontmatter,
 } from "@/lib/profile-editor";
 import { EventSlugSchema, type EventSlug } from "@/lib/events";
+import { safeHandle as toSafeHandle } from "@/lib/handles";
+import { log } from "@/lib/log";
 
 const RsvpInputSchema = z.object({
   eventSlug: z.string(),
@@ -93,11 +95,10 @@ function commitMessage(
   desired: "going" | "interested" | "none",
   eventSlug: string,
 ): string {
-  // Defense-in-depth: strip CR/LF from session-derived handle before
-  // interpolating into the commit message trailer. GitHub already enforces
-  // alphanumeric+hyphen on login, but the injection boundary should not rely
-  // on an external party's invariant.
-  const safeHandle = handle.replace(/[\r\n]/g, "");
+  // Defense-in-depth: strip CR/LF + cap at 39 chars via lib/handles. GitHub
+  // already enforces alphanumeric+hyphen + ≤39 char on login, but the
+  // injection boundary should not rely on an external party's invariant.
+  const safeHandle = toSafeHandle(handle);
   return (
     `chore(community): @${safeHandle} RSVP ${desired} "${eventSlug}"\n\n` +
     `Co-Authored-By: ${safeHandle} <${safeHandle}@users.noreply.github.com>\n`
@@ -128,9 +129,11 @@ export async function rsvpEvent(input: RsvpInput): Promise<RsvpResult> {
 
   // H31: SHA-gated — refuse if loaded SHA doesn't match current file SHA.
   if (file.sha !== parsed.data.profileSha) {
-    console.warn(
-      `[rsvp-event] sha mismatch for ${member.slug} (loaded=${parsed.data.profileSha}, current=${file.sha})`,
-    );
+    log.warn("rsvp-event", "sha_mismatch", {
+      slug: member.slug,
+      loaded: parsed.data.profileSha,
+      current: file.sha,
+    });
     return { ok: false, error: "refresh_needed" };
   }
 
@@ -162,22 +165,26 @@ export async function rsvpEvent(input: RsvpInput): Promise<RsvpResult> {
     });
   } catch (err: unknown) {
     if (err instanceof GitHubAppError && err.kind === "sha_conflict") {
-      console.warn(
-        `[rsvp-event] sha_conflict for ${member.slug} on ${parsed.data.eventSlug}`,
-      );
+      log.warn("rsvp-event", "sha_conflict", {
+        slug: member.slug,
+        event: parsed.data.eventSlug,
+      });
       return { ok: false, error: "refresh_needed" };
     }
-    console.error(
-      `[rsvp-event] writeFile failed: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    log.error("rsvp-event", "writeFile_failed", {
+      reason: err instanceof Error ? err.message : String(err),
+    });
     return { ok: false, error: "internal_error" };
   }
 
   revalidatePath(`/events/${parsed.data.eventSlug}`);
   revalidatePath(`/members/${member.slug}`);
 
-  console.warn(
-    `[rsvp-event] ${member.slug} ${recon.priorState}→${parsed.data.desiredState} on ${parsed.data.eventSlug}`,
-  );
+  log.warn("rsvp-event", "updated", {
+    slug: member.slug,
+    from: recon.priorState,
+    to: parsed.data.desiredState,
+    event: parsed.data.eventSlug,
+  });
   return { ok: true, state: parsed.data.desiredState };
 }

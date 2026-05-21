@@ -23,6 +23,12 @@ vi.mock("@/lib/content-snapshot", () => ({
           ? { slug, name: "Bob" }
           : undefined,
 }));
+// v0.5.1 H82: EventRoster now calls auth() internally to gate the "+N members
+// (sign in to see)" chip on viewer state. Default mock returns null = anonymous,
+// which preserves the existing test expectations (chip shows when hiddenCount > 0).
+vi.mock("@/lib/auth", () => ({
+  auth: vi.fn(async () => null),
+}));
 
 import { EventRoster } from "@/app/components/EventRoster";
 

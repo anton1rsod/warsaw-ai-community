@@ -457,4 +457,38 @@ Body.
       expect(entry?.body).toBe("Tab A's edit.");
     });
   });
+
+  describe("H83: safeHandle on commit message (chat-33 reviewer-triage HIGH)", () => {
+    it("strips CR/LF from session handle before interpolating into commit message", async () => {
+      // Inject a session handle containing CRLF — the safeHandle helper must
+      // strip it before commitMessage() builds the commit body + Co-Authored-By
+      // trailer. Without the strip, an attacker controlling session.githubHandle
+      // (or a session payload bug) could inject a second commit-message line.
+      vi.mocked(auth).mockResolvedValue({
+        githubHandle: "evil\r\nuser",
+      } as never);
+      vi.mocked(findMemberByHandle).mockReturnValue({
+        slug: "anton-safronov",
+        githubHandle: "anton1rsod",
+        name: "Anton Safronov",
+      } as never);
+      mockClient.readFile.mockResolvedValue({
+        content: ANTON_FILE,
+        sha: "s1",
+        path: "community/members/anton-safronov.md",
+      });
+      mockClient.writeFile.mockResolvedValue({ sha: "s2" });
+
+      await saveProfile(formData("Fresh edit.", "s1"));
+
+      const writeFileCall = mockClient.writeFile.mock.calls[0];
+      if (!writeFileCall) throw new Error("writeFile should have been called");
+      const opts = writeFileCall[2] as { message: string };
+      expect(opts.message).not.toMatch(/\r/);
+      // The trailer's first newline is structural (between body and trailer);
+      // assert that beyond that, the handle position is collapsed to "eviluser".
+      expect(opts.message).toContain("@eviluser");
+      expect(opts.message).toContain("eviluser <eviluser@users.noreply.github.com>");
+    });
+  });
 });

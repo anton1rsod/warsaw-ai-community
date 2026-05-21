@@ -9,6 +9,8 @@ import {
   GitHubAppError,
   type GitHubAppClient,
 } from "@/lib/github-app";
+import { log } from "@/lib/log";
+import { safeHandle as toSafeHandle } from "@/lib/handles";
 import {
   SaveProfileSchema,
   parseFrontmatter,
@@ -42,9 +44,15 @@ function buildClient(): GitHubAppClient {
 }
 
 function commitMessage(handle: string): string {
+  // v0.5.1 chat-33 reviewer-triage HIGH fix: safeHandle wasn't in the original
+  // spec §2 Item 3 scope for save-profile (which lacked the inline CRLF strip
+  // pattern), but commitMessage interpolates the raw handle into the commit
+  // body + Co-Authored-By trailer — same injection surface as the other 3
+  // server actions. Close it here for consistency.
+  const safeHandle = toSafeHandle(handle);
   return (
-    `chore(community): update profile prose for @${handle}\n\n` +
-    `Co-Authored-By: ${handle} <${handle}@users.noreply.github.com>\n`
+    `chore(community): update profile prose for @${safeHandle}\n\n` +
+    `Co-Authored-By: ${safeHandle} <${safeHandle}@users.noreply.github.com>\n`
   );
 }
 
@@ -108,7 +116,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
   // requests are rejected before any state-mutating operation occurs.
   const session = await auth();
   if (!session?.githubHandle) {
-    console.warn("[save-profile]", {
+    log.warn("save-profile", "not_authenticated", {
       success: false,
       error: "not_authenticated",
     });
@@ -120,7 +128,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
   const handle = session.githubHandle;
   const member = findMemberByHandle(handle);
   if (!member) {
-    console.warn("[save-profile]", {
+    log.warn("save-profile", "not_a_member", {
       slug: null,
       success: false,
       error: "not_a_member",
@@ -137,7 +145,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
     expectedSha: formData.get("sha"),
   });
   if (!parsed.success) {
-    console.warn("[save-profile]", {
+    log.warn("save-profile", "invalid_body", {
       slug,
       success: false,
       error: "invalid_body",
@@ -159,7 +167,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
     parsed.data.expectedSha,
   );
   if (attempt.kind === "conflict") {
-    console.warn("[save-profile]", {
+    log.warn("save-profile", "refresh_needed", {
       slug,
       success: false,
       error: "refresh_needed",
@@ -169,7 +177,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
 
   if (attempt.kind === "error") {
     // H24: log only {slug, success, error} — never body content.
-    console.warn("[save-profile]", {
+    log.warn("save-profile", "attempt_error", {
       slug,
       success: false,
       error: attempt.error,
@@ -179,7 +187,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
 
   // H24: log only {slug, sha, success} — body is deliberately omitted.
   // H17: sha in the log provides an audit-trail link to the git commit.
-  console.warn("[save-profile]", {
+  log.warn("save-profile", "saved", {
     slug,
     sha: attempt.sha,
     success: true,
