@@ -3282,3 +3282,437 @@ H78's `readFile` + `writeFile` pair is **not atomic**. Two admins creating the s
 *This § (§15) drafted 2026-05-20 in chat-31 from the brainstorm seed at `docs/specs/2026-05-20-community-platform-v0-5-admin-events-new-brainstorm.md`. Locks all 12 open questions O1–O12 inline (§15.8) per the seed's recommended defaults; reviewer = Anton-via-Auto-mode "start next recommended phase" approval. ADR-0015 candidate referenced (§15.6); drafted same chat-31 commit. No prior chat-30 dependencies (admin-events-new is independent of v0.4 hotfix surfaces).*
 
 *Next chat: implementation. `superpowers:writing-plans` produces `v0.5.0-plan.md` in the same chat-31 commit; the v0.5.0 implementation chat reads the plan + this §15 + ADR-0015 and runs `superpowers:subagent-driven-development` against 4 phases (~3.5 days). Trigger to start: when v0.5.0 is the highest-leverage scope on the chat menu (typically post-meetup-#4 retro + Phase B gate evaluation 2026-05-25+).*
+
+---
+
+## 16. v0.6.0 — Visual redesign (4 hero surfaces + shared chrome)
+
+### 16.0 Intro & scope
+
+v0.6.0 ships the platform's first deliberate aesthetic — a "warm maximalist" identity that takes the v0.4 amber posture (ADR-0014) and pushes it to the irreverent edge. Through v0.5.1 the platform has functioned but read as "generic Tailwind scaffold with sterile neutrals and default font" (Anton's chat-34 framing: *"doesn't look good at all for a top community platform"*). v0.6 corrects the visual ground without touching any data flow, auth, RBAC, or hardening contract.
+
+**Scope envelope (chat-34 brainstorm lock):**
+
+- **4 hero surfaces** — `/` (anon visitor entry) · `/home` (signed-in dashboard) · `/events` (index) · `/events/[slug]` (detail).
+- **Shared chrome** — `Header.tsx` + `Footer.tsx` rewritten; every other page inherits.
+- **Tokens** — palette extended (cream / ink / amber / dust), 3-font system via `next/font/google` (Fraunces variable + Inter kept + JetBrains Mono added).
+- **New primitives** — `AmberTag`, `MonoLabel`, `Pill` (3 variants), `EventCard`.
+
+**Out of v0.6.0** (separate future versions): `/members` redesign, `/me/edit` redesign, `/admin/events/new` redesign, `/handbook`, `/decisions`, `/projects`, dark mode (token slots laid but no `prefers-color-scheme:dark` block), Tailwind 3→4 migration (orthogonal infra change).
+
+**Source of design rationale:** Chat-34 brainstorm. Visual locks captured in `docs/specs/2026-05-21-community-platform-v0-6-redesign-brainstorm.md` (this chat's handoff doc, includes ASCII descriptions of the 4 design-preview mockups since the live mockup HTML lives in gitignored `.superpowers/brainstorm/`).
+
+### 16.1 Brainstorm locks (aesthetic / hierarchy / typography)
+
+| Axis | Lock | Rejected alternatives + reason |
+|---|---|---|
+| Aesthetic flavor | **D — Warm maximalist** (PostHog amber evolved with serif italic display + mono technical voice + hand-drawn marks) | A Editorial refinement (too "tech blog"), B Brutalist Warsaw (too institutional for community), C Sharp-tech Linear/Vercel (crowded territory — every YC startup ships this) |
+| Hierarchy lens | **Event-first** — next meetup is the hero; calendar dominates the fold | Shipping-first (build feed needs critical mass that doesn't exist yet), Member-first (LinkedIn move, lower personality) |
+| Display serif | **Fraunces** (variable; SOFT + WONK axes for per-surface expression; OSS via Google Fonts) | EB Garamond (pulls toward "literary review" not "ships"), Playfair Display (everywhere now), DM Serif Display (one-note) |
+| Body | **Inter** (kept; refined, readable; already loaded in v0.4) | n/a (no swap needed) |
+| Mono voice | **JetBrains Mono** (OSS via Google Fonts; readable, technical, popular) | IBM Plex Mono / Iosevka (no marginal value over JetBrains Mono) |
+| Color anchor | **Amber `#f59e0b`** (kept from v0.4 ADR-0014; supporting palette = cream `#fef6e6` / ink `#1a1a2e` / dust `#8b6f3a`) | New dominant + accent system (would orphan v0.4 brand equity) |
+| Dark mode | **Light-only for v0.6**; token slots laid for `prefers-color-scheme:dark` override in v0.7+ | Dark-first (too disruptive for one release); parity (deferred for token-stability) |
+| Motion appetite | **Sober** — amber-tag −1.5° static tilt + EventCard hover translateY −2px; CSS-only; no JS animation libs; no page-load orchestration | Always-on ambient motion (perf cost), Hero page-load orchestration (over-engineered for current scale) |
+| Surface scope | **All 4** — `/` + `/home` + `/events` + `/events/[slug]` (chat-34 Q4 single-select pick) | 3 surfaces (drops `/events/[slug]` which is Meetup #4's high-stakes page); 2 surfaces (feels incremental, not a v0.6 milestone) |
+| Framework | **Tailwind 3.4 stays** + extended theme + custom CSS layer for variable-font axes | Tailwind 4 migration (orthogonal infra change; out of v0.6 scope); shadcn/ui adoption (architectural shift not warranted at current component count) |
+
+### 16.2 Design tokens
+
+**Palette** (`app/globals.css` `:root` — extends v0.4 H64 contract):
+
+```css
+:root {
+  /* Existing accent ramp (v0.4 — kept) */
+  --color-accent-50:  #fffbeb;
+  --color-accent-500: #f59e0b;  /* amber anchor */
+  --color-accent-600: #d97706;
+  --color-accent-700: #b45309;
+
+  /* v0.6 additions */
+  --color-cream:      #fef6e6;  /* paper canvas */
+  --color-cream-deep: #fdebc9;  /* gradient stop on hero blocks */
+  --color-ink:        #1a1a2e;  /* primary text + header strip bg */
+  --color-dust:       #8b6f3a;  /* mono-voice labels + secondary text */
+  --color-paper:      #ffffff;  /* card bg over cream */
+  --color-alert:      #dc1f1f;  /* error states only (no decorative use) */
+}
+```
+
+Tailwind config extension exposes these as `bg-cream`, `text-ink`, `text-dust`, `bg-paper`, `text-alert` utility classes alongside the existing `accent-*` ramp.
+
+**Typography** (`app/layout.tsx` `next/font/google` imports):
+
+```typescript
+import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
+
+// Fraunces is variable — use weight: "variable" + axes (not weight array)
+// per next/font/google API for variable fonts. opsz is built-in for Fraunces.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: "variable",
+  style: ["normal", "italic"],
+  axes: ["SOFT", "WONK"],   // opsz auto-loaded for Fraunces; wght included by default
+  variable: "--font-fraunces",
+  display: "swap",
+});
+
+const inter = Inter({  // kept from v0.4
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-jetbrains",
+  display: "swap",
+});
+```
+
+`<html>` carries all three variables: `className={\`${fraunces.variable} ${inter.variable} ${jetbrains.variable}\`}`.
+
+**Phase 0 verification gate**: `pnpm tsc --noEmit` + `pnpm build` must be green after this import block lands; if `next/font/google` rejects the `axes` API shape (Next.js 16 minor-version drift risk), fall back to static-weight Fraunces (`weight: ["400", "700", "900"]`) + drop the `font-variation-settings` declarations from §16.2 (the rotated tag still works without SOFT/WONK axes; only the per-surface expression dial is lost).
+
+**Type roles (Tailwind utility classes):**
+
+- `font-display` → `var(--font-fraunces)` — italic, weight 900, used on H1/H2 hero headlines + the rotated "tag" highlight
+- `font-body` → `var(--font-inter)` — body copy, button labels, regular UI text (matches v0.4)
+- `font-voice` → `var(--font-jetbrains)` — mono labels ("// next meetup · in 6h 12m"), timestamps, handles, code
+
+**Motifs (locked design language):**
+
+- **Rotated amber tag**: `<span class="bg-accent-500 px-1 -rotate-[1.5deg] inline-block">tonight.</span>` — the signature gesture; appears on hero headlines AND date badges on EventCard
+- **Mono label**: `<p class="font-voice text-[10px] uppercase tracking-[1.5px] text-dust">// next meetup · in 6h 12m</p>` — used to introduce every hero block
+- **Pills (3 variants)**:
+  - `<Pill variant="going">✓ going</Pill>` — solid ink bg, cream text, monospace
+  - `<Pill variant="dashed">+ rsvp</Pill>` — dashed ink border, transparent bg
+  - `<Pill variant="solid">+ calendar</Pill>` — solid ink border, transparent bg
+- **0 radii** — `rounded-none` is the default; NO `rounded-md`/`rounded-lg` on EventCard, Header, Footer, Pill, or AmberTag
+- **1.5px rules** — borders are `border-[1.5px] border-ink` (rejecting the 1px Tailwind default which reads as "Material Design template")
+- **Spacing scale** — 4 / 12 / 24 / 48 px (Tailwind `1` / `3` / `6` / `12`); compact rhythm, NOT generous-whitespace
+
+**Visual lock** — the cohesive system rendered as `design-preview.html` mockup with Tokens + Header + Footer + 4 surfaces side-by-side (chat-34 approval "nice"). HTML preserved in chat-34 brainstorm output doc.
+
+### 16.3 Shared chrome — Header + Footer
+
+**`app/components/Header.tsx` (Server Component, ~80 lines):**
+
+- Top strip: `bg-ink text-cream font-voice text-[11px] tracking-[0.5px] px-4 py-2 flex justify-between`
+- Left: `<span class="font-bold">warsaw.ai</span>` (replaces v0.4 "Warsaw AI" text logo; rendering matches the mono voice)
+- Center: nav links — Home / Calendar / Members / Projects / Handbook — separated by ` · ` middots; current page rendered in amber via server-derived `usePathname()`-equivalent (`headers().get('x-pathname')` per H56 / v0.4 posture)
+- Right (anon): `[ sign in ]` linked to `/login` (mono brackets are intentional — signals "command-bar" terminal voice)
+- Right (signed-in): avatar chip (18×18 amber square with monogram initials) + handle + ▾ dropdown trigger
+- Dropdown menu (kept from v0.4): Your week / Members / Edit profile / Sign out — same content, restyled to cream paper + ink type + mono labels on each row
+
+**`app/components/Footer.tsx` (Server Component, ~40 lines):**
+
+- `bg-ink text-cream font-display italic text-[11px] px-4 py-3 flex justify-between`
+- Left: `© 2026 Warsaw AI Community · <span class="font-voice not-italic opacity-70">built in public, MIT</span>`
+- Right: `<span class="font-voice not-italic text-[10px] opacity-85">about · telegram · github · license</span>`
+- Per H62 (v0.4 lock): no second context strip; single band only
+- v0.4.2 a11y fix preserved: no empty `aria-label` on placeholder divs
+
+**Auth-state distinction (H64 / H66 preserve)**: Header server-renders the correct right-hand element from `auth()` — no client flicker, no `useEffect` hydration swap (chat-30 v0.4.8 force-dynamic posture extended to `/home`, `/events`, `/events/[slug]` per §16.4).
+
+### 16.4 Hero surface compositions
+
+All 4 surfaces follow the same structure: dark Header strip → cream body → dark Footer strip. The body is where each surface diverges.
+
+**`app/page.tsx` (`/` anon visitor) — Server Component, `force-dynamic`:**
+
+```
+┌────────────────────────────────────────┐
+│ // next meetup · in 6h 12m             │  ← MonoLabel
+│                                        │
+│ Warsaw AI                              │  ← Fraunces italic 900, 32px
+│ ships in [public.]                     │     [public.] = AmberTag
+│                                        │
+│ Where Warsaw's AI builders learn,      │  ← Inter italic 13px (sub-tagline)
+│ ship, and find each other.             │
+│                                        │
+│ ┌──────────────────────────────────┐  │
+│ │ // tonight                       │  │  ← Next-event card
+│ │ AI Community Meetup № 4          │  │     border 1.5px ink, paper bg
+│ │ 19:00 · Grzybowska 85a · @anton  │  │
+│ │ [RSVP →] [+ calendar]            │  │     Pill variants solid + dashed
+│ └──────────────────────────────────┘  │
+│                                        │
+│ [sign in with github] [join telegram]  │  ← Pill variants going + dashed
+└────────────────────────────────────────┘
+```
+
+`/` rewritten from `AnonymousHero` component (v0.4) to use new tokens. CTAs preserved per v0.4.2 a11y fix (text-neutral-900 on amber → AAA contrast).
+
+**`app/home/page.tsx` (`/home` signed-in) — Server Component, `force-dynamic`:**
+
+Same chrome; body diverges:
+```
+┌────────────────────────────────────────┐
+│ // your week · meetup in 6h            │  ← MonoLabel personalized
+│                                        │
+│ Tonight, Anton—                        │  ← Fraunces italic 900, 32px
+│ [Meetup № 4.]                          │     [Meetup № 4.] = AmberTag
+│                                        │
+│ ┌──────────────────────────────────┐  │  ← Same EventCard pattern as /
+│ │ AI Community Meetup № 4          │  │     but with viewer-state pills
+│ │ 19:00 · Grzybowska 85a           │  │     (going if user RSVPed)
+│ │ [✓ going] [+ calendar]           │  │
+│ └──────────────────────────────────┘  │
+│                                        │
+│ // this week · 3 ships                 │  ← Replaces v0.3 "Recent" header
+│ ┃ @kazia · persona-builder v0.3   2h  │  ← Build-feed cards
+│ ┃ @anton · community-platform v0.5.1 1d│     border-left 3px amber, paper bg
+│                                        │
+│ ┌──────────────────────────────────┐  │  ← Empty-state if no ships:
+│ │ // no recent ships               │  │     italic Georgia "Next ship lands
+│ │ Next ship lands when somebody    │  │     when somebody commits."
+│ │ commits.                         │  │
+│ └──────────────────────────────────┘  │
+└────────────────────────────────────────┘
+```
+
+`/home` keeps existing data layer (`loadYourWeekData(member)` from v0.4.1; `contributions.json` + `recent` data). Visual layer rewritten.
+
+**`app/events/page.tsx` (`/events` index) — Server Component, `force-dynamic`:**
+
+```
+┌────────────────────────────────────────┐
+│ // events · 1 upcoming                 │
+│                                        │
+│ Events.                                │  ← Fraunces italic 900, 32px
+│                                        │
+│ [+ new event] [subscribe (ICS)]        │  ← Pill variants solid + outline
+│                                        │     "+ new event" only if admin (H81)
+│ // upcoming                            │
+│ ┌──────────────────────────────────┐  │
+│ │[21]  AI Community Meetup № 4     │  │  ← EventCard primitive:
+│ │[MAY] 19:00 · Grzybowska 85a      │  │     amber date-badge tilted -1.5°,
+│ │      [1 going]                   │  │     Fraunces italic title,
+│ └──────────────────────────────────┘  │     mono meta line, going-count pill
+│                                        │
+│ // past                                │
+│ No past events yet — Warsaw AI         │  ← Empty-state in Georgia italic
+│ starts tonight.                        │     (dust color)
+└────────────────────────────────────────┘
+```
+
+`/events` preserves the v0.5.1 "+ new event" admin-only button placement (H81). Subscribe to calendar link → `/api/calendar.ics` unchanged.
+
+**`app/events/[slug]/page.tsx` (`/events/[slug]` detail) — Server Component, `force-dynamic` (v0.4.8 lock preserved):**
+
+```
+┌────────────────────────────────────────┐
+│ // meetup № 04 · 21 may · 19:00 sharp  │
+│                                        │
+│ AI Community                           │  ← Fraunces italic 900, 30px
+│ Meetup № 4 [tonight.]                  │     [tonight.] = AmberTag
+│                                        │
+│ 120 min · Grzybowska 85a · hosted by   │  ← mono meta line
+│ @anton1rsod                            │
+│                                        │
+│ [✓ going] [interested] [+ calendar]    │  ← EventRsvpButton (v0.4.7 hydration
+│                                        │     + v0.4.8 force-dynamic preserved)
+│ ┌──────────────────────────────────┐  │
+│ │ Agenda                           │  │  ← Article body in paper card
+│ │ Persona setup · NDA signing ·    │  │     border 1.5px ink
+│ │ Idea round · Validation skill.   │  │
+│ │ When · Where (markdown article)  │  │
+│ └──────────────────────────────────┘  │
+│                                        │
+│ // going (1)        // interested (0)  │
+│ [AS]                No one's marked    │  ← Avatar tile grid (going)
+│                     yet.               │     + dust italic empty (interested)
+└────────────────────────────────────────┘
+```
+
+EventRsvpButton + AddToCalendar functional contract unchanged (props + hydration + force-dynamic from v0.4.7/v0.4.8). Only the visual presentation of the button + roster shifts to the new token system.
+
+### 16.5 New primitives + component breakdown
+
+| Component | Path | New / Modified | Lines (est) | Notes |
+|---|---|---|---|---|
+| `AmberTag` | `app/components/AmberTag.tsx` | **New** | ~15 | `<span class="bg-accent-500 px-[5px] -rotate-[1.5deg] inline-block">{children}</span>` |
+| `MonoLabel` | `app/components/MonoLabel.tsx` | **New** | ~15 | `<p class="font-voice text-[10px] uppercase tracking-[1.5px] text-dust">{children}</p>` |
+| `Pill` | `app/components/Pill.tsx` | **New** | ~30 | 3 variants via discriminated union: `'going' \| 'dashed' \| 'solid'` |
+| `EventCard` | `app/components/EventCard.tsx` | **New** | ~50 | Date-badge + title + meta + going-count; used on `/events` index AND `/home` "next event" block |
+| `Header` | `app/components/Header.tsx` | **Modified** | ~80 (was 90) | Strip rewrite; auth-state branches preserved |
+| `HeaderMobileMenu` | `app/components/HeaderMobileMenu.tsx` | **Modified** | ~70 | Hamburger panel restyled to cream + mono nav; behavior unchanged |
+| `Footer` | `app/components/Footer.tsx` | **Modified** | ~40 (was 35) | Dark band; serif italic + mono links |
+| `AnonymousHero` | `app/components/AnonymousHero.tsx` | **Modified** | ~40 | Rewritten using new primitives; CTA contrast preserved (v0.4.2 H64) |
+| `YourWeekPane` | `app/components/YourWeekPane.tsx` | **Modified** | ~50 | "Tonight, Anton—" personalization; uses AmberTag + MonoLabel |
+| `HomeFeed` | `app/components/HomeFeed.tsx` | **Modified** | ~45 | Build-feed cards with `border-l-[3px] border-accent-500`; v0.4.3 `<DateTime>` integration preserved |
+| `EventRoster` | `app/components/EventRoster.tsx` | **Modified** | ~50 | v0.5.1 H82 + H85 chip preserved; avatar tiles restyled |
+| `EventRsvpButton` | `app/components/EventRsvpButton.tsx` | **Style-only** | unchanged | Functional contract preserved (v0.4.7 hydration; v0.4.8 force-dynamic); just swap class names |
+| `Avatar` | `app/components/Avatar.tsx` | **Modified** | ~30 | Amber-bg monogram tile (matches Header avatar chip) |
+| `ListItem` | `app/components/ListItem.tsx` | **Modified** | ~25 | Border-left amber + paper bg pattern |
+| `EmptyState` | `app/components/EmptyState.tsx` | **Modified** | ~25 | Georgia italic + dust color + warm copy posture |
+| `DateTime` | `app/components/DateTime.tsx` | **Style-only** | unchanged | Inherits new mono voice via parent classes |
+
+**Primitive type contracts (Phase 1 deliverable — implementer locks these byte-identical):**
+
+```typescript
+// app/components/AmberTag.tsx
+interface AmberTagProps { children: React.ReactNode; className?: string; }
+export function AmberTag(props: AmberTagProps): React.JSX.Element;
+
+// app/components/MonoLabel.tsx
+interface MonoLabelProps { children: React.ReactNode; as?: "p" | "div" | "span"; }
+export function MonoLabel(props: MonoLabelProps): React.JSX.Element;
+
+// app/components/Pill.tsx
+type PillVariant = "going" | "dashed" | "solid";
+type PillProps = { variant: PillVariant; children: React.ReactNode } & (
+  | { href: string; type?: never; onClick?: never }                                  // anchor mode
+  | { type: "button" | "submit"; href?: never; onClick?: () => void; disabled?: boolean }  // button mode
+);
+export function Pill(props: PillProps): React.JSX.Element;
+
+// app/components/EventCard.tsx
+interface EventCardProps {
+  slug: string;          // EventSlug brand (lib/events.ts)
+  title: string;
+  date: string;          // YYYY-MM-DD; date-badge derives day + 3-char month
+  startTime?: string;    // HH:MM (24h)
+  location?: string;
+  goingCount: number;
+  hoverLift?: boolean;   // default true on /events; false on /home next-event card (already inside hero block)
+  showRsvpStateChip?: "going" | "interested" | null;  // signed-in viewer state for /home + future surfaces
+}
+export function EventCard(props: EventCardProps): React.JSX.Element;
+```
+
+**Untouched in v0.6**: `EventForm`, `ProfileEditor`, `StatusEditor`, `AskGBrainButton`, `ConsentModal`, `GdprPanel`, `TopContributors`, `ContributionCard`, `Tag`, `SafeHtml`. These keep current visual treatment until their parent surface is redesigned in v0.7+.
+
+### 16.6 Empty states + motion + dark-mode posture
+
+**Empty states (warm copy, never sterile):**
+
+| Surface | When empty | Copy (s(key) entry) |
+|---|---|---|
+| `/home` next-event card | No upcoming event within 7 days | "Next meetup lands soon. Watch this strip." (italic) |
+| `/home` ships feed | No commits in 7-day window | "Next ship lands when somebody commits." (italic) |
+| `/events` upcoming | No upcoming events | "No upcoming meetup scheduled — [Telegram](https://t.me/warsaw_ai) has the next signal." (italic; evergreen — works whether community is bootstrapping or quiet between meetups) |
+| `/events` past | No past events | "No past events yet." (italic; this state only persists until first meetup; defensive copy) |
+| `/events/[slug]` going roster | 0 going | "Be the first to RSVP." (italic) |
+| `/events/[slug]` interested roster | 0 interested | "No one's marked interested yet." (italic) |
+
+All empty-state copy lives in `lib/i18n/strings.ts` under namespace `empty.<surface>.<slot>`. Existing `<EmptyState>` component (`<EmptyState text={s("empty.home.ships")} />`) restyled to dust italic Georgia.
+
+**Motion (sober — no JS animation libs):**
+
+- `AmberTag` — static `-rotate-[1.5deg]`, no animation
+- `EventCard` — `hover:translate-y-[-2px] hover:shadow-[0_4px_0_0_#1a1a2e] focus-visible:translate-y-[-2px] focus-visible:shadow-[0_4px_0_0_#1a1a2e] transition-transform duration-150` (hard ink shadow; **keyboard-focus parity required per H91** — hover-only would fail axe-core focus-visible-on-hover-affordance gate)
+- `Pill` variant=going — `hover:bg-accent-500 hover:text-ink focus-visible:bg-accent-500 focus-visible:text-ink transition-colors duration-150` (focus parity on RSVP toggle)
+- All interactive elements get visible `focus-visible:outline-[2px] focus-visible:outline-accent-500 focus-visible:outline-offset-2` as default (Tailwind `@layer base` rule)
+- Header active-page indicator — no transition (server-rendered per request, no flicker)
+- `prefers-reduced-motion: reduce` — disables all `transition-*` and `translate-*` motion via global `@layer base` media query (`*, *::before, *::after { transition: none !important; transform: none !important; }`)
+- No page-load orchestration; no parallax; no Lottie / Framer Motion / GSAP
+
+**Dark-mode posture:**
+
+Light-only for v0.6. Token slots laid in `:root`; v0.7+ can introduce a `@media (prefers-color-scheme: dark)` override block on the same custom properties without component churn. ADR-0014's "Phase A light only; v0.5+ dark-mode overrides land here" guidance extended to v0.7+.
+
+### 16.7 i18n strategy
+
+**ALL new copy flows through `s(key)` from `lib/i18n/strings.ts`** (flat-keys-with-surface-prefix per v0.4 O10 / H67 lock). New namespaces:
+
+- `hero.anon.*` — `/` page copy (tagline, sub-tagline, sign-in CTA label, join-telegram CTA label)
+- `hero.home.*` — `/home` page copy (your-week mono label, personalized hero, ships header, ships empty-state)
+- `events.index.*` — `/events` page copy (title, upcoming label, past label, empty-states)
+- `events.detail.*` — `/events/[slug]` page copy (mono lead-in label, going-roster label, interested-roster label, empty-states)
+- `empty.<surface>.<slot>` — all 6 empty-state copies per §16.6 table
+- `chrome.header.*` — Header copy (nav labels, sign-in CTA, dropdown items)
+- `chrome.footer.*` — Footer copy (copyright, footer-nav links)
+
+No hardcoded strings outside `s(key)`. New translation key inventory: ~35 entries; matches v0.4 / v0.5 namespace discipline.
+
+### 16.8 Hardening preservation + new H87–H92
+
+**Preserved (must grep-verify post-merge):** H56–H68 (v0.4 chrome / a11y), H69–H80 (v0.5 admin events), H81–H86 (v0.5.1 admin discoverability + safe-handle + log). `grep -rE 'describe\("H8[1-6]:' tests/` returns ≥6 hits at v0.6 merge.
+
+**New v0.6 hardenings:**
+
+| ID | Hardening | Test location |
+|---|---|---|
+| **H87** | Three Google Fonts loaded via `next/font/google` with `display: 'swap'` + Latin-only subset; no FOIT flash; no external `<link rel="stylesheet">` fallback (offline-safe) | `tests/unit/layout-fonts.test.tsx` |
+| **H88** | All v0.6 new UI copy resolves via `s(key)`; no hardcoded English strings in `app/page.tsx`, `app/home/page.tsx`, `app/events/page.tsx`, `app/events/[slug]/page.tsx`, `Header.tsx`, `Footer.tsx`, `EventCard.tsx` (grep guard test) | `tests/unit/i18n-coverage-v0-6.test.ts` |
+| **H89** | EventRsvpButton + EventForm + ProfileEditor functional contract preserved — props, server-action call shape, hydration behavior, force-dynamic posture all byte-identical (snapshot test on contract surface) | `tests/unit/v0-6-functional-contract-preservation.test.ts` |
+| **H90** | Header amber active-page indicator computed server-side from `headers().get('x-pathname')`; no client-side flicker; matches the v0.4 H56 / v0.4.8 force-dynamic precedent | `tests/unit/header-active-page.test.tsx` |
+| **H91** | All 4 v0.6 surfaces clear axe-core serious-violations gate on Vercel preview; v0.4.2 a11y baseline preserved (Footer no aria-prohibited-attr; CTA contrast AA-pass) | `e2e/v0-6-a11y.spec.ts` |
+| **H92** | Color-contrast on every v0.6 token pair meets WCAG AA 4.5:1 (ink-on-cream, dust-on-cream, ink-on-paper, cream-on-ink, amber-on-ink, ink-on-amber); Fraunces italic at weight 700 size ≥14px verified | `tests/unit/contrast.test.ts` |
+
+### 16.9 Testing & coverage
+
+**Strict-list coverage targets (100% lines on each new file):**
+- `app/components/AmberTag.tsx` — 100/100
+- `app/components/MonoLabel.tsx` — 100/100
+- `app/components/Pill.tsx` — 100/95+ (3 variant branches)
+- `app/components/EventCard.tsx` — 100/95+
+
+**Modified-file targets (≥80% baseline, no regression):**
+- `app/page.tsx`, `app/home/page.tsx`, `app/events/page.tsx`, `app/events/[slug]/page.tsx` — visual rewrite preserves existing test coverage; new tests added for empty-state copy keys
+- `Header.tsx` — coverage holds (v0.4 baseline 97.41% lines); active-page indicator + amber chip get new tests
+- `Footer.tsx` — coverage holds; a11y gate preserved
+- `YourWeekPane.tsx`, `HomeFeed.tsx`, `EventRoster.tsx`, `EventRsvpButton.tsx` — style-only or visual-only changes; behavioral tests unchanged
+
+**E2E (Playwright vs Vercel preview):**
+- `e2e/v0-6-shell.spec.ts` — Header strip renders (anon and signed-in variants); Footer band renders; current-page amber indicator appears on the right nav link
+- `e2e/v0-6-surfaces.spec.ts` — each of 4 surfaces renders the expected hero composition (Fraunces italic title, MonoLabel, EventCard if event present)
+- `e2e/v0-6-a11y.spec.ts` — axe-core serious-violations gate on all 4 surfaces (H91)
+- Existing v0.4-shell, v0.4-a11y, v0.5.1 E2E tests stay green
+
+**Lighthouse (vs Vercel preview, mobile + desktop) — Phase 4 acceptance gate:**
+
+| Metric | Mobile threshold | Current baseline (/login) | Budget headroom |
+|---|---|---|---|
+| Performance score | ≥90 | 99 | up to −9 |
+| LCP | ≤2.5s | 1.5s | +1s for font swap |
+| TBT | ≤300ms | 60ms | +240ms for hydration |
+| CLS | ≤0.1 | 0 | font-swap CLS budget 0.05 |
+| Accessibility score | ≥95 (raised from v0.4's ≥90) | 100 | up to −5 |
+| Best Practices score | ≥90 | 96 | up to −6 |
+| SEO score | ≥90 | 91 | up to −1 |
+
+Font-loading is the perf risk: 3 Google Fonts with multiple weights → potential LCP regression. Mitigated by `next/font/google` self-hosting + `display: swap` + Latin-only subset + weight scoping (Fraunces variable 400-900 italic, Inter 400/600, JetBrains 400/700 — total ~6-8 woff2 files, ~120KB compressed). **If LCP regresses past 2.5s on mobile**, Phase 4 closeout drops `font-variation-settings` on body copy (only display headlines use variable axes) and falls back to fixed-weight static Fraunces files.
+
+### 16.10 Out of scope (v0.7+ candidates)
+
+- `/members`, `/me/edit`, `/admin/events/new`, `/handbook`, `/decisions`, `/projects/[slug]`, `/meetings`, `/meetings/[slug]`, `/this-week` redesigns
+- Dark mode (`prefers-color-scheme: dark` token overrides)
+- Tailwind 3 → 4 migration (orthogonal infra change)
+- Internationalization beyond English (`s(key)` system supports it; no second locale defined)
+- Page-load motion orchestration / Lottie / hero animations
+- Custom illustration system (hand-drawn marks beyond the rotated tag are out)
+
+### 16.11 Open questions locked
+
+| O# | Question | Lock | Reason |
+|---|---|---|---|
+| O1 | Does `/home` use `force-dynamic` like `/events/[slug]`? | **Yes** — extends v0.4.8 posture | Header active-page indicator + viewer-state ships card require per-request render |
+| O2 | Does `/` use `force-dynamic`? | **Yes** | Same reasoning + `headers().get('x-pathname')` for Header |
+| O3 | Does `/events` use `force-dynamic`? | **Yes** | Same reasoning; admin "+ new event" button visibility per H81 already requires `auth()` on render |
+| O4 | Does AmberTag rotate animate on hover? | **No** | Static tilt — animation reads as gimmick; v0.6 motion is sober per §16.6 |
+| O5 | Does the dark Footer band repeat the dark Header band styling exactly? | **Yes** | Sandwich rhythm (dark / cream / dark) is the editorial framing motif |
+| O6 | Are the 3 Pill variants in one file or 3 files? | **One file** with discriminated union | Single source of truth; matches `Tag` precedent (v0.3) |
+| O7 | Does mobile have a different Header rendering? | **Yes** — `HeaderMobileMenu.tsx` panel restyled to cream + mono nav, same hamburger trigger | v0.4 H58 hydration stability preserved |
+| O8 | Does the v0.6 spec amend ADR-0014, or warrant a new ADR-0016? | **Amend ADR-0014** | Same warm-amber posture extended with typography + token additions; no posture reversal |
+
+### 16.12 Implementation phases (preview — full plan in `v0.6.0-plan.md`)
+
+- **Phase 0 — Pre-flight** (~½ day) — `next/font/google` Fraunces + JetBrains Mono additions in `app/layout.tsx`; Tailwind config `theme.extend.colors` + `theme.extend.fontFamily` additions; `:root` CSS custom property additions in `app/globals.css`. Test that `pnpm tsc --noEmit` + `pnpm build` are green before any visual changes land.
+- **Phase 1 — New primitives** (~1 day) — `AmberTag` + `MonoLabel` + `Pill` + `EventCard` with 100% unit-test coverage (H87 font loading, H88 i18n coverage, H92 contrast).
+- **Phase 2 — Shared chrome rewrite** (~1 day) — `Header.tsx` + `HeaderMobileMenu.tsx` + `Footer.tsx` rewrite. H90 active-page indicator + v0.4.2 a11y baseline preserved.
+- **Phase 3 — Hero surfaces rewrite** (~1.5 days) — `app/page.tsx` + `app/home/page.tsx` + `app/events/page.tsx` + `app/events/[slug]/page.tsx`. Per-surface unit + E2E tests.
+- **Phase 4 — A11y + Lighthouse + reviewer dispatch** (~½ day) — H91 axe-core gate; Lighthouse vs Vercel preview; security-reviewer + typescript-reviewer + code-reviewer dispatch.
+- **Phase 5 — Closeout** (~½ day) — CHANGELOG `[0.6.0]`; STATE.md update; tag `community-platform-v0.6.0`; memory entry `project_community_platform_v0_6_redesign.md`.
+
+**Total ~5 days** — single-chat-feasible via `superpowers:subagent-driven-development` at implementation time.
+
+---
+
+*This § (§16) drafted 2026-05-21 in chat-34 from the brainstorm visual locks captured at `docs/specs/2026-05-21-community-platform-v0-6-redesign-brainstorm.md`. Locks all 8 open questions O1–O8 inline (§16.11) per the brainstorm-decision precedence. Visual approval: chat-34 "nice" on the `design-preview.html` mockup (gitignored under `.superpowers/brainstorm/`; ASCII descriptions preserved in handoff doc). Reviewer = Anton-via-Auto-mode "start next recommended phase" approval expected after spec self-review pass. No ADR-0016 — amends ADR-0014's warm-amber posture (typography + token additions are extensions, not reversal).*
+
+*Next chat: implementation. `superpowers:writing-plans` produces `v0.6.0-plan.md` referencing this §16 + the brainstorm-output handoff. The v0.6.0 implementation chat reads the plan + this §16 and runs `superpowers:subagent-driven-development` against 5 phases (~5 days). Trigger to start: when Anton picks v0.6 from the menu post-Meetup #4 (typically 2026-05-22 or later, post-meetup retro).*
