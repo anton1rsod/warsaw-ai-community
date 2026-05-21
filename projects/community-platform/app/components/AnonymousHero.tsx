@@ -1,7 +1,8 @@
-import Link from "next/link";
 import type { Route } from "next";
+import { AmberTag } from "@/app/components/AmberTag";
+import { MonoLabel } from "@/app/components/MonoLabel";
+import { Pill } from "@/app/components/Pill";
 import { s } from "@/lib/i18n/strings";
-import { DateTime } from "@/app/components/DateTime";
 
 const TELEGRAM_URL = "https://t.me/warsaw_ai";
 
@@ -10,79 +11,89 @@ interface NextEventSummary {
   title: string;
   date: string;
   startTime?: string;
+  location?: string;
+  host?: string;
 }
 
 interface AnonymousHeroProps {
   nextEvent: NextEventSummary | null;
+  timeUntil?: string;
 }
 
 /**
- * Anonymous `/` hero composition per ADR-0014 + Q1.2 hero lock.
+ * Anonymous `/` hero — v0.6 visual redesign (chat-35 Phase 3.1).
  *
- * Renders the Q-1.1 ambition sentence, sub-line, dual CTA, and next-event
- * ribbon (when an upcoming event exists). The ribbon framing is NEUTRAL
- * only — no scarcity, no countdown, no "spots remaining" (§14B
- * manipulation-resistance audit).
+ * Composes the Phase 1 primitives (MonoLabel, AmberTag, Pill) per spec §16:
+ * mono pre-header, Fraunces italic Q1.2 ambition sentence with amber-tag
+ * accent on "public.", subtagline, optional "tonight" next-event card, dual
+ * CTA row (sign-in + telegram).
+ *
+ * The next-event card framing is NEUTRAL only — no scarcity, no countdown
+ * urgency, no "spots remaining" (§14B manipulation-resistance audit). Past
+ * events collapse to "now" upstream in `formatTimeUntil`, never to a
+ * negative duration.
  *
  * H56: this component is rendered ONLY in the anonymous branch of
- * app/page.tsx. The page handler asserts session is null before
- * mounting; no auth-derived state can leak in via props.
+ * app/page.tsx — page handler asserts no signed-in member before mounting,
+ * so no auth-derived state can leak in via props. The component MUST NOT
+ * import `@/lib/auth` (h-v0-4.test.tsx asserts this at the source level).
  */
 export function AnonymousHero({
   nextEvent,
+  timeUntil,
 }: AnonymousHeroProps): React.JSX.Element {
+  const monoLabel =
+    nextEvent && timeUntil
+      ? s("hero.anon.nextEventMonoFmt").replace("{timeUntil}", timeUntil)
+      : s("hero.anon.noNextEventMono");
+
   return (
-    <section className="mx-auto max-w-5xl px-4 py-12">
-      <div className="grid gap-8 md:grid-cols-[2fr_1fr] md:items-center">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-semibold text-neutral-900 leading-tight">
-            {s("landing.headline")}
-          </h1>
-          <p className="mt-4 text-lg text-neutral-700">{s("landing.subline")}</p>
-          <div className="mt-8 flex flex-wrap items-center gap-4">
-            <Link
-              href="/login"
-              className="inline-flex items-center rounded bg-accent-500 px-5 py-3 text-sm font-semibold text-neutral-900 hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2"
-            >
-              {s("landing.signIn")}
-            </Link>
-            <a
-              href={TELEGRAM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center text-sm font-medium text-neutral-900 underline"
-            >
-              {s("landing.telegram")}
-            </a>
+    <section
+      aria-labelledby="hero-title"
+      className="mx-auto max-w-3xl px-6 py-10"
+    >
+      <MonoLabel>{monoLabel}</MonoLabel>
+      <h1
+        id="hero-title"
+        className="font-display italic font-black text-[40px] leading-[0.95] text-ink mt-3 tracking-tight"
+      >
+        {s("hero.anon.taglineLead")} {s("hero.anon.taglineInfix")}{" "}
+        <AmberTag>{s("hero.anon.taglineHighlight")}</AmberTag>
+      </h1>
+      <p className="font-body italic text-[14px] text-ink mt-4 max-w-md">
+        {s("hero.anon.subtagline")}
+      </p>
+
+      {nextEvent ? (
+        <div className="mt-6 bg-paper border-[1.5px] border-ink p-4">
+          <MonoLabel>{s("hero.anon.tonightLabel")}</MonoLabel>
+          <div className="font-display italic font-bold text-[18px] text-ink mt-1 leading-tight">
+            {nextEvent.title}
+          </div>
+          <div className="font-voice text-[10px] text-ink mt-2">
+            {[
+              nextEvent.startTime,
+              nextEvent.location,
+              nextEvent.host ? `@${nextEvent.host}` : undefined,
+            ]
+              .filter((seg): seg is string => Boolean(seg))
+              .join(" · ")}
+          </div>
+          <div className="mt-3 flex gap-2">
+            <Pill variant="solid" href={`/events/${nextEvent.slug}` as Route}>
+              {s("landing.nextEvent.cta")}
+            </Pill>
           </div>
         </div>
-        <aside aria-label="Next event">
-          {nextEvent ? (
-            <div className="rounded border border-neutral-200 p-4">
-              <p className="text-sm text-neutral-500">
-                {s("landing.nextEvent.label")}
-              </p>
-              <p className="mt-1 text-neutral-900 font-medium">
-                <DateTime
-                  iso={nextEvent.date}
-                  context="list"
-                  startTime={nextEvent.startTime}
-                />{" "}
-                — {nextEvent.title}
-              </p>
-              <Link
-                href={`/events/${nextEvent.slug}` as Route}
-                className="mt-3 inline-block text-sm text-accent-700 underline"
-              >
-                {s("landing.nextEvent.cta")}
-              </Link>
-            </div>
-          ) : (
-            <p className="text-sm text-neutral-600">
-              {s("landing.nextEvent.empty")}
-            </p>
-          )}
-        </aside>
+      ) : null}
+
+      <div className="mt-6 flex gap-2 flex-wrap">
+        <Pill variant="going" href={"/login" as Route}>
+          {s("hero.anon.signInCta")}
+        </Pill>
+        <Pill variant="dashed" href={TELEGRAM_URL} external>
+          {s("hero.anon.telegramCta")}
+        </Pill>
       </div>
     </section>
   );

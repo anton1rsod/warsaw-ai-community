@@ -3,25 +3,28 @@
 @tailwind utilities;
 
 /*
- * Token CSS variable contract (v0.4 / H64):
+ * Token CSS variable contract (v0.4 / H64 + v0.6 / H87-H92):
  *   --color-<role>-<weight>
  *
- * `role`   : "accent" (warm amber, PostHog brand-language anchor)
- *          | "neutral" (foundation slot — Phase A renders light-only; v0.5+ dark-mode overrides land here)
- * `weight` : Tailwind ramp stop (50/100/500/600/700/900)
+ * `role`   : "accent" (warm amber anchor — v0.4, PostHog brand-language)
+ *          | "neutral" (foundation slot — kept for non-v0.6 surfaces like /handbook)
+ *          | "cream" / "cream-deep" / "ink" / "dust" / "paper" / "alert" (v0.6 warm-maximalist additions)
+ * `weight` : Tailwind ramp stop (50/100/500/600/700/900) for accent + neutral; v0.6 vars are single-value roles
  *
  * Tailwind `theme.extend.colors.accent` references these vars so component
  * authors use the utility class layer (`bg-accent-500`, `text-accent-700`)
- * without touching CSS-var names directly.
+ * without touching CSS-var names directly. Phase 0.3 wires bg-cream / text-ink
+ * / bg-paper / etc. utilities to the v0.6 vars below.
  *
  * Accent rules (Q4.8 lock): accent appears ONLY on primary CTAs / focus
- * rings / current-page nav state / RSVP "Going" pill (Phase B). Links use
- * neutral underline. Tags use neutral background with neutral-700 text
- * (except `status:proposed` which gets accent-50 bg + accent-700 text per O12).
+ * rings / current-page nav state / RSVP "Going" pill / amber-tag highlight /
+ * date-badge. Links use neutral underline. Tags use neutral background with
+ * neutral-700 text (except `status:proposed` which gets accent-50 bg +
+ * accent-700 text per O12).
  *
- * Dark-mode posture (Q4.3 / D43): deferred to v0.5+. Token slot is laid in
- * Phase A so the v0.5+ design pass can override `--color-neutral-*` under a
- * `@media (prefers-color-scheme: dark)` block without touching components.
+ * Dark-mode posture (v0.6 / O8): light-only for v0.6; v0.7+ adds
+ * @media (prefers-color-scheme: dark) overrides on these vars without
+ * touching components.
  */
 :root {
   /* Accent ramp — PostHog amber (Tailwind `amber` stops) */
@@ -32,13 +35,21 @@
   --color-accent-700: #b45309;
   --color-accent-900: #78350f;
 
-  /* Neutral ramp slot — Phase A light only; v0.5+ dark-mode overrides under
-     prefers-color-scheme:dark land here without touching components */
+  /* Neutral ramp slot — kept for non-v0.6 pages (/handbook etc.); v0.7+ dark-mode
+     overrides under prefers-color-scheme:dark land here without touching components */
   --color-neutral-50:  #fafafa;
   --color-neutral-100: #f5f5f5;
   --color-neutral-500: #737373;
   --color-neutral-700: #404040;
   --color-neutral-900: #171717;
+
+  /* v0.6 warm-maximalist additions (H87-H92) */
+  --color-cream:      #fef6e6;
+  --color-cream-deep: #fdebc9;
+  --color-ink:        #1a1a2e;
+  --color-dust:       #886c37;
+  --color-paper:      #ffffff;
+  --color-alert:      #dc1f1f;
 
   color-scheme: light;
 }
@@ -46,9 +57,26 @@
 * { box-sizing: border-box; }
 
 body {
-  @apply m-0 bg-white text-neutral-900;
+  @apply m-0 bg-cream text-ink;
   /* Inter loaded via next/font in app/layout.tsx; fallback chain below
      covers the FOIT window + non-FontFace-API browsers. */
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Global keyboard focus affordance (H91 a11y gate) */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-accent-500);
+    outline-offset: 2px;
+  }
+}
+
+/* Respect prefers-reduced-motion — disable all transitions + transforms */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    transform: none !important;
+    animation: none !important;
+  }
 }

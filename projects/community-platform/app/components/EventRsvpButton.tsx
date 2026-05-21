@@ -72,7 +72,7 @@ export function EventRsvpButton({
     return (
       <a
         href={`/login?callbackUrl=/events/${eventSlug}`}
-        className="inline-block rounded border border-neutral-300 px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-900"
+        className="inline-block border-[1.5px] border-solid border-ink text-ink font-voice font-bold text-[10px] px-3 py-1 hover:bg-ink hover:text-cream focus-visible:bg-ink focus-visible:text-cream"
       >
         Sign in to RSVP
       </a>
@@ -83,7 +83,7 @@ export function EventRsvpButton({
     if (!profileSha) return;
     const prior = state;
     setErrMsg(null);
-    setState(desiredState as State);
+    setState(desiredState);
     startTransition(async () => {
       const r = await rsvpEvent({ eventSlug, desiredState, profileSha });
       if (!r.ok) {
@@ -114,11 +114,11 @@ export function EventRsvpButton({
           type="button"
           onClick={onGoing}
           disabled={isPending}
-          className={`rounded px-3 py-1.5 text-sm font-medium transition ${
+          className={
             goingActive
-              ? "bg-green-600 text-white hover:bg-green-700"
-              : "border border-neutral-300 text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-900"
-          }`}
+              ? "bg-ink text-cream font-voice font-bold text-[10px] px-3 py-1 hover:bg-accent-500 hover:text-ink focus-visible:bg-accent-500 focus-visible:text-ink"
+              : "border-[1.5px] border-ink text-ink font-voice font-bold text-[10px] px-3 py-1 hover:bg-ink hover:text-cream focus-visible:bg-ink focus-visible:text-cream"
+          }
         >
           {goingActive ? "✓ Going" : "Going"}
         </button>
@@ -126,11 +126,11 @@ export function EventRsvpButton({
           type="button"
           onClick={onInterested}
           disabled={isPending}
-          className={`rounded px-3 py-1.5 text-sm font-medium transition ${
+          className={
             interestedActive
-              ? "bg-amber-500 text-white hover:bg-amber-600"
-              : "border border-neutral-300 text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-900"
-          }`}
+              ? "bg-ink text-cream font-voice font-bold text-[10px] px-3 py-1 hover:bg-accent-500 hover:text-ink focus-visible:bg-accent-500 focus-visible:text-ink"
+              : "border-[1.5px] border-ink text-ink font-voice font-bold text-[10px] px-3 py-1 hover:bg-ink hover:text-cream focus-visible:bg-ink focus-visible:text-cream"
+          }
         >
           {interestedActive ? "★ Interested" : "Interested"}
         </button>

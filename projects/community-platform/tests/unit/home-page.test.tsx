@@ -27,7 +27,10 @@ describe("ADR-0012: /home anonymous accessibility (v0.4 — HomeHeader dropped)"
     const ui = await HomePage();
     render(ui);
     // Headline ADR-0012 requirement: anonymous render works.
-    expect(screen.getByText(/Nothing scheduled this week/i)).toBeInTheDocument();
+    // v0.6 Phase 3.3: HomeFeed renders MonoLabel "no recent ships" header
+    // + evergreen empty-state when no items. Either marker confirms the
+    // feed mounted without throwing.
+    expect(screen.getByText(/no recent ships/i)).toBeInTheDocument();
   });
 
   it("anonymous render does NOT mount YourWeekPane", async () => {
@@ -36,7 +39,8 @@ describe("ADR-0012: /home anonymous accessibility (v0.4 — HomeHeader dropped)"
     const { default: HomePage } = await import("@/app/home/page");
     const ui = await HomePage();
     render(ui);
-    expect(screen.queryByText("Your week")).toBeNull();
+    // v0.6 Phase 3.2: YourWeekPane heading is <h1 id="your-week">; absent for anon.
+    expect(document.getElementById("your-week")).toBeNull();
   });
 
   it("anonymous render does NOT include Sections nav (global Header supersedes)", async () => {
@@ -62,7 +66,10 @@ describe("/home — signed-in Your week pane (Phase A.2.4 / Q1.3 / D25)", () => 
     const { default: HomePage } = await import("@/app/home/page");
     const ui = await HomePage();
     render(ui);
-    expect(screen.getByText("Your week")).toBeInTheDocument();
+    // v0.6 Phase 3.2: hero <h1 id="your-week"> with first-name lead ("This week, Anton—").
+    const hero = document.getElementById("your-week");
+    expect(hero).not.toBeNull();
+    expect(hero?.textContent ?? "").toMatch(/Anton—/);
   });
 
   it("signed-in render still shows the feed", async () => {
@@ -77,7 +84,8 @@ describe("/home — signed-in Your week pane (Phase A.2.4 / Q1.3 / D25)", () => 
     const { default: HomePage } = await import("@/app/home/page");
     const ui = await HomePage();
     render(ui);
-    expect(screen.getByText(/Nothing scheduled this week/i)).toBeInTheDocument();
+    // v0.6 Phase 3.3: feed-still-mounted assertion via the MonoLabel header.
+    expect(screen.getByText(/no recent ships/i)).toBeInTheDocument();
   });
 
   it("§14.6 forward-defense: signed-in render DOM has no streak/missed copy", async () => {
@@ -105,6 +113,7 @@ describe("/home — signed-in Your week pane (Phase A.2.4 / Q1.3 / D25)", () => 
     const { default: HomePage } = await import("@/app/home/page");
     const ui = await HomePage();
     render(ui);
-    expect(screen.queryByText("Your week")).toBeNull();
+    // v0.6 Phase 3.2: no hero rendered when roster lookup fails.
+    expect(document.getElementById("your-week")).toBeNull();
   });
 });

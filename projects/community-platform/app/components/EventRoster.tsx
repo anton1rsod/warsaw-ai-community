@@ -1,86 +1,51 @@
 import rostersData from "@/lib/__generated__/event-rosters.json";
 import { findMemberBySlug } from "@/lib/content-snapshot";
 import { auth } from "@/lib/auth";
+import { MonoLabel } from "@/app/components/MonoLabel";
+import { Avatar } from "@/app/components/Avatar";
+import { s } from "@/lib/i18n/strings";
 
 interface RosterEntry {
   going: { publicSlugs: string[]; hiddenCount: number };
   interested: { publicSlugs: string[]; hiddenCount: number };
 }
-const rosters: Record<string, RosterEntry> = rostersData as Record<string, RosterEntry>;
+const rosters: Record<string, RosterEntry> = rostersData as Record<
+  string,
+  RosterEntry
+>;
 
 interface EventRosterProps {
   eventSlug: string;
 }
 
-function MemberAvatar({ slug }: { slug: string }): React.JSX.Element {
+function MemberTile({ slug }: { slug: string }): React.JSX.Element {
   const member = findMemberBySlug(slug);
   const name = member?.name ?? slug;
-  const initials = name
-    .split(" ")
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const handle = member?.githubHandle ?? slug;
   return (
-    <a
-      href={`/members/${slug}`}
-      title={name}
-      className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-xs font-medium dark:bg-neutral-800"
-    >
-      {initials || slug.slice(0, 2).toUpperCase()}
+    <a href={`/members/${slug}`} title={name} className="inline-block">
+      <Avatar name={name} handle={handle} size={40} decorative />
     </a>
   );
 }
 
-function SubRoster({
-  label,
-  side,
-  total,
-  publicSlugs,
+function HiddenChip({
   hiddenCount,
   eventSlug,
-  viewerIsSignedIn,
 }: {
-  label: string;
-  side: "going" | "interested";
-  total: number;
-  publicSlugs: readonly string[];
   hiddenCount: number;
   eventSlug: string;
-  viewerIsSignedIn: boolean;
 }): React.JSX.Element {
-  const accent = side === "going" ? "border-green-500" : "border-amber-500";
+  // H85 chip: "+ N members (sign in to see)" — only renders when caller decides
+  // (anonymous viewer with hiddenCount > 0). The chip's purpose is the sign-up
+  // CTA; meaningless for signed-in viewers.
   return (
-    <div className={`rounded border-l-4 ${accent} pl-3`}>
-      <h3 className="text-sm font-medium">
-        {label} ({total} total)
-      </h3>
-      {total === 0 ? (
-        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-          {side === "going"
-            ? "No one's marked going yet — be the first."
-            : "No one's marked interested yet."}
-        </p>
-      ) : (
-        <div className="mt-2 flex flex-wrap gap-2">
-          {publicSlugs.map((s) => (
-            <MemberAvatar key={s} slug={s} />
-          ))}
-          {/* v0.5.1 H82: hide the +N chip when viewer is signed-in — the
-              chip's only purpose was the sign-up CTA, which is wrong for
-              signed-in viewers. The h3 already shows ({total} total). */}
-          {hiddenCount > 0 && !viewerIsSignedIn ? (
-            <a
-              href={`/login?callbackUrl=/events/${eventSlug}`}
-              className="flex h-10 items-center rounded-full bg-neutral-100 px-3 text-xs text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-            >
-              + {hiddenCount} members (sign in to see)
-            </a>
-          ) : null}
-        </div>
-      )}
-    </div>
+    <a
+      href={`/login?callbackUrl=/events/${eventSlug}`}
+      className="font-voice text-[10px] uppercase tracking-[1.5px] text-dust inline-flex items-center rounded-full bg-cream px-3 py-1 hover:text-ink"
+    >
+      + {hiddenCount} members (sign in to see)
+    </a>
   );
 }
 
@@ -101,26 +66,67 @@ export async function EventRoster({
   const goingTotal = goingPublic.length + goingHidden;
   const interestedTotal = interestedPublic.length + interestedHidden;
 
+  // Going label: always shows count (no anon gating per spec §16.4).
+  const goingLabel = s("events.detail.goingRosterFmt").replace(
+    "{count}",
+    String(goingTotal),
+  );
+  // Interested label: signed-in sees count; anonymous sees "(sign in to see)" (H82).
+  const interestedLabel = viewerIsSignedIn
+    ? s("events.detail.interestedRosterFmt").replace(
+        "{count}",
+        String(interestedTotal),
+      )
+    : s("events.detail.interestedAnonLabel");
+
   return (
-    <section className="mt-8 space-y-4">
-      <SubRoster
-        label="Going"
-        side="going"
-        total={goingTotal}
-        publicSlugs={goingPublic}
-        hiddenCount={goingHidden}
-        eventSlug={eventSlug}
-        viewerIsSignedIn={viewerIsSignedIn}
-      />
-      <SubRoster
-        label="Interested"
-        side="interested"
-        total={interestedTotal}
-        publicSlugs={interestedPublic}
-        hiddenCount={interestedHidden}
-        eventSlug={eventSlug}
-        viewerIsSignedIn={viewerIsSignedIn}
-      />
+    <section
+      aria-labelledby={`${eventSlug}-roster`}
+      className="mt-8 grid grid-cols-2 gap-6 text-[11px]"
+    >
+      <h2 id={`${eventSlug}-roster`} className="sr-only">
+        Roster
+      </h2>
+      <div>
+        <MonoLabel>{goingLabel}</MonoLabel>
+        {goingTotal === 0 ? (
+          <p className="font-display italic text-dust mt-2">
+            {s("empty.eventDetail.going")}
+          </p>
+        ) : (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {goingPublic.map((slug) => (
+              <MemberTile key={slug} slug={slug} />
+            ))}
+            {/* H85 chip: anonymous viewer + hiddenCount > 0 → sign-in CTA */}
+            {goingHidden > 0 && !viewerIsSignedIn ? (
+              <HiddenChip
+                hiddenCount={goingHidden}
+                eventSlug={eventSlug}
+              />
+            ) : null}
+          </div>
+        )}
+      </div>
+      <div>
+        <MonoLabel>{interestedLabel}</MonoLabel>
+        {/* Interested list: signed-in viewer sees roster; anonymous sees nothing
+            (label already says "(sign in to see)"). Empty state only renders for
+            signed-in viewer with count 0. */}
+        {viewerIsSignedIn ? (
+          interestedTotal === 0 ? (
+            <p className="font-display italic text-dust mt-2">
+              {s("empty.eventDetail.interested")}
+            </p>
+          ) : (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {interestedPublic.map((slug) => (
+                <MemberTile key={slug} slug={slug} />
+              ))}
+            </div>
+          )
+        ) : null}
+      </div>
     </section>
   );
 }

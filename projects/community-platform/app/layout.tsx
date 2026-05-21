@@ -1,12 +1,29 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import { RootShell } from "@/app/components/RootShell";
 import "./globals.css";
+
+// Fraunces is a variable font — weight: "variable" + axes for personality control
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: "variable",
+  style: ["normal", "italic"],
+  axes: ["SOFT", "WONK"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
 
 const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "600"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-jetbrains",
   display: "swap",
 });
 
@@ -39,7 +56,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${jetbrains.variable}`}>
       <body className="min-h-screen flex flex-col">
         <RootShell>{children}</RootShell>
       </body>

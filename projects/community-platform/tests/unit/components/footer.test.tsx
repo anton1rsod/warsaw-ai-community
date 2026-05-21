@@ -4,44 +4,58 @@ import { Footer } from "@/app/components/Footer";
 
 afterEach(() => cleanup());
 
-describe("Footer — Q3.1 / D30 / O5 5-link strip", () => {
-  it("renders copyright text", () => {
+describe("Footer v0.6 — dark band, serif italic + mono links", () => {
+  it("renders dark band with serif italic left + mono links right", () => {
     render(<Footer />);
-    expect(screen.getByText("© 2026 Warsaw AI Community")).toBeInTheDocument();
+    const footer = screen.getByRole("contentinfo");
+    expect(footer).toHaveClass("bg-ink");
+    expect(footer).toHaveClass("text-cream");
+    expect(footer.className).toMatch(/font-display/);
+    expect(footer.className).toMatch(/italic/);
   });
 
-  it("Phase A renders About + Telegram + GitHub + MIT-licensed (RSS deferred to Phase C)", () => {
+  it("includes built-in-public mono badge", () => {
     render(<Footer />);
-    expect(screen.getByText("About")).toBeInTheDocument();
-    expect(screen.getByText("Telegram")).toBeInTheDocument();
-    expect(screen.getByText("GitHub")).toBeInTheDocument();
-    expect(screen.getByText("MIT-licensed")).toBeInTheDocument();
-    expect(screen.queryByText("RSS")).toBeNull();
+    expect(screen.getByText(/built in public, MIT/i)).toBeInTheDocument();
+  });
+
+  it("preserves v0.4.2 a11y fix — no aria-label on empty div", () => {
+    const { container } = render(<Footer />);
+    const emptyDivs = Array.from(container.querySelectorAll("div"))
+      .filter((d) => d.children.length === 0 && d.textContent === "");
+    for (const d of emptyDivs) {
+      expect(d.hasAttribute("aria-label")).toBe(false);
+    }
+  });
+
+  it("uses i18n keys for all footer copy (H88)", () => {
+    render(<Footer />);
+    expect(screen.getByText(/about/i)).toBeInTheDocument();
+    expect(screen.getByText(/telegram/i)).toBeInTheDocument();
+    expect(screen.getByText(/github/i)).toBeInTheDocument();
+    expect(screen.getByText(/license/i)).toBeInTheDocument();
+  });
+});
+
+describe("Footer v0.6 — link wiring + external safety", () => {
+  it("renders copyright text via chrome.footer.copyrightFmt", () => {
+    render(<Footer />);
+    expect(screen.getByText("© 2026 Warsaw AI Community")).toBeInTheDocument();
   });
 
   it("About links to /handbook (Phase A fallback per O5)", () => {
     render(<Footer />);
     expect(
-      screen.getByRole("link", { name: "About" }).getAttribute("href"),
+      screen.getByRole("link", { name: /about/i }).getAttribute("href"),
     ).toBe("/handbook");
   });
 
-  it("Telegram + GitHub + MIT-licensed are external links with rel=noopener", () => {
+  it("Telegram + GitHub + License are external links with rel=noopener", () => {
     render(<Footer />);
-    for (const label of ["Telegram", "GitHub", "MIT-licensed"]) {
+    for (const label of [/telegram/i, /github/i, /license/i]) {
       const link = screen.getByRole("link", { name: label });
       expect(link.getAttribute("rel")).toMatch(/noopener/);
       expect(link.getAttribute("target")).toBe("_blank");
-    }
-  });
-
-  it("language-switcher slot exists but is empty in v0.4 (v0.5+ populates)", () => {
-    render(<Footer />);
-    const slot = screen.queryByLabelText("Language");
-    // Slot existence is optional in Phase A; the test asserts that no
-    // language-switcher widget is rendered today.
-    if (slot) {
-      expect(slot.children.length).toBe(0);
     }
   });
 });

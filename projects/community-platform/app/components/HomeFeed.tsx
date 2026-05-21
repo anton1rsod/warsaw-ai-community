@@ -1,5 +1,6 @@
 import type { HomeFeedData, FeedItem } from "@/lib/home-feed";
 import { DateTime } from "@/app/components/DateTime";
+import { MonoLabel } from "@/app/components/MonoLabel";
 import { s } from "@/lib/i18n/strings";
 
 interface HomeFeedProps {
@@ -7,85 +8,97 @@ interface HomeFeedProps {
   showRecent?: boolean;
 }
 
+/**
+ * v0.6 Phase 3.3: single-feed-strip aesthetic.
+ *
+ * Option B keeps the existing `feed: HomeFeedData` prop (and `showRecent`)
+ * so the three consuming pages (app/page.tsx, app/home/page.tsx,
+ * app/this-week/page.tsx) don't churn. Internally we flatten thisWeek+recent
+ * into one card list and render the v0.6 MonoLabel header + amber-border
+ * ship cards + paper-bg, with an evergreen empty-state when both buckets
+ * are empty.
+ *
+ * Count semantics: "// this week · N ships" mirrors thisWeek.length (the
+ * activity that landed in the current week bucket). Recent cards are still
+ * shown beneath when showRecent=true, but they don't bump the headline ship
+ * count.
+ *
+ * H45 preserved: showRecent=false AND thisWeek empty → return null.
+ */
 function TypeIcon({ type }: { type: FeedItem["type"] }): React.JSX.Element {
-  const symbol = type === "meeting" ? "📅" : type === "event" ? "🎟" : type === "status" ? "✍" : "🛠";
-  return <span aria-hidden="true" className="mr-2 inline-block w-4">{symbol}</span>;
-}
-
-function ThisWeekItem({ item }: { item: FeedItem }): React.JSX.Element {
+  const symbol =
+    type === "meeting"
+      ? "📅"
+      : type === "event"
+        ? "🎟"
+        : type === "status"
+          ? "✍"
+          : "🛠";
   return (
-    <li className="flex items-start py-2">
-      <TypeIcon type={item.type} />
-      <div className="flex-1">
-        <a className="font-medium hover:underline" href={item.href}>
-          {item.title}
-        </a>
-        <div className="text-sm text-neutral-600">
-          <DateTime iso={item.date} context="list" />
-          {item.excerpt ? <span className="ml-2">— {item.excerpt}</span> : null}
-        </div>
-      </div>
-    </li>
+    <span aria-hidden="true" className="inline-block w-4 text-[12px]">
+      {symbol}
+    </span>
   );
 }
 
-function RecentItem({ item }: { item: FeedItem }): React.JSX.Element {
+function ShipCard({ item }: { item: FeedItem }): React.JSX.Element {
   return (
-    <li className="flex items-center py-1 text-sm">
+    <li
+      data-feed-card
+      className="bg-paper border-l-[3px] border-accent-500 px-3 py-2 flex items-center gap-2 text-[12px]"
+    >
       <TypeIcon type={item.type} />
-      <a className="hover:underline" href={item.href}>
+      {item.author ? (
+        <span className="font-voice font-bold text-dust">@{item.author}</span>
+      ) : null}
+      <a
+        className="font-display italic flex-1 text-ink hover:underline"
+        href={item.href}
+      >
         {item.title}
       </a>
-      {item.author ? <span className="ml-2 text-neutral-500">@{item.author}</span> : null}
-      <span className="ml-auto text-neutral-500"><DateTime iso={item.date} context="list" /></span>
+      <span className="font-voice text-dust">
+        <DateTime iso={item.date} context="list" />
+      </span>
     </li>
   );
 }
 
-export function HomeFeed({ feed, showRecent = true }: HomeFeedProps): React.JSX.Element | null {
+export function HomeFeed({
+  feed,
+  showRecent = true,
+}: HomeFeedProps): React.JSX.Element | null {
   // H45: when showRecent=false AND thisWeek empty, hide entirely.
   if (!showRecent && feed.thisWeek.length === 0) return null;
-  const showEmpty = showRecent;
+
+  const shipCount = feed.thisWeek.length;
+  const label =
+    shipCount === 0
+      ? s("hero.home.shipsLabelNone")
+      : s("hero.home.shipsLabelFmt").replace("{count}", String(shipCount));
+
+  const items = showRecent ? [...feed.thisWeek, ...feed.recent] : feed.thisWeek;
+  const isEmpty = items.length === 0;
 
   return (
-    <section className="space-y-6">
-      <div>
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-          {s("home.thisWeek.heading")}
-        </h2>
-        {feed.thisWeek.length === 0 ? (
-          showEmpty ? (
-            <p className="mt-2 text-sm text-neutral-600">
-              Nothing scheduled this week — <a className="underline" href="/events">browse all events</a>.
-            </p>
-          ) : null
-        ) : (
-          <ul className="mt-1 divide-y divide-neutral-200">
-            {feed.thisWeek.map((item) => (
-              <ThisWeekItem key={item.type + ":" + item.slug} item={item} />
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {showRecent ? (
-        <div>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-            {s("home.recent.heading")}
-          </h2>
-          {feed.recent.length === 0 ? (
-            <p className="mt-2 text-sm text-neutral-600">
-              No recent activity. — <a className="underline" href="/projects">browse projects</a>.
-            </p>
-          ) : (
-            <ul className="mt-1 divide-y divide-neutral-200">
-              {feed.recent.map((item) => (
-                <RecentItem key={item.type + ":" + item.slug} item={item} />
-              ))}
-            </ul>
-          )}
+    <section aria-labelledby="ships-feed" className="space-y-3">
+      <MonoLabel>{label}</MonoLabel>
+      <h2 id="ships-feed" className="sr-only">
+        {s("home.thisWeek.heading")}
+      </h2>
+      {isEmpty ? (
+        <div className="bg-paper border-[1.5px] border-ink p-4">
+          <p className="font-display italic text-ink text-[14px]">
+            {s("empty.home.ships")}
+          </p>
         </div>
-      ) : null}
+      ) : (
+        <ul className="flex flex-col gap-1.5">
+          {items.map((item) => (
+            <ShipCard key={item.type + ":" + item.slug} item={item} />
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

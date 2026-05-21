@@ -37,8 +37,10 @@ describe("ListItem — Q5.1 / D36 props contract", () => {
         avatar={{ name: "Anton", handle: "anton1rsod", size: 32 }}
       />,
     );
-    // Avatar renders an <img> for the GitHub URL (H59-gated by next.config)
-    expect(screen.queryByRole("img")).not.toBeNull();
+    // v0.6 Avatar renders an amber monogram tile (no <img>); presence is
+    // confirmed via the accessible label.
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(screen.getByLabelText("Anton's avatar")).toBeInTheDocument();
   });
 
   it("renders trailing slot as ReactNode", () => {
@@ -52,15 +54,40 @@ describe("ListItem — Q5.1 / D36 props contract", () => {
     expect(screen.getByTestId("trailing-chip")).toBeInTheDocument();
   });
 
-  it("padding + hover + focus-visible classes per Q5.1", () => {
+  it("v0.6 wrapper uses paper bg + ink left border + cream hover + focus-visible accent ring (§16.5 + Q5.1)", () => {
     render(<ListItem href="/x" title="T" />);
     const link = screen.getByRole("link");
+    // v0.6 visual targets (§16.5)
+    expect(link.className).toMatch(/bg-paper/);
+    expect(link.className).toMatch(/border-l-\[3px\]/);
+    expect(link.className).toMatch(/border-l-ink/);
+    expect(link.className).toMatch(/hover:bg-cream/);
+    // Spacing + focus-visible affordance preserved from Q5.1 + Q9.1
     expect(link.className).toMatch(/py-3/);
     expect(link.className).toMatch(/px-4/);
-    expect(link.className).toMatch(/hover:bg-neutral-50/);
     expect(link.className).toMatch(/focus-visible:ring-2/);
     expect(link.className).toMatch(/ring-accent-500/);
     expect(link.className).toMatch(/ring-offset-2/);
+  });
+
+  it("v0.6 title uses font-display italic; subtitle + meta use font-voice dust (§16.5)", () => {
+    render(
+      <ListItem
+        href="/x"
+        title="Title"
+        subtitle="Subtitle line"
+        meta="Wed May 21"
+      />,
+    );
+    const title = screen.getByText("Title");
+    expect(title.className).toMatch(/font-display/);
+    expect(title.className).toMatch(/italic/);
+    const subtitle = screen.getByText("Subtitle line");
+    expect(subtitle.className).toMatch(/font-voice/);
+    expect(subtitle.className).toMatch(/text-dust/);
+    const meta = screen.getByText("Wed May 21");
+    expect(meta.className).toMatch(/font-voice/);
+    expect(meta.className).toMatch(/text-dust/);
   });
 
   it("omits subtitle / meta / avatar / trailing slots when undefined", () => {

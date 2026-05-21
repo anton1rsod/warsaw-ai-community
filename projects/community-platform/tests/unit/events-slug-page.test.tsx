@@ -1,5 +1,7 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import type { Event } from "@/lib/events";
 import type * as GitHubAppModule from "@/lib/github-app";
 
@@ -87,15 +89,17 @@ vi.mock("@/app/components/EventRoster", () => ({
 afterEach(() => { cleanup(); vi.resetAllMocks(); });
 
 describe("H35: /events/[slug] detail", () => {
-  it("renders title, date, startTime, location, AddToCalendar", async () => {
+  it("renders title, monoLead with date+startTime, durationMinutes+location meta, AddToCalendar", async () => {
     const { findEventBySlug } = await import("@/lib/content-snapshot");
     vi.mocked(findEventBySlug).mockReturnValue(event);
     const { default: EventPage } = await import("@/app/events/[slug]/page");
     const ui = await EventPage({ params: Promise.resolve({ slug: "2026-06-15-hack" }) });
     render(ui);
     expect(screen.getByRole("heading", { level: 1, name: /AI Hackathon/ })).toBeInTheDocument();
-    expect(screen.getByText("2026-06-15")).toBeInTheDocument();
-    expect(screen.getByText(/18:00/)).toBeInTheDocument();
+    // v0.6 redesign: date+time live in the monoLead pre-header, not raw ISO.
+    expect(screen.getByText(/meetup № 00 · 15 jun · 18:00 sharp/i)).toBeInTheDocument();
+    // v0.6 meta line excludes startTime (avoid duplication with monoLead); shows duration + location.
+    expect(screen.getByText(/180 min/)).toBeInTheDocument();
     expect(screen.getByText(/Office/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Add to Calendar/i })).toBeInTheDocument();
   });
@@ -258,5 +262,75 @@ describe("H35: /events/[slug] detail", () => {
     expect(
       screen.getByText(/No one's marked going yet/i),
     ).toBeInTheDocument();
+  });
+});
+
+describe("EventDetailPage v0.6 (Task 3.5 — visual redesign + H89 contract)", () => {
+  // Use the same shared mocks established at module-load time above.
+  const meetup4: Event = {
+    date: "2026-05-21",
+    slug: "2026-05-21-meetup-4" as Event["slug"],
+    title: "AI Community | Meetup #4",
+    status: "scheduled",
+    body: "Body content",
+    startTime: "19:00",
+    durationMinutes: 120,
+    location: "Grzybowska 85a",
+    host: "anton1rsod",
+  };
+
+  afterEach(() => { vi.useRealTimers(); });
+
+  it("renders MonoLabel '// meetup № 04 · 21 may · 19:00 sharp' (events.detail.monoLeadFmt)", async () => {
+    const { findEventBySlug } = await import("@/lib/content-snapshot");
+    vi.mocked(findEventBySlug).mockReturnValue(meetup4);
+    const { default: EventPage } = await import("@/app/events/[slug]/page");
+    const ui = await EventPage({ params: Promise.resolve({ slug: "2026-05-21-meetup-4" }) });
+    render(ui);
+    expect(screen.getByText(/meetup № 04 · 21 may · 19:00 sharp/i)).toBeInTheDocument();
+  });
+
+  it("renders Fraunces italic title with AmberTag 'tonight.' suffix on event-day", async () => {
+    // Pin now to event day (2026-05-21 noon Warsaw-ish) so todaySuffix() yields tonight.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 4, 21, 12, 0, 0));
+    const { findEventBySlug } = await import("@/lib/content-snapshot");
+    vi.mocked(findEventBySlug).mockReturnValue(meetup4);
+    const { default: EventPage } = await import("@/app/events/[slug]/page");
+    const ui = await EventPage({ params: Promise.resolve({ slug: "2026-05-21-meetup-4" }) });
+    render(ui);
+    expect(screen.getByText("tonight.")).toBeInTheDocument();
+  });
+
+  it("renders AmberTag 'this week.' suffix 1–6 days before event-day", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 4, 18, 12, 0, 0)); // 3 days before
+    const { findEventBySlug } = await import("@/lib/content-snapshot");
+    vi.mocked(findEventBySlug).mockReturnValue(meetup4);
+    const { default: EventPage } = await import("@/app/events/[slug]/page");
+    const ui = await EventPage({ params: Promise.resolve({ slug: "2026-05-21-meetup-4" }) });
+    render(ui);
+    expect(screen.getByText("this week.")).toBeInTheDocument();
+  });
+
+  it("omits AmberTag suffix for events more than 6 days out", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 4, 14, 12, 0, 0)); // 7 days before
+    const { findEventBySlug } = await import("@/lib/content-snapshot");
+    vi.mocked(findEventBySlug).mockReturnValue(meetup4);
+    const { default: EventPage } = await import("@/app/events/[slug]/page");
+    const ui = await EventPage({ params: Promise.resolve({ slug: "2026-05-21-meetup-4" }) });
+    render(ui);
+    expect(screen.queryByText("tonight.")).not.toBeInTheDocument();
+    expect(screen.queryByText("this week.")).not.toBeInTheDocument();
+  });
+
+  it("preserves force-dynamic + loadViewerRsvp (v0.4.7 + v0.4.8 contract — H89 grep)", () => {
+    const src = readFileSync(
+      resolve(__dirname, "../../app/events/[slug]/page.tsx"),
+      "utf-8",
+    );
+    expect(src).toMatch(/export\s+const\s+dynamic\s*=\s*["']force-dynamic["']/);
+    expect(src).toMatch(/loadViewerRsvp/);
   });
 });
