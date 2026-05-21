@@ -1,5 +1,6 @@
 import rostersData from "@/lib/__generated__/event-rosters.json";
 import { findMemberBySlug } from "@/lib/content-snapshot";
+import { auth } from "@/lib/auth";
 
 interface RosterEntry {
   going: { publicSlugs: string[]; hiddenCount: number };
@@ -39,6 +40,7 @@ function SubRoster({
   publicSlugs,
   hiddenCount,
   eventSlug,
+  viewerIsSignedIn,
 }: {
   label: string;
   side: "going" | "interested";
@@ -46,6 +48,7 @@ function SubRoster({
   publicSlugs: readonly string[];
   hiddenCount: number;
   eventSlug: string;
+  viewerIsSignedIn: boolean;
 }): React.JSX.Element {
   const accent = side === "going" ? "border-green-500" : "border-amber-500";
   return (
@@ -64,7 +67,10 @@ function SubRoster({
           {publicSlugs.map((s) => (
             <MemberAvatar key={s} slug={s} />
           ))}
-          {hiddenCount > 0 ? (
+          {/* v0.5.1 H82: hide the +N chip when viewer is signed-in — the
+              chip's only purpose was the sign-up CTA, which is wrong for
+              signed-in viewers. The h3 already shows ({total} total). */}
+          {hiddenCount > 0 && !viewerIsSignedIn ? (
             <a
               href={`/login?callbackUrl=/events/${eventSlug}`}
               className="flex h-10 items-center rounded-full bg-neutral-100 px-3 text-xs text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
@@ -81,6 +87,12 @@ function SubRoster({
 export async function EventRoster({
   eventSlug,
 }: EventRosterProps): Promise<React.JSX.Element> {
+  // v0.5.1 H82: read viewer state at request time. Page parent (/events/[slug])
+  // is force-dynamic per v0.4.8 / chat-30, so this auth() runs per-request and
+  // matches the request cookie.
+  const session = await auth();
+  const viewerIsSignedIn = session?.githubHandle != null;
+
   const entry = rosters[eventSlug];
   const goingPublic = entry?.going.publicSlugs ?? [];
   const goingHidden = entry?.going.hiddenCount ?? 0;
@@ -98,6 +110,7 @@ export async function EventRoster({
         publicSlugs={goingPublic}
         hiddenCount={goingHidden}
         eventSlug={eventSlug}
+        viewerIsSignedIn={viewerIsSignedIn}
       />
       <SubRoster
         label="Interested"
@@ -106,6 +119,7 @@ export async function EventRoster({
         publicSlugs={interestedPublic}
         hiddenCount={interestedHidden}
         eventSlug={eventSlug}
+        viewerIsSignedIn={viewerIsSignedIn}
       />
     </section>
   );
