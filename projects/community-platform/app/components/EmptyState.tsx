@@ -1,8 +1,17 @@
-import Link from "next/link";
-import type { Route } from "next";
+import { Pill } from "@/app/components/Pill";
 
 /**
  * <EmptyState> — Q3.5 codification + walkthrough §3 (asymmetric empty-state fix).
+ *
+ * v0.6 Phase 3.8 restyle (spec §16.6):
+ *   - Typography flipped from neutral sans-medium to Fraunces italic
+ *     (font-display) in dust color — warm, sober empty-state voice.
+ *   - Calibration rendered in the same family at smaller size.
+ *   - nextAction CTA rendered as <Pill variant="dashed"> per Phase 3.8
+ *     brief: this matches the dashed-border CTA pattern used across
+ *     other v0.6 surfaces (e.g., /events). External nextAction keeps
+ *     the ↗ glyph + rel=noopener (preserves Q3.5 external semantics —
+ *     Pill anchor mode adds target=_blank + rel=noopener when external).
  *
  * Renders at least the headline. Every Phase A surface that mounts this
  * component MUST pass at least one of calibration / nextAction (per
@@ -10,8 +19,6 @@ import type { Route } from "next";
  * future v0.5+ "terminal empty state" use case (e.g., /no-access) does
  * not require a new component; Phase A code-review enforces the
  * "calibration OR nextAction required on real surfaces" invariant.
- *
- * external nextAction: opens in new tab; appends ↗ glyph; rel=noopener.
  */
 interface EmptyStateProps {
   headline: string;
@@ -30,29 +37,21 @@ export function EmptyState({
 }: EmptyStateProps): React.JSX.Element {
   return (
     <div className="py-8 px-4 text-center">
-      <p className="text-neutral-900 font-medium">{headline}</p>
+      <p className="font-display italic text-dust text-[13px]">{headline}</p>
       {calibration && (
-        <p className="mt-2 text-sm text-neutral-600">{calibration}</p>
+        <p className="mt-2 font-display italic text-dust text-[12px]">
+          {calibration}
+        </p>
       )}
       {nextAction && (
         <p className="mt-3">
-          {nextAction.external ? (
-            <a
-              href={nextAction.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-accent-700 underline"
-            >
-              {nextAction.label} ↗
-            </a>
-          ) : (
-            <Link
-              href={nextAction.href as Route}
-              className="text-accent-700 underline"
-            >
-              {nextAction.label}
-            </Link>
-          )}
+          <Pill
+            variant="dashed"
+            href={nextAction.href}
+            external={nextAction.external}
+          >
+            {nextAction.external ? `${nextAction.label} ↗` : nextAction.label}
+          </Pill>
         </p>
       )}
     </div>
