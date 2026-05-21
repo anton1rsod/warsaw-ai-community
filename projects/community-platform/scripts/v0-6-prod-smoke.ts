@@ -1,6 +1,6 @@
 // chat-35 v0.6.0 production smoke — drive 4 anon surfaces, capture screenshots,
 // assert key visual markers from spec §16.4. Run with:
-//   pnpm exec node scripts/v0-6-prod-smoke.mjs
+//   pnpm exec tsx scripts/v0-6-prod-smoke.ts
 // Uses a fresh chromium.launch() (no user-data-dir) to avoid colliding with
 // any MCP browser session. Output: 4 screenshots in ./prod-smoke-v0-6/ + a
 // per-surface marker check printed to stdout.
