@@ -10,6 +10,7 @@ import {
   type GitHubAppClient,
 } from "@/lib/github-app";
 import { log } from "@/lib/log";
+import { safeHandle as toSafeHandle } from "@/lib/handles";
 import {
   SaveProfileSchema,
   parseFrontmatter,
@@ -43,9 +44,15 @@ function buildClient(): GitHubAppClient {
 }
 
 function commitMessage(handle: string): string {
+  // v0.5.1 chat-33 reviewer-triage HIGH fix: safeHandle wasn't in the original
+  // spec §2 Item 3 scope for save-profile (which lacked the inline CRLF strip
+  // pattern), but commitMessage interpolates the raw handle into the commit
+  // body + Co-Authored-By trailer — same injection surface as the other 3
+  // server actions. Close it here for consistency.
+  const safeHandle = toSafeHandle(handle);
   return (
-    `chore(community): update profile prose for @${handle}\n\n` +
-    `Co-Authored-By: ${handle} <${handle}@users.noreply.github.com>\n`
+    `chore(community): update profile prose for @${safeHandle}\n\n` +
+    `Co-Authored-By: ${safeHandle} <${safeHandle}@users.noreply.github.com>\n`
   );
 }
 

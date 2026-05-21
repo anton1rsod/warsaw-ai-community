@@ -19,8 +19,10 @@ function format(tag: string, event: string, fields?: LogFields): string {
   if (tag.length === 0) {
     throw new Error("log tag must be non-empty");
   }
-  const hasFields = fields !== undefined && Object.keys(fields).length > 0;
-  return hasFields
+  // Inline the guard to preserve TypeScript narrowing of `fields` in the
+  // JSON.stringify branch — `const hasFields = ...` would break narrowing
+  // through the boolean intermediate (caught by chat-33 ts-reviewer).
+  return fields !== undefined && Object.keys(fields).length > 0
     ? `[${tag}] ${event} ${JSON.stringify(fields)}`
     : `[${tag}] ${event}`;
 }

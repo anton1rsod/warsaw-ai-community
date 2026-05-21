@@ -118,6 +118,9 @@ describe("H81: /events admin button", () => {
     const link = screen.queryByRole("link", { name: /\+ New event/ });
     expect(link).not.toBeNull();
     expect(link?.getAttribute("href")).toBe("/admin/events/new");
+    // chat-33 reviewer triage: assert isAdmin was called with the session
+    // handle (not the slug, not the full session object, not undefined).
+    expect(vi.mocked(isAdmin)).toHaveBeenCalledWith("anton1rsod");
   });
 
   it("signed-in non-admin does NOT see button", async () => {

@@ -30,25 +30,25 @@ afterEach(() => {
 
 describe("EventRoster — H82 viewer-state at render-time", () => {
   it("anonymous viewer sees +N (sign in to see) chip when hiddenCount > 0", async () => {
-    (auth as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    vi.mocked(auth).mockResolvedValue(null as never);
     const el = await EventRoster({ eventSlug: "with-hidden" });
     render(el);
     expect(screen.queryByText(/members \(sign in to see\)/)).not.toBeNull();
   });
 
   it("signed-in viewer does NOT see +N (sign in to see) chip", async () => {
-    (auth as ReturnType<typeof vi.fn>).mockResolvedValue({
+    vi.mocked(auth).mockResolvedValue({
       githubHandle: "anton1rsod",
-    });
+    } as never);
     const el = await EventRoster({ eventSlug: "with-hidden" });
     render(el);
     expect(screen.queryByText(/members \(sign in to see\)/)).toBeNull();
   });
 
   it("signed-in viewer still sees h3 totals", async () => {
-    (auth as ReturnType<typeof vi.fn>).mockResolvedValue({
+    vi.mocked(auth).mockResolvedValue({
       githubHandle: "anton1rsod",
-    });
+    } as never);
     const el = await EventRoster({ eventSlug: "with-hidden" });
     render(el);
     // Going: 1 public + 2 hidden = 3 total
@@ -56,7 +56,7 @@ describe("EventRoster — H82 viewer-state at render-time", () => {
   });
 
   it("hiddenCount === 0 means no chip in either viewer state", async () => {
-    (auth as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    vi.mocked(auth).mockResolvedValue(null as never);
     const el = await EventRoster({ eventSlug: "no-hidden" });
     render(el);
     expect(screen.queryByText(/members \(sign in to see\)/)).toBeNull();
