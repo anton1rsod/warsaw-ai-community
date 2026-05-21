@@ -3346,13 +3346,15 @@ Tailwind config extension exposes these as `bg-cream`, `text-ink`, `text-dust`, 
 ```typescript
 import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 
+// Fraunces is variable — use weight: "variable" + axes (not weight array)
+// per next/font/google API for variable fonts. opsz is built-in for Fraunces.
 const fraunces = Fraunces({
   subsets: ["latin"],
-  weight: ["400", "700", "900"],
+  weight: "variable",
   style: ["normal", "italic"],
+  axes: ["SOFT", "WONK"],   // opsz auto-loaded for Fraunces; wght included by default
   variable: "--font-fraunces",
   display: "swap",
-  axes: ["opsz", "SOFT", "WONK"],
 });
 
 const inter = Inter({  // kept from v0.4
@@ -3370,7 +3372,9 @@ const jetbrains = JetBrains_Mono({
 });
 ```
 
-`<html>` carries all three variables: `className={`${fraunces.variable} ${inter.variable} ${jetbrains.variable}`}`.
+`<html>` carries all three variables: `className={\`${fraunces.variable} ${inter.variable} ${jetbrains.variable}\`}`.
+
+**Phase 0 verification gate**: `pnpm tsc --noEmit` + `pnpm build` must be green after this import block lands; if `next/font/google` rejects the `axes` API shape (Next.js 16 minor-version drift risk), fall back to static-weight Fraunces (`weight: ["400", "700", "900"]`) + drop the `font-variation-settings` declarations from §16.2 (the rotated tag still works without SOFT/WONK axes; only the per-surface expression dial is lost).
 
 **Type roles (Tailwind utility classes):**
 
@@ -3547,6 +3551,39 @@ EventRsvpButton + AddToCalendar functional contract unchanged (props + hydration
 | `EmptyState` | `app/components/EmptyState.tsx` | **Modified** | ~25 | Georgia italic + dust color + warm copy posture |
 | `DateTime` | `app/components/DateTime.tsx` | **Style-only** | unchanged | Inherits new mono voice via parent classes |
 
+**Primitive type contracts (Phase 1 deliverable — implementer locks these byte-identical):**
+
+```typescript
+// app/components/AmberTag.tsx
+interface AmberTagProps { children: React.ReactNode; className?: string; }
+export function AmberTag(props: AmberTagProps): React.JSX.Element;
+
+// app/components/MonoLabel.tsx
+interface MonoLabelProps { children: React.ReactNode; as?: "p" | "div" | "span"; }
+export function MonoLabel(props: MonoLabelProps): React.JSX.Element;
+
+// app/components/Pill.tsx
+type PillVariant = "going" | "dashed" | "solid";
+type PillProps = { variant: PillVariant; children: React.ReactNode } & (
+  | { href: string; type?: never; onClick?: never }                                  // anchor mode
+  | { type: "button" | "submit"; href?: never; onClick?: () => void; disabled?: boolean }  // button mode
+);
+export function Pill(props: PillProps): React.JSX.Element;
+
+// app/components/EventCard.tsx
+interface EventCardProps {
+  slug: string;          // EventSlug brand (lib/events.ts)
+  title: string;
+  date: string;          // YYYY-MM-DD; date-badge derives day + 3-char month
+  startTime?: string;    // HH:MM (24h)
+  location?: string;
+  goingCount: number;
+  hoverLift?: boolean;   // default true on /events; false on /home next-event card (already inside hero block)
+  showRsvpStateChip?: "going" | "interested" | null;  // signed-in viewer state for /home + future surfaces
+}
+export function EventCard(props: EventCardProps): React.JSX.Element;
+```
+
 **Untouched in v0.6**: `EventForm`, `ProfileEditor`, `StatusEditor`, `AskGBrainButton`, `ConsentModal`, `GdprPanel`, `TopContributors`, `ContributionCard`, `Tag`, `SafeHtml`. These keep current visual treatment until their parent surface is redesigned in v0.7+.
 
 ### 16.6 Empty states + motion + dark-mode posture
@@ -3557,8 +3594,8 @@ EventRsvpButton + AddToCalendar functional contract unchanged (props + hydration
 |---|---|---|
 | `/home` next-event card | No upcoming event within 7 days | "Next meetup lands soon. Watch this strip." (italic) |
 | `/home` ships feed | No commits in 7-day window | "Next ship lands when somebody commits." (italic) |
-| `/events` upcoming | No upcoming events | "No upcoming events yet — Warsaw AI starts tonight." (italic, only true on launch night; static after) |
-| `/events` past | No past events | "No past events yet — Warsaw AI starts tonight." |
+| `/events` upcoming | No upcoming events | "No upcoming meetup scheduled — [Telegram](https://t.me/warsaw_ai) has the next signal." (italic; evergreen — works whether community is bootstrapping or quiet between meetups) |
+| `/events` past | No past events | "No past events yet." (italic; this state only persists until first meetup; defensive copy) |
 | `/events/[slug]` going roster | 0 going | "Be the first to RSVP." (italic) |
 | `/events/[slug]` interested roster | 0 interested | "No one's marked interested yet." (italic) |
 
@@ -3567,9 +3604,11 @@ All empty-state copy lives in `lib/i18n/strings.ts` under namespace `empty.<surf
 **Motion (sober — no JS animation libs):**
 
 - `AmberTag` — static `-rotate-[1.5deg]`, no animation
-- `EventCard` — `hover:translate-y-[-2px] hover:shadow-[0_4px_0_0_#1a1a2e] transition-transform duration-150` (hard ink shadow on hover, matches the brutalist-edge motif)
-- `Pill` variant=going — `hover:bg-accent-500 hover:text-ink transition-colors duration-150` on the RSVP toggle path
+- `EventCard` — `hover:translate-y-[-2px] hover:shadow-[0_4px_0_0_#1a1a2e] focus-visible:translate-y-[-2px] focus-visible:shadow-[0_4px_0_0_#1a1a2e] transition-transform duration-150` (hard ink shadow; **keyboard-focus parity required per H91** — hover-only would fail axe-core focus-visible-on-hover-affordance gate)
+- `Pill` variant=going — `hover:bg-accent-500 hover:text-ink focus-visible:bg-accent-500 focus-visible:text-ink transition-colors duration-150` (focus parity on RSVP toggle)
+- All interactive elements get visible `focus-visible:outline-[2px] focus-visible:outline-accent-500 focus-visible:outline-offset-2` as default (Tailwind `@layer base` rule)
 - Header active-page indicator — no transition (server-rendered per request, no flicker)
+- `prefers-reduced-motion: reduce` — disables all `transition-*` and `translate-*` motion via global `@layer base` media query (`*, *::before, *::after { transition: none !important; transform: none !important; }`)
 - No page-load orchestration; no parallax; no Lottie / Framer Motion / GSAP
 
 **Dark-mode posture:**
@@ -3625,13 +3664,19 @@ No hardcoded strings outside `s(key)`. New translation key inventory: ~35 entrie
 - `e2e/v0-6-a11y.spec.ts` — axe-core serious-violations gate on all 4 surfaces (H91)
 - Existing v0.4-shell, v0.4-a11y, v0.5.1 E2E tests stay green
 
-**Lighthouse (vs Vercel preview, mobile + desktop):**
-- Performance ≥90 (current baseline /login mobile 99 / desktop 100)
-- Accessibility ≥90 (current baseline 100)
-- Best Practices ≥90 (current baseline 96)
-- SEO ≥90 (current baseline 91)
+**Lighthouse (vs Vercel preview, mobile + desktop) — Phase 4 acceptance gate:**
 
-Font-loading is the perf risk: 3 Google Fonts with multiple weights → potential LCP regression. Mitigated by `next/font/google` self-hosting + `display: swap` + Latin-only subset + weight scoping (Fraunces 400/700/900, Inter 400/600, JetBrains 400/700 — total ~8 woff2 files, ~120KB compressed).
+| Metric | Mobile threshold | Current baseline (/login) | Budget headroom |
+|---|---|---|---|
+| Performance score | ≥90 | 99 | up to −9 |
+| LCP | ≤2.5s | 1.5s | +1s for font swap |
+| TBT | ≤300ms | 60ms | +240ms for hydration |
+| CLS | ≤0.1 | 0 | font-swap CLS budget 0.05 |
+| Accessibility score | ≥95 (raised from v0.4's ≥90) | 100 | up to −5 |
+| Best Practices score | ≥90 | 96 | up to −6 |
+| SEO score | ≥90 | 91 | up to −1 |
+
+Font-loading is the perf risk: 3 Google Fonts with multiple weights → potential LCP regression. Mitigated by `next/font/google` self-hosting + `display: swap` + Latin-only subset + weight scoping (Fraunces variable 400-900 italic, Inter 400/600, JetBrains 400/700 — total ~6-8 woff2 files, ~120KB compressed). **If LCP regresses past 2.5s on mobile**, Phase 4 closeout drops `font-variation-settings` on body copy (only display headlines use variable axes) and falls back to fixed-weight static Fraunces files.
 
 ### 16.10 Out of scope (v0.7+ candidates)
 
