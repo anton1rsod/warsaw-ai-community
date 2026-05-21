@@ -35,18 +35,21 @@ import { EventRoster } from "@/app/components/EventRoster";
 afterEach(cleanup);
 
 describe("H32: EventRoster (D10, D12)", () => {
-  it("renders Going + Interested sub-rosters with totals", async () => {
+  it("renders Going + Interested sub-rosters with v0.6 mono labels", async () => {
     const ui = await EventRoster({ eventSlug: "2026-06-15-hack" });
     render(ui);
-    // Going: 2 public + 3 hidden = 5 total. Interested: 1 + 0 = 1.
-    expect(screen.getByText(/Going \(5 total\)/)).toBeInTheDocument();
-    expect(screen.getByText(/Interested \(1 total\)/)).toBeInTheDocument();
+    // v0.6 markup: "// going (5)" (2 public + 3 hidden); anonymous viewer
+    // sees "// interested (sign in to see)" rather than the count.
+    expect(screen.getByText(/\/\/ going \(5\)/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/\/\/ interested \(sign in to see\)/),
+    ).toBeInTheDocument();
   });
 
-  it("renders avatars for public slugs (initials)", async () => {
+  it("renders avatars for public slugs (link wrappers carry member name as title)", async () => {
     const ui = await EventRoster({ eventSlug: "2026-06-15-hack" });
     render(ui);
-    // Avatar links use title attribute for the full name; accessible name is the initials text.
+    // v0.6: Avatar primitive wrapped in <a href="/members/<slug>" title={name}>
     expect(screen.getByTitle("Anton Safronov")).toHaveAttribute(
       "href",
       "/members/anton-safronov",
@@ -74,27 +77,26 @@ describe("H32: EventRoster (D10, D12)", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("empty state on both sides when totals are 0", async () => {
+  it("empty state on going side when totals are 0 (v0.6 i18n copy)", async () => {
     const ui = await EventRoster({ eventSlug: "2026-07-04-empty" });
     render(ui);
+    // v0.6 empty-state copy from `s("empty.eventDetail.going")`.
+    expect(screen.getByText(/Be the first to RSVP\./i)).toBeInTheDocument();
+    // Anonymous viewer with 0-total interested side: NO empty-state copy renders
+    // (label already says "(sign in to see)" — list is suppressed entirely).
     expect(
-      screen.getByText(/No one's marked going yet/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/No one's marked interested yet/i),
-    ).toBeInTheDocument();
+      screen.queryByText(/No one's marked interested yet/i),
+    ).not.toBeInTheDocument();
   });
 
   it("graceful handling when eventSlug has no roster entry", async () => {
     const ui = await EventRoster({ eventSlug: "no-such-event" });
     render(ui);
     // Falls through to empty path (0 total on both sides).
-    expect(
-      screen.getByText(/No one's marked going yet/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Be the first to RSVP\./i)).toBeInTheDocument();
   });
 
-  it("avatar initials fall back to slug prefix when member missing", async () => {
+  it("avatar tile falls back to slug when member missing", async () => {
     vi.doMock("@/lib/__generated__/event-rosters.json", () => ({
       default: {
         "x-event": {
