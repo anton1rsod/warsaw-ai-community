@@ -40,7 +40,7 @@ describe("Footer v0.6 — dark band, serif italic + mono links", () => {
 describe("Footer v0.6 — link wiring + external safety", () => {
   it("renders copyright text via chrome.footer.copyrightFmt", () => {
     render(<Footer />);
-    expect(screen.getByText("© 2026 Warsaw AI Community")).toBeInTheDocument();
+    expect(screen.getByText("© 2026 Subploters")).toBeInTheDocument();
   });
 
   it("About links to /handbook (Phase A fallback per O5)", () => {

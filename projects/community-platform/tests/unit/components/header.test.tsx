@@ -35,10 +35,12 @@ describe("Header — anonymous render", () => {
   it("renders wordmark linking to /", async () => {
     (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     render(await Header());
-    // v0.6 logo is the lowercase "warsaw.ai" wordmark.
-    const wordmark = screen.getByRole("link", { name: /warsaw\.ai/ });
+    // v1.1 brand (chat-38): logo is the path-drawn Subploters inline-fused lockup (dark variant).
+    const wordmark = screen.getByRole("link", { name: /Subploters/ });
     expect(wordmark.getAttribute("href")).toBe("/");
-    expect(wordmark.className).toMatch(/font-bold/);
+    const img = wordmark.querySelector("img");
+    expect(img?.getAttribute("src")).toBe("/branding/subploters-lockup-dark.svg");
+    expect(img?.getAttribute("alt")).toBe("Subploters");
   });
 
   it("renders 5-item top nav (Q2.1)", async () => {

@@ -138,11 +138,11 @@ export const strings = {
   // ═══════════════════════════════════════════════════════════════════════
 
   // ─── hero.anon.* (anon landing hero copy) ───────────────────────────────
-  "hero.anon.taglineLead": "Warsaw AI",
+  "hero.anon.taglineLead": "Subploters",
   "hero.anon.taglineHighlight": "public.",
   "hero.anon.taglineInfix": "ships in",
   "hero.anon.subtagline":
-    "Where Warsaw's AI builders learn, ship, and find each other.",
+    "Where Subploters learn, ship, and find each other.",
   "hero.anon.signInCta": "sign in with github",
   "hero.anon.telegramCta": "join telegram",
   "hero.anon.nextEventMonoFmt": "// next meetup · {timeUntil}",
@@ -188,7 +188,7 @@ export const strings = {
   "empty.eventDetail.interested": "No one's marked interested yet.",
 
   // ─── chrome.header.* (v0.6 header chrome) ───────────────────────────────
-  "chrome.header.logo": "warsaw.ai",
+  "chrome.header.logo": "Subploters",
   "chrome.header.signIn": "[ sign in ]",
   "chrome.header.nav.home": "home",
   "chrome.header.nav.calendar": "calendar",
@@ -200,7 +200,7 @@ export const strings = {
   "chrome.header.dropdown.signOut": "sign out",
 
   // ─── chrome.footer.* (v0.6 footer chrome) ───────────────────────────────
-  "chrome.footer.copyrightFmt": "© {year} Warsaw AI Community",
+  "chrome.footer.copyrightFmt": "© {year} Subploters",
   "chrome.footer.builtInPublic": "built in public, MIT",
   "chrome.footer.about": "about",
   "chrome.footer.telegram": "telegram",

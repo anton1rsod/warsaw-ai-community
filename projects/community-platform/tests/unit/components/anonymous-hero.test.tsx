@@ -13,10 +13,12 @@ vi.mock("@/lib/content-snapshot", () => ({
 describe("AnonymousHero v0.6 — ADR-0014 / Q1.2 hero composition", () => {
   it("renders MonoLabel + Fraunces italic headline with AmberTag", () => {
     render(<AnonymousHero nextEvent={null} />);
-    expect(screen.getByText(/Warsaw AI/)).toBeInTheDocument();
+    // v1.1 brand (chat-38): "Warsaw AI" → "Subploters". Brand name appears in both
+    // the taglineLead headline AND the subtagline, hence getAllByText for safety.
+    expect(screen.getAllByText(/Subploters/).length).toBeGreaterThan(0);
     expect(screen.getByText(/public\./)).toBeInTheDocument();
     expect(
-      screen.getByText(/builders learn, ship, and find each other/),
+      screen.getByText(/Subploters learn, ship, and find each other/),
     ).toBeInTheDocument();
   });
 

@@ -15,8 +15,8 @@ describe("v0.6 i18n keys (H88)", () => {
       expect(v.length).toBeGreaterThan(0);
     });
 
-    it("taglineLead is 'Warsaw AI'", () => {
-      expect(s("hero.anon.taglineLead")).toBe("Warsaw AI");
+    it("taglineLead is 'Subploters'", () => {
+      expect(s("hero.anon.taglineLead")).toBe("Subploters");
     });
 
     it("taglineHighlight is 'public.'", () => {

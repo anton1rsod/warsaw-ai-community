@@ -28,8 +28,8 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Warsaw AI Community",
-  description: "Where Warsaw's AI builders learn, ship, and find each other.",
+  title: "Subploters",
+  description: "Where Subploters learn, ship, and find each other.",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -40,8 +40,8 @@ export const metadata: Metadata = {
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
   },
   openGraph: {
-    title: "Warsaw AI Community",
-    description: "Where Warsaw's AI builders learn, ship, and find each other.",
+    title: "Subploters",
+    description: "Where Subploters learn, ship, and find each other.",
     type: "website",
   },
 };

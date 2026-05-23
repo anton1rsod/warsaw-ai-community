@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Subploters — Master wordmark
+  License: CC0 1.0 Universal (see ../LICENSE.md)
+  Version: v1.1 (2026-05-23, chat-38 / Path D)
+
+  Brand rules
+    - Typography: Geist 600, ink #1a1a2e
+    - Plain wordmark — no inline glyph mark (the PL monogram lives separately as subploters-mark.svg)
+    - When paired with the mark or PSA · CITY tag, use the master wordmark above or beside, never fused inline
+    - Letter-spacing: -0.02em (Geist's natural tracking is loose at display sizes; tighten for the wordmark)
+
+  Rendering dependency
+    This SVG uses a <text> element with font-family="Geist". It renders correctly when:
+      - Used inside the community-platform (Geist is loaded via next/font)
+      - The rendering tool has Geist available (Inkscape with font installed, Figma with font enabled, etc.)
+    For off-platform use (decks, print, third-party), prefer a rasterized PNG export prepared with Geist available,
+    or wait for the v2 brand refresh which will path-draw the wordmark for font-independent rendering.
+
+  viewBox is sized for Geist 600 at 128px; trim/pad as needed downstream.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 160" role="img" aria-label="Subploters">
+  <title>Subploters</title>
+  <text x="0" y="115" font-family="Geist, system-ui, sans-serif" font-weight="600" font-size="128" letter-spacing="-0.02em" fill="#1a1a2e">Subploters</text>
+</svg>

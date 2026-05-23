@@ -34,10 +34,14 @@ const { auth } = await import("@/lib/auth");
 const { findMemberByHandle } = await import("@/lib/content-snapshot");
 
 describe("Header v0.6 — mono strip chrome", () => {
-  it("renders mono strip with warsaw.ai logo + nav with middots", async () => {
+  it("renders mono strip with Subploters lockup + nav with middots", async () => {
     (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     render(await Header());
-    expect(screen.getByText("warsaw.ai")).toBeInTheDocument();
+    // v1.1 brand (chat-38): logo is the path-drawn Subploters lockup (dark variant for bg-ink header).
+    const logo = screen.getByRole("link", { name: /Subploters/ });
+    expect(logo.querySelector("img")?.getAttribute("src")).toBe(
+      "/branding/subploters-lockup-dark.svg",
+    );
     const nav = screen.getByRole("navigation", { name: /primary/i });
     expect(nav).toHaveTextContent(/home/i);
     expect(nav).toHaveTextContent(/calendar/i);

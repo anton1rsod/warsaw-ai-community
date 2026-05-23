@@ -76,9 +76,17 @@ export async function Header({
 
       <Link
         href="/"
-        className="font-bold text-cream no-underline"
+        aria-label={s("chrome.header.logo")}
+        className="no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
       >
-        {s("chrome.header.logo")}
+        {/* Subploters master lockup — dark-mode variant (cream letters + amber PL) for the bg-ink header */}
+        <img
+          src="/branding/subploters-lockup-dark.svg"
+          alt={s("chrome.header.logo")}
+          className="h-6 w-auto"
+          width={158}
+          height={24}
+        />
       </Link>
 
       {!compact && (
