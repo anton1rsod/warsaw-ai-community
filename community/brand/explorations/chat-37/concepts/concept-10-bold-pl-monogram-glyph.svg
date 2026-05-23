@@ -1,0 +1,9 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Subploters PL monogram">
+  <g id="bg">
+    <rect x="0" y="0" width="512" height="512" fill="#fef6e6"/>
+  </g>
+  <g id="mark">
+    <path d="M 100 116 L 150 116 L 150 396 L 100 396 Z M 150 116 L 220 116 L 220 256 L 150 256 Z M 194 144 L 220 144 L 220 228 L 194 228 Z M 150 228 L 194 228 L 194 256 L 150 256 Z" fill="#f59e0b"/>
+    <path d="M 270 116 L 320 116 L 320 396 L 270 396 Z M 320 346 L 350 346 L 350 396 L 320 396 Z" fill="#f59e0b"/>
+  </g>
+</svg>

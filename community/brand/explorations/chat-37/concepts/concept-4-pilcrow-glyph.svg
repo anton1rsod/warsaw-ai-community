@@ -1,0 +1,8 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Subploters pilcrow mark">
+  <g id="bg">
+    <rect width="512" height="512" fill="#fef6e6"/>
+  </g>
+  <g id="mark">
+    <path d="M 112 96 L 384 96 L 384 416 L 332 416 L 332 144 L 280 144 L 280 416 L 228 416 L 228 256 L 196 256 C 149 256 112 220 112 176 C 112 132 149 96 196 96 Z M 228 144 L 196 144 C 178 144 164 158 164 176 C 164 194 178 208 196 208 L 228 208 Z" fill="#f59e0b"/>
+  </g>
+</svg>

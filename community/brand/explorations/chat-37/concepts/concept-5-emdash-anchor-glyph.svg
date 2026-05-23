@@ -1,0 +1,9 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Subploters em-dash anchor mark">
+  <g id="bg">
+    <rect width="512" height="512" fill="#fef6e6"/>
+  </g>
+  <g id="mark">
+    <rect x="70" y="232" width="300" height="48" fill="#f59e0b"/>
+    <rect x="394" y="106" width="48" height="300" fill="#f59e0b"/>
+  </g>
+</svg>

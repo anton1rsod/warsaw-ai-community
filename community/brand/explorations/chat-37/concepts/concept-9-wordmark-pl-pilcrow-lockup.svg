@@ -1,0 +1,13 @@
+<svg viewBox="0 0 1024 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Subploters wordmark with PL highlight and pilcrow">
+  <g id="bg">
+    <rect width="1024" height="512" fill="#fef6e6"/>
+  </g>
+  <g id="wordmark">
+    <text x="80" y="290" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif" font-weight="700" font-size="160" letter-spacing="-4">
+      <tspan fill="#1a1a2e">Sub</tspan><tspan fill="#f59e0b">pl</tspan><tspan fill="#1a1a2e">oters</tspan>
+    </text>
+    <g transform="rotate(-3 980 220)">
+      <path d="M 950 180 L 990 180 L 990 188 L 980 188 L 980 260 L 970 260 L 970 188 L 962 188 L 962 220 C 954 220 946 216 940 210 C 934 204 930 196 930 188 C 930 180 934 172 940 166 C 946 160 954 156 962 156 L 990 156 L 990 164 L 950 164 Z M 962 164 C 956 164 950 166 946 172 C 942 176 940 182 940 188 C 940 194 942 200 946 204 C 950 210 956 212 962 212 L 962 164 Z" fill="#f59e0b"/>
+    </g>
+  </g>
+</svg>

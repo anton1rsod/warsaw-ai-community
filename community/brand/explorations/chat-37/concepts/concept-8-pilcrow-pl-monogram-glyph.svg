@@ -1,0 +1,10 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Subploters pilcrow-PL monogram">
+  <g id="bg">
+    <rect width="512" height="512" fill="#fef6e6"/>
+  </g>
+  <g id="mark">
+    <path d="M 116 76 L 276 76 L 276 132 L 172 132 L 172 200 L 276 200 L 276 256 L 172 256 L 172 436 L 116 436 Z" fill="#f59e0b"/>
+    <rect x="340" y="76" width="56" height="360" fill="#f59e0b"/>
+    <rect x="276" y="76" width="64" height="32" fill="#f59e0b"/>
+  </g>
+</svg>

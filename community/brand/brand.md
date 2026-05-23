@@ -81,6 +81,8 @@ The brand has a signature glyph mark that sits in the asterisk position after "S
 
 The `assets/asterisk.svg` file in this directory is a **chat-36 iteration candidate (6-point geometric line asterisk)** — NOT the final form. The founder rejected it as too close to Claude/Anthropic visually. See `docs/specs/2026-05-23-subploters-brand-mark-handoff.md` for the full iteration history and next-chat brief.
 
+**Chat-37 update (2026-05-23):** Explored 4 new directions (letterform ligature / framework container / punctuation / abstract geometric) across 5 rounds, 14 candidates. Landed conceptually on a **PL+pilcrow fusion** — the bold pilcrow `¶` anatomy naturally reads as P (bowl + descender) + L (right vertical stroke), triple-coding **Poland** (PL country code, since Subploters registers as a Polish *Stowarzyszenie*) + **subPLot** (the embedded letters in "Subploters") + **paragraph mark** (subplot-as-paragraph metaphor). Strongest standalone glyph execution: refined PL monogram at `community/brand/explorations/chat-37/concepts/concept-11-pl-refined-glyph.svg` — real ring-shaped P bowl with interior daylight, trimmed L foot, -3° rotation. The **lockup composition** (mark adjacent to wordmark) didn't land — SVG `<text>` + `<path>` alignment is fragile due to system-font width variance; reliable execution requires path-drawing the entire wordmark. **Form remains OPEN** pending fresh-chat refinement or designer engagement. See `docs/specs/2026-05-23-subploters-brand-mark-chat37-handoff.md` and `community/brand/explorations/chat-37/README.md`.
+
 ---
 
 ## 4. Elements

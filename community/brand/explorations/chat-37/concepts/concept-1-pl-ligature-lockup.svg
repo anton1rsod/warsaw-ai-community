@@ -1,0 +1,13 @@
+<svg viewBox="0 0 1024 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Subploters concept 1: pl ligature lockup">
+  <g id="bg">
+    <rect width="1024" height="512" fill="#fef6e6"/>
+  </g>
+  <g id="wordmark" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif" font-weight="600" font-size="160" letter-spacing="-4">
+    <text x="512" y="300" text-anchor="middle">
+      <tspan fill="#1a1a2e">Sub</tspan><tspan fill="#f59e0b">pl</tspan><tspan fill="#1a1a2e">oters</tspan>
+    </text>
+  </g>
+  <g id="caption" font-family="ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace" font-weight="500" font-size="20" fill="#886c37" letter-spacing="3">
+    <text x="512" y="380" text-anchor="middle">SUB·PL·OTERS — THE SUBPLOT WITHIN</text>
+  </g>
+</svg>

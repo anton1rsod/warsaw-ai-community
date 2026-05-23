@@ -1,0 +1,15 @@
+<svg viewBox="0 0 1024 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Subploters lockup with PL inline + trailing asterisk qualifier">
+  <g id="bg">
+    <rect width="1024" height="512" fill="#fef6e6"/>
+  </g>
+  <g id="wordmark">
+    <text x="80" y="320" font-family="-apple-system, BlinkMacSystemFont, 'Geist', 'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif" font-weight="700" font-size="160" letter-spacing="-4" fill="#1a1a2e">Sub</text>
+    <g id="pl-inline-mark" transform="translate(258, 158) scale(0.41)">
+      <path fill-rule="evenodd" fill="#f59e0b" d="M 140 116 L 190 116 C 234 116 270 146 270 184 C 270 222 234 252 190 252 L 190 396 L 140 396 Z M 190 144 L 220 144 C 235 144 248 162 248 184 C 248 206 235 224 220 224 L 190 224 Z M 300 116 L 350 116 L 350 360 L 390 360 L 390 396 L 300 396 Z"/>
+    </g>
+    <text x="430" y="320" font-family="-apple-system, BlinkMacSystemFont, 'Geist', 'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif" font-weight="700" font-size="160" letter-spacing="-4" fill="#1a1a2e">oters</text>
+    <g id="qualifier-asterisk" transform="translate(820, 215) rotate(-3)">
+      <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Geist', 'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif" font-weight="700" font-size="100" fill="#f59e0b" text-anchor="start">*</text>
+    </g>
+  </g>
+</svg>

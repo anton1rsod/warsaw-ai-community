@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subploters — Mark Direction Exploration · chat-37 round 4 (refined PL+pilcrow)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..900&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --amber: #f59e0b;
+    --cream: #fef6e6;
+    --ink: #1a1a2e;
+    --dust: #886c37;
+    --bg: #f4ebd2;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    padding: 60px 40px;
+  }
+  .board-header {
+    max-width: 1100px;
+    margin: 0 auto 60px;
+    padding-bottom: 32px;
+    border-bottom: 1.5px solid var(--ink);
+  }
+  .board-header h1 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 28px;
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+  }
+  .board-header .sub {
+    font-size: 15px;
+    color: var(--dust);
+    line-height: 1.5;
+    max-width: 820px;
+  }
+  .board-header .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--dust);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 18px;
+  }
+  .triple-meaning {
+    max-width: 1100px;
+    margin: 0 auto 48px;
+    background: rgba(245, 158, 11, 0.08);
+    border-left: 3px solid var(--amber);
+    padding: 24px 32px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .triple-meaning strong { color: var(--ink); }
+  h2.section {
+    max-width: 1100px;
+    margin: 56px auto 24px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+  }
+  h2.section .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--dust);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-left: 12px;
+    vertical-align: middle;
+  }
+
+  .variant-card {
+    max-width: 1100px;
+    margin: 0 auto 28px;
+    background: var(--cream);
+    padding: 56px 80px;
+    position: relative;
+  }
+  .variant-card.dark {
+    background: var(--ink);
+    color: var(--cream);
+  }
+  .variant-card.featured {
+    border: 2px solid var(--amber);
+  }
+  .variant-label {
+    position: absolute;
+    top: 24px;
+    right: 32px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--dust);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+  .featured .variant-label {
+    color: var(--amber);
+    font-weight: 500;
+  }
+  .variant-name {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
+  .variant-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--dust);
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+  .variant-card.dark .variant-desc { color: rgba(254, 246, 230, 0.6); }
+  .variant-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 0;
+    min-height: 200px;
+  }
+  .variant-display img {
+    max-width: 100%;
+    height: auto;
+    max-height: 280px;
+  }
+  .variant-display img.glyph {
+    max-height: 240px;
+    max-width: 240px;
+  }
+
+  .favicon-section {
+    max-width: 1100px;
+    margin: 60px auto 0;
+    padding: 40px 60px;
+    background: var(--cream);
+  }
+  .favicon-section h2 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    margin-bottom: 32px;
+  }
+  .fav-row {
+    display: flex;
+    gap: 48px;
+    flex-wrap: wrap;
+    align-items: end;
+  }
+  .fav-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .fav-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--dust);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 12px;
+  }
+  .fav-sizes {
+    display: flex;
+    gap: 18px;
+    align-items: end;
+  }
+  .fav-size-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .fav-size-cell .px {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--dust);
+    margin-top: 6px;
+  }
+  .footer-note {
+    max-width: 1100px;
+    margin: 60px auto 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--dust);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="board-header">
+  <h1>Subploters — Mark Direction Exploration</h1>
+  <div class="sub">chat-37 round 5 — refined Concept 14 with trailing amber asterisk qualifier. The wordmark `Sub[PL]oters*` now reads as a complete brand mark + a reference indicator that this is something "from Subploters" (Subploters* community, Subploters* venture, Subploters* idea).</div>
+  <div class="meta">2026-05-23 · chat-37 · round 5 · featured Concept 14</div>
+</div>
+
+<div class="triple-meaning">
+  <strong>Triple semantic layer:</strong><br>
+  1. <strong>Pilcrow ¶</strong> — paragraph mark. Each subploter's venture is a paragraph in the larger story.<br>
+  2. <strong>subPLot</strong> — the embedded letters in "Subploters" highlighting the brand name's narrative reference.<br>
+  3. <strong>PL</strong> — Poland country code. Subploters is a Polish-registered Stowarzyszenie (Professional Subploters Association).
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────────────── -->
+
+<h2 class="section">Refined glyph <span class="tag">CONCEPT 11 · ROUND 4</span></h2>
+
+<div class="variant-card featured">
+  <div class="variant-label">CONCEPT 11 · GLYPH · REFINED</div>
+  <div class="variant-name">PL monogram — refined</div>
+  <div class="variant-desc">Polished P bowl (real ring shape with interior daylight via evenodd fill-rule, replacing round 3's solid block), trimmed L foot (40px×36px instead of 80px×50px), tighter P-stem-to-L-stem gap (30px), -3° rotation around canvas center matching brand.md asterisk-rotation rule.</div>
+  <div class="variant-display">
+    <img src="concepts/concept-11-pl-refined-glyph.svg" alt="Concept 11 — refined PL monogram" class="glyph">
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────────────── -->
+
+<h2 class="section">Lockup variants <span class="tag">PICK ONE PLACEMENT</span></h2>
+
+<div class="variant-card">
+  <div class="variant-label">CONCEPT 12 · LOCKUP A</div>
+  <div class="variant-name">Amber `pl` inline + PL monogram in superscript</div>
+  <div class="variant-desc">Direct refinement of round 3's Concept 9 — keeps the amber "pl" highlight inside the wordmark AND adds the path-drawn PL monogram in superscript (replacing the old system-font pilcrow). Two PL appearances — semantic but possibly redundant.</div>
+  <div class="variant-display">
+    <img src="concepts/concept-12-lockup-amber-pl-with-pl-superscript.svg" alt="Concept 12 — amber pl + PL superscript">
+  </div>
+</div>
+
+<div class="variant-card">
+  <div class="variant-label">CONCEPT 13 · LOCKUP B</div>
+  <div class="variant-name">All-ink wordmark + PL monogram in superscript</div>
+  <div class="variant-desc">Stripped — "Subploters" all in ink, with the path-drawn PL monogram in superscript as the SOLE brand mark. One place to look for the signature. Most disciplined option.</div>
+  <div class="variant-display">
+    <img src="concepts/concept-13-lockup-all-ink-with-pl-superscript.svg" alt="Concept 13 — all ink + PL superscript">
+  </div>
+</div>
+
+<div class="variant-card featured">
+  <div class="variant-label">CONCEPT 14 · LOCKUP C · REFINED · ⭐ FEATURED</div>
+  <div class="variant-name">Sub[PL]oters* — PL inline replacement + trailing asterisk qualifier</div>
+  <div class="variant-desc">The unified wordmark+mark direction (chat-37 round 5 refinement). PL letters in "Subploters" are LITERALLY the path-drawn monogram. PLUS a small amber trailing asterisk (*) in superscript — reads as a footnote-style brand qualifier ("this is Subploters*-affiliated"). The asterisk role here is fundamentally different from chat-36's rejected primary-mark asterisks: this one is a small reference indicator, not a foreground signature. Brand applications: "Subploters* idea", "Subploters* venture", "Subploters* community".</div>
+  <div class="variant-display">
+    <img src="concepts/concept-14-lockup-pl-inline-replacement.svg" alt="Concept 14 — PL inline replacement with trailing asterisk">
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────────────── -->
+
+<h2 class="section">Reference — round 3 baseline (before refinement) <span class="tag">FOR COMPARISON</span></h2>
+
+<div class="variant-card">
+  <div class="variant-label">CONCEPT 10 · ROUND 3 BASELINE</div>
+  <div class="variant-name">PL monogram (round 3, pre-refinement)</div>
+  <div class="variant-desc">For before/after comparison — solid P bowl block (no daylight), chunky L foot, no rotation. Concept 11 replaces this.</div>
+  <div class="variant-display">
+    <img src="concepts/concept-10-bold-pl-monogram-glyph.svg" alt="Concept 10 — round 3 PL monogram" class="glyph">
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────────────── -->
+
+<div class="favicon-section">
+  <h2>Favicon Size Check — Concept 11 (refined PL)</h2>
+  <div class="fav-row">
+    <div class="fav-cell">
+      <div class="fav-label">11 · PL refined</div>
+      <div class="fav-sizes">
+        <div class="fav-size-cell"><img src="concepts/concept-11-pl-refined-glyph.svg" width="64" height="64"><div class="px">64</div></div>
+        <div class="fav-size-cell"><img src="concepts/concept-11-pl-refined-glyph.svg" width="32" height="32"><div class="px">32</div></div>
+        <div class="fav-size-cell"><img src="concepts/concept-11-pl-refined-glyph.svg" width="16" height="16"><div class="px">16</div></div>
+      </div>
+    </div>
+    <div class="fav-cell">
+      <div class="fav-label">10 · PL r3 (before)</div>
+      <div class="fav-sizes">
+        <div class="fav-size-cell"><img src="concepts/concept-10-bold-pl-monogram-glyph.svg" width="64" height="64"><div class="px">64</div></div>
+        <div class="fav-size-cell"><img src="concepts/concept-10-bold-pl-monogram-glyph.svg" width="32" height="32"><div class="px">32</div></div>
+        <div class="fav-size-cell"><img src="concepts/concept-10-bold-pl-monogram-glyph.svg" width="16" height="16"><div class="px">16</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer-note">
+  All 14 concepts archived at concepts/concept-1*.svg through concept-14*.svg · rounds 1–4
+</div>
+
+</body>
+</html>

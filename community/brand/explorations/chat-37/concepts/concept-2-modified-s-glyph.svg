@@ -1,0 +1,47 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Subploters concept 2: modified S with tail">
+  <g id="bg">
+    <rect width="512" height="512" fill="#fef6e6"/>
+  </g>
+  <g id="mark">
+    <!-- Custom geometric S as a single closed path, amber fill, hand-traced to look like Geist 700 with an extended tail loop -->
+    <path
+      d="M 350 130
+         C 350 80, 305 50, 240 50
+         L 180 50
+         C 115 50, 70 90, 70 145
+         C 70 195, 115 230, 180 230
+         L 240 230
+         C 280 230, 310 245, 310 280
+         C 310 315, 280 340, 235 340
+         L 175 340
+         C 130 340, 95 320, 95 280
+         L 95 270
+         L 55 270
+         L 55 295
+         C 55 365, 110 410, 180 410
+         L 250 410
+         C 330 410, 380 365, 380 295
+         C 380 245, 345 215, 280 195
+         L 220 195
+         C 175 195, 150 175, 150 145
+         C 150 110, 175 90, 215 90
+         L 280 90
+         C 320 90, 350 105, 350 140
+         L 350 145
+         L 395 145
+         Z"
+      fill="#f59e0b"
+    />
+    <!-- Extended tail: a sweep that exits to the right then loops back, suggesting a narrative arc -->
+    <path
+      d="M 380 410
+         L 470 410
+         Q 510 410, 510 370
+         L 510 320"
+      stroke="#f59e0b"
+      stroke-width="48"
+      fill="none"
+      stroke-linecap="round"
+    />
+  </g>
+</svg>

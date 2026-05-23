@@ -1,0 +1,8 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Subploters concept 1: pl ligature glyph">
+  <g id="bg">
+    <rect width="512" height="512" fill="#fef6e6"/>
+  </g>
+  <g id="ligature" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif" font-weight="700">
+    <text x="256" y="360" text-anchor="middle" font-size="380" fill="#f59e0b" letter-spacing="-12">pl</text>
+  </g>
+</svg>
