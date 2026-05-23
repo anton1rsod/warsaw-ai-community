@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Subploters — Standalone brand mark (PL monogram)
+  License: CC0 1.0 Universal (see ../LICENSE.md)
+  Version: v1.1 (2026-05-23, chat-38 / Path D)
+
+  Brand rules
+    - Color: amber #f59e0b (do not recolor without amending brand.md)
+    - viewBox: 512×512, transparent background
+    - Rotation: -3° is baked into the transform — do NOT apply additional rotation in the rendering context
+    - Usage: favicons, social avatars, member badges, deck-corner watermarks, signage
+    - Never inline-fused with the wordmark. Wordmark and mark live as separate units (Linear / Stripe family).
+
+  Triple-coded semantics (chat-37)
+    1. Pilcrow ¶ — paragraph mark; each subploter's venture is a paragraph in the community's larger narrative
+    2. subPLot — the embedded letters in "Subploters", highlighting the brand-name's narrative reference
+    3. PL — Poland country code; Subploters registers as a Polish Stowarzyszenie (Professional Subploters Association)
+
+  Geometry (Concept 11)
+    - P with ring-shaped bowl (interior daylight via fill-rule="evenodd")
+    - L with subtle 40×36px foot
+    - 30px stem-to-stem gap (tight letterpair, reads as P-L not P L)
+
+  Provenance: derived from community/brand/explorations/chat-37/concepts/concept-11-pl-refined-glyph.svg.
+  Supersedes the chat-36 6-point asterisk (see community/brand/explorations/chat-36-archive/asterisk.svg).
+  The v2 brand refresh will path-draw a full Subploters wordmark + this mark as an inline lockup
+  (triggers: second-city launch OR formal Stowarzyszenie registration OR Q3 2026, whichever first).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Subploters mark">
+  <title>Subploters mark</title>
+  <g transform="rotate(-3 256 256)">
+    <path fill-rule="evenodd" fill="#f59e0b" d="M 140 116 L 190 116 C 234 116 270 146 270 184 C 270 222 234 252 190 252 L 190 396 L 140 396 Z M 190 144 L 220 144 C 235 144 248 162 248 184 C 248 206 235 224 220 224 L 190 224 Z M 300 116 L 350 116 L 350 360 L 390 360 L 390 396 L 300 396 Z"/>
+  </g>
+</svg>

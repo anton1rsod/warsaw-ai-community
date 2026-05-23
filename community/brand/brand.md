@@ -1,6 +1,6 @@
 # Brand
 
-**Status:** v1 — locked 2026-05-23 (chat-36). Supersedes v0 (April 2026, "Warsaw AI Community" placeholder identity).
+**Status:** v1.1 — locked 2026-05-23 (chat-38 / Path A). Supersedes v1 (chat-36 lock with mark form open) and v0 (April 2026, "Warsaw AI Community" placeholder identity).
 
 ---
 
@@ -16,7 +16,7 @@
 | **Tagline** | **Every venture is a subplot.** | Primary tagline. Declarative, on-metaphor. |
 | **Founding** | Warsaw, Poland — 2024 | First community. Externally treated as equal among future locations (no "main" / "HQ" labeling in branding). |
 
-The architecture is a **two-piece compositional system**: the universal wordmark `Subploters✱` plus a replaceable city stamp `PSA · CITY`. Used separately or together depending on context.
+The architecture is a **three-piece compositional system**: the universal wordmark `Subploters` (the inline-fused master lockup — PL monogram replacing the "pl" letters + trailing `*` amber qualifier), the standalone PL monogram mark for compact contexts (favicons, avatars), and a replaceable city stamp `PSA · CITY`. Used independently or in combination depending on context.
 
 ---
 
@@ -26,7 +26,7 @@ The architecture is a **two-piece compositional system**: the universal wordmark
 
 | Role | Color | Hex | Usage |
 |---|---|---|---|
-| Accent | Warm amber | `#f59e0b` | Asterisk, city tag background, accent rules. **Use as accent, not as field.** |
+| Accent | Warm amber | `#f59e0b` | PL monogram (inline + standalone), trailing `*` qualifier, city tag background, accent rules. **Use as accent, not as field.** |
 | Field | Cream | `#fef6e6` | Default background. Page, card, deck cover background. |
 | Ink | Deep navy-ink | `#1a1a2e` | Text, wordmark, rules, tag text. |
 | Supporting | Dust | `#886c37` | Captions, metadata, JetBrains Mono small text, dust-on-cream secondary text. |
@@ -46,58 +46,78 @@ Fraunces italic is **dropped** as of 2026-05-23 (v0.7 brand revision).
 - **0 border-radius** on all elements — geometric, decisive, no rounded corners.
 - **1.5px rules** for all dividers and underlines.
 - **−1.5° rotation** for amber tags (the v0.6 motif, inherited).
-- **−3° rotation** for the asterisk symbol mark.
+- **−3° rotation** for the PL monogram (baked into both the inline-fused lockup and the standalone mark assets — do not re-apply in CSS).
 
 ---
 
-## 3. The signature mark — placement locked, form OPEN
+## 3. The signature mark and master lockup — v1.1 (Path A, chat-38 locked)
 
-The brand has a signature glyph mark that sits in the asterisk position after "Subploters". The **placement, color, behavior, and attachment rules are locked**. The **specific visual form is NOT locked** — chat-36 explored ~7 directions (geometric radial asterisk, dagger, reference mark, name-rooted glyphs, typographic alternatives, gem cuts, refined brilliants) and the founder rejected all of them. The mark-form decision is handed off to the next iteration.
+The brand mark is the **PL monogram** (chat-37 Concept 11). The master wordmark is the **inline-fused lockup**: path-drawn "Subploters" in Geist SemiBold (600) with the PL monogram replacing the "pl" letters + trailing `*` amber qualifier. Both the inline lockup and the standalone PL mark are canonical, used in different contexts.
 
-### What's locked
+This is the Path A execution from the chat-37 handoff — the lockup ambition resolved in chat-38 rather than deferred. The lockup is **path-drawn** (every letter is SVG path data, not `<text>` glyphs), so it renders identically across browsers, OS, and tools without font-availability dependencies.
+
+### What's locked (v1.1)
 
 | Specification | Value |
 |---|---|
-| Color | Amber `#f59e0b` |
-| Size relative to text | `0.42em–0.6em` of parent text size (exact value depends on final form) |
-| Vertical position | Superscript — above baseline, around cap-height |
-| Rotation | `-3°` (slight visible tilt) |
-| Attachment rule | **Always attached to "Subploters"**. Never to a city name, never to "Association", never standing alone in the middle of a phrase (except when used as standalone monogram). |
+| Master lockup | `assets/subploters-lockup.svg` — path-drawn Geist SemiBold (600) "Subploters" with inline PL monogram + trailing `*` |
+| Standalone mark | `assets/subploters-mark.svg` — PL monogram alone, with PNG exports at 16 / 32 / 180 / 192 / 512 px under `assets/` |
+| Mark color | Amber `#f59e0b` |
+| Letter color | Ink `#1a1a2e` (in the lockup, surrounding letters are ink) |
+| Trailing `*` color | Amber `#f59e0b` (chat-37 round 5 footnote-style qualifier; small, superscript position) |
+| Mark rotation | `-3°` (baked into both the lockup and the standalone asset; do not re-apply in CSS) |
+| PL geometry | Real ring-shaped P bowl (interior daylight via `fill-rule="evenodd"`), trimmed L foot, 30px stem-to-stem gap (Concept 11 reference proportions) |
+| PL inline scale | PL height = cap-height (matches lowercase l ascender), bottom aligned to baseline — no descender extension below baseline |
+| PL inline slot | PL width + 80 unit padding (40 each side); slot is tighter than `pl` advance width so PL feels integrated, not isolated |
 
-### Where it attaches (rules)
+### Triple-coded semantics
 
-| Lockup | Mark position | Example pattern |
-|---|---|---|
-| Master wordmark | After "Subploters" | `Subploters[mark]` |
-| Location sub-mark | After "Subploters" (not after the city) | `Subploters[mark] Warsaw` |
-| Formal entity lockup | After "Subploters" (inside the formal name) | `Professional Subploters[mark] Association` |
-| Standalone monogram | The mark alone | `[mark]` |
+The bold pilcrow `¶` anatomy naturally reads as **P** (filled bowl + stem on the left) + **L** (right vertical stroke). The mark triple-codes:
 
-### What's NOT locked
+1. **Pilcrow ¶** — paragraph mark; each subploter's venture is a paragraph in the community's larger narrative.
+2. **subPLot** — the embedded letters in "Subploters", highlighting the brand-name's narrative reference. The inline lockup makes this literal — the PL *replaces* the "pl" letters in the wordmark.
+3. **PL** — Poland country code; Subploters registers as a Polish *Stowarzyszenie* (Professional Subploters Association).
 
-- The specific visual form of `[mark]` (the glyph itself)
-- The exact size within the 0.42–0.6em range
-- Whether to use Unicode ✱ as digital fallback or commission custom SVG everywhere
+Three layers of meaning in one glyph. Density that none of the chat-36 directions produced.
 
-The `assets/asterisk.svg` file in this directory is a **chat-36 iteration candidate (6-point geometric line asterisk)** — NOT the final form. The founder rejected it as too close to Claude/Anthropic visually. See `docs/specs/2026-05-23-subploters-brand-mark-handoff.md` for the full iteration history and next-chat brief.
+### When to use the lockup vs the standalone mark
 
-**Chat-37 update (2026-05-23):** Explored 4 new directions (letterform ligature / framework container / punctuation / abstract geometric) across 5 rounds, 14 candidates. Landed conceptually on a **PL+pilcrow fusion** — the bold pilcrow `¶` anatomy naturally reads as P (bowl + descender) + L (right vertical stroke), triple-coding **Poland** (PL country code, since Subploters registers as a Polish *Stowarzyszenie*) + **subPLot** (the embedded letters in "Subploters") + **paragraph mark** (subplot-as-paragraph metaphor). Strongest standalone glyph execution: refined PL monogram at `community/brand/explorations/chat-37/concepts/concept-11-pl-refined-glyph.svg` — real ring-shaped P bowl with interior daylight, trimmed L foot, -3° rotation. The **lockup composition** (mark adjacent to wordmark) didn't land — SVG `<text>` + `<path>` alignment is fragile due to system-font width variance; reliable execution requires path-drawing the entire wordmark. **Form remains OPEN** pending fresh-chat refinement or designer engagement. See `docs/specs/2026-05-23-subploters-brand-mark-chat37-handoff.md` and `community/brand/explorations/chat-37/README.md`.
+| Context | Use |
+|---|---|
+| Brand wordmark anywhere it appears at readable size (header, deck cover, About page, marketing) | **Master lockup** `subploters-lockup.svg` |
+| Body-text mention of "Subploters" (plain HTML/CSS, where loading the lockup SVG is overkill) | Render `Subploters` in Geist SemiBold ink — the secondary plain wordmark `subploters-wordmark.svg` exists for SVG-only contexts |
+| Favicon, social avatar (`@subploters`), member badge, app icon, deck-corner watermark — any compact context where the wordmark won't fit | **Standalone PL monogram** `subploters-mark.svg` |
+| Formal entity lockup ("Professional Subploters Association" on legal docs / Stowarzyszenie plaque) | See §4.4 |
+
+### Build pipeline
+
+The lockup is regenerated by `community/brand/.scratch/build-lockup.js` (gitignored npm scaffold; uses `opentype.js` + Vercel's `geist` npm package for the SemiBold TTF). Run `node build-lockup.js` from inside `.scratch/` to regenerate `assets/subploters-lockup.svg`. To change the lockup (PL scale, slot padding, trailing `*` size), edit the script and re-run.
+
+### Provenance
+
+- **v0 (rejected):** chat-36 6-point asterisk — archived at `explorations/chat-36-archive/asterisk.svg`.
+- **v1.1 mark (locked):** chat-37 Concept 11 PL monogram — `assets/subploters-mark.svg`.
+- **v1.1 lockup (locked):** chat-38 Path A — `assets/subploters-lockup.svg` (path-drawn from Geist SemiBold + Concept 11 PL inline + chat-37 round 5 trailing `*`).
+- **Concept archive:** `explorations/chat-37/` (14 SVGs across 5 rounds, README with anti-patterns list).
+- **Handoffs:** `docs/specs/2026-05-23-subploters-brand-mark-handoff.md` (chat-36 → chat-37) and `docs/specs/2026-05-23-subploters-brand-mark-chat37-handoff.md` (chat-37 → chat-38).
 
 ---
 
 ## 4. Elements
 
-### 4.1 Master wordmark
+### 4.1 Master wordmark (inline-fused lockup)
 
-`Subploters✱` — the universal global mark. Geist 600 ink, superscript amber asterisk.
+`Subploters` — the universal global mark. Path-drawn in Geist SemiBold (600) ink, with the PL monogram inline-fused replacing the "pl" letters + trailing `*` amber qualifier. Source vector at `assets/subploters-lockup.svg` (path-drawn, font-independent, renders identically anywhere).
 
-Used on: domain, social profiles, marketing, merch, primary brand contexts.
+Used on: domain wordmark renders, social-profile cover graphics, marketing materials, merch, deck covers, About-page header, hero banners — anywhere the brand wordmark appears at readable size.
 
-### 4.2 Standalone asterisk monogram
+For body-text mentions of "Subploters" (HTML/CSS where loading the lockup SVG is overkill), render `Subploters` in Geist SemiBold ink directly. The secondary `assets/subploters-wordmark.svg` exists for SVG-only contexts where the lockup is too expressive but a vector wordmark is needed.
 
-`✱` alone — amber, rotated -3°, on cream or any field.
+### 4.2 Standalone PL monogram mark
 
-Used on: favicons (16/32/180px), social avatars (`@subploters`), member badges, watermarks in deck corners, signage, anywhere the brand needs to be present at small sizes.
+The **PL monogram** at `assets/subploters-mark.svg` — amber `#f59e0b`, rotated `-3°` (baked into the asset transform; do not re-apply in CSS). Available as vector + PNG exports at 16 / 32 / 180 / 192 / 512 px under `assets/`.
+
+Used on: favicons, social avatars (`@subploters`), member badges, deck-corner watermarks, app icons, signage — anywhere the brand needs to be present at small sizes or independent of the wordmark.
 
 ### 4.3 City stamp
 
@@ -117,22 +137,22 @@ Used on: location sub-marks, deck cover location tag, member badges, location-sp
 
 ### 4.4 Formal entity lockup
 
-`Professional Subploters✱ Association`
+`Professional Subploters Association`
 
 | Specification | Value |
 |---|---|
-| Typography | Geist 500, ink |
+| Typography | Geist 500 ink for "Professional" and "Association"; the master inline-fused lockup (`subploters-lockup.svg`) embedded inline for the "Subploters" portion |
 | Size | Large but not dominant — 28–36px for headers, scaled proportionally elsewhere |
-| Asterisk position | **Inside the name, after "Subploters"** — not at the end |
+| Inline mark | The "Subploters" portion uses the master lockup with its inline PL + trailing `*` — the formal entity inherits the wordmark composition (no separate inline-mark treatment) |
 
 Used on: About-page masthead, legal documents, annual reports, Polish Stowarzyszenie registration plaque, member welcome packet covers.
 
 ### 4.5 Location sub-marks (composition)
 
-Master wordmark **plus** city stamp, stacked.
+Master wordmark (the inline-fused lockup from §4.1) **plus** city stamp, stacked. The standalone PL monogram may additionally sit beside or above the composition (deck-corner watermark, page-header glyph).
 
 ```
-Subploters✱
+Subploters         ← master lockup wordmark (assets/subploters-lockup.svg)
 [ PSA · WARSAW ]   ← amber tag, rotated -1.5°
 ```
 
@@ -144,14 +164,14 @@ Used on: location-specific landing pages, local deck covers, city member portals
 
 Each city receives identical visual treatment — the system is **stamp-replaceable**:
 
-- `Subploters✱` + `PSA · WARSAW`
-- `Subploters✱` + `PSA · BERLIN`
-- `Subploters✱` + `PSA · LONDON`
-- `Subploters✱` + `PSA · NYC`
+- `Subploters` + `PSA · WARSAW`
+- `Subploters` + `PSA · BERLIN`
+- `Subploters` + `PSA · LONDON`
+- `Subploters` + `PSA · NYC`
 
 No city is privileged in the visual system. Warsaw is the **founding** community (preserved in narrative and history) but not labeled "main" or "HQ" in brand assets.
 
-When opening a new city, the only design work needed is creating a new `PSA · [CITY]` tag — the wordmark, asterisk, and overall system carry over unchanged.
+When opening a new city, the only design work needed is creating a new `PSA · [CITY]` tag — the wordmark, standalone PL monogram mark, and overall system carry over unchanged.
 
 ---
 
@@ -170,12 +190,13 @@ When opening a new city, the only design work needed is creating a new `PSA · [
 
 | Do | Don't |
 |---|---|
-| Attach the asterisk to "Subploters" always | Attach the asterisk to a city name or "Association" |
+| Use the inline-fused master lockup `subploters-lockup.svg` as the wordmark wherever it appears at readable size | Substitute plain "Subploters" text where the lockup belongs |
+| Use the standalone PL monogram `subploters-mark.svg` at compact sizes (favicons, social avatars, member badges) | Scale the full lockup down to favicon size — it goes illegible |
 | Use the amber tag for location identification | Spell out city names in Geist next to the wordmark |
 | Treat Warsaw as one location among future N | Label Warsaw as "main" or "HQ" externally |
 | Use *Subploters* as the brand wordmark | Use *PSA* alone as the primary external brand mark |
-| Render the asterisk at superscript position | Render the asterisk at baseline or mid-line |
-| Rotate the asterisk -3° | Use the asterisk upright |
+| Keep PL amber `#f59e0b` and surrounding letters ink `#1a1a2e` | Recolor either fill |
+| Respect the baked-in `-3°` PL rotation in both lockup and standalone | Re-rotate or upright the PL in CSS |
 | Rotate the city tag -1.5° | Use the city tag flat |
 | Keep `0` border-radius across all elements | Add rounded corners |
 | Use amber as accent only | Use amber as a background field |
@@ -189,13 +210,22 @@ community/brand/
   brand.md              ← this document (single source of truth)
   LICENSE.md            ← CC0 dedication (per ADR-0001 OSS-first)
   assets/
-    asterisk.svg        ← canonical custom asterisk (vector)
+    subploters-lockup.svg        ← MASTER inline-fused wordmark (path-drawn Geist SemiBold + inline PL + trailing *)
+    subploters-mark.svg          ← Standalone PL monogram (compact contexts: favicons, avatars, badges)
+    subploters-mark-16.png       ← favicon (browser tab)
+    subploters-mark-32.png       ← favicon (high-DPI)
+    subploters-mark-180.png      ← apple-touch-icon
+    subploters-mark-192.png      ← PWA icon
+    subploters-mark-512.png      ← PWA icon / og-image fallback
+    subploters-wordmark.svg      ← Secondary plain wordmark (Geist 600 ink text-based; font-dependent — for SVG-only contexts where the lockup is too expressive)
     [future]
-    subploters-wordmark.svg
     psa-warsaw-tag.svg
-    favicon-16.png  ... favicon-512.png
     og-image-1200x630.png
   exports/              ← (future) PNG / PDF exports for non-web use
+  explorations/
+    chat-36-archive/             ← rejected chat-36 mark candidates (incl. the 6-point asterisk)
+    chat-37/                     ← chat-37 PL+pilcrow exploration (14 SVG candidates + comparison board + README)
+  .scratch/                      ← gitignored — npm scaffold for build-lockup.js (opentype.js + Vercel geist TTFs)
 ```
 
 Web-optimized assets for the community platform live at `projects/community-platform/public/branding/`.
@@ -210,6 +240,7 @@ All brand assets in this directory are dedicated to the public domain under **CC
 
 ## 10. Version history
 
+- **v1.1 — 2026-05-23 (chat-38 / Path A).** Signature mark form AND master lockup BOTH locked. **Master wordmark is the inline-fused lockup**: path-drawn "Subploters" in Geist SemiBold (600) ink with the PL monogram (chat-37 Concept 11) inline-fused replacing the "pl" letters + trailing `*` amber qualifier (chat-37 round 5 idea, refined in chat-38 visual iteration). Architecture: **three-piece** (inline-fused lockup wordmark + standalone PL mark + city stamp). PL inline is capped at cap-height (matches lowercase l ascender, no descender extension below baseline — chat-38 v2 iteration after Anton's "PL too tall" feedback on v1). Assets: `assets/subploters-lockup.svg` (path-drawn, font-independent), `assets/subploters-mark.svg` + 5 PNG exports, `assets/subploters-wordmark.svg` (secondary plain variant). Build pipeline: `community/brand/.scratch/build-lockup.js` (gitignored — opentype.js + Vercel geist TTFs). Rejected chat-36 6-point asterisk archived to `explorations/chat-36-archive/asterisk.svg`.
 - **v1 — 2026-05-23 (chat-36).** Subploters identity locked. Name architecture, brand voice, color palette, typography (Geist + Inter + JetBrains Mono), motifs (rotated amber tags), city stamp system (PSA · CITY), two-piece compositional system for multi-location scaling, Co-Founder role in default signatures. **Signature mark form NOT locked** — iterated through ~7 design directions, none approved. See chat-37 handoff for continuation.
 - **v0 — 2026-04-24.** Placeholder Warsaw AI Community identity. No logo. Iterated to v1 after the chat-36 brand brainstorm in May.
 
