@@ -4,15 +4,25 @@ import CalendarPage from "@/app/calendar/page";
 
 afterEach(() => cleanup());
 
+function isoOffsetDays(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+const UPCOMING_MEETING_DATE = isoOffsetDays(2);
+const PAST_MEETING_DATE = isoOffsetDays(-7);
+const UPCOMING_EVENT_DATE = isoOffsetDays(25);
+
 vi.mock("@/lib/content-snapshot", () => ({
   listMeetingsFromSnapshot: vi.fn(() => [
-    { date: "2026-05-21", slug: "2026-05-21", title: "Weekly sync", body: "" },
-    { date: "2026-05-14", slug: "2026-05-14", title: "Last sync", body: "" },
+    { date: UPCOMING_MEETING_DATE, slug: UPCOMING_MEETING_DATE, title: "Weekly sync", body: "" },
+    { date: PAST_MEETING_DATE, slug: PAST_MEETING_DATE, title: "Last sync", body: "" },
   ]),
   listEventsFromSnapshot: vi.fn(() => [
     {
-      date: "2026-06-15",
-      slug: "2026-06-15-ai-hackathon",
+      date: UPCOMING_EVENT_DATE,
+      slug: `${UPCOMING_EVENT_DATE}-ai-hackathon`,
       title: "AI Hackathon",
       body: "",
     },
