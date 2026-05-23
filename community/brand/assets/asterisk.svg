@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Subploters✱ — Canonical asterisk monogram
+  License: CC0 1.0 Universal (see ../LICENSE.md)
+  Version: v1 (2026-05-23)
+
+  Brand rules:
+    - Color: amber #f59e0b (do not recolor without amending brand.md)
+    - The asset is UPRIGHT — apply transform: rotate(-3deg) in rendering context
+      when using as the signature mark (per brand.md §3)
+    - When used standalone (favicon, avatar, badge), rotation is optional
+    - Asset is square (100×100 viewBox) for predictable scaling at all sizes
+
+  Design rationale:
+    - 6-point asterisk (three crossing lines) — matches the Unicode ✱ pattern
+      and the literary footnote convention without depending on a font's
+      asterisk glyph rendering
+    - Equal stroke weight on all six spokes
+    - Rounded line caps — slightly softer than a pure-geometric mark,
+      sympathetic to Geist's slightly humanist sans
+    - Length and weight tuned so the mark reads as a deliberate shape
+      at 16px (favicon) without becoming a blob
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="Subploters asterisk">
+  <title>Subploters asterisk</title>
+  <g stroke="#f59e0b" stroke-width="16" stroke-linecap="round" fill="none">
+    <line x1="50" y1="14" x2="50" y2="86"/>
+    <line x1="19" y1="32" x2="81" y2="68"/>
+    <line x1="19" y1="68" x2="81" y2="32"/>
+  </g>
+</svg>
