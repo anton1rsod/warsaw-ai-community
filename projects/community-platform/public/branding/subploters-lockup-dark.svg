@@ -19,7 +19,7 @@
 
   Two variants ship: subploters-lockup.svg (ink on cream/light) and subploters-lockup-dark.svg (cream on ink/dark).
 
-  Source: community/brand/.scratch/build-lockup.js (regenerate with: node build-lockup.js)
+  Source: community/brand/scripts/build-lockup.js (regenerate with: node community/brand/scripts/build-lockup.js)
   Provenance: chat-37 Concept 11 + chat-37 Concept 14 (inline replacement intent), executed via path-drawing in chat-38.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-27 199 5389 902" role="img" aria-label="Subploters">
