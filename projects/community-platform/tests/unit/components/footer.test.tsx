@@ -10,13 +10,10 @@ describe("Footer v0.6 — dark band, serif italic + mono links", () => {
     const footer = screen.getByRole("contentinfo");
     expect(footer).toHaveClass("bg-ink");
     expect(footer).toHaveClass("text-cream");
-    expect(footer.className).toMatch(/font-display/);
-    expect(footer.className).toMatch(/italic/);
-  });
-
-  it("includes built-in-public mono badge", () => {
-    render(<Footer />);
-    expect(screen.getByText(/built in public, MIT/i)).toBeInTheDocument();
+    // v0.7: the serif-italic treatment moved from <footer> to the inner copyright row
+    const copyrightRow = footer.querySelector(".italic");
+    expect(copyrightRow?.className).toMatch(/font-display/);
+    expect(copyrightRow?.className).toMatch(/italic/);
   });
 
   it("preserves v0.4.2 a11y fix — no aria-label on empty div", () => {
@@ -39,8 +36,8 @@ describe("Footer v0.6 — dark band, serif italic + mono links", () => {
 
 describe("Footer v0.6 — link wiring + external safety", () => {
   it("renders copyright text via chrome.footer.copyrightFmt", () => {
-    render(<Footer />);
-    expect(screen.getByText("© 2026 Subploters")).toBeInTheDocument();
+    const { container } = render(<Footer />);
+    expect(container.textContent).toMatch(/© 2026 Subploters/);
   });
 
   it("About links to /handbook (Phase A fallback per O5)", () => {
@@ -57,5 +54,38 @@ describe("Footer v0.6 — link wiring + external safety", () => {
       expect(link.getAttribute("rel")).toMatch(/noopener/);
       expect(link.getAttribute("target")).toBe("_blank");
     }
+  });
+});
+
+describe("Footer — v0.7 brand v1.2 wire-in (chat-41)", () => {
+  it("renders the formal entity line above the copyright row", () => {
+    const { container } = render(<Footer />);
+    const text = container.textContent ?? "";
+    expect(text).toMatch(/Professional Subploters/);
+    expect(text).toMatch(/Association/);
+  });
+
+  it("does NOT render 'built in public, MIT' (deleted in v0.7)", () => {
+    const { container } = render(<Footer />);
+    expect(container.textContent ?? "").not.toMatch(/built in public/i);
+  });
+
+  it("renders the brand-signature * on the copyright (Subploters*)", () => {
+    const { container } = render(<Footer />);
+    const sups = container.querySelectorAll("sup");
+    // Two BrandStars expected: one in formal entity line, one in copyright
+    expect(sups.length).toBeGreaterThanOrEqual(2);
+    // All BrandStars are aria-hidden (H93)
+    sups.forEach((sup) => {
+      expect(sup.getAttribute("aria-hidden")).toBe("true");
+    });
+  });
+
+  it("formal entity line uses font-voice caps treatment (JetBrains Mono)", () => {
+    const { container } = render(<Footer />);
+    const formalLine = container.querySelector("[data-testid='formal-entity-line']");
+    expect(formalLine).not.toBeNull();
+    expect(formalLine?.className).toMatch(/font-voice/);
+    expect(formalLine?.className).toMatch(/uppercase/);
   });
 });
