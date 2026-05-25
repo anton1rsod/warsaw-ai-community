@@ -1,0 +1,115 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:ital,wght@0,400;0,500;1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap');
+</style>
+
+<h2>Q3 v4 — final composite (all three surfaces)</h2>
+<p class="subtitle">Header + Footer locked from v3. About masthead adds the trailing * brand-signature on "Subploters" (amber superscript). This is the proposed final wire-in.</p>
+
+<div class="cards" style="grid-template-columns:repeat(1,1fr);gap:24px;">
+
+  <div class="card" data-choice="header" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fafafa;padding:0;display:flex;flex-direction:column;gap:0;min-height:0;">
+      <div style="padding:8px 14px;background:#fff8e1;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#886c37;border-top:1.5px solid #f59e0b;border-bottom:1.5px solid #f59e0b;">v4 — header</div>
+      <div style="background:#1a1a2e;color:#fef6e6;font-family:'Geist',ui-sans-serif,system-ui,sans-serif;font-size:13px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:48px;">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a href="#" style="display:inline-flex;align-items:center;"><svg style="height:24px;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="-27 199 5389 902" role="img" aria-label="Subploters">
+  <title>Subploters</title>
+  <path d="M348 1021Q260 1021 196 990Q132 959 95.50 903.50Q59 848 53 774L185 766Q194 835 235 872Q276 909 350 909Q413 909 447.50 885.50Q482 862 482 817Q482 790 469 769Q456 748 419 730Q382 712 309 695Q221 675 168 649.50Q115 624 91 585.50Q67 547 67 489Q67 427 98 379.50Q129 332 186 305.50Q243 279 323 279Q408 279 467.50 309.50Q527 340 560.50 393Q594 446 602 515L471 521Q464 463 426 427Q388 391 321 391Q265 391 232.50 417Q200 443 200 484Q200 513 213.50 532Q227 551 262 565Q297 579 360 593Q455 614 511 644.50Q567 675 591 716Q615 757 615 810Q615 875 581.50 922.50Q548 970 488.50 995.50Q429 1021 348 1021M914 1017Q832 1017 785 964Q738 911 738 815L738 471L866 471L866 783Q866 851 888.50 882Q911 913 957 913Q1008 913 1037 878.50Q1066 844 1066 778L1066 471L1194 471L1194 1005L1077 1005L1075 918Q1033 1017 914 1017M1611 1017Q1555 1017 1513 993Q1471 969 1449 926L1446 1005L1324 1005L1324 295L1452 295L1452 547Q1473 511 1514.50 485Q1556 459 1611 459Q1680 459 1730.50 493.50Q1781 528 1808.50 590.50Q1836 653 1836 738Q1836 823 1808.50 885.50Q1781 948 1730.50 982.50Q1680 1017 1611 1017M1582 913Q1637 913 1670 866.50Q1703 820 1703 738Q1703 655 1670.50 609Q1638 563 1583 563Q1521 563 1486.50 609Q1452 655 1452 738Q1452 820 1486.50 866.50Q1521 913 1582 913" fill="#fef6e6"/>
+  <path d="M2890.93 1017Q2811.93 1017 2752.43 982.50Q2692.93 948 2660.43 885.50Q2627.93 823 2627.93 738Q2627.93 653 2660.43 590.50Q2692.93 528 2752.43 493.50Q2811.93 459 2890.93 459Q2969.93 459 3028.93 493.50Q3087.93 528 3120.43 590.50Q3152.93 653 3152.93 738Q3152.93 823 3120.43 885.50Q3087.93 948 3028.93 982.50Q2969.93 1017 2890.93 1017M2890.93 913Q2951.93 913 2985.93 867Q3019.93 821 3019.93 738Q3019.93 655 2985.93 609Q2951.93 563 2890.93 563Q2828.93 563 2794.93 609Q2760.93 655 2760.93 738Q2760.93 821 2794.93 867Q2828.93 913 2890.93 913M3561.93 1005L3447.93 1005Q3367.93 1005 3330.43 968.50Q3292.93 932 3292.93 852L3292.93 570L3208.93 570L3208.93 471L3292.93 471L3292.93 346L3420.93 346L3420.93 471L3561.93 471L3561.93 570L3420.93 570L3420.93 840Q3420.93 878 3437.43 892Q3453.93 906 3486.93 906L3561.93 906L3561.93 1005M3877.93 1017Q3797.93 1017 3738.93 982.50Q3679.93 948 3647.93 885Q3615.93 822 3615.93 738Q3615.93 654 3647.93 591Q3679.93 528 3738.43 493.50Q3796.93 459 3874.93 459Q3950.93 459 4007.93 493Q4064.93 527 4096.43 591Q4127.93 655 4127.93 745L4127.93 774L3748.93 774Q3751.93 844 3786.93 879.50Q3821.93 915 3878.93 915Q3965.93 915 3989.93 841L4120.93 849Q4098.93 927 4034.43 972Q3969.93 1017 3877.93 1017M3748.93 688L3995.93 688Q3990.93 623 3958.43 591.50Q3925.93 560 3874.93 560Q3822.93 560 3789.93 593Q3756.93 626 3748.93 688M4355.93 1005L4227.93 1005L4227.93 471L4347.93 471L4350.93 575Q4366.93 521 4397.93 496Q4428.93 471 4478.93 471L4527.93 471L4527.93 581L4477.93 581Q4416.93 581 4386.43 608.50Q4355.93 636 4355.93 697L4355.93 1005M4813.93 1017Q4691.93 1017 4631.93 966Q4571.93 915 4565.93 837L4696.93 831Q4703.93 873 4730.43 896Q4756.93 919 4814.93 919Q4859.93 919 4883.43 904.50Q4906.93 890 4906.93 859Q4906.93 841 4898.43 829Q4889.93 817 4865.43 808Q4840.93 799 4793.93 790Q4712.93 776 4666.93 755.50Q4620.93 735 4602.43 704Q4583.93 673 4583.93 627Q4583.93 553 4641.43 506Q4698.93 459 4809.93 459Q4886.93 459 4936.43 483.50Q4985.93 508 5011.43 548.50Q5036.93 589 5040.93 639L4910.93 645Q4908.93 607 4884.93 582Q4860.93 557 4807.93 557Q4762.93 557 4739.43 575Q4715.93 593 4715.93 623Q4715.93 655 4738.43 670.50Q4760.93 686 4820.93 696Q4902.93 708 4950.93 729Q4998.93 750 5019.43 781.50Q5039.93 813 5039.93 857Q5039.93 934 4978.43 975.50Q4916.93 1017 4813.93 1017" fill="#fef6e6"/>
+  <g transform="translate(1560.00 0.86) scale(2.5357) rotate(-3 256 256)">
+    <path d="M 140 116 L 190 116 C 234 116 270 146 270 184 C 270 222 234 252 190 252 L 190 396 L 140 396 Z M 190 144 L 220 144 C 235 144 248 162 248 184 C 248 206 235 224 220 224 L 190 224 Z M 300 116 L 350 116 L 350 360 L 390 360 L 390 396 L 300 396 Z" fill="#f59e0b" fill-rule="evenodd"/>
+  </g>
+  <path d="M5209.39 456.70L5185.45 496.60L5156.47 479.38L5181.67 441.16L5136.31 441.16L5136.31 404.20L5181.67 404.62L5156.47 366.40L5185.45 348.76L5209.39 389.50L5233.33 348.76L5262.31 366.40L5236.27 404.62L5281.63 404.20L5281.63 441.16L5236.27 441.16L5262.31 479.38L5233.33 496.60" fill="#f59e0b"/>
+</svg></a>
+      <span style="display:inline-block;background:#f59e0b;color:#1a1a2e;padding:3px 8px;font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:500;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;transform:rotate(-1.5deg);transform-origin:center;border-radius:0;">WARSAW</span>
+    </div>
+    <nav style="display:flex;align-items:center;gap:14px;">
+    <span style="display:flex;align-items:center;gap:10px;">
+      
+      <a href="#" style="color:#fef6e6;opacity:0.85;text-decoration:none;font-family:'Geist',ui-sans-serif,system-ui,sans-serif;font-weight:500;letter-spacing:0;">home</a>
+    </span>
+    <span style="display:flex;align-items:center;gap:10px;">
+      <span style="opacity:0.5;font-family:'Geist',sans-serif;">·</span>
+      <a href="#" style="color:#fef6e6;opacity:0.85;text-decoration:none;font-family:'Geist',ui-sans-serif,system-ui,sans-serif;font-weight:500;letter-spacing:0;">calendar</a>
+    </span>
+    <span style="display:flex;align-items:center;gap:10px;">
+      <span style="opacity:0.5;font-family:'Geist',sans-serif;">·</span>
+      <a href="#" style="color:#fef6e6;opacity:0.85;text-decoration:none;font-family:'Geist',ui-sans-serif,system-ui,sans-serif;font-weight:500;letter-spacing:0;">projects</a>
+    </span>
+    <span style="display:flex;align-items:center;gap:10px;">
+      <span style="opacity:0.5;font-family:'Geist',sans-serif;">·</span>
+      <a href="#" style="color:#fef6e6;opacity:0.85;text-decoration:none;font-family:'Geist',ui-sans-serif,system-ui,sans-serif;font-weight:500;letter-spacing:0;">members</a>
+    </span>
+    <span style="display:flex;align-items:center;gap:10px;">
+      <span style="opacity:0.5;font-family:'Geist',sans-serif;">·</span>
+      <a href="#" style="color:#fef6e6;opacity:0.85;text-decoration:none;font-family:'Geist',ui-sans-serif,system-ui,sans-serif;font-weight:500;letter-spacing:0;">handbook</a>
+    </span></nav>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <a href="#" style="color:#fef6e6;opacity:0.85;text-decoration:none;font-family:'Geist',sans-serif;font-weight:500;">sign in</a>
+    </div>
+  </div>
+    </div>
+    <div class="card-body">
+      <h3>Header (locked from v3)</h3>
+      <p style="margin:4px 0;"><strong>Spec:</strong> Geist 500 nav + 16px lockup→chip + 48px min flex gap + JetBrains Mono chip</p>
+      <p style="margin:4px 0;color:#886c37;font-size:0.9em;">Unchanged from v3 — approved.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="footer" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fafafa;padding:0;display:flex;flex-direction:column;gap:0;min-height:0;">
+      <div style="padding:8px 14px;background:#fff8e1;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#886c37;border-top:1.5px solid #f59e0b;border-bottom:1.5px solid #f59e0b;">v4 — footer</div>
+      <div style="background:#1a1a2e;color:#fef6e6;padding:12px 16px;font-family:'Geist',ui-sans-serif,system-ui,sans-serif;font-style:italic;font-size:11px;">
+    
+    <div style="font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:500;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#fef6e6;opacity:0.6;padding-bottom:6px;border-bottom:1px solid #fef6e61f;margin-bottom:8px;">
+      Professional Subploters Association
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:32px;flex-wrap:wrap;">
+      <div>
+        <span>© 2026 Subploters</span>
+        <span style="opacity:0.85;"> · </span>
+        <span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-style:normal;opacity:0.7;font-size:10px;">built in public, MIT</span>
+      </div>
+      <nav style="font-family:'JetBrains Mono',ui-monospace,monospace;font-style:normal;font-size:10px;opacity:0.85;display:flex;gap:8px;">
+        <a href="#" style="color:#fef6e6;text-decoration:none;">about</a>
+        <span>·</span>
+        <a href="#" style="color:#fef6e6;text-decoration:none;">telegram</a>
+        <span>·</span>
+        <a href="#" style="color:#fef6e6;text-decoration:none;">github</a>
+        <span>·</span>
+        <a href="#" style="color:#fef6e6;text-decoration:none;">license</a>
+      </nav>
+    </div>
+  </div>
+    </div>
+    <div class="card-body">
+      <h3>Footer (locked from v3)</h3>
+      <p style="margin:4px 0;"><strong>Spec:</strong> JetBrains Mono caps formal-entity line + 32px gap + flex-wrap</p>
+      <p style="margin:4px 0;color:#886c37;font-size:0.9em;">Unchanged from v3 — approved.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="about" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fafafa;padding:0;display:flex;flex-direction:column;gap:0;min-height:0;">
+      <div style="padding:8px 14px;background:#fff8e1;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#886c37;border-top:1.5px solid #f59e0b;border-bottom:1.5px solid #f59e0b;">v4 — about</div>
+      <div style="background:#fef6e6;padding:48px 32px 32px 32px;border-bottom:1.5px solid #1a1a2e;">
+    <div style="max-width:768px;margin:0 auto;">
+      <div style="font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:500;font-size:11px;letter-spacing:0.20em;text-transform:uppercase;color:#886c37;margin-bottom:18px;">
+        Founded 2026 · Warsaw
+      </div>
+      <h1 style="font-family:'Geist',ui-sans-serif,system-ui,sans-serif;font-weight:500;font-size:40px;color:#1a1a2e;letter-spacing:-0.015em;margin:0;line-height:1.15;">
+        Professional Subploters<sup style="color:#f59e0b;font-size:0.55em;line-height:0;font-weight:500;vertical-align:0.55em;margin-left:0.05em;">*</sup> Association
+      </h1>
+      <p style="font-family:'Inter',ui-sans-serif,system-ui,sans-serif;font-size:14px;color:#1a1a2e;margin-top:20px;max-width:520px;line-height:1.5;">
+        The Warsaw chapter of the Professional Subploters Association &mdash; for founders writing their next plot.
+      </p>
+    </div>
+  </div>
+    </div>
+    <div class="card-body">
+      <h3>/handbook masthead — v4: + brand-signature *</h3>
+      <p style="margin:4px 0;"><strong>Spec:</strong> §4.4: Plain Geist 500 + amber * superscript on "Subploters" — "it's our organization" signal</p>
+      <p style="margin:4px 0;color:#886c37;font-size:0.9em;">v4 diff: (1) trailing `*` added on "Subploters" in the headline — amber, ~0.55em, superscript position; same convention as the master lockup. (2) "Polish Stowarzyszenie" dropped from caption — Stowarzyszenie is now legal-doc-only, not surfaced anywhere on the platform.</p>
+    </div>
+  </div>
+</div>
