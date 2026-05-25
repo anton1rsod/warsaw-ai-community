@@ -5,6 +5,7 @@ import { auth, signOut } from "@/lib/auth";
 import { findMemberByHandle } from "@/lib/content-snapshot";
 import { s, type StringKey } from "@/lib/i18n/strings";
 import { HeaderMobileMenu } from "@/app/components/HeaderMobileMenu";
+import { CityChip } from "@/app/components/CityChip";
 
 interface HeaderProps {
   /**
@@ -65,7 +66,7 @@ export async function Header({
   const pathname = activePath ?? h.get("x-pathname");
 
   return (
-    <header className="bg-ink text-cream font-voice text-[11px] tracking-[0.5px] px-4 py-2 flex justify-between items-center">
+    <header className="bg-ink text-cream font-display text-[13px] tracking-[0] px-4 py-2.5 flex justify-between items-center gap-12">
       {/* H65 — first focusable element on Tab */}
       <a
         href="#main"
@@ -74,20 +75,24 @@ export async function Header({
         {s("header.skipToContent")}
       </a>
 
-      <Link
-        href="/"
-        aria-label={s("chrome.header.logo")}
-        className="no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
-      >
-        {/* Subploters master lockup — dark-mode variant (cream letters + amber PL) for the bg-ink header */}
-        <img
-          src="/branding/subploters-lockup-dark.svg"
-          alt={s("chrome.header.logo")}
-          className="h-6 w-auto"
-          width={158}
-          height={24}
-        />
-      </Link>
+      <div className="flex items-center gap-[10px]">
+        <Link
+          href="/"
+          aria-label={s("chrome.header.logo")}
+          className="no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 focus-visible:ring-offset-ink inline-flex items-center"
+        >
+          {/* Subploters master lockup — dark-mode variant (cream letters + amber PL) for the bg-ink header */}
+          <img
+            src="/branding/subploters-lockup-dark.svg"
+            alt={s("chrome.header.logo")}
+            className="h-6 w-auto"
+            width={158}
+            height={24}
+          />
+        </Link>
+        {/* v0.7 — §4.3 chrome chip variant: upright, CITY-only, 10px right of lockup (chip is owned by the brand group). Geist nav (font-display) is a chrome-only exception to §2 voice typography per brand.md §10 (H95); the chip keeps font-voice as its own register per §4.3. */}
+        <CityChip city="Warsaw" />
+      </div>
 
       {!compact && (
         <nav
