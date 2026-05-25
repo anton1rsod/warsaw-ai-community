@@ -1,4 +1,5 @@
 import { s } from "@/lib/i18n/strings";
+import { FormalEntityMasthead } from "@/app/components/FormalEntityMasthead";
 
 /**
  * /handbook — Q2.3 / D29 / Q6.1 (i) / O4.
@@ -20,7 +21,9 @@ const DECISIONS_TREE_URL = "https://github.com/anton1rsod/warsaw-ai-community/tr
 
 export default async function HandbookPage(): Promise<React.JSX.Element> {
   return (
-    <main id="main" className="mx-auto max-w-3xl px-4 py-8">
+    <>
+      <FormalEntityMasthead />
+      <main id="main" className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="text-3xl font-semibold mb-8">{s("handbook.title")}</h1>
 
       <section className="mb-10">
@@ -79,5 +82,6 @@ export default async function HandbookPage(): Promise<React.JSX.Element> {
         </ul>
       </section>
     </main>
+    </>
   );
 }
