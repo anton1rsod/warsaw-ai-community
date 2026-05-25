@@ -55,6 +55,7 @@ const LINKS: readonly FooterLink[] = [
 
 export function Footer(): React.JSX.Element {
   const copyright = s("chrome.footer.copyrightFmt").replace("{year}", YEAR);
+  const [copyrightBefore, copyrightAfter = ""] = copyright.split("Subploters");
   return (
     <footer className="bg-ink text-cream px-4 py-3">
       {/* v0.7 §4.4 formal entity line — JetBrains Mono caps, dim, divider below */}
@@ -68,8 +69,8 @@ export function Footer(): React.JSX.Element {
       <div className="font-display italic text-[11px] flex justify-between items-center gap-8 flex-wrap">
         <div>
           <span>
-            {copyright.split("Subploters")[0]}Subploters<BrandStar />
-            {copyright.split("Subploters")[1]}
+            {copyrightBefore}Subploters<BrandStar />
+            {copyrightAfter}
           </span>
         </div>
         <nav

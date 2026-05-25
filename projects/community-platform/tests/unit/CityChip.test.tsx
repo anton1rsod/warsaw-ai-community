@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import { CityChip } from "@/app/components/CityChip";
 
 describe("CityChip (v0.7 brand v1.2 — §4.3 chrome variant)", () => {
-  it("renders the city name in uppercase", () => {
+  it("renders the city name (DOM text stays mixed-case; CSS uppercases it)", () => {
     const { getByText } = render(<CityChip city="Warsaw" />);
-    expect(getByText("WARSAW")).toBeTruthy();
+    // a11y: keep the DOM text "Warsaw" so screen readers say the word, not "W-A-R-S-A-W";
+    // the visual all-caps comes from the `uppercase` class (asserted separately below).
+    expect(getByText("Warsaw")).toBeTruthy();
   });
 
   it("does NOT include 'PSA ·' prefix (chrome variant)", () => {

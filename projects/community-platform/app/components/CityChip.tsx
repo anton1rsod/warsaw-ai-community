@@ -34,7 +34,7 @@ export function CityChip({ city }: CityChipProps): JSX.Element {
         borderRadius: 0,
       }}
     >
-      {city.toUpperCase()}
+      {city}
     </span>
   );
 }

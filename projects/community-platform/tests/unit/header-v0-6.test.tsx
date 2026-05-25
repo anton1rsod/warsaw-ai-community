@@ -107,7 +107,7 @@ describe("Header — v0.7 brand v1.2 wire-in (chat-41)", () => {
   it("renders the WARSAW city chip next to the lockup", async () => {
     (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     const { findByText } = render(await Header({ activePath: "/" }));
-    const chip = await findByText("WARSAW");
+    const chip = await findByText("Warsaw");
     expect(chip).toBeTruthy();
     // H95 — chip is rendered via CityChip (JetBrains Mono via font-voice)
     expect(chip.className).toMatch(/font-voice/);
