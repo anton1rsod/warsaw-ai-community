@@ -12,7 +12,7 @@ describe("H67: i18n string centralization — strings map contract", () => {
   });
 
   it("s(key) returns the value for a known key", () => {
-    expect(s("chrome.header.signIn")).toBe("[ sign in ]");
+    expect(s("chrome.header.signIn")).toBe("sign in");
     expect(s("chrome.header.nav.home")).toBe("home");
     expect(s("chrome.header.nav.calendar")).toBe("calendar");
     expect(s("chrome.header.nav.projects")).toBe("projects");
@@ -25,7 +25,7 @@ describe("H67: i18n string centralization — strings map contract", () => {
 
   it("StringKey type union covers exactly Object.keys(strings) (compile-time check)", () => {
     const k: StringKey = "chrome.header.signIn";
-    expect(s(k)).toBe("[ sign in ]");
+    expect(s(k)).toBe("sign in");
   });
 
   it("contains keys for every surface in the v0.4 Phase A taxonomy", () => {
