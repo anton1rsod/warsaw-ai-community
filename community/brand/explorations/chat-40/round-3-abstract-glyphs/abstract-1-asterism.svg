@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Asterism three-dot mark">
+  <title>Subploters mark — asterism (three-dot subplot separator)</title>
+  <g transform="rotate(-3 256 256)">
+    <circle cx="126" cy="165" r="56" fill="#f59e0b"/>
+    <circle cx="386" cy="165" r="56" fill="#f59e0b"/>
+    <circle cx="256" cy="366.5" r="56" fill="#f59e0b"/>
+  </g>
+</svg>

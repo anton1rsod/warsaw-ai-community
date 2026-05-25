@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Single sweeping arc">
+  <title>Subploters mark — single arc (story arc)</title>
+  <g transform="rotate(-3 256 256)">
+    <path d="M 120 380 C 180 130, 330 130, 392 200" stroke="#f59e0b" stroke-width="56" fill="none" stroke-linecap="square"/>
+  </g>
+</svg>
