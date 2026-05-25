@@ -57,7 +57,7 @@ describe("Header v0.6 — mono strip chrome", () => {
     const header = container.querySelector("header");
     expect(header?.className).toMatch(/bg-ink/);
     expect(header?.className).toMatch(/text-cream/);
-    expect(header?.className).toMatch(/font-display/);
+    expect(header?.className).toMatch(/font-geist/);
   });
 });
 
@@ -120,11 +120,12 @@ describe("Header — v0.7 brand v1.2 wire-in (chat-41)", () => {
     expect(queryByText("[ sign in ]")).toBeNull();
   });
 
-  it("uses font-display (Geist) on the parent header, not font-voice", async () => {
+  it("uses font-geist (Geist) on the parent header, not font-voice", async () => {
     (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     const { container } = render(await Header({ activePath: "/" }));
     const header = container.querySelector("header");
-    expect(header?.className).toMatch(/font-display/);
+    expect(header?.className).toMatch(/font-geist/);
     expect(header?.className).not.toMatch(/font-voice/);
+    expect(header?.className).not.toMatch(/font-display/);
   });
 });

@@ -24,11 +24,11 @@ const { findMemberByHandle } = await import("@/lib/content-snapshot");
 const { headers } = await import("next/headers");
 
 describe("Header — anonymous render", () => {
-  it("shows [ sign in ] button when no session", async () => {
+  it("shows sign in link when no session", async () => {
     (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     render(await Header());
-    // v0.6 sign-in copy is bracketed mono-strip style; v0.4 baseline was "Sign in".
-    expect(screen.getByText("[ sign in ]")).toBeInTheDocument();
+    // v0.7 Geist-sans treatment: plain "sign in" (no brackets); v0.6 copy was bracketed.
+    expect(screen.getByText("sign in")).toBeInTheDocument();
     expect(screen.queryByLabelText("Account")).toBeNull();
   });
 

@@ -26,7 +26,14 @@ describe("H87: layout.tsx font loading", () => {
     expect(layoutSrc).toMatch(/Inter\s*\(\s*\{[\s\S]*?weight:\s*\[[\s\S]*?["']400["'][\s\S]*?["']600["']/);
   });
 
-  it("html element carries all three CSS variable classes", () => {
-    expect(layoutSrc).toMatch(/className=\{`\$\{fraunces\.variable\}\s*\$\{inter\.variable\}\s*\$\{jetbrains\.variable\}`\}/);
+  it("html element carries all four CSS variable classes", () => {
+    expect(layoutSrc).toMatch(/className=\{`\$\{fraunces\.variable\}\s*\$\{geist\.variable\}\s*\$\{inter\.variable\}\s*\$\{jetbrains\.variable\}`\}/);
+  });
+
+  it("imports Geist from next/font/google with weight 400/500/600 and swap (v0.7)", () => {
+    expect(layoutSrc).toMatch(/import\s*\{[^}]*\bGeist\b[^}]*\}\s*from\s*["']next\/font\/google["']/);
+    expect(layoutSrc).toMatch(/Geist\s*\(\s*\{[\s\S]*?weight:\s*\[[\s\S]*?["']500["']/);
+    expect(layoutSrc).toMatch(/Geist\s*\(\s*\{[\s\S]*?variable:\s*["']--font-geist["']/);
+    expect(layoutSrc).toMatch(/Geist\s*\(\s*\{[\s\S]*?display:\s*["']swap["']/);
   });
 });

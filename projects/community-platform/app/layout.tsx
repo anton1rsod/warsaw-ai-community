@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Geist, Inter, JetBrains_Mono } from "next/font/google";
 import { RootShell } from "@/app/components/RootShell";
 import "./globals.css";
 
@@ -24,6 +24,16 @@ const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "700"],
   variable: "--font-jetbrains",
+  display: "swap",
+});
+
+// Geist (Vercel) — the brand wordmark family. v0.7 brand v1.2 wire-in: used for
+// the Header nav + /handbook masthead headline so live text matches the Geist
+// lockup (brand.md §10 chrome exception). Other display surfaces stay Fraunces.
+const geist = Geist({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-geist",
   display: "swap",
 });
 
@@ -56,7 +66,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${jetbrains.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${geist.variable} ${inter.variable} ${jetbrains.variable}`}>
       <body className="min-h-screen flex flex-col">
         <RootShell>{children}</RootShell>
       </body>
