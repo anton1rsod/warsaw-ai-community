@@ -1,6 +1,8 @@
-# Chat-40 → chat-41 handoff: Subploters brand v1.2 — re-aim after 3 failed rounds
+# Chat-40 → chat-41 handoff: Subploters brand v1.2 — Path Z (wordmark-only) locked
 
-**Date:** 2026-05-25 · **From:** chat-40 (3 rounds × 16 candidates rejected) · **To:** chat-41 (re-aim — no candidates first; brainstorm what's missing)
+**Date:** 2026-05-25 · **From:** chat-40 (3 rounds × 16 candidates rejected) · **To:** chat-41 (Path Z execution — three sub-questions to lock, then implementation)
+
+**★ Path locked 2026-05-25 (chat-40 close):** Anton picked **Path Z — wordmark-only, no standalone mark beyond favicon (Stripe / Substack lineage)**. The five-path triage section below is historical context; the operative work for chat-41 is in the "Path Z scope" and "Paste-ready prompt" sections at the bottom of this doc.
 
 PROTOCOL: brand work; the eventual wire-in is platform work but not yet.
 
@@ -103,32 +105,104 @@ These remain candidate-space if chat-41 decides to keep exploring (rather than g
 - Don't try to "fix" the wordmark — locked from v1.1.
 - Don't auto-route to a designer — Path X is one of five options, not the default; ask Anton.
 
+## ★ Path Z scope — wordmark-only architecture
+
+Anton locked Path Z at end of chat-40. The work for chat-41 is to brainstorm three sub-questions, then write the spec amendments + asset regeneration plan.
+
+### Q1 — Favicon slot under wordmark-only architecture
+
+There's no standalone mark, but the favicon (16/32/180/192/512 px) still needs SOMETHING. Reference brands:
+
+| Brand | Favicon approach |
+|---|---|
+| **Substack** | "S" first letter from wordmark (typographic, not stylized) |
+| **Stripe** | "/" — abstracted slash from old logo |
+| **Linear** | "L" / minimal slash |
+| **Notion** | "N" first letter (typographic) |
+| **Mailchimp** | Chimp icon (they DO keep a mark — counter-example) |
+
+Options:
+- (a) **"S" extracted from wordmark** — Geist SemiBold S, path-drawn, amber or ink, -3° rotation. Substack lineage. Most natural.
+- (b) **"Sub" wordmark fragment** — first three letters of wordmark at large size, cropped to square. Reads as wordmark-fragment, not as letter.
+- (c) **Trailing `*` rendered standalone** — only if Q2 keeps the `*` as wordmark accent.
+- (d) **Minimal abstract glyph reserved for favicon-only use** — something distinct from chat-40 abstract glyphs (asterism / twin ascend / bracket / hash beats / vertical hatch / single arc all rejected).
+- (e) **No favicon** — use just a solid amber square or no favicon at all (rare; weakens the brand).
+
+**Anti-pattern clarification:** chat-37 rejected "S monogram" as **a custom stylized S with sweep tails treated as a signature mark**. Option (a) here is different — it's the FIRST LETTER OF THE WORDMARK rendered in the SAME typeface as the wordmark (Geist SemiBold), no custom anatomy. That's typography, not monogram design. Substack does this; it's safe to revisit.
+
+### Q2 — Trailing `*` status under Path Z
+
+The trailing `*` qualifier in `Subploters*` was retired per chat-39 v1.2 scope-pivot. Under Path Z:
+
+- (a) **Retire entirely** — clean `Subploters` wordmark, no trailing glyph. Maximum Stripe/Substack purity.
+- (b) **Keep as wordmark typographic accent** — `Subploters*` always renders together, the `*` is part of the wordmark composition (not a separate "mark" or "qualifier"). Preserves the chat-37/38 typographic detail without it being a separate compositional element.
+
+Q1 and Q2 interact — if Q2 keeps `*`, Q1 option (c) becomes available.
+
+### Q3 — Platform location wire-in (still part of v1.2 scope)
+
+Chat-39 scope-pivot named three intertwined moves for v1.2: (1) mark replacement, (2) trailing glyph replacement, (3) location identification wire-in. Path Z dissolves (1); Q2 resolves (2); (3) still needs locking.
+
+Where do §4.3 city stamp + §4.4 formal entity lockup + §4.5 location sub-marks land on the platform?
+
+- (a) Header chip right of wordmark (`Subploters  PSA · WARSAW`)
+- (b) Footer chip
+- (c) About page full formal lockup (`POLISH STOWARZYSZENIE · FOUNDED 2024 · WARSAW`)
+- (d) All three (recommended in chat-39 handoff — different surfaces serve different roles)
+
+### Implementation work after Q1-Q3 lock
+
+1. **Amend `community/brand/brand.md`** §1 architecture description (currently says "three-piece compositional system: inline-fused lockup + standalone PL + city stamp" — rewrite for wordmark-only)
+2. **Amend §3** — retire "The signature mark and master lockup — v1.1" section; replace with v1.2 wordmark-only spec
+3. **Amend §4.1/§4.2** — wordmark becomes single canonical element; standalone-mark section either retires entirely OR redirects to favicon-only spec
+4. **Amend §8** — asset directory tree updated for new file set
+5. **Add §10 v1.2 entry** marking Path Z shipped
+6. **Asset regeneration:**
+   - `subploters-lockup.svg` + `subploters-lockup-dark.svg` — rebuild WITHOUT inline PL (and with/without trailing `*` per Q2). `community/brand/scripts/build-lockup.js` needs amendment.
+   - `subploters-mark.svg` + 5 PNG exports + favicon.ico — replace with Q1 favicon choice (or retire entirely with Q1=(e))
+7. **Platform wire-in (per Q3):**
+   - `projects/community-platform/app/components/Header.tsx` — possibly add city chip
+   - `projects/community-platform/app/components/Footer.tsx` — possibly add formal entity treatment
+   - `/about` page — possibly add formal lockup component
+   - Updated `subploters-lockup-dark.svg` propagates to Header automatically via existing wire-in
+
 ## ★ Paste-ready prompt for chat-41
 
 ```
-Start chat-41 — Subploters brand v1.2 mark design, re-aim after 3 failed rounds.
+Start chat-41 — Subploters brand v1.2, Path Z (wordmark-only, Stripe/Substack lineage) confirmed by Anton at end of chat-40.
 
 Read order:
-1. docs/specs/2026-05-25-subploters-brand-v1-2-chat40-closeout-handoff.md (this handoff)
-2. community/brand/explorations/chat-40/README.md (16 rejected candidates, anti-pattern list)
-3. community/brand/brand.md (v1.1 system locked, §10 v1.2 OPEN)
+1. docs/specs/2026-05-25-subploters-brand-v1-2-chat40-closeout-handoff.md (this handoff — Path Z scope section)
+2. community/brand/explorations/chat-40/README.md (3 rounds × 16 rejected candidates + combined chat-36/37/40 anti-pattern list)
+3. community/brand/brand.md (v1.1 system, §10 v1.2 OPEN)
 
-Skill: superpowers:brainstorming. Do NOT generate candidates in the first response. Brainstorm direction first.
+Skill: superpowers:brainstorming for the three Q1-Q3 sub-questions, then writing-plans for asset-regeneration + platform-wire-in.
 
-Five paths Anton can take (ask which matches his appetite — time, money, ambition):
-  X) External designer (EUR 2-8k, 2-6 weeks)
-  Y) Restore PL monogram, defer v1.2 to v2 (when second city launches)
-  Z) Wordmark-only, no standalone mark (Stripe/Substack lineage)
-  W) Mood board first, candidates after (1-2 chats)
-  V) Direction-level brainstorm without candidates (one chat)
+Three sub-questions to lock in chat-41 (full options in handoff §"Path Z scope"):
+  Q1) Favicon slot — "S" extracted (Substack-style) / "Sub" fragment / standalone * / new minimal glyph / no favicon
+  Q2) Trailing * — retired entirely / kept as wordmark typographic accent
+  Q3) Platform location wire-in — Header / Footer / About / all three
 
-Don't repeat: PSA letter monogram (any architecture), badge container (any variant), abstract single-shape glyphs from chat-40 list (asterism, twin ascend, bracket angle, hash beats, vertical hatch, single arc). Plus combined chat-36 + chat-37 + chat-40 anti-pattern list at archive README.
+Reference brands (Path Z lineage): Stripe (early), Substack, Linear, Notion, Apollo. Wordmark-centric brands with minimal or extracted-letter favicons.
 
-Locked: wordmark typographic form, tagline, typography, palette, city stamp visual, naming architecture, ADR-0001.
+Anti-pattern clarification: chat-37 rejected "S monogram" as a CUSTOM STYLIZED S with sweep tails treated as primary mark. First-letter-of-wordmark in Geist SemiBold (Substack-style) is typography, not monogram design — safe to revisit.
 
-Open: standalone mark, trailing glyph, location wire-in (still untouched).
+Locked from v1.1 (do NOT change):
+- Master wordmark typographic form: "Subploters" Geist SemiBold path-drawn, ink color, current letter geometry
+- Tagline: "Every venture is a subplot."
+- Color palette: amber #f59e0b / cream #fef6e6 / ink #1a1a2e / dust #886c37
+- Typography: Geist + Inter + JetBrains Mono
+- City stamp visual: -1.5° rotation, JetBrains Mono caps, amber field
+- Naming architecture: Subploters / Professional Subploters Association / PSA / PSC
+- ADR-0001 OSS-first + CC0 brand license
+
+Don't relitigate: PSA letter monograms (any architecture), badge containers (any variant), the 6 chat-40 abstract glyphs (asterism, twin ascend, bracket angle, hash beats, vertical hatch, single arc), plus combined chat-36 + chat-37 anti-patterns at the archive README.
+
+Pipeline available: opentype.js + Geist SemiBold path-drawing via community/brand/.scratch/. `build-lockup.js` needs amendment (no inline PL; * status TBD per Q2).
+
+Output: spec amendments to community/brand/brand.md (§1/§3/§4/§8/§10) + amended build-lockup.js + regenerated assets (subploters-lockup{,-dark}.svg + subploters-mark.svg/PNGs/favicon.ico per Q1) + platform wire-in per Q3.
 ```
 
 ---
 
-*Drafted 2026-05-25 in chat-40 after three rounds of brand-mark exploration produced 16 candidates and zero winners. Anton requested a clean record so chat-41 doesn't repeat the failures.*
+*Drafted 2026-05-25 in chat-40 after three rounds of brand-mark exploration produced 16 candidates and zero winners. Anton picked Path Z (wordmark-only) at session close. Handoff amended to scope Path Z specifically.*
