@@ -16,7 +16,9 @@
 | **Tagline** | **Every venture is a subplot.** | Primary tagline. Declarative, on-metaphor. |
 | **Founding** | Warsaw, Poland — 2026 | First community. Externally treated as equal among future locations (no "main" / "HQ" labeling in branding). |
 
-The architecture is a **three-piece compositional system**: the universal wordmark `Subploters` (the inline-fused master lockup — PL monogram replacing the "pl" letters + trailing `*` amber qualifier), the standalone PL monogram mark for compact contexts (favicons, avatars), and a replaceable city stamp `PSA · CITY`. Used independently or in combination depending on context.
+The architecture is a **three-piece compositional system**: the universal wordmark `Subploters` (the inline-fused master lockup — PL monogram replacing the "pl" letters + trailing `*` amber qualifier), the standalone **S symbol** (amber-field — for favicon, avatar, app icon, Telegram photo), and a replaceable city stamp `PSA · CITY`. Used independently or in combination depending on context.
+
+**Note (v1.2):** the **PL monogram appears only inline inside the wordmark** — it is no longer used as a standalone symbol. The standalone symbol is the amber-field S (§4.2). See §10 v1.2 entry.
 
 ---
 
@@ -26,7 +28,7 @@ The architecture is a **three-piece compositional system**: the universal wordma
 
 | Role | Color | Hex | Usage |
 |---|---|---|---|
-| Accent | Warm amber | `#f59e0b` | PL monogram (inline + standalone), trailing `*` qualifier, city tag background, accent rules. **Use as accent, not as field.** |
+| Accent | Warm amber | `#f59e0b` | Inline PL monogram, S-symbol field, trailing `*` qualifier, city tag background, accent rules. **Use as accent, not as field** — exceptions: the S-symbol field and the city-stamp field are the established amber-field treatments. |
 | Field | Cream | `#fef6e6` | Default background. Page, card, deck cover background. |
 | Ink | Deep navy-ink | `#1a1a2e` | Text, wordmark, rules, tag text. |
 | Supporting | Dust | `#886c37` | Captions, metadata, JetBrains Mono small text, dust-on-cream secondary text. |
@@ -46,13 +48,13 @@ Fraunces italic is **dropped** as of 2026-05-23 (v0.7 brand revision).
 - **0 border-radius** on all elements — geometric, decisive, no rounded corners.
 - **1.5px rules** for all dividers and underlines.
 - **−1.5° rotation** for standalone amber tags (the v0.6 motif): `AmberTag` in hero, §4.5 location sub-marks, deck covers, location landing pages — surfaces where the tag sits in calm whitespace and the tilt reads as deliberate accent. **Chrome surfaces are exempt** (v1.2): the platform Header city chip is upright (0°) because in the upright header grid a tilted chip reads as a rendering bug, not as accent. See §4.3 for the chrome variant.
-- **−3° rotation** for the PL monogram (baked into both the inline-fused lockup and the standalone mark assets — do not re-apply in CSS).
+- **−3° rotation** for the inline PL monogram (baked into the lockup asset — do not re-apply in CSS). The amber-field S symbol is upright (no rotation).
 
 ---
 
 ## 3. The signature mark and master lockup — v1.1 (Path A, chat-38 locked)
 
-The brand mark is the **PL monogram** (chat-37 Concept 11). The master wordmark is the **inline-fused lockup**: path-drawn "Subploters" in Geist SemiBold (600) with the PL monogram replacing the "pl" letters + trailing `*` amber qualifier. Both the inline lockup and the standalone PL mark are canonical, used in different contexts.
+The signature glyph embedded in the wordmark is the **PL monogram** (chat-37 Concept 11). The master wordmark is the **inline-fused lockup**: path-drawn "Subploters" in Geist SemiBold (600) with the PL monogram replacing the "pl" letters + trailing `*` amber qualifier. The PL monogram is canonical **inline within this lockup**. (v1.2: the PL is no longer used as a *standalone* mark — the standalone symbol is the amber-field S, §4.2. This §3 documents the v1.1 lockup geometry, which is unchanged.)
 
 This is the Path A execution from the chat-37 handoff — the lockup ambition resolved in chat-38 rather than deferred. The lockup is **path-drawn** (every letter is SVG path data, not `<text>` glyphs), so it renders identically across browsers, OS, and tools without font-availability dependencies.
 
@@ -61,7 +63,7 @@ This is the Path A execution from the chat-37 handoff — the lockup ambition re
 | Specification | Value |
 |---|---|
 | Master lockup | `assets/subploters-lockup.svg` (ink letters, default — for cream/light backgrounds) + `assets/subploters-lockup-dark.svg` (cream letters — for ink/dark backgrounds like the platform header / footer) |
-| Standalone mark | `assets/subploters-mark.svg` — PL monogram alone, with PNG exports at 16 / 32 / 180 / 192 / 512 px under `assets/` |
+| Standalone symbol (v1.2) | `assets/subploters-symbol.svg` — amber-field S (§4.2); full export set under `exports/symbol/`. Supersedes the v1.1 standalone PL monogram `subploters-mark.svg` (deprecated, inline-only). |
 | Mark color | Amber `#f59e0b` |
 | Letter color | Ink `#1a1a2e` (in the lockup, surrounding letters are ink) |
 | Trailing `*` color | Amber `#f59e0b` (chat-37 round 5 footnote-style qualifier; small, superscript position) |
@@ -86,7 +88,7 @@ Three layers of meaning in one glyph. Density that none of the chat-36 direction
 |---|---|
 | Brand wordmark anywhere it appears at readable size (header, deck cover, About page, marketing) | **Master lockup** `subploters-lockup.svg` |
 | Body-text mention of "Subploters" (plain HTML/CSS, where loading the lockup SVG is overkill) | Render `Subploters` in Geist SemiBold ink + brand-signature `*` (see "Plain-text brand-signature" below) — the secondary plain wordmark `subploters-wordmark.svg` exists for SVG-only contexts |
-| Favicon, social avatar (`@subploters`), member badge, app icon, deck-corner watermark — any compact context where the wordmark won't fit | **Standalone PL monogram** `subploters-mark.svg` |
+| Favicon, social avatar (`@subploters`), member badge, app icon, Telegram photo, deck-corner watermark — any compact context where the wordmark won't fit | **Standalone S symbol** `subploters-symbol.svg` (amber-field — §4.2) |
 | Formal entity ("Professional Subploters Association" on About masthead, legal docs) | See §4.4 |
 
 ### Plain-text brand-signature (v1.2)
@@ -144,11 +146,13 @@ Used on: domain wordmark renders, social-profile cover graphics, marketing mater
 
 For body-text mentions of "Subploters" (HTML/CSS where loading the lockup SVG is overkill), render `Subploters` in Geist SemiBold ink directly **plus the brand-signature `*` per §3** — every plain-text wordmark mention wears the `*`. The secondary `assets/subploters-wordmark.svg` exists for SVG-only contexts where the lockup is too expressive but a vector wordmark is needed.
 
-### 4.2 Standalone PL monogram mark
+### 4.2 Standalone symbol — amber-field S (v1.2)
 
-The **PL monogram** at `assets/subploters-mark.svg` — amber `#f59e0b`, rotated `-3°` (baked into the asset transform; do not re-apply in CSS). Available as vector + PNG exports at 16 / 32 / 180 / 192 / 512 px under `assets/`.
+The standalone brand symbol is the **amber-field S**: a square amber `#f59e0b` field with the wordmark's first letter `S` in Geist SemiBold ink `#1a1a2e`, centered (~0.62 fill ratio). Substack lineage — the first letter of the wordmark as a bold solid-field glyph, not a custom-drawn letter. Source at `assets/subploters-symbol.svg`; full export set (SVG + PNG 16/32/48/180/192/256/512/1024/2048 + `favicon.ico` + PDF) under `exports/symbol/`.
 
-Used on: favicons, social avatars (`@subploters`), member badges, deck-corner watermarks, app icons, signage — anywhere the brand needs to be present at small sizes or independent of the wordmark.
+Used on: favicon, social avatars (`@subploters`), member badges, app icons, **Telegram group photo**, deck-corner watermarks, signage — anywhere the brand needs to be present at small sizes or independent of the wordmark.
+
+**v1.1 → v1.2 change:** v1.1 used the standalone **PL monogram** (`subploters-mark.svg`) for these compact contexts. v1.2 retires the PL monogram as a standalone symbol — it now appears **only inline inside the wordmark lockup** (the amber "PL" in "SubPLoters"). The standalone symbol is the amber-field S. Rationale: the PL monogram's ring-bowl detail muddies at favicon sizes (16/32px) and reading "PL" alone (Poland) detached from the wordmark was ambiguous; the S is bolder small and unambiguously the first letter of "Subploters". `subploters-mark.svg` is retained in `assets/` as deprecated/historical (still the geometry source for the inline PL) but is no longer a published standalone asset.
 
 ### 4.3 City stamp
 
@@ -200,7 +204,7 @@ Used on: About masthead, legal documents (when registered), member welcome packe
 
 ### 4.5 Location sub-marks (composition)
 
-Master wordmark (the inline-fused lockup from §4.1) **plus** city stamp standalone variant (§4.3), stacked. The standalone PL monogram may additionally sit beside or above the composition (deck-corner watermark, page-header glyph).
+Master wordmark (the inline-fused lockup from §4.1) **plus** city stamp standalone variant (§4.3), stacked. The standalone S symbol (§4.2) may additionally sit beside or above the composition (deck-corner watermark, page-header glyph).
 
 ```
 Subploters         ← master lockup (assets/subploters-lockup.svg — PL inline + trailing *)
@@ -228,7 +232,7 @@ Each city receives identical visual treatment — the system is **stamp-replacea
 
 No city is privileged in the visual system. Warsaw is the **founding** community (preserved in narrative and history) but not labeled "main" or "HQ" in brand assets.
 
-When opening a new Polish city, the only design work needed is creating a new `PSA · [CITY]` tag — the wordmark, standalone PL monogram mark, and overall system carry over unchanged. Polish diacritics (Ó, Ń, Ł, etc.) render natively in JetBrains Mono.
+When opening a new Polish city, the only design work needed is creating a new `PSA · [CITY]` tag — the wordmark, standalone S symbol, and overall system carry over unchanged. Polish diacritics (Ó, Ń, Ł, etc.) render natively in JetBrains Mono.
 
 ---
 
@@ -249,7 +253,7 @@ When opening a new Polish city, the only design work needed is creating a new `P
 |---|---|
 | Use the inline-fused master lockup `subploters-lockup.svg` as the wordmark wherever it appears at readable size | Substitute plain "Subploters" text where the lockup belongs |
 | Render plain-text "Subploters*" with the brand-signature `*` (§3) in every body-context mention | Drop the `*` from plain-text references — the `*` is part of the wordmark, not an option |
-| Use the standalone PL monogram `subploters-mark.svg` at compact sizes (favicons, social avatars, member badges) | Scale the full lockup down to favicon size — it goes illegible |
+| Use the standalone **S symbol** `subploters-symbol.svg` at compact sizes (favicon, avatar, app icon, Telegram photo) | Scale the full lockup down to favicon size — it goes illegible; or use the PL monogram as a standalone symbol (retired in v1.2 — inline-only) |
 | Use the city stamp standalone variant (-1.5° tilt, `PSA · CITY`, standard size) on landing pages, deck covers, social, posters | Tilt the chrome chip variant in the platform header — the upright grid reads it as broken |
 | Use the city stamp chrome variant (upright, `CITY`-only, small size, 10px from the master wordmark) in the platform header | Spell out city names in Geist next to the wordmark |
 | Treat Warsaw as one Polish location among future Polish locations | Label Warsaw as "main" or "HQ" externally; or extend the city system outside Poland in v1.2 |
@@ -269,30 +273,33 @@ When opening a new Polish city, the only design work needed is creating a new `P
 community/brand/
   brand.md              ← this document (single source of truth)
   LICENSE.md            ← CC0 dedication (per ADR-0001 OSS-first)
-  assets/
+  assets/               ← canonical sources
     subploters-lockup.svg        ← MASTER inline-fused wordmark (path-drawn Geist SemiBold + inline PL + trailing *) — ink letters, for cream/light backgrounds
     subploters-lockup-dark.svg   ← Dark-mode variant — cream letters, for ink/dark backgrounds (platform header, footer, dark hero)
-    subploters-mark.svg          ← Standalone PL monogram (compact contexts: favicons, avatars, badges)
-    subploters-mark-16.png       ← favicon (browser tab)
-    subploters-mark-32.png       ← favicon (high-DPI)
-    subploters-mark-180.png      ← apple-touch-icon
-    subploters-mark-192.png      ← PWA icon
-    subploters-mark-512.png      ← PWA icon / og-image fallback
+    subploters-symbol.svg        ← STANDALONE SYMBOL — amber-field S (v1.2). Favicon, avatar, app icon, Telegram photo.
     subploters-wordmark.svg      ← Secondary plain wordmark (Geist 600 ink text-based; font-dependent — for SVG-only contexts where the lockup is too expressive)
-    [future]
-    psa-warsaw-tag.svg
-    og-image-1200x630.png
-  exports/              ← (future) PNG / PDF exports for non-web use
+    subploters-mark.svg          ← DEPRECATED (v1.2) — standalone PL monogram. No longer a published standalone asset; retained as the geometry source for the inline PL inside the lockup. Do NOT use standalone.
+    subploters-mark-{16,32,180,192,512}.png ← DEPRECATED (v1.2) — old PL favicons, superseded by exports/symbol/.
+  exports/              ← FULL production kit (generated by .scratch/build-exports.js) — see exports/README.md
+    lockup/             ← master lockup light + dark — svg + png(600..2400) + pdf
+    symbol/             ← amber-field S — svg + png(16..2048) + favicon.ico + pdf
+    wordmark/           ← secondary plain wordmark — svg + png + pdf
+    city-stamp/         ← psa-warsaw (tilted) + warsaw-chip (chrome) — svg + png + pdf
+    location-submark/   ← lockup + PSA·WARSAW stacked — svg + png + pdf
+    og/                 ← og-light + og-dark, 1200×630 png + svg
+    telegram/           ← telegram-group-photo.png (512×512, the S)
+    README.md
   scripts/
     build-lockup.js              ← Canonical build script for the lockup (regenerates both variants)
   explorations/
     chat-36-archive/             ← rejected chat-36 mark candidates (incl. the 6-point asterisk)
     chat-37/                     ← chat-37 PL+pilcrow exploration (14 SVG candidates + comparison board + README)
     chat-38/                     ← chat-38 Path A process documentation + decision archive
-  .scratch/                      ← gitignored — node_modules host for build-lockup.js (opentype.js + Vercel geist TTFs + png-to-ico)
+    chat-40/                     ← rejected chat-40 v1.2 mark candidates (16 across 3 rounds)
+  .scratch/                      ← gitignored — node_modules host (opentype.js + Vercel geist TTFs + JetBrains Mono woff + sharp + pdfkit + svg-to-pdfkit + png-to-ico) + build-exports.js + chat-41 mockup generators
 ```
 
-Web-optimized assets for the community platform live at `projects/community-platform/public/branding/`.
+Web-optimized assets for the community platform live at `projects/community-platform/public/branding/`. The platform favicon should be swapped from the old PL monogram to `exports/symbol/favicon.ico` + the symbol PNGs (tracked as a platform follow-up).
 
 ---
 
@@ -309,6 +316,7 @@ All brand assets in this directory are dedicated to the public domain under **CC
   - **§1 founding** year corrected 2024 → 2026; "Polish Stowarzyszenie" reference dropped (entity not yet registered).
   - **§2 motif rule** amended: `-1.5°` rotation now applies only to standalone amber tags (AmberTag in hero, §4.5 location sub-marks, deck covers, posters). Chrome surfaces are exempt — the platform Header chip is upright (0°).
   - **§3 NEW Plain-text brand-signature `*`** convention: every plain-text "Subploters" mention wears the trailing `*` (amber, 0.55em, superscript via HTML `<sup>`). Internal documentation may omit the `*`; public surfaces must include it.
+  - **§4.2 Standalone symbol → amber-field S** (decided during the chat-41 export-kit build, after a favicon round-trip): the standalone symbol is now the amber-field S (first letter of the wordmark, Substack lineage), NOT the PL monogram. The **PL monogram is retired as a standalone symbol** — it appears only inline inside the wordmark lockup. Drove the favicon swap (S replaces PL) and the Telegram group photo (the S). `subploters-mark.svg` deprecated → inline-PL geometry source only. Reason: PL ring-bowl detail muddies at 16/32px and "PL" alone read ambiguously (Poland) detached from the wordmark.
   - **§4.3 City stamp** gains a chrome variant: upright, `CITY`-only (no PSA prefix when adjacent to the master wordmark), small size (3px 8px padding), 10px gap from the wordmark.
   - **§4.4 Formal entity** simplified to plain Geist 500 throughout — no embedded master lockup. The `*` carries the wordmark identity in body context.
   - **§4.5 Location sub-marks** scoped to Polish cities (Kraków, Gdańsk, Wrocław, Poznań, Łódź) until internationalization is decided.
@@ -322,7 +330,9 @@ All brand assets in this directory are dedicated to the public domain under **CC
   - Footer copyright gets the `*` (`© 2026 Subploters*`).
   - `/handbook` page header gains a formal-entity masthead: caption `FOUNDED 2026 · WARSAW` (JetBrains Mono caps, dust color) above headline `Professional Subploters* Association` (Geist 500, 40px, ink) above subtitle `The Warsaw chapter of the Professional Subploters* Association — for founders writing their next plot.` (Inter, 14px). When `/about` ships in a later phase, the same component moves over.
 
-  Chat-40 archive (still relevant as anti-pattern reference for future mark-replacement attempts): `community/brand/explorations/chat-40/` (16 rejected candidates). Chat-41 mockup scripts: `community/brand/.scratch/build-q1-*.js`, `build-q2-trailing-board.js`, `build-q3-wire-in-board-v{1..5}.js`, `build-section-45-location-submarks.js` (gitignored throwaway).
+  **Export kit:** the full production asset set was generated into `community/brand/exports/` (lockup, symbol, wordmark, city-stamp, location-submark, og light+dark, telegram group photo — each in SVG + PNG + vector PDF, plus `favicon.ico`). Warsaw-only scope. Built by `community/brand/.scratch/build-exports.js` (path-drawn via opentype.js + Geist + JetBrains Mono; rasterized via sharp; vector PDF via pdfkit/svg-to-pdfkit; ico via png-to-ico). See `exports/README.md`.
+
+  Chat-40 archive (still relevant as anti-pattern reference for future mark-replacement attempts): `community/brand/explorations/chat-40/` (16 rejected candidates). Chat-41 mockup scripts: `community/brand/.scratch/build-q1-*.js`, `build-q2-trailing-board.js`, `build-q3-wire-in-board-v{1..5}.js`, `build-section-45-location-submarks.js`, `build-og-image-board.js`, `build-telegram-avatars.js` (gitignored throwaway).
 - **v1.1 — 2026-05-23 (chat-38 / Path A).** Signature mark form AND master lockup BOTH locked. **Master wordmark is the inline-fused lockup**: path-drawn "Subploters" in Geist SemiBold (600) ink with the PL monogram (chat-37 Concept 11) inline-fused replacing the "pl" letters + trailing `*` amber qualifier (chat-37 round 5 idea, refined in chat-38 visual iteration). Architecture: **three-piece** (inline-fused lockup wordmark + standalone PL mark + city stamp). PL inline is capped at cap-height (matches lowercase l ascender, no descender extension below baseline — chat-38 v2 iteration after Anton's "PL too tall" feedback on v1). Assets: `assets/subploters-lockup.svg` (path-drawn, font-independent), `assets/subploters-mark.svg` + 5 PNG exports, `assets/subploters-wordmark.svg` (secondary plain variant). Build pipeline: `community/brand/.scratch/build-lockup.js` (gitignored — opentype.js + Vercel geist TTFs). Rejected chat-36 6-point asterisk archived to `explorations/chat-36-archive/asterisk.svg`.
 - **v1 — 2026-05-23 (chat-36).** Subploters identity locked. Name architecture, brand voice, color palette, typography (Geist + Inter + JetBrains Mono), motifs (rotated amber tags), city stamp system (PSA · CITY), two-piece compositional system for multi-location scaling, Co-Founder role in default signatures. **Signature mark form NOT locked** — iterated through ~7 design directions, none approved. See chat-37 handoff for continuation.
 - **v0 — 2026-04-24.** Placeholder Warsaw AI Community identity. No logo. Iterated to v1 after the chat-36 brand brainstorm in May.
