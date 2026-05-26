@@ -17,6 +17,15 @@ import { Header } from "@/app/components/Header";
 
 afterEach(() => cleanup());
 
+// v0.8.1 (chat-44): active-page indicator moved client-side. `HeaderNav` (the
+// new Client Component carrying the desktop nav) reads `usePathname()` from
+// `next/navigation`; `HeaderMobileMenu` does the same. The legacy `next/headers`
+// mock is no longer required for the active-state assertions but is kept here
+// as a defensive no-op (Header.tsx itself no longer calls `headers()`).
+vi.mock("next/navigation", () => ({
+  usePathname: vi.fn(() => "/calendar"),
+}));
+
 vi.mock("next/headers", () => ({
   headers: vi.fn(async () => new Map([["x-pathname", "/calendar"]])),
 }));

@@ -2,17 +2,33 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { Route } from "next";
 import { s } from "@/lib/i18n/strings";
 
 interface HeaderMobileMenuProps {
   /**
-   * Nav items to render inside the slide-in panel. `current` (v0.6 H90) is
-   * computed server-side by `Header.tsx` from `headers().get("x-pathname")`
-   * so the mobile menu stays a thin renderer — no `usePathname()` needed,
-   * which keeps the `useEffect` shape locked (v0.4 H58).
+   * Nav items to render inside the slide-in panel. v0.8.1 (chat-44 followup):
+   * `current` was previously computed server-side by `Header.tsx` from
+   * `headers().get("x-pathname")` and passed through here, but that value
+   * went stale on Next.js soft `<Link>` navigations (cached root layout).
+   * The mobile menu now reads `usePathname()` directly — same client-side
+   * reactivity guarantee as `HeaderNav`. The `useState` shape is unchanged
+   * (panel open/close state still local; v0.4 H58 hydration contract preserved).
    */
-  navItems: { href: Route; label: string; current?: boolean }[];
+  navItems: { href: Route; label: string }[];
+}
+
+/**
+ * Active-page matcher (mirrors HeaderNav / Header's prior v0.6 logic):
+ *
+ *   /         → active when pathname is "/" or "/home"
+ *   /<x>      → active when pathname === "/<x>" OR starts with "/<x>/"
+ */
+function isCurrent(href: string, pathname: string | null): boolean {
+  if (!pathname) return false;
+  if (href === "/") return pathname === "/" || pathname === "/home";
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 /**
@@ -30,6 +46,7 @@ export function HeaderMobileMenu({
   navItems,
 }: HeaderMobileMenuProps): React.JSX.Element {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
@@ -74,7 +91,7 @@ export function HeaderMobileMenu({
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={`block font-voice text-[12px] uppercase tracking-[0.5px] no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 ${
-                  item.current
+                  isCurrent(item.href, pathname)
                     ? "text-accent-500"
                     : "text-ink hover:text-accent-500"
                 }`}

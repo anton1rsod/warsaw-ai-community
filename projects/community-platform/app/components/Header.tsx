@@ -1,18 +1,19 @@
-import { headers } from "next/headers";
 import Link from "next/link";
 import type { Route } from "next";
 import { auth, signOut } from "@/lib/auth";
 import { findMemberByHandle } from "@/lib/content-snapshot";
 import { s, type StringKey } from "@/lib/i18n/strings";
+import { HeaderNav } from "@/app/components/HeaderNav";
 import { HeaderMobileMenu } from "@/app/components/HeaderMobileMenu";
 import { CityChip } from "@/app/components/CityChip";
 
 interface HeaderProps {
   /**
-   * Optional explicit active path. When provided, overrides the value read
-   * server-side from `headers().get("x-pathname")`. RootShell still passes
-   * this for backwards-compat with v0.4 callers; new code should rely on
-   * the headers() read.
+   * @deprecated v0.8.1 — no longer read by Header. The active-page indicator
+   * (H90) is now reactive via `usePathname()` inside `HeaderNav` and
+   * `HeaderMobileMenu` (both Client Components). Kept on the interface so
+   * legacy `<Header activePath={…} />` call sites (RootShell, tests) keep
+   * compiling; the prop is a no-op. Remove from call sites in a future cleanup.
    */
   activePath?: string;
   compact?: boolean;
@@ -34,24 +35,11 @@ const NAV_ITEMS: readonly {
   { key: "handbook", href: "/handbook" as Route, labelKey: "chrome.header.nav.handbook" },
 ];
 
-/**
- * Active-page matcher (H90).
- *
- *   /          → active when pathname is "/" or "/home"
- *   /<x>       → active when pathname === "/<x>" OR starts with "/<x>/"
- */
-function isCurrent(href: string, pathname: string | null): boolean {
-  if (!pathname) return false;
-  if (href === "/") return pathname === "/" || pathname === "/home";
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
 function initialsOf(handle: string): string {
   return handle.slice(0, 2).toUpperCase();
 }
 
 export async function Header({
-  activePath,
   compact = false,
 }: HeaderProps = {}): Promise<React.JSX.Element> {
   const session = await auth();
@@ -59,11 +47,10 @@ export async function Header({
   const member = handle ? findMemberByHandle(handle) : undefined;
   const signedIn = Boolean(member);
 
-  // H90 — active-page indicator. Prefer the explicit activePath prop (so
-  // tests + legacy callers still work) but fall back to the proxy-set
-  // x-pathname header on every request. Both paths route through isCurrent.
-  const h = await headers();
-  const pathname = activePath ?? h.get("x-pathname");
+  // v0.8.1 (chat-44): active-page indicator (H90) is now resolved client-side
+  // inside HeaderNav + HeaderMobileMenu via `usePathname()`. Header itself no
+  // longer reads `next/headers` — soft `<Link>` navigation now keeps the
+  // active state live without re-rendering the cached layout.
 
   return (
     <header className="bg-ink text-cream font-display text-[13px] tracking-[0] px-4 py-2.5 flex justify-between items-center gap-12">
@@ -95,30 +82,13 @@ export async function Header({
       </div>
 
       {!compact && (
-        <nav
-          aria-label="Primary"
-          className="hidden md:flex items-center gap-3"
-        >
-          {NAV_ITEMS.map((item, idx) => (
-            <span key={item.key} className="flex items-center gap-3">
-              {idx > 0 && (
-                <span aria-hidden="true" className="opacity-50">
-                  ·
-                </span>
-              )}
-              <Link
-                href={item.href}
-                className={`no-underline ${
-                  isCurrent(item.href, pathname)
-                    ? "text-accent-500"
-                    : "text-cream opacity-85 hover:opacity-100"
-                }`}
-              >
-                {s(item.labelKey)}
-              </Link>
-            </span>
-          ))}
-        </nav>
+        <HeaderNav
+          items={NAV_ITEMS.map((item) => ({
+            key: item.key,
+            href: item.href,
+            label: s(item.labelKey),
+          }))}
+        />
       )}
 
       <div className="flex items-center gap-3">
@@ -193,7 +163,6 @@ export async function Header({
             navItems={NAV_ITEMS.map((item) => ({
               href: item.href,
               label: s(item.labelKey),
-              current: isCurrent(item.href, pathname),
             }))}
           />
         )}

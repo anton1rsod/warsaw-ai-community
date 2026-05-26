@@ -4,9 +4,15 @@ import { Header } from "@/app/components/Header";
 
 afterEach(() => cleanup());
 
+// v0.8.1 (chat-44): active-page indicator moved client-side via
+// `usePathname()` in HeaderNav + HeaderMobileMenu. The legacy `next/headers`
+// mock is no longer the source of truth for the active state but is kept here
+// as a defensive no-op (some test branches may still indirectly touch it).
+vi.mock("next/navigation", () => ({
+  usePathname: vi.fn(() => "/"),
+}));
+
 vi.mock("next/headers", () => ({
-  // Default mock for behavioral tests where pathname is irrelevant; the
-  // dedicated active-page assertion below overrides via mockResolvedValueOnce.
   headers: vi.fn(async () => new Map([["x-pathname", "/"]])),
 }));
 
@@ -21,7 +27,7 @@ vi.mock("@/lib/content-snapshot", () => ({
 
 const { auth } = await import("@/lib/auth");
 const { findMemberByHandle } = await import("@/lib/content-snapshot");
-const { headers } = await import("next/headers");
+const { usePathname } = await import("next/navigation");
 
 describe("Header — anonymous render", () => {
   it("shows sign in link when no session", async () => {
@@ -130,20 +136,21 @@ describe("H65: skip-to-content link", () => {
   });
 });
 
-describe("Header — current-page state", () => {
-  it("applies accent-500 highlight to active nav link (v0.6 H90)", async () => {
+describe("Header — current-page state (v0.8.1: usePathname-driven)", () => {
+  it("applies accent-500 highlight to the active nav link when usePathname matches", async () => {
     (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    render(await Header({ activePath: "/calendar" }));
+    (usePathname as unknown as ReturnType<typeof vi.fn>).mockReturnValue("/calendar");
+    render(await Header());
     const active = screen.getByRole("link", { name: /^calendar$/ });
-    // v0.6 active-page indicator is amber text (text-accent-500), no underline.
+    // v0.6 active-page indicator (H90) — amber text (text-accent-500), no underline.
+    // v0.8.1: source-of-truth migrated from headers() to usePathname() so soft
+    // `<Link>` navigation re-evaluates without re-rendering the cached layout.
     expect(active.className).toMatch(/accent-500/);
   });
 
-  it("reads pathname from headers().x-pathname when activePath prop is absent (H90)", async () => {
+  it("re-evaluates the active link when usePathname changes (soft-nav contract)", async () => {
     (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    (headers as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-      new Map([["x-pathname", "/members"]])
-    );
+    (usePathname as unknown as ReturnType<typeof vi.fn>).mockReturnValueOnce("/members");
     render(await Header());
     const active = screen.getByRole("link", { name: /^members$/ });
     expect(active.className).toMatch(/accent-500/);
