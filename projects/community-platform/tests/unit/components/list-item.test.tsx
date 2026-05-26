@@ -70,7 +70,7 @@ describe("ListItem — Q5.1 / D36 props contract", () => {
     expect(link.className).toMatch(/ring-offset-2/);
   });
 
-  it("v0.6 title uses font-display italic; subtitle + meta use font-voice dust (§16.5)", () => {
+  it("v0.8 title uses font-display Geist 600 (no italic); subtitle + meta use font-voice dust", () => {
     render(
       <ListItem
         href="/x"
@@ -81,7 +81,8 @@ describe("ListItem — Q5.1 / D36 props contract", () => {
     );
     const title = screen.getByText("Title");
     expect(title.className).toMatch(/font-display/);
-    expect(title.className).toMatch(/italic/);
+    expect(title.className).toMatch(/font-semibold/);
+    expect(title.className).not.toMatch(/italic/);
     const subtitle = screen.getByText("Subtitle line");
     expect(subtitle.className).toMatch(/font-voice/);
     expect(subtitle.className).toMatch(/text-dust/);

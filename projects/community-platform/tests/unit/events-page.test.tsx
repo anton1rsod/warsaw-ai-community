@@ -156,16 +156,16 @@ describe("H86: /events force-dynamic export", () => {
 });
 
 describe("EventsPage v0.6", () => {
-  it("renders Fraunces italic 'Events.' title via i18n", async () => {
+  it("renders Geist 600 'Events.' title via i18n (no italic)", async () => {
     const { listEventsFromSnapshot } = await import("@/lib/content-snapshot");
     vi.mocked(listEventsFromSnapshot).mockReturnValue([]);
     const { default: EventsIndex } = await import("@/app/events/page");
     render(await EventsIndex());
     const heading = screen.getByRole("heading", { level: 1, name: "Events." });
     expect(heading).toBeInTheDocument();
-    // Fraunces is wired via the `font-display` Tailwind family (Phase 0.3).
     expect(heading.className).toMatch(/font-display/);
-    expect(heading.className).toMatch(/italic/);
+    expect(heading.className).toMatch(/font-semibold/);
+    expect(heading.className).not.toMatch(/italic/);
   });
 
   it("renders MonoLabel '// events · N upcoming' with count", async () => {
@@ -196,6 +196,24 @@ describe("EventsPage v0.6", () => {
     const { default: EventsIndex } = await import("@/app/events/page");
     render(await EventsIndex());
     expect(screen.getByText(/No past events yet/i)).toBeInTheDocument();
+  });
+
+  it("v0.8: upcoming/past empty-states use font-voice dust (mono), not italic", async () => {
+    const { listEventsFromSnapshot } = await import("@/lib/content-snapshot");
+    // zero upcoming + zero past
+    vi.mocked(listEventsFromSnapshot).mockReturnValue([]);
+    const { default: EventsIndex } = await import("@/app/events/page");
+    render(await EventsIndex());
+    const upcoming = screen.getByText(/Telegram has the next signal/i);
+    expect(upcoming.className).toMatch(/font-voice/);
+    expect(upcoming.className).toMatch(/text-dust/);
+    expect(upcoming.className).not.toMatch(/italic/);
+    expect(upcoming.className).not.toMatch(/font-display/);
+    const past = screen.getByText(/No past events yet/i);
+    expect(past.className).toMatch(/font-voice/);
+    expect(past.className).toMatch(/text-dust/);
+    expect(past.className).not.toMatch(/italic/);
+    expect(past.className).not.toMatch(/font-display/);
   });
 
   it("EventCard rows render upcoming events with title + slug link", async () => {

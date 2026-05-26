@@ -33,9 +33,10 @@ describe("FormalEntityMasthead (v0.7 brand v1.2 — §4.4)", () => {
     expect(container.textContent ?? "").not.toMatch(/venture studio/i);
   });
 
-  it("uses font-geist (Geist) on the headline", () => {
+  it("uses font-display (Geist via v0.8 token) on the headline", () => {
     const { container } = render(<FormalEntityMasthead />);
     const h1 = container.querySelector("h1");
-    expect(h1?.className).toMatch(/font-geist/);
+    // v0.8 §4.2: font-geist token retired; font-display is the unified Geist token
+    expect(h1?.className).toMatch(/font-display/);
   });
 });

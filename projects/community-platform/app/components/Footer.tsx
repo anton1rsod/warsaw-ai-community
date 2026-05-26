@@ -3,12 +3,12 @@ import { s, type StringKey } from "@/lib/i18n/strings";
 import { BrandStar } from "@/app/components/BrandStar";
 
 /**
- * Global <Footer> — v0.7 brand v1.2 wire-in (chat-41).
+ * Global <Footer> — dark band, mono copyright left + mono links right.
  *
  * Three stacked elements:
  *   1. Formal entity line (NEW v0.7) — JetBrains Mono caps, cream/60 opacity, divider below.
  *      Renders "PROFESSIONAL SUBPLOTERS* ASSOCIATION" with the BrandStar superscript.
- *   2. Copyright row — Geist italic 11px, with BrandStar on "Subploters*" (v0.7).
+ *   2. Copyright row — JetBrains Mono 11px, with BrandStar on "Subploters*" (v0.7).
  *      "built in public, MIT" segment REMOVED in v0.7 (brand v1.2 simplification).
  *   3. Links row (right side, same row as copyright) — JetBrains Mono small, unchanged.
  *
@@ -66,7 +66,7 @@ export function Footer(): React.JSX.Element {
         Professional Subploters<BrandStar /> Association
       </div>
       {/* v0.7 copyright + links row — copyright wears the BrandStar; flex-gap prevents collapse */}
-      <div className="font-display italic text-[11px] flex justify-between items-center gap-8 flex-wrap">
+      <div className="font-voice text-[11px] flex justify-between items-center gap-8 flex-wrap">
         <div>
           <span>
             {copyrightBefore}Subploters<BrandStar />
@@ -75,7 +75,7 @@ export function Footer(): React.JSX.Element {
         </div>
         <nav
           aria-label="Footer"
-          className="font-voice not-italic text-[10px] opacity-85 flex gap-2"
+          className="font-voice text-[10px] opacity-85 flex gap-2"
         >
           {LINKS.map((link, idx) => (
             <span key={link.key} className="flex gap-2 items-center">

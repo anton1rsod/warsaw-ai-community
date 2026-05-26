@@ -17,7 +17,7 @@ import { s } from "@/lib/i18n/strings";
  *   writing their next plot.
  *
  * Both "Subploters*" mentions wear the brand-signature * via <BrandStar /> per
- * §3. Headline is font-geist (real Geist — continuity with the Geist lockup).
+ * §3. Headline is font-display (= Geist via v0.8 §4.2 consolidated token).
  * The caption does NOT mention "Polish Stowarzyszenie" (entity not yet
  * registered — v1.2 lock).
  *
@@ -36,7 +36,7 @@ export function FormalEntityMasthead(): JSX.Element {
           {s("masthead.foundedFmt")}
         </div>
         <h1
-          className="font-geist font-medium text-ink m-0"
+          className="font-display font-medium text-ink m-0"
           style={{ fontSize: "40px", letterSpacing: "-0.015em", lineHeight: 1.15 }}
         >
           {s("masthead.formalEntityLead")} Subploters<BrandStar /> {s("masthead.formalEntityTail")}

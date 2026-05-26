@@ -21,7 +21,7 @@ describe("YourWeekPane v0.6 — Q1.3 / D25 / O9", () => {
         now={new Date(2026, 4, 21)}
       />,
     );
-    expect(screen.getByText(/Tonight, Anton—/)).toBeInTheDocument();
+    expect(screen.getByText(/Tonight, Anton/)).toBeInTheDocument();
     expect(screen.getByText(/AI Community Meetup № 4/)).toBeInTheDocument();
   });
 
@@ -41,7 +41,7 @@ describe("YourWeekPane v0.6 — Q1.3 / D25 / O9", () => {
         now={new Date(2026, 4, 21)}
       />,
     );
-    expect(screen.getByText(/This week, Anton—/)).toBeInTheDocument();
+    expect(screen.getByText(/This week, Anton/)).toBeInTheDocument();
   });
 
   it("renders empty-state when no nextRsvp", () => {
@@ -55,6 +55,47 @@ describe("YourWeekPane v0.6 — Q1.3 / D25 / O9", () => {
       />,
     );
     expect(screen.getByText(/Next meetup lands soon/)).toBeInTheDocument();
+  });
+
+  it("v0.8: hero uses Geist 600 (not italic) with amber em-dash flourish", () => {
+    render(
+      <YourWeekPane
+        firstName="Anton"
+        nextRsvp={{
+          slug: "2026-05-21-meetup-4",
+          title: "AI Community Meetup № 4",
+          date: "2026-05-21",
+          startTime: "19:00",
+          location: "Grzybowska 85a",
+        }}
+        timeUntil="in 6h"
+        kudosWeekCount={0}
+        now={new Date(2026, 4, 21)}
+      />,
+    );
+    const heading = screen.getByRole("heading", { level: 1 });
+    expect(heading.className).toMatch(/font-display/);
+    expect(heading.className).toMatch(/font-semibold/);
+    expect(heading.className).not.toMatch(/italic/);
+    expect(heading.className).not.toMatch(/font-black/);
+    expect(heading.querySelector(".text-accent-500")?.textContent).toBe("—");
+  });
+
+  it("v0.8: empty-week accent line uses font-voice dust (mono), not italic", () => {
+    render(
+      <YourWeekPane
+        firstName="Anton"
+        nextRsvp={null}
+        timeUntil={undefined}
+        kudosWeekCount={0}
+        now={new Date(2026, 4, 21)}
+      />,
+    );
+    const line = screen.getByText(/Next meetup lands soon/i);
+    expect(line.className).toMatch(/font-voice/);
+    expect(line.className).toMatch(/text-dust/);
+    expect(line.className).not.toMatch(/italic/);
+    expect(line.className).not.toMatch(/font-display/);
   });
 
   describe("§14.6 manipulation-resistance — NO streak / notifications / comparison", () => {

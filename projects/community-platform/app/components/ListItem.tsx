@@ -7,7 +7,7 @@ import { Avatar, type AvatarSize } from "@/app/components/Avatar";
  *
  * v0.6 Phase 3.8 restyle (spec §16.5):
  *   - Outer wrapper: paper background + 3px ink left border (no radii).
- *   - Title rendered in Fraunces italic (font-display) for serif voice.
+ *   - Title rendered in Geist (font-display) for the display voice.
  *   - Subtitle/meta rendered in JetBrains Mono (font-voice) dust color.
  *   - 0-radii — preserves v0.6 "no rounded corners" posture.
  *   - Compact spacing matches the ship-card pattern from HomeFeed (§16.5):
@@ -63,7 +63,7 @@ export function ListItem({
         />
       )}
       <span className="flex-1 min-w-0">
-        <span className="block font-display italic text-ink text-[13px] truncate">
+        <span className="block font-display font-semibold text-ink text-[13px] truncate">
           {title}
         </span>
         {subtitle && (

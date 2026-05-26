@@ -77,7 +77,7 @@ describe("EmptyState — Q3.5 codification", () => {
     expect(screen.queryByRole("link")).toBeNull();
   });
 
-  it("v0.6 headline + calibration use font-display italic dust (§16.6)", () => {
+  it("v0.8 headline + calibration use font-voice dust (mono), not italic", () => {
     render(
       <EmptyState
         headline="No upcoming events."
@@ -85,13 +85,13 @@ describe("EmptyState — Q3.5 codification", () => {
       />,
     );
     const headline = screen.getByText("No upcoming events.");
-    expect(headline.className).toMatch(/font-display/);
-    expect(headline.className).toMatch(/italic/);
+    expect(headline.className).toMatch(/font-voice/);
     expect(headline.className).toMatch(/text-dust/);
+    expect(headline.className).not.toMatch(/italic/);
+    expect(headline.className).not.toMatch(/font-display/);
     const calibration = screen.getByText("The next weekly sync is Wed 18:30.");
-    expect(calibration.className).toMatch(/font-display/);
-    expect(calibration.className).toMatch(/italic/);
-    expect(calibration.className).toMatch(/text-dust/);
+    expect(calibration.className).toMatch(/font-voice/);
+    expect(calibration.className).not.toMatch(/italic/);
   });
 
   it("v0.6 nextAction renders as <Pill variant=\"dashed\"> (dashed ink border CTA per Phase 3.8 brief)", () => {

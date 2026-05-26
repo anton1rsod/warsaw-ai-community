@@ -75,9 +75,9 @@ export function YourWeekPane({
       <MonoLabel>{weekLabel}</MonoLabel>
       <h1
         id="your-week"
-        className="font-display italic font-black text-[40px] leading-[0.95] text-ink mt-3 tracking-tight"
+        className="font-display font-semibold text-[40px] leading-[0.95] text-ink mt-3 tracking-tight"
       >
-        {lead} {firstName}—
+        {lead} {firstName}<span className="text-accent-500">—</span>
         {nextRsvp && (
           <>
             <br />
@@ -102,7 +102,7 @@ export function YourWeekPane({
       ) : (
         <div className="mt-6 bg-paper border-[1.5px] border-ink p-4">
           <MonoLabel>{s("hero.home.weekLabel")}</MonoLabel>
-          <p className="font-display italic text-ink mt-2 text-[14px]">
+          <p className="font-voice text-dust mt-2 text-[13px]">
             {s("empty.home.nextEvent")}
           </p>
         </div>

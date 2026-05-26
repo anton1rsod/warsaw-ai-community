@@ -29,7 +29,7 @@ export async function RootShell({ children }: RootShellProps): Promise<React.JSX
   return (
     <>
       <Header activePath={pathname} compact={compact} />
-      {children}
+      <div className="flex-1">{children}</div>
       <Footer />
     </>
   );

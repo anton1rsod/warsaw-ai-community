@@ -24,8 +24,8 @@ interface AnonymousHeroProps {
  * Anonymous `/` hero — v0.6 visual redesign (chat-35 Phase 3.1).
  *
  * Composes the Phase 1 primitives (MonoLabel, AmberTag, Pill) per spec §16:
- * mono pre-header, Fraunces italic Q1.2 ambition sentence with amber-tag
- * accent on "public.", subtagline, optional "tonight" next-event card, dual
+ * mono pre-header, Geist 600 headline with AmberTag accent on "public.",
+ * subtagline, optional "tonight" next-event card, dual
  * CTA row (sign-in + telegram).
  *
  * The next-event card framing is NEUTRAL only — no scarcity, no countdown
@@ -55,19 +55,19 @@ export function AnonymousHero({
       <MonoLabel>{monoLabel}</MonoLabel>
       <h1
         id="hero-title"
-        className="font-display italic font-black text-[40px] leading-[0.95] text-ink mt-3 tracking-tight"
+        className="font-display font-semibold text-[40px] leading-[0.95] text-ink mt-3 tracking-tight"
       >
         {s("hero.anon.taglineLead")} {s("hero.anon.taglineInfix")}{" "}
         <AmberTag>{s("hero.anon.taglineHighlight")}</AmberTag>
       </h1>
-      <p className="font-body italic text-[14px] text-ink mt-4 max-w-md">
+      <p className="font-body text-[14px] text-ink mt-4 max-w-md">
         {s("hero.anon.subtagline")}
       </p>
 
       {nextEvent ? (
         <div className="mt-6 bg-paper border-[1.5px] border-ink p-4">
           <MonoLabel>{s("hero.anon.tonightLabel")}</MonoLabel>
-          <div className="font-display italic font-bold text-[18px] text-ink mt-1 leading-tight">
+          <div className="font-display font-semibold text-[18px] text-ink mt-1 leading-tight">
             {nextEvent.title}
           </div>
           <div className="font-voice text-[10px] text-ink mt-2">

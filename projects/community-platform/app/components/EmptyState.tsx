@@ -3,9 +3,8 @@ import { Pill } from "@/app/components/Pill";
 /**
  * <EmptyState> — Q3.5 codification + walkthrough §3 (asymmetric empty-state fix).
  *
- * v0.6 Phase 3.8 restyle (spec §16.6):
- *   - Typography flipped from neutral sans-medium to Fraunces italic
- *     (font-display) in dust color — warm, sober empty-state voice.
+ * v0.8 restyle (brand §2):
+ *     in JetBrains Mono (font-voice) dust — quiet "system voice" empty state.
  *   - Calibration rendered in the same family at smaller size.
  *   - nextAction CTA rendered as <Pill variant="dashed"> per Phase 3.8
  *     brief: this matches the dashed-border CTA pattern used across
@@ -37,9 +36,9 @@ export function EmptyState({
 }: EmptyStateProps): React.JSX.Element {
   return (
     <div className="py-8 px-4 text-center">
-      <p className="font-display italic text-dust text-[13px]">{headline}</p>
+      <p className="font-voice text-dust text-[12px]">{headline}</p>
       {calibration && (
-        <p className="mt-2 font-display italic text-dust text-[12px]">
+        <p className="mt-2 font-voice text-dust text-[11px]">
           {calibration}
         </p>
       )}

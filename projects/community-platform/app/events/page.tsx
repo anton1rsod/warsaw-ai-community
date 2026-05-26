@@ -59,7 +59,7 @@ export default async function EventsIndex(): Promise<React.JSX.Element> {
   return (
     <main id="main" className="mx-auto max-w-3xl px-6 py-10">
       <MonoLabel>{eventsLabel}</MonoLabel>
-      <h1 className="mt-2 font-display italic font-black text-[40px] leading-[0.95] tracking-tight text-ink">
+      <h1 className="mt-2 font-display font-semibold text-[40px] leading-[0.95] tracking-tight text-ink">
         {s("events.index.title")}
       </h1>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -79,7 +79,7 @@ export default async function EventsIndex(): Promise<React.JSX.Element> {
           Upcoming
         </h2>
         {upcoming.length === 0 ? (
-          <p className="mt-2 font-display italic text-[14px] text-dust">
+          <p className="mt-2 font-voice text-[12px] text-dust">
             {s("empty.events.upcoming")}
           </p>
         ) : (
@@ -106,7 +106,7 @@ export default async function EventsIndex(): Promise<React.JSX.Element> {
           Past
         </h2>
         {past.length === 0 ? (
-          <p className="mt-2 font-display italic text-[14px] text-dust">
+          <p className="mt-2 font-voice text-[12px] text-dust">
             {s("empty.events.past")}
           </p>
         ) : (
