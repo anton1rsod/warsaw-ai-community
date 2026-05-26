@@ -15,11 +15,11 @@ export default function ProjectsPage(): React.JSX.Element {
         {projects.map((p) => (
           <li
             key={p.slug}
-            className="rounded border p-4 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+            className="rounded border p-4 hover:bg-cream-deep"
           >
             <Link href={`/projects/${p.slug}`} className="block">
               <div className="font-medium">{p.title}</div>
-              <div className="font-mono text-sm text-neutral-600 dark:text-neutral-400">
+              <div className="font-voice text-[12px] text-dust">
                 {p.slug}
               </div>
             </Link>

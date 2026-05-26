@@ -16,6 +16,33 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.8.1] — 2026-05-26 (chat-44 followup — Anton-smoke triage)
+
+Three small fixes surfaced by Anton's post-v0.8.0 prod smoke. **No business-logic changes; pure UI/chrome.** Spec amendment at `projects/community-platform/spec.md` §18.1.
+
+### Fixed
+
+- **H90 active-page indicator stale on client-side navigation** — `Header.tsx` was an async Server Component reading `headers().get("x-pathname")` once at render. Next.js App Router caches the root layout across soft `<Link>` navigations, so the active-state value froze at the first hard-nav pathname — clicking "home" from `/calendar` left `calendar` amber and `home` cream. **Fix:** extracted the desktop nav into a new Client Component `HeaderNav.tsx` that reads `usePathname()` live; `HeaderMobileMenu.tsx` also switched from a server-pre-computed `current` prop to its own `usePathname()` call. `Header.tsx` itself stays a Server Component (auth, lockup, city chip, dropdown unchanged). The H90 contract is preserved at the same selectors/classnames; only the source-of-truth migrated (`headers()` → `usePathname()`). The `activePath?` prop on `Header` is now a no-op (deprecated, kept for call-site backwards-compat).
+- **Projects page hover contrast unreadable in macOS dark mode** — `app/projects/page.tsx` is v0.1 scaffolding (never refactored through v0.4 / v0.6 / v0.7 redesigns) and carried Tailwind `dark:hover:bg-neutral-900` + `dark:text-neutral-400` variants. Tailwind defaults to `darkMode: "media"`, so `prefers-color-scheme: dark` activated them; but `globals.css` has no companion `@media (prefers-color-scheme: dark)` rules to invert the cream/ink tokens — only this page's `dark:` rules fired, leaving dark text on a dark-flipped background. **Fix:** stripped every `dark:` variant from the file, replaced `hover:bg-neutral-100 dark:hover:bg-neutral-900` with `hover:bg-cream-deep`, swapped the slug's `font-mono text-sm text-neutral-600` for `font-voice text-[12px] text-dust` (matches v0.8 §5.2 mono dust voice elsewhere).
+- **YourWeekPane hero em-dash flourish retired** — v0.8 §4.3 added a trailing amber em-dash on the hero (`{lead} {firstName}<span className="text-accent-500">—</span>`). On a live read Anton found it visually off ("strange right of Anton"). **Fix:** replaced with a plain ink period — `{lead} {firstName}.`. Knock-on win: the two pre-existing `/Tonight, Anton/` and `/This week, Anton/` text-match assertions, which I had to weaken in v0.8 Phase 2 because the em-dash span split the text node, are now **tightened back** to `/Tonight, Anton\./` and `/This week, Anton\./` — strictly stronger than the v0.7 baseline.
+
+### Tests
+
+- **1237 unit/integration green** (1226 v0.8.0 baseline + 11 net new). `pnpm tsc --noEmit` clean. `pnpm lint` clean.
+- New: `tests/unit/components/header-nav.test.tsx` (7 tests — active state at `/`, `/home`, `/calendar`, nested `/projects/[slug]`, empty pathname; middot separator count; cream + opacity contract on inactive links).
+- New: `tests/unit/projects-page.test.tsx` (4 source-scan tests — no `dark:` variants, `hover:bg-cream-deep` present, `font-voice` + `text-dust` on slug, no `neutral-*` color classes).
+- Updated: `tests/unit/components/header.test.tsx` + `tests/unit/header-v0-6.test.tsx` (active-state tests migrated from `next/headers` mock to `next/navigation.usePathname` mock); `tests/unit/components/your-week-pane.test.tsx` (em-dash span assertion retired, period matchers tightened, hero `it` desc renamed to v0.8.1); `tests/unit/home-page.test.tsx` (`/Anton—/` → `/Anton\./`).
+
+### Reconciliation note (caught by Anton-smoke, not by my v0.8.0 Playwright smoke)
+
+These three bugs were each PRE-EXISTING relative to v0.8.0:
+
+- **Bug 1 (H90 staleness)** shipped in v0.6 (chat-35) and stayed latent through v0.7 / v0.8.0 because every prior visual smoke used Playwright `goto` — a hard nav that fully re-renders the cached layout. Anton's click was the first soft nav exercised against this surface.
+- **Bug 2 (em-dash)** was the only v0.8-introduced issue. Intentional design lock from the chat-43 brainstorm; reversed in v0.8.1 on the live-read feedback.
+- **Bug 3 (Projects card hover)** shipped in v0.1 scaffolding and never got refactored through the v0.4 / v0.6 / v0.7 redesigns; surfaced now because Anton hovered a project card while his macOS was in dark mode.
+
+Future visual smokes should include **soft-nav + hover/focus** passes — not just static `goto` + screenshot — to catch this category before users do.
+
 ## [0.8.0] — 2026-05-26 (chat-44 — typography realignment Fraunces → Geist + brand polish)
 
 Typography realignment per `community/brand/brand.md` §2 — retires Fraunces from the platform display surface and consolidates on Geist (already loaded by v0.7 PR #41), re-treats the former Fraunces-italic accent lines as JetBrains Mono dust ("system voice"), pins the footer via a `flex-1` wrapper in `RootShell`, and byte-swaps favicon + PWA icons to the amber-field S. **No new business logic, auth, or data surfaces — pure UI/CSS work.** Design at `docs/specs/2026-05-26-community-platform-v0-8-typography-ui-ux-design.md`. Plan at `projects/community-platform/v0.8.0-plan.md` (9 phases / 18 TDD tasks). Spec at `projects/community-platform/spec.md` §18.

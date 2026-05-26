@@ -77,7 +77,7 @@ export function YourWeekPane({
         id="your-week"
         className="font-display font-semibold text-[40px] leading-[0.95] text-ink mt-3 tracking-tight"
       >
-        {lead} {firstName}<span className="text-accent-500">—</span>
+        {lead} {firstName}.
         {nextRsvp && (
           <>
             <br />

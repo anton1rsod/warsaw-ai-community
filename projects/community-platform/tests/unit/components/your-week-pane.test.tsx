@@ -5,7 +5,7 @@ import { YourWeekPane } from "@/app/components/YourWeekPane";
 afterEach(() => cleanup());
 
 describe("YourWeekPane v0.6 — Q1.3 / D25 / O9", () => {
-  it("renders 'Tonight, <firstName>—' when event today + same-day mono label", () => {
+  it("renders 'Tonight, <firstName>.' when event today + same-day mono label (v0.8.1: em-dash retired)", () => {
     render(
       <YourWeekPane
         firstName="Anton"
@@ -21,11 +21,11 @@ describe("YourWeekPane v0.6 — Q1.3 / D25 / O9", () => {
         now={new Date(2026, 4, 21)}
       />,
     );
-    expect(screen.getByText(/Tonight, Anton/)).toBeInTheDocument();
+    expect(screen.getByText(/Tonight, Anton\./)).toBeInTheDocument();
     expect(screen.getByText(/AI Community Meetup № 4/)).toBeInTheDocument();
   });
 
-  it("renders 'This week, <firstName>—' fallback when event is >1d away", () => {
+  it("renders 'This week, <firstName>.' fallback when event is >1d away (v0.8.1: em-dash retired)", () => {
     render(
       <YourWeekPane
         firstName="Anton"
@@ -41,7 +41,7 @@ describe("YourWeekPane v0.6 — Q1.3 / D25 / O9", () => {
         now={new Date(2026, 4, 21)}
       />,
     );
-    expect(screen.getByText(/This week, Anton/)).toBeInTheDocument();
+    expect(screen.getByText(/This week, Anton\./)).toBeInTheDocument();
   });
 
   it("renders empty-state when no nextRsvp", () => {
@@ -57,7 +57,7 @@ describe("YourWeekPane v0.6 — Q1.3 / D25 / O9", () => {
     expect(screen.getByText(/Next meetup lands soon/)).toBeInTheDocument();
   });
 
-  it("v0.8: hero uses Geist 600 (not italic) with amber em-dash flourish", () => {
+  it("v0.8.1: hero uses Geist 600 (not italic) with ink period (em-dash flourish retired)", () => {
     render(
       <YourWeekPane
         firstName="Anton"
@@ -78,7 +78,9 @@ describe("YourWeekPane v0.6 — Q1.3 / D25 / O9", () => {
     expect(heading.className).toMatch(/font-semibold/);
     expect(heading.className).not.toMatch(/italic/);
     expect(heading.className).not.toMatch(/font-black/);
-    expect(heading.querySelector(".text-accent-500")?.textContent).toBe("—");
+    // v0.8.1 (chat-44): em-dash flourish retired — no amber span inside the heading
+    expect(heading.querySelector(".text-accent-500")).toBeNull();
+    expect(heading.textContent).toMatch(/Anton\./);
   });
 
   it("v0.8: empty-week accent line uses font-voice dust (mono), not italic", () => {
