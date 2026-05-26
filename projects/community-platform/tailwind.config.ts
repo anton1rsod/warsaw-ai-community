@@ -29,6 +29,10 @@ const config: Config = {
         display: ["var(--font-fraunces)", "Georgia", "serif"],
         body: ["var(--font-inter)", "system-ui", "sans-serif"],
         voice: ["var(--font-jetbrains)", "ui-monospace", "monospace"],
+        // v0.7 — Geist (brand wordmark family). Scoped to the Header nav + /handbook
+        // masthead headline so live text matches the Geist lockup (brand.md §10 chrome
+        // exception). Other display surfaces stay `display` (Fraunces).
+        geist: ["var(--font-geist)", "system-ui", "sans-serif"],
       },
     },
   },

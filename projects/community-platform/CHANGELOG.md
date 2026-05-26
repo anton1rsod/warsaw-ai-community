@@ -16,6 +16,44 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.7.0] — 2026-05-25 (chat-42 — brand v1.2 wire-in: chrome + /handbook masthead)
+
+Wires the Subploters **brand v1.2** spec (`community/brand/brand.md` §3 / §4.3 / §4.4 / §10, locked chat-41 at SHA `8863e62`) into the platform chrome and the `/handbook` page. **No mark architecture changes** — the v1.1 inline-fused lockup stays canonical. Spec at `projects/community-platform/spec.md` §17. Plan at `projects/community-platform/v0.7.0-plan.md` (8-task base plan; chat-42 added a Geist-load task after discovering the platform's `font-display` token is Fraunces, not Geist).
+
+### Added
+
+- **3 new presentation components** at `app/components/`:
+  - `BrandStar.tsx` — the amber `*` brand-signature superscript per §3 (`<sup aria-hidden="true">`, `0.55em`, `vertical-align: 0.55em`, `margin-left: 0.05em`, `#f59e0b`, optional `color` override). Used in plain-text "Subploters" contexts (footer copyright + formal-entity line, masthead headline + subtitle). H93.
+  - `CityChip.tsx` — §4.3 **chrome variant** of the city stamp: `CITY`-only (no `PSA ·` prefix), upright (0°), amber field / ink text, `font-voice` caps `0.18em`, `3px 8px` padding, `border-radius: 0`. H94.
+  - `FormalEntityMasthead.tsx` — §4.4 plain-text masthead (rendered as a `<section>`, not `<header>`, so it does NOT create a duplicate banner landmark alongside the chrome Header). Caption `FOUNDED 2026 · WARSAW` (mono dust caps), headline `Professional Subploters* Association` (Geist 500 / `font-geist`, 40px, ink), subtitle `The Warsaw chapter of the Professional Subploters* Association — for founders writing their next plot.` (Inter, 14px). Both `Subploters*` mentions wear `BrandStar`. No "Polish Stowarzyszenie" (entity not yet registered), no "venture studio" (v1.2 spec drop).
+- **Geist web font** loaded via `next/font/google` in `app/layout.tsx` as `--font-geist` (weights 400/500/600, `display: swap`); new `font-geist` Tailwind token in `tailwind.config.ts`. Scoped to the Header nav + masthead headline so live text matches the Geist SVG lockup (brand.md §10 chrome exception). The rest of the v0.6 Fraunces display aesthetic is untouched. (chat-42: the platform previously had no Geist web font — `font-display` resolves to Fraunces; the planned `font-display` wiring would have rendered the nav in serif, contradicting brand.md's "Geist 500, visual continuity with the lockup." Anton chose to load Geist.)
+- **Footer formal-entity line** above the copyright row: `PROFESSIONAL SUBPLOTERS* ASSOCIATION` (`font-voice` caps, 10px, `0.18em` tracking, cream/60 opacity, `cream/10` divider below).
+- **`masthead.*` i18n keys** in `lib/i18n/strings.ts` (`foundedFmt` / `formalEntityLead` / `formalEntityTail` / `subtitleLead` / `subtitleTail`).
+- **4 hardenings H93–H96** (continue v0.6's H87–H92):
+  - **H93** — `BrandStar` is `aria-hidden="true"` (decorative; screen readers hear "Subploters", not "Subploters star"). Tested at `tests/unit/BrandStar.test.tsx`.
+  - **H94** — `CityChip` is server-rendered + inline-styled; no client hydration / animation. Tested at `tests/unit/CityChip.test.tsx`.
+  - **H95** — Geist nav is a chrome-only exception to §2 voice typography, documented in `Header.tsx` + `tailwind.config.ts` comments + brand.md §10. The chip keeps `font-voice` per §4.3. Tested at `tests/unit/header-v0-6.test.tsx`.
+  - **H96** — `BrandStar` renders a semantic `<sup>` so paste-to-plain-text preserves the asterisk.
+
+### Changed
+
+- **`app/components/Header.tsx`** — parent font `font-voice` (JetBrains Mono) → `font-geist` (real Geist, H95); `CityChip` (`WARSAW`) mounted 10px right of the lockup inside a brand-group flex; parent flex gains `gap-12` (prevents chip↔nav collision). All v0.6 contracts (active-page indicator H90, dropdown, `signOut`, mobile menu, skip-link, `compact`/`activePath` props) preserved.
+- **`app/components/Footer.tsx`** — formal-entity line added above the copyright row; copyright now reads `© 2026 Subploters*` (BrandStar after "Subploters"); copyright row gains `gap-8` + `flex-wrap` (H96 — prevents copyright↔links collapse at narrow widths). The serif-italic treatment moved from `<footer>` to the inner copyright row. All link wiring + external-safety + the hardcoded `YEAR` preserved.
+- **`app/handbook/page.tsx`** — opens with `FormalEntityMasthead` (full-width cream band, ink underline) above the existing constrained `<main>`. When a dedicated `/about` ships later, the same component moves over.
+- **`lib/i18n/strings.ts`** — `chrome.header.signIn` `"[ sign in ]"` → `"sign in"`.
+- **`app/layout.tsx` `<html>`** — now carries 4 font-variable classes (`fraunces` / `geist` / `inter` / `jetbrains`).
+
+### Removed
+
+- **`chrome.footer.builtInPublic` i18n key** + the footer "built in public, MIT" segment (brand v1.2 footer simplification).
+
+### Tests
+
+- New: `BrandStar.test.tsx` (5), `CityChip.test.tsx` (6), `FormalEntityMasthead.test.tsx` (6) — all in `tests/unit/`.
+- Updated: `header-v0-6.test.tsx` (+3 v0.7 tests; font-voice→font-geist), `components/footer.test.tsx` (+4 v0.7 tests; built-in-public test removed; copyright + serif-italic assertions retargeted), `handbook-page.test.tsx` (+2), `layout-fonts.test.tsx` (4th font var + Geist import assertion), plus stale-string fixes in `components/header.test.tsx` / `i18n-strings.test.ts` / `i18n-v0-6.test.ts` (only surfaced by the full-suite run, not per-task globs).
+- Full suite green: **1216/1216** unit/integration; tsc + lint clean. E2E deferred to v0.7.1 (no behavioral change — purely visual).
+- Local dev smoke (chat-42): `/` + `/handbook` server-render every marker (WARSAW chip, `font-geist` nav, "sign in" without brackets, masthead caption/headline/subtitle, footer formal-entity, no "built in public"); Playwright screenshot confirms Geist renders + chip/masthead/footer layout intact.
+
 ## [0.6.0] — 2026-05-21 (chat-35 — warm-maximalist visual redesign across 4 hero surfaces + shared chrome)
 
 **v0.6 visual redesign** — first deliberate aesthetic identity. Takes v0.4 amber posture (ADR-0014) and pushes to the irreverent edge: warm cream canvas + dark ink chrome + amber rotated tags + Fraunces italic display + JetBrains mono voice. 4 hero surfaces (`/`, `/home`, `/events`, `/events/[slug]`) + shared Header/Footer chrome + 4 new primitives + ~50 new i18n keys + 6 hardenings H87–H92. Spec at `projects/community-platform/spec.md` §16 (chat-34 brainstorm output, locked in PR #37). Plan at `projects/community-platform/v0.6.0-plan.md` (22-task / 6-phase canonical execution).

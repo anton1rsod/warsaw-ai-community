@@ -3716,3 +3716,33 @@ Font-loading is the perf risk: 3 Google Fonts with multiple weights → potentia
 *This § (§16) drafted 2026-05-21 in chat-34 from the brainstorm visual locks captured at `docs/specs/2026-05-21-community-platform-v0-6-redesign-brainstorm.md`. Locks all 8 open questions O1–O8 inline (§16.11) per the brainstorm-decision precedence. Visual approval: chat-34 "nice" on the `design-preview.html` mockup (gitignored under `.superpowers/brainstorm/`; ASCII descriptions preserved in handoff doc). Reviewer = Anton-via-Auto-mode "start next recommended phase" approval expected after spec self-review pass. No ADR-0016 — amends ADR-0014's warm-amber posture (typography + token additions are extensions, not reversal).*
 
 *Next chat: implementation. `superpowers:writing-plans` produces `v0.6.0-plan.md` referencing this §16 + the brainstorm-output handoff. The v0.6.0 implementation chat reads the plan + this §16 and runs `superpowers:subagent-driven-development` against 5 phases (~5 days). Trigger to start: when Anton picks v0.6 from the menu post-Meetup #4 (typically 2026-05-22 or later, post-meetup retro).*
+
+## §17 v0.7 brand v1.2 wire-in (chat-41 / 2026-05-25)
+
+Wires the chat-41 Subploters brand v1.2 spec (`community/brand/brand.md` §10 v1.2 entry, SHA `8863e62` on main) into the community-platform chrome and /handbook page. **No mark architecture changes** — v1.1 lockup stays canonical.
+
+### Scope
+
+1. **Header** (`app/components/Header.tsx`): add city chip (`WARSAW`, upright, amber field, ink text, 10px right of master lockup); change nav font from `font-voice` (JetBrains Mono) to Geist 500 — chrome exception to §2 voice typography; drop brackets from sign-in i18n string.
+2. **Footer** (`app/components/Footer.tsx`): add formal entity line (`PROFESSIONAL SUBPLOTERS* ASSOCIATION`, JetBrains Mono caps, 10px, 0.18em letter-spacing, cream/60 opacity, divider below) above the existing copyright row; delete `built in public, MIT` segment (and the `chrome.footer.builtInPublic` i18n key); copyright wears the `*` (`© 2026 Subploters*`).
+3. **/handbook masthead** (`app/handbook/page.tsx`): add §4.4 formal entity masthead at top — caption `FOUNDED 2026 · WARSAW` (JetBrains Mono caps, dust, 0.20em); headline `Professional Subploters* Association` (Geist 500, 40px, ink); subtitle `The Warsaw chapter of the Professional Subploters* Association — for founders writing their next plot.` (Inter, 14px). When `/about` ships later, same component moves over.
+4. **Brand-signature `*` convention** (`app/components/BrandStar.tsx` NEW): renders the amber asterisk superscript per brand.md §3. Used by Footer copyright + formal entity, and /handbook masthead headline + subtitle.
+
+### Out of scope (deferred)
+
+- Year switch (`YEAR` in Footer stays hardcoded "2026" per existing v0.4 baseline; v0.7 cleanup candidate flagged for a later release).
+- New `/about` page (chat-23 plan deferral preserved; masthead lands on `/handbook` until dedicated page ships).
+- Mark architecture changes (v1.1 stays intact per chat-41 lock).
+
+### Hardenings
+
+H93. **Brand-signature `*` is `aria-hidden`** — decorative; screen readers should hear "Subploters", not "Subploters star". `BrandStar` component sets `aria-hidden="true"`.
+H94. **City chip is server-rendered and snapshot-tested** — no client-side hydration flicker (matches v0.4.8 chrome-flicker pattern). Inline-styled, no animations.
+H95. **Geist nav font is a chrome-only exception to §2 voice typography** — explicitly documented in code comments + brand.md §10 v1.2 entry. Don't propagate Geist to other voice contexts (chip stays JetBrains Mono per §4.3).
+H96. **Footer formal entity line uses `<sup>` (semantic) not styled span** — `BrandStar` renders as `<sup>` so paste-to-plain-text preserves the asterisk.
+
+### Tests
+
+- Unit: `BrandStar.test.tsx`, `CityChip.test.tsx`, `FormalEntityMasthead.test.tsx`.
+- Integration: existing `Header.test.tsx` / `Footer.test.tsx` updated for chip / nav font / copyright / formal entity assertions.
+- E2E: deferred to v0.7.1 (no behavioral surface change — purely visual).

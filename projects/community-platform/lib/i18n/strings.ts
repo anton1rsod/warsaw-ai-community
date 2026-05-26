@@ -189,7 +189,7 @@ export const strings = {
 
   // ─── chrome.header.* (v0.6 header chrome) ───────────────────────────────
   "chrome.header.logo": "Subploters",
-  "chrome.header.signIn": "[ sign in ]",
+  "chrome.header.signIn": "sign in",
   "chrome.header.nav.home": "home",
   "chrome.header.nav.calendar": "calendar",
   "chrome.header.nav.members": "members",
@@ -201,11 +201,17 @@ export const strings = {
 
   // ─── chrome.footer.* (v0.6 footer chrome) ───────────────────────────────
   "chrome.footer.copyrightFmt": "© {year} Subploters",
-  "chrome.footer.builtInPublic": "built in public, MIT",
   "chrome.footer.about": "about",
   "chrome.footer.telegram": "telegram",
   "chrome.footer.github": "github",
   "chrome.footer.license": "license",
+
+  // ─── masthead.* (v0.7 — /handbook formal entity masthead per brand.md §4.4) ───────────────────
+  "masthead.foundedFmt": "Founded 2026 · Warsaw",
+  "masthead.formalEntityLead": "Professional",
+  "masthead.formalEntityTail": "Association",
+  "masthead.subtitleLead": "The Warsaw chapter of the Professional",
+  "masthead.subtitleTail": "Association — for founders writing their next plot.",
 } as const;
 
 export type StringKey = keyof typeof strings;

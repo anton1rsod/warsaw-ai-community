@@ -100,7 +100,6 @@ describe("v0.6 i18n keys (H88)", () => {
   describe("chrome.footer.*", () => {
     it.each([
       "chrome.footer.copyrightFmt",
-      "chrome.footer.builtInPublic",
       "chrome.footer.about",
       "chrome.footer.telegram",
       "chrome.footer.github",

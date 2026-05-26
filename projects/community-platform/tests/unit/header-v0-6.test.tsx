@@ -57,7 +57,7 @@ describe("Header v0.6 — mono strip chrome", () => {
     const header = container.querySelector("header");
     expect(header?.className).toMatch(/bg-ink/);
     expect(header?.className).toMatch(/text-cream/);
-    expect(header?.className).toMatch(/font-voice/);
+    expect(header?.className).toMatch(/font-geist/);
   });
 });
 
@@ -80,10 +80,10 @@ describe("Header v0.6 — H90: active-page indicator from headers()", () => {
 });
 
 describe("Header v0.6 — anon vs signed-in", () => {
-  it("shows [ sign in ] when no session", async () => {
+  it("shows sign in when no session", async () => {
     (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     render(await Header());
-    expect(screen.getByText("[ sign in ]")).toBeInTheDocument();
+    expect(screen.getByText("sign in")).toBeInTheDocument();
   });
 
   it("shows avatar chip + handle when signed in", async () => {
@@ -96,9 +96,36 @@ describe("Header v0.6 — anon vs signed-in", () => {
       name: "Anton Safronov",
     });
     render(await Header());
-    expect(screen.queryByText("[ sign in ]")).not.toBeInTheDocument();
+    expect(screen.queryByText("sign in")).not.toBeInTheDocument();
     // The handle (or "@handle") must appear somewhere in the signed-in chrome.
     const matches = screen.getAllByText(/anton1rsod/);
     expect(matches.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Header — v0.7 brand v1.2 wire-in (chat-41)", () => {
+  it("renders the WARSAW city chip next to the lockup", async () => {
+    (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    const { findByText } = render(await Header({ activePath: "/" }));
+    const chip = await findByText("Warsaw");
+    expect(chip).toBeTruthy();
+    // H95 — chip is rendered via CityChip (JetBrains Mono via font-voice)
+    expect(chip.className).toMatch(/font-voice/);
+  });
+
+  it("does NOT wrap sign-in text in brackets (Geist sans treatment)", async () => {
+    (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    const { findByText, queryByText } = render(await Header({ activePath: "/" }));
+    await findByText("sign in");
+    expect(queryByText("[ sign in ]")).toBeNull();
+  });
+
+  it("uses font-geist (Geist) on the parent header, not font-voice", async () => {
+    (auth as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    const { container } = render(await Header({ activePath: "/" }));
+    const header = container.querySelector("header");
+    expect(header?.className).toMatch(/font-geist/);
+    expect(header?.className).not.toMatch(/font-voice/);
+    expect(header?.className).not.toMatch(/font-display/);
   });
 });

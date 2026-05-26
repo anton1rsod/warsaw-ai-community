@@ -58,3 +58,19 @@ describe("/handbook — Q2.3 / D29 / O4 / Q6.1 (i)", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("/handbook (v0.7 brand v1.2 — formal entity masthead)", () => {
+  it("mounts the FormalEntityMasthead at the top of the page", async () => {
+    const { container } = render(await HandbookPage());
+    expect(container.textContent ?? "").toMatch(/Founded 2026 . Warsaw/);
+    expect(container.textContent ?? "").toMatch(/Professional Subploters/);
+  });
+
+  it("preserves existing handbook sections (charter / roadmap / decisions)", async () => {
+    const { container } = render(await HandbookPage());
+    const text = container.textContent ?? "";
+    expect(text.toLowerCase()).toMatch(/charter|founding/);
+    expect(text.toLowerCase()).toMatch(/roadmap|projects/);
+    expect(text.toLowerCase()).toMatch(/decisions|adr/);
+  });
+});
