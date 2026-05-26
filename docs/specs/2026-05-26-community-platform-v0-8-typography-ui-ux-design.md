@@ -58,7 +58,7 @@ This work brings the platform into brand compliance. It is a **typographic reali
 Display headlines currently carry `font-display italic font-black` (Fraunces ~900 italic). New contract:
 - `font-display` (now Geist) + weight **600** (`font-semibold`) — drop `font-black`/`italic`.
 - Tight tracking via the existing `tracking-tight` utility (or a tuned value if 600 needs it).
-- Trailing flourish punctuation (`—`, `.`) wrapped and colored **amber** (`text-accent-500`) where it exists today (hero em-dash, "Events.").
+- **Amber flourish — substantial trailing marks only** (design-review refinement, chat-43): recolor a trailing **em-dash** amber (`text-accent-500`) where it exists today (e.g. `/home` hero "This week, {name}—"). A lone trailing **period** is *not* recolored — at 600 it renders as a faint amber speck that reads as an artifact, not a flourish; keep terminal periods **ink** (e.g. "Events." stays ink period, or drop the period). Rule of thumb: the recolor needs a visually substantial mark to land.
 
 ## 5. Italic migration (the careful part)
 
@@ -88,7 +88,7 @@ Geist and JetBrains Mono have **no true italic** → **zero `italic` classes may
 | `EventRoster.tsx:93` | Roster empty-state ("No one's going yet") |
 | `EventRoster.tsx:118` | Roster empty-state ("No one's marked interested yet.") |
 
-Mono accent lines render slightly smaller (mono runs large) and keep their existing `text-dust` / `text-ink` color per context (empty states = dust). These are **short "system voice" asides** — the mono treatment from decision 2.
+Mono accent lines render slightly smaller (mono runs large) and keep their existing `text-dust` / `text-ink` color per context (empty states = dust). These are **short "system voice" asides** — the mono treatment from decision 2. **Design-review note (chat-43):** JetBrains Mono is ~15% wider than Inter, so these lines wrap sooner — keep empty-state strings concise and verify they don't wrap awkwardly in the narrow mobile column (the longest today is "No upcoming meetup scheduled — Telegram has the next signal.").
 
 ### 5.2b Body paragraph that was italic → **Inter roman** (drop `italic`, stay body)
 | File:line | Surface |
@@ -111,6 +111,8 @@ Mono accent lines render slightly smaller (mono runs large) and keep their exist
 Today `RootShell` renders `<Header/>{children}<Footer/>` and each page owns a `<main className="mx-auto max-w-3xl px-4 py-8">` with **no `flex-1`**. In the `min-h-screen flex flex-col` body, `main` doesn't grow → footer floats up on short pages.
 
 **Fix:** wrap `{children}` in a `flex-1` container in `RootShell` (single change, applies to every route) so the footer pins to the viewport bottom. Content stays **top-anchored** with a comfortable top offset (breathing room, not jammed under the header). No per-page `<main>` changes required beyond the wrapper; the `/login` (no-chrome) variant is unaffected (it returns `{children}` directly).
+
+**Design-review caveat (chat-43):** the footer-pin *anchors* the footer but does not *fill* the empty middle band on a sparse page — rendered mockup confirms a calm cream gap remains between content and footer when there's little content. That's expected and acceptable: it's why **A (anchored-top)** was chosen over forcing content to fill, and the gap shrinks naturally as the community accrues events/ships/members. The top-offset/spacing scale is tunable during implementation if the gap reads too large at launch.
 
 ## 7. Favicon / PWA swap — `public/`
 
