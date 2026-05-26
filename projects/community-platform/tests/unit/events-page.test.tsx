@@ -156,16 +156,16 @@ describe("H86: /events force-dynamic export", () => {
 });
 
 describe("EventsPage v0.6", () => {
-  it("renders Fraunces italic 'Events.' title via i18n", async () => {
+  it("renders Geist 600 'Events.' title via i18n (no italic)", async () => {
     const { listEventsFromSnapshot } = await import("@/lib/content-snapshot");
     vi.mocked(listEventsFromSnapshot).mockReturnValue([]);
     const { default: EventsIndex } = await import("@/app/events/page");
     render(await EventsIndex());
     const heading = screen.getByRole("heading", { level: 1, name: "Events." });
     expect(heading).toBeInTheDocument();
-    // Fraunces is wired via the `font-display` Tailwind family (Phase 0.3).
     expect(heading.className).toMatch(/font-display/);
-    expect(heading.className).toMatch(/italic/);
+    expect(heading.className).toMatch(/font-semibold/);
+    expect(heading.className).not.toMatch(/italic/);
   });
 
   it("renders MonoLabel '// events · N upcoming' with count", async () => {
