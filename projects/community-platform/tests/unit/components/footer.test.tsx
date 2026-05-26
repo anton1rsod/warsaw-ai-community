@@ -4,16 +4,19 @@ import { Footer } from "@/app/components/Footer";
 
 afterEach(() => cleanup());
 
-describe("Footer v0.6 — dark band, serif italic + mono links", () => {
-  it("renders dark band with serif italic left + mono links right", () => {
+describe("Footer v0.8 — dark band, mono copyright + mono links", () => {
+  it("renders dark band with mono copyright left + mono links right", () => {
     render(<Footer />);
     const footer = screen.getByRole("contentinfo");
     expect(footer).toHaveClass("bg-ink");
     expect(footer).toHaveClass("text-cream");
-    // v0.7: the serif-italic treatment moved from <footer> to the inner copyright row
-    const copyrightRow = footer.querySelector(".italic");
-    expect(copyrightRow?.className).toMatch(/font-display/);
-    expect(copyrightRow?.className).toMatch(/italic/);
+    // v0.8: copyright row is now mono (font-voice), no serif-italic
+    const copyrightRow = footer.querySelector(".font-voice.text-\\[11px\\]") ??
+      footer.querySelector("[class*='font-voice'][class*='11px']");
+    expect(copyrightRow).not.toBeNull();
+    expect(copyrightRow?.className).toMatch(/font-voice/);
+    expect(copyrightRow?.className).not.toMatch(/font-display/);
+    expect(copyrightRow?.className).not.toMatch(/\bitalic\b/);
   });
 
   it("preserves v0.4.2 a11y fix — no aria-label on empty div", () => {
