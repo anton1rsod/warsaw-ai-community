@@ -90,7 +90,7 @@ export async function EventRoster({
       <div>
         <MonoLabel>{goingLabel}</MonoLabel>
         {goingTotal === 0 ? (
-          <p className="font-display italic text-dust mt-2">
+          <p className="font-voice text-dust mt-2 text-[12px]">
             {s("empty.eventDetail.going")}
           </p>
         ) : (
@@ -115,7 +115,7 @@ export async function EventRoster({
             signed-in viewer with count 0. */}
         {viewerIsSignedIn ? (
           interestedTotal === 0 ? (
-            <p className="font-display italic text-dust mt-2">
+            <p className="font-voice text-dust mt-2 text-[12px]">
               {s("empty.eventDetail.interested")}
             </p>
           ) : (

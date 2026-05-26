@@ -89,6 +89,16 @@ describe("H32: EventRoster (D10, D12)", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("v0.8: roster empty-states use font-voice dust (mono), not italic", async () => {
+    const ui = await EventRoster({ eventSlug: "2026-07-04-empty" });
+    render(ui);
+    const goingEmpty = screen.getByText(/Be the first to RSVP\./i);
+    expect(goingEmpty.className).toMatch(/font-voice/);
+    expect(goingEmpty.className).toMatch(/text-dust/);
+    expect(goingEmpty.className).not.toMatch(/italic/);
+    expect(goingEmpty.className).not.toMatch(/font-display/);
+  });
+
   it("graceful handling when eventSlug has no roster entry", async () => {
     const ui = await EventRoster({ eventSlug: "no-such-event" });
     render(ui);
