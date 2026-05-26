@@ -3785,3 +3785,19 @@ The plan was first drafted pre-#41 (Fraunces baseline); chat-43 amended Phase 1 
 - Verification gates: `grep` for `fraunces` / `italic` in `app/` returns zero; `font-geist` in `app/+tailwind` is only the kept `--font-geist` CSS variable name; full suite 1226/1226 green; tsc clean; coverage 88.64% lines / 93.18% branches / 93.03% functions / 88.64% statements (≥80% gate).
 - Final typescript-reviewer: 0 CRITICAL / 0 HIGH / 2 MEDIUM (M1 applied = icon-192 + apple-touch byte-equality assertions; M2 accepted by design = source-scan root-shell test deliberate per plan).
 - E2E: no behavioral surface change → existing E2E suite unaltered; visual smoke deferred to Anton-side prod check post-merge.
+
+## §18.1 v0.8.1 amendments (chat-44 followup / 2026-05-26)
+
+Three small fixes surfaced by Anton's post-v0.8.0 prod smoke. **No business-logic changes; pure UI/chrome.** Full CHANGELOG entry at `projects/community-platform/CHANGELOG.md` `[0.8.1]`.
+
+### Amendment 1 — H90 active-page indicator migrates to client-side
+
+§16 H90 (v0.6) declared the indicator computed server-side from `headers().get("x-pathname")` "with no client flicker." That was correct on first paint but stale on Next.js App Router soft navigation (the root layout caches; the Server Component Header doesn't re-render). v0.8.1 migrates the source-of-truth: the desktop nav extracted into a new Client Component `HeaderNav.tsx` reading `usePathname()`; `HeaderMobileMenu.tsx` switches from a server-passed `current` prop to its own `usePathname()` call. `Header.tsx` stays a Server Component for auth, lockup, city chip, and dropdown. H90 visual + accessibility contract preserved; only the underlying React/Next pattern changed.
+
+### Amendment 2 — YourWeekPane hero em-dash flourish retired
+
+§18 §4.3 specified `{lead} {firstName}<span className="text-accent-500">—</span>` as the signature amber flourish on the hero. v0.8.1 retires this in favor of a plain ink period — `{lead} {firstName}.` — based on live-read feedback. Other amber accents on the hero (the AmberTag on the meetup name tail, the EventCard date-badge) remain in place. No other typography surface changes.
+
+### Amendment 3 — Projects page hover contrast (out-of-scope cleanup, v0.1 scaffolding leftover)
+
+`app/projects/page.tsx` was never refactored through the v0.4 / v0.6 / v0.7 redesigns and carried Tailwind `dark:` variants from the original v0.1 scaffolding. macOS-dark-mode viewers saw an unreadable dark-text-on-dark-flipped-bg hover state on project cards. v0.8.1 strips the `dark:` variants from this file and brings the project-card hover into the platform's cream-aesthetic contract: `hover:bg-cream-deep`, slug rendered in `font-voice text-[12px] text-dust`. **Larger Projects-page typographic polish (Geist h1, drop the duplicate "Home" link, replace `rounded border` with the v0.6 flat aesthetic) is explicitly deferred to a future v0.9 page-by-page sweep.**
