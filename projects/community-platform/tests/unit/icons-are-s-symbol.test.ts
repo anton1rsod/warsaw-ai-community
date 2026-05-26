@@ -20,4 +20,14 @@ describe("v0.8: favicon + PWA icons are the amber-field S", () => {
       statSync(sym("favicon.ico")).size,
     );
   });
+  it("icon-192 matches the S 192 export byte size", () => {
+    expect(statSync(pub("icons/icon-192.png")).size).toBe(
+      statSync(sym("subploters-symbol-192.png")).size,
+    );
+  });
+  it("apple-touch-icon matches the S 180 export byte size", () => {
+    expect(statSync(pub("icons/apple-touch-icon.png")).size).toBe(
+      statSync(sym("subploters-symbol-180.png")).size,
+    );
+  });
 });
