@@ -55,7 +55,7 @@ export function AnonymousHero({
       <MonoLabel>{monoLabel}</MonoLabel>
       <h1
         id="hero-title"
-        className="font-display italic font-black text-[40px] leading-[0.95] text-ink mt-3 tracking-tight"
+        className="font-display font-semibold text-[40px] leading-[0.95] text-ink mt-3 tracking-tight"
       >
         {s("hero.anon.taglineLead")} {s("hero.anon.taglineInfix")}{" "}
         <AmberTag>{s("hero.anon.taglineHighlight")}</AmberTag>
@@ -67,7 +67,7 @@ export function AnonymousHero({
       {nextEvent ? (
         <div className="mt-6 bg-paper border-[1.5px] border-ink p-4">
           <MonoLabel>{s("hero.anon.tonightLabel")}</MonoLabel>
-          <div className="font-display italic font-bold text-[18px] text-ink mt-1 leading-tight">
+          <div className="font-display font-semibold text-[18px] text-ink mt-1 leading-tight">
             {nextEvent.title}
           </div>
           <div className="font-voice text-[10px] text-ink mt-2">

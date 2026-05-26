@@ -11,7 +11,7 @@ vi.mock("@/lib/content-snapshot", () => ({
 }));
 
 describe("AnonymousHero v0.6 — ADR-0014 / Q1.2 hero composition", () => {
-  it("renders MonoLabel + Fraunces italic headline with AmberTag", () => {
+  it("renders MonoLabel + Geist 600 headline (no italic) with AmberTag", () => {
     render(<AnonymousHero nextEvent={null} />);
     // v1.1 brand (chat-38): "Warsaw AI" → "Subploters". Brand name appears in both
     // the taglineLead headline AND the subtagline, hence getAllByText for safety.
@@ -20,6 +20,11 @@ describe("AnonymousHero v0.6 — ADR-0014 / Q1.2 hero composition", () => {
     expect(
       screen.getByText(/Subploters learn, ship, and find each other/),
     ).toBeInTheDocument();
+    const headline = screen.getByRole("heading", { level: 1 });
+    expect(headline.className).toMatch(/font-display/);
+    expect(headline.className).toMatch(/font-semibold/);
+    expect(headline.className).not.toMatch(/italic/);
+    expect(headline.className).not.toMatch(/font-black/);
   });
 
   it("renders next-event card when event provided", () => {
