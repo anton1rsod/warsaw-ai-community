@@ -3746,3 +3746,42 @@ H96. **Footer formal entity line uses `<sup>` (semantic) not styled span** — `
 - Unit: `BrandStar.test.tsx`, `CityChip.test.tsx`, `FormalEntityMasthead.test.tsx`.
 - Integration: existing `Header.test.tsx` / `Footer.test.tsx` updated for chip / nav font / copyright / formal entity assertions.
 - E2E: deferred to v0.7.1 (no behavioral surface change — purely visual).
+
+## §18 v0.8 typography realignment + brand polish (chat-44 / 2026-05-26)
+
+Migrates the platform display font from Fraunces to Geist (`community/brand/brand.md` §2 compliance), re-treats the former Fraunces-italic accent surfaces as JetBrains Mono dust ("system voice"), pins the footer via a `flex-1` wrapper in `RootShell`, and byte-swaps favicon + PWA icons to the amber-field S. **No new business logic, auth, or data surfaces — pure UI/CSS.** Design (canonical): `docs/specs/2026-05-26-community-platform-v0-8-typography-ui-ux-design.md`. Plan: `projects/community-platform/v0.8.0-plan.md` (9 phases / 18 TDD tasks).
+
+### Scope
+
+1. **Foundation (Phase 1)** — `app/layout.tsx` drops Fraunces (import, const, `--font-fraunces` className); `tailwind.config.ts` repoints `display` → Geist and **deletes** the redundant `geist` token added by v0.7 PR #41; the two `font-geist` className usages (`Header.tsx` nav + `FormalEntityMasthead.tsx` headline) migrate to `font-display`. Geist itself stays exactly as #41 wired it (weights 400/500/600, `--font-geist`).
+2. **Display headlines (Phase 2 — 5 surfaces)** — drop `italic` + `font-black`/`font-bold`, add `font-semibold` (600): `YourWeekPane` hero (+ amber em-dash flourish span on the trailing `—`), `/events` "Events." headline, `/events/[slug]` title, `AnonymousHero` (40px main + 18px secondary), `EventCard` / `ListItem` / `HomeFeed` ship titles.
+3. **Accent / empty-state lines (Phase 3 — 5 surfaces)** — flip `font-display italic text-{ink|dust}` → `font-voice text-dust` (drop `italic` + `font-display`, force `text-dust`, step the size down one notch): `YourWeekPane` empty-week accent, `HomeFeed` ships-empty, `EmptyState` (headline + calibration), `EventRoster` (going + interested empty), `/events` (upcoming + past empty). `AnonymousHero` subtagline becomes `font-body` Inter roman (drop italic; §5.2b — distinct from the §5.2 mono dust because the subtagline is a descriptive body line, not a system-voice empty-state).
+4. **Footer + comment sweep (Phase 4)** — `Footer.tsx` copyright row `font-display italic text-[11px]` → `font-voice text-[11px]` (drop the now-redundant `not-italic` on the links nav); JSDoc references to "Fraunces" / "serif italic" in `AnonymousHero.tsx` / `ListItem.tsx` / `EmptyState.tsx` swept. #41's formal-entity line, `BrandStar`, copyright `*` content, and link structure all preserved byte-equivalent; the footer test re-targets the copyright row while keeping #41's a11y + i18n assertions.
+5. **Density (Phase 5)** — `RootShell` wraps `{children}` in `<div className="flex-1">` on the non-`/login` paths so the Footer pins to the viewport bottom on sparse pages (cooperates with `<body className="min-h-screen flex flex-col">` from `app/layout.tsx`). The `/login` early return stays bare (no header/footer, no wrap needed).
+6. **Favicon / PWA (Phase 6)** — byte-swap `public/favicon.ico` + `public/icons/{icon-192,icon-512,apple-touch-icon}` from `community/brand/exports/symbol/` (retires the PL-monogram). Filenames preserved → no `layout.tsx` or `manifest.json` change.
+
+### Out of scope (deferred)
+
+- **No mark architecture changes** — v1.1 inline-fused lockup stays canonical.
+- **No /handbook / /about / formal-entity reflow** — v0.7 wire-in untouched.
+- **No new content components, no i18n keys added, no business logic** — pure typography.
+- **No `manifest.json` change** — icon paths preserved.
+
+### Hardenings
+
+v0.8 has no new H## numbers — the changes are pure typography swaps with regression tests but no new safety surfaces. v0.7's H93-H96 + v0.6's H87-H92 + earlier H1-H86 all preserved.
+
+### Decision A — token consolidation
+
+v0.7 PR #41 added a separate `geist` Tailwind token for the nav + masthead (the platform's `font-display` was still Fraunces; loading Geist was scoped to those two chrome surfaces). v0.8 collapses to one token: `display` becomes Geist, the `geist` alias is deleted, and the two prior `font-geist` className usages migrate to `font-display`. This restores the one-token-per-family contract from brand.md §2 and removes a v0.7 transient.
+
+### Reconciliation note
+
+The plan was first drafted pre-#41 (Fraunces baseline); chat-43 amended Phase 1 against #41-merged state (`docs(community-platform): reconcile v0.8 plan Phase 1 against merged #41` @ `1505ca7`) to account for Geist being already loaded and the redundant `geist` token. Phase 4 (`Footer.tsx`) line-number hints predated #41's footer restructure (3-element layout with formal-entity line + copyright `*`) — implementation correctly located the actual element (the copyright/links row div, not the root `<footer>`) by content rather than line number.
+
+### Tests
+
+- Unit: 2 new test files — `tests/unit/components/root-shell.test.tsx` (1 source-scan asserting `<div className="flex-1">{children}</div>`), `tests/unit/icons-are-s-symbol.test.ts` (4 byte-equality assertions vs the symbol export). 14 existing component tests updated for the typography contract (font-display + font-semibold on headlines; font-voice + text-dust on accents; #41 footer assertions retained).
+- Verification gates: `grep` for `fraunces` / `italic` in `app/` returns zero; `font-geist` in `app/+tailwind` is only the kept `--font-geist` CSS variable name; full suite 1226/1226 green; tsc clean; coverage 88.64% lines / 93.18% branches / 93.03% functions / 88.64% statements (≥80% gate).
+- Final typescript-reviewer: 0 CRITICAL / 0 HIGH / 2 MEDIUM (M1 applied = icon-192 + apple-touch byte-equality assertions; M2 accepted by design = source-scan root-shell test deliberate per plan).
+- E2E: no behavioral surface change → existing E2E suite unaltered; visual smoke deferred to Anton-side prod check post-merge.

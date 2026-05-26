@@ -16,6 +16,51 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.8.0] — 2026-05-26 (chat-44 — typography realignment Fraunces → Geist + brand polish)
+
+Typography realignment per `community/brand/brand.md` §2 — retires Fraunces from the platform display surface and consolidates on Geist (already loaded by v0.7 PR #41), re-treats the former Fraunces-italic accent lines as JetBrains Mono dust ("system voice"), pins the footer via a `flex-1` wrapper in `RootShell`, and byte-swaps favicon + PWA icons to the amber-field S. **No new business logic, auth, or data surfaces — pure UI/CSS work.** Design at `docs/specs/2026-05-26-community-platform-v0-8-typography-ui-ux-design.md`. Plan at `projects/community-platform/v0.8.0-plan.md` (9 phases / 18 TDD tasks). Spec at `projects/community-platform/spec.md` §18.
+
+### Added
+
+- **Amber em-dash flourish** on `YourWeekPane` hero — trailing `—` wrapped in `<span className="text-accent-500">—</span>`. Other trailing periods (e.g., "Events.") stay ink — only the em-dash gets the accent color.
+- **`flex-1` wrapper** in `RootShell` around `{children}` on non-`/login` paths — pins the Footer to the viewport bottom on sparse pages (cooperates with `<body className="min-h-screen flex flex-col">` from `app/layout.tsx`). The `/login` early return stays bare.
+- **Amber-field S favicon + PWA icons** — `public/favicon.ico` + `public/icons/{icon-192,icon-512,apple-touch-icon}` byte-swapped from `community/brand/exports/symbol/` (retiring the v0.7 PL-monogram). Filenames preserved → no `app/layout.tsx` or `public/manifest.json` change needed.
+- **2 new unit test files**: `tests/unit/components/root-shell.test.tsx` (source-scan asserting `<div className="flex-1">{children}</div>` is present); `tests/unit/icons-are-s-symbol.test.ts` (byte-equality against the symbol export for icon-512, icon-192, apple-touch-180, and favicon.ico after the reviewer-triage M1 expansion).
+
+### Changed
+
+- **`tailwind.config.ts`** — `theme.extend.fontFamily.display` repointed from `var(--font-fraunces)` → `var(--font-geist)` (sans fallbacks: `system-ui`, `sans-serif`). The redundant `geist` Tailwind token added by v0.7 (#41) is **deleted** — `font-display` is the unified Geist token. The 2 v0.7 `font-geist` className usages (`Header.tsx` nav, `FormalEntityMasthead.tsx` headline) migrate to `font-display`. (Decision A.)
+- **`app/layout.tsx`** — Fraunces `next/font/google` import + const declaration + `--font-fraunces` className all removed from the `<html>`. Geist stays exactly as #41 wired it (weights 400/500/600, `--font-geist`, `display: swap`).
+- **Display headlines (5 surfaces) → Geist 600** — `YourWeekPane` hero, `/events` "Events." headline, `/events/[slug]` title, `AnonymousHero` (40px main + 18px secondary), `EventCard` / `ListItem` / `HomeFeed` ship titles. All drop `italic` + `font-black`/`font-bold`, gain `font-semibold` (600). Geist has no true italic and loads only 400/500/600 — `font-display` className unchanged, weight migrated to 600 from 900.
+- **Accent / empty-state lines (5 surfaces) → JetBrains Mono dust** — `YourWeekPane` empty-week accent, `HomeFeed` ships-empty, `EmptyState` (headline + calibration), `EventRoster` (going + interested empty), `/events` (upcoming + past empty). All transform `font-display italic text-{ink|dust}` → `font-voice text-dust`, drop `italic` + `font-display`, step the size down one notch (mono runs ~15% wider).
+- **`AnonymousHero` subtagline** → `font-body` Inter roman (drop `italic`). Distinct from the §5.2 mono dust treatment per design §5.2b — this line is a descriptive body line, not a system-voice empty-state.
+- **`Footer.tsx`** copyright row — `font-display italic text-[11px]` → `font-voice text-[11px]`; the redundant `not-italic` is dropped from the links `<nav>`. #41's formal-entity line, `BrandStar` placement, copyright `*` content, and link structure all preserved byte-equivalent.
+- **JSDoc comments** referencing "Fraunces" / "serif italic" in `AnonymousHero.tsx` / `ListItem.tsx` / `EmptyState.tsx` updated to describe the v0.8 reality (Geist 600 / JetBrains Mono dust).
+
+### Removed
+
+- **Fraunces** — `next/font/google` import, const declaration, `--font-fraunces` CSS variable, and every Tailwind `font-display` mapping to Fraunces. Zero functional refs remain in `app/+tailwind.config.ts` (only the regression-guard `not.toMatch(/Fraunces/)` assertions in `tests/unit/layout-fonts.test.tsx` persist by design).
+- **`font-geist` Tailwind token** — added by v0.7 (#41) as a scoped alias for the nav + masthead headline; v0.8 consolidates to `font-display` and deletes the alias.
+- **PL-monogram favicons** — byte-replaced by amber-field S.
+
+### Tests
+
+- **1226 unit/integration green** (1216 v0.7 baseline + 8 net new from tasks + 2 from reviewer-triage M1). `pnpm tsc --noEmit` clean. Coverage **88.64% lines / 93.18% branches / 93.03% functions / 88.64% statements** (≥80% gate).
+- New: `tests/unit/components/root-shell.test.tsx` (1 — source-scan), `tests/unit/icons-are-s-symbol.test.ts` (4 — byte-equality for icon-512, icon-192, apple-touch-180, favicon.ico).
+- Updated: `layout-fonts.test.tsx` (deletes the "imports Fraunces" block, adds 2 negative-match Fraunces regression guards), `tailwind-config.test.ts` (`display`→Geist + `geist` undefined), `header-v0-6.test.tsx` (`font-geist` → `font-display` + regression guard against the retired token), `FormalEntityMasthead.test.tsx` (`font-geist` → `font-display`), `your-week-pane.test.tsx` (em-dash matcher fix for the split text-node + new hero v0.8 test + new accent-line v0.8 test), `events-page.test.tsx` (headline Fraunces-italic → Geist-600 + new empty-state v0.8 test), `events-slug-page.test.tsx` (title v0.8), `anonymous-hero.test.tsx` (headlines v0.8 + new subtagline v0.8 test), `event-card.test.tsx` (title v0.8), `components/list-item.test.tsx` (title v0.8), `components/empty-state.test.tsx` (v0.8 headline + calibration), `EventRoster.test.tsx` (new empty-state v0.8 test), `components/footer.test.tsx` (copyright-row v0.8 selector; #41 a11y + i18n assertions preserved).
+- **Reviewer triage** (final typescript-reviewer over the full v0.8 diff): 0 CRITICAL / 0 HIGH / 2 MEDIUM. **M1 applied** in commit `4564135` — icon-192 + apple-touch byte-equality assertions added to `icons-are-s-symbol.test.ts`, closes the regression-guard symmetry gap (the original test only covered icon-512 + favicon.ico). **M2 accepted by design** — `root-shell.test.tsx` deliberately uses a source-scan pattern per plan §5.1; the runtime contract is covered by the Vercel preview / Playwright smoke.
+
+### Verification gates (Phase 7)
+
+- `grep -rn -i 'fraunces' app/ tailwind.config.ts` → zero functional matches.
+- `grep -rn 'italic' app/` → zero.
+- `grep -rn 'font-geist' app/` → only the kept `--font-geist` CSS variable name in `layout.tsx` (the Geist web-font CSS variable; the Tailwind `geist` token is gone, every `font-geist` className migrated to `font-display`).
+- WCAG AA 4.5:1 contrast for `dust=#886c37` on `cream=#fef6e6` — preserved (existing `["dust", "cream", 4.5]` assertion in `tests/unit/contrast.test.ts` passes; no token darkening needed for mono accent sizes 11-13px, which are "normal text" per WCAG and covered by the same assertion).
+
+### Reconciliation note (chat-43 → chat-44)
+
+`main` already had Geist loaded (v0.7 PR #41) and a `geist` Tailwind alias when v0.8 execution started. Phase 1 was rewritten pre-execution (`docs(community-platform): reconcile v0.8 plan Phase 1 against merged #41` @ `1505ca7`) to: (a) remove Fraunces only, (b) repoint `display`→Geist + delete the redundant `geist` alias, (c) migrate the 2 `font-geist` className usages to `font-display`. Phase 4 (`Footer.tsx`) was also re-read against #41's restructured 3-element layout — the copyright/links row div carried the old `font-display italic`, not the root `<footer>` element the plan's pre-#41 line hints assumed; the implementer located the actual post-#41 element by content.
+
 ## [0.7.0] — 2026-05-25 (chat-42 — brand v1.2 wire-in: chrome + /handbook masthead)
 
 Wires the Subploters **brand v1.2** spec (`community/brand/brand.md` §3 / §4.3 / §4.4 / §10, locked chat-41 at SHA `8863e62`) into the platform chrome and the `/handbook` page. **No mark architecture changes** — the v1.1 inline-fused lockup stays canonical. Spec at `projects/community-platform/spec.md` §17. Plan at `projects/community-platform/v0.7.0-plan.md` (8-task base plan; chat-42 added a Geist-load task after discovering the platform's `font-display` token is Fraunces, not Geist).
