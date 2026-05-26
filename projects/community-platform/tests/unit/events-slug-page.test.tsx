@@ -290,7 +290,7 @@ describe("EventDetailPage v0.6 (Task 3.5 — visual redesign + H89 contract)", (
     expect(screen.getByText(/meetup № 04 · 21 may · 19:00 sharp/i)).toBeInTheDocument();
   });
 
-  it("renders Fraunces italic title with AmberTag 'tonight.' suffix on event-day", async () => {
+  it("renders Geist 600 title with AmberTag 'tonight.' suffix on event-day", async () => {
     // Pin now to event day (2026-05-21 noon Warsaw-ish) so todaySuffix() yields tonight.
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 4, 21, 12, 0, 0));
@@ -300,6 +300,10 @@ describe("EventDetailPage v0.6 (Task 3.5 — visual redesign + H89 contract)", (
     const ui = await EventPage({ params: Promise.resolve({ slug: "2026-05-21-meetup-4" }) });
     render(ui);
     expect(screen.getByText("tonight.")).toBeInTheDocument();
+    const heading = screen.getByRole("heading", { level: 1 });
+    expect(heading.className).toMatch(/font-display/);
+    expect(heading.className).toMatch(/font-semibold/);
+    expect(heading.className).not.toMatch(/italic/);
   });
 
   it("renders AmberTag 'this week.' suffix 1–6 days before event-day", async () => {

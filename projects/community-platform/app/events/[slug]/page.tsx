@@ -182,7 +182,7 @@ export default async function EventPage({
   return (
     <main id="main" className="mx-auto max-w-3xl px-6 py-10">
       <MonoLabel>{monoLead}</MonoLabel>
-      <h1 className="mt-2 font-display italic font-black text-[36px] leading-[0.95] tracking-tight text-ink">
+      <h1 className="mt-2 font-display font-semibold text-[36px] leading-[0.95] tracking-tight text-ink">
         {event.title}
         {suffix ? (
           <>
