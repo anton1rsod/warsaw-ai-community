@@ -79,7 +79,7 @@ export default async function EventsIndex(): Promise<React.JSX.Element> {
           Upcoming
         </h2>
         {upcoming.length === 0 ? (
-          <p className="mt-2 font-display italic text-[14px] text-dust">
+          <p className="mt-2 font-voice text-[12px] text-dust">
             {s("empty.events.upcoming")}
           </p>
         ) : (
@@ -106,7 +106,7 @@ export default async function EventsIndex(): Promise<React.JSX.Element> {
           Past
         </h2>
         {past.length === 0 ? (
-          <p className="mt-2 font-display italic text-[14px] text-dust">
+          <p className="mt-2 font-voice text-[12px] text-dust">
             {s("empty.events.past")}
           </p>
         ) : (
