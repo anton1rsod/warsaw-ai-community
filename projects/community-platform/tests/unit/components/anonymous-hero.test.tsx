@@ -57,6 +57,13 @@ describe("AnonymousHero v0.6 — ADR-0014 / Q1.2 hero composition", () => {
     expect(tg.getAttribute("rel")).toMatch(/noopener/);
   });
 
+  it("v0.8: subtagline is Inter roman (font-body, not italic)", () => {
+    render(<AnonymousHero nextEvent={null} />);
+    const sub = screen.getByText(/Where Subploters learn, ship, and find each other\./i);
+    expect(sub.className).toMatch(/font-body/);
+    expect(sub.className).not.toMatch(/italic/);
+  });
+
   it("renders no-event mono label when nextEvent is null (neutral framing — §14B)", () => {
     render(<AnonymousHero nextEvent={null} />);
     expect(screen.getByText(/no meetup scheduled/i)).toBeInTheDocument();

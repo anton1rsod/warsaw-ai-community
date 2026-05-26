@@ -60,7 +60,7 @@ export function AnonymousHero({
         {s("hero.anon.taglineLead")} {s("hero.anon.taglineInfix")}{" "}
         <AmberTag>{s("hero.anon.taglineHighlight")}</AmberTag>
       </h1>
-      <p className="font-body italic text-[14px] text-ink mt-4 max-w-md">
+      <p className="font-body text-[14px] text-ink mt-4 max-w-md">
         {s("hero.anon.subtagline")}
       </p>
 
