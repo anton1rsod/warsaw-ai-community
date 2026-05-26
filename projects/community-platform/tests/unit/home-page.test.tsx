@@ -66,10 +66,10 @@ describe("/home — signed-in Your week pane (Phase A.2.4 / Q1.3 / D25)", () => 
     const { default: HomePage } = await import("@/app/home/page");
     const ui = await HomePage();
     render(ui);
-    // v0.6 Phase 3.2: hero <h1 id="your-week"> with first-name lead ("This week, Anton—").
+    // v0.8.1: hero <h1 id="your-week"> with first-name lead + ink period ("This week, Anton.").
     const hero = document.getElementById("your-week");
     expect(hero).not.toBeNull();
-    expect(hero?.textContent ?? "").toMatch(/Anton—/);
+    expect(hero?.textContent ?? "").toMatch(/Anton\./);
   });
 
   it("signed-in render still shows the feed", async () => {
