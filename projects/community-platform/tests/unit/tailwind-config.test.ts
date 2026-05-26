@@ -20,8 +20,11 @@ describe("v0.6 tailwind.config — theme extensions", () => {
 
   it("extends fontFamily with display/body/voice → CSS variables", () => {
     const ff = config.theme?.extend?.fontFamily as Record<string, string[]>;
-    expect(ff.display).toEqual(["var(--font-fraunces)", "Georgia", "serif"]);
+    // v0.8 §4.2: display → Geist (brand.md §2 typography realignment)
+    expect(ff.display).toEqual(["var(--font-geist)", "system-ui", "sans-serif"]);
     expect(ff.body).toEqual(["var(--font-inter)", "system-ui", "sans-serif"]);
     expect(ff.voice).toEqual(["var(--font-jetbrains)", "ui-monospace", "monospace"]);
+    // v0.7 geist token retired in v0.8 §4.2 (#41 reconciliation)
+    expect(ff.geist).toBeUndefined();
   });
 });

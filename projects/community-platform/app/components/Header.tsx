@@ -66,7 +66,7 @@ export async function Header({
   const pathname = activePath ?? h.get("x-pathname");
 
   return (
-    <header className="bg-ink text-cream font-geist text-[13px] tracking-[0] px-4 py-2.5 flex justify-between items-center gap-12">
+    <header className="bg-ink text-cream font-display text-[13px] tracking-[0] px-4 py-2.5 flex justify-between items-center gap-12">
       {/* H65 — first focusable element on Tab */}
       <a
         href="#main"
@@ -90,7 +90,7 @@ export async function Header({
             height={24}
           />
         </Link>
-        {/* v0.7 — §4.3 chrome chip variant: upright, CITY-only, 10px right of lockup (chip is owned by the brand group). Geist nav (font-geist) is a chrome-only exception to §2 voice typography per brand.md §10 (H95); the chip keeps font-voice as its own register per §4.3. */}
+        {/* v0.7 — §4.3 chrome chip variant: upright, CITY-only, 10px right of lockup (chip is owned by the brand group). Geist nav (font-display v0.8) is the unified display family per brand.md §2; the chip keeps font-voice as its own register per §4.3. */}
         <CityChip city="Warsaw" />
       </div>
 

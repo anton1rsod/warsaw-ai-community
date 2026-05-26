@@ -25,14 +25,11 @@ const config: Config = {
         // Loaded via next/font in app/layout.tsx; --font-* vars are exposed
         // for chained fallback stacks in globals.css.
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-        // v0.6 display/body/voice families (Fraunces / Inter / JetBrains_Mono).
-        display: ["var(--font-fraunces)", "Georgia", "serif"],
+        // v0.8 display = Geist (brand.md §2 typography realignment; v0.8 §4.2).
+        // v0.7's separate `geist` token retired — font-display is the unified token.
+        display: ["var(--font-geist)", "system-ui", "sans-serif"],
         body: ["var(--font-inter)", "system-ui", "sans-serif"],
         voice: ["var(--font-jetbrains)", "ui-monospace", "monospace"],
-        // v0.7 — Geist (brand wordmark family). Scoped to the Header nav + /handbook
-        // masthead headline so live text matches the Geist lockup (brand.md §10 chrome
-        // exception). Other display surfaces stay `display` (Fraunces).
-        geist: ["var(--font-geist)", "system-ui", "sans-serif"],
       },
     },
   },
