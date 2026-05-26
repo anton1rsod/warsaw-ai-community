@@ -81,6 +81,23 @@ describe("YourWeekPane v0.6 — Q1.3 / D25 / O9", () => {
     expect(heading.querySelector(".text-accent-500")?.textContent).toBe("—");
   });
 
+  it("v0.8: empty-week accent line uses font-voice dust (mono), not italic", () => {
+    render(
+      <YourWeekPane
+        firstName="Anton"
+        nextRsvp={null}
+        timeUntil={undefined}
+        kudosWeekCount={0}
+        now={new Date(2026, 4, 21)}
+      />,
+    );
+    const line = screen.getByText(/Next meetup lands soon/i);
+    expect(line.className).toMatch(/font-voice/);
+    expect(line.className).toMatch(/text-dust/);
+    expect(line.className).not.toMatch(/italic/);
+    expect(line.className).not.toMatch(/font-display/);
+  });
+
   describe("§14.6 manipulation-resistance — NO streak / notifications / comparison", () => {
     it("DOM contains no streak / missed / chain copy", () => {
       const { container } = render(

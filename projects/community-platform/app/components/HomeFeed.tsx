@@ -88,7 +88,7 @@ export function HomeFeed({
       </h2>
       {isEmpty ? (
         <div className="bg-paper border-[1.5px] border-ink p-4">
-          <p className="font-display italic text-ink text-[14px]">
+          <p className="font-voice text-dust text-[13px]">
             {s("empty.home.ships")}
           </p>
         </div>

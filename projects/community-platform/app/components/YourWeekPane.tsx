@@ -102,7 +102,7 @@ export function YourWeekPane({
       ) : (
         <div className="mt-6 bg-paper border-[1.5px] border-ink p-4">
           <MonoLabel>{s("hero.home.weekLabel")}</MonoLabel>
-          <p className="font-display italic text-ink mt-2 text-[14px]">
+          <p className="font-voice text-dust mt-2 text-[13px]">
             {s("empty.home.nextEvent")}
           </p>
         </div>
