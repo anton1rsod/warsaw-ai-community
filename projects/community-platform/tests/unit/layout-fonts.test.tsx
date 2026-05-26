@@ -8,11 +8,9 @@ const layoutSrc = readFileSync(
 );
 
 describe("H87: layout.tsx font loading", () => {
-  it("imports Fraunces from next/font/google with variable weight + axes", () => {
-    expect(layoutSrc).toMatch(/import\s*\{[^}]*\bFraunces\b[^}]*\}\s*from\s*["']next\/font\/google["']/);
-    expect(layoutSrc).toMatch(/Fraunces\s*\(\s*\{[\s\S]*?weight:\s*["']variable["']/);
-    expect(layoutSrc).toMatch(/Fraunces\s*\(\s*\{[\s\S]*?axes:\s*\[[\s\S]*?["']SOFT["'][\s\S]*?["']WONK["']/);
-    expect(layoutSrc).toMatch(/Fraunces\s*\(\s*\{[\s\S]*?display:\s*["']swap["']/);
+  it("no longer references Fraunces (v0.8 §4.1 — Fraunces removed)", () => {
+    expect(layoutSrc).not.toMatch(/\bFraunces\b/);
+    expect(layoutSrc).not.toMatch(/font-fraunces/);
   });
 
   it("imports JetBrains_Mono from next/font/google with weight 400+700 and swap", () => {
@@ -26,8 +24,8 @@ describe("H87: layout.tsx font loading", () => {
     expect(layoutSrc).toMatch(/Inter\s*\(\s*\{[\s\S]*?weight:\s*\[[\s\S]*?["']400["'][\s\S]*?["']600["']/);
   });
 
-  it("html element carries all four CSS variable classes", () => {
-    expect(layoutSrc).toMatch(/className=\{`\$\{fraunces\.variable\}\s*\$\{geist\.variable\}\s*\$\{inter\.variable\}\s*\$\{jetbrains\.variable\}`\}/);
+  it("html element carries geist + inter + jetbrains CSS variable classes (v0.8)", () => {
+    expect(layoutSrc).toMatch(/className=\{`\$\{geist\.variable\}\s*\$\{inter\.variable\}\s*\$\{jetbrains\.variable\}`\}/);
   });
 
   it("imports Geist from next/font/google with weight 400/500/600 and swap (v0.7)", () => {

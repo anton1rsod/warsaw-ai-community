@@ -1,17 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Geist, Inter, JetBrains_Mono } from "next/font/google";
+import { Geist, Inter, JetBrains_Mono } from "next/font/google";
 import { RootShell } from "@/app/components/RootShell";
 import "./globals.css";
-
-// Fraunces is a variable font — weight: "variable" + axes for personality control
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: "variable",
-  style: ["normal", "italic"],
-  axes: ["SOFT", "WONK"],
-  variable: "--font-fraunces",
-  display: "swap",
-});
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,9 +17,9 @@ const jetbrains = JetBrains_Mono({
   display: "swap",
 });
 
-// Geist (Vercel) — the brand wordmark family. v0.7 brand v1.2 wire-in: used for
-// the Header nav + /handbook masthead headline so live text matches the Geist
-// lockup (brand.md §10 chrome exception). Other display surfaces stay Fraunces.
+// Geist (Vercel) — the brand wordmark family. v0.8 §4.1: sole display family
+// (font-display token, brand.md §2). v0.7 had a separate `geist` Tailwind token
+// which is now retired in v0.8 §4.2; both nav + masthead use font-display.
 const geist = Geist({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
@@ -66,7 +56,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <html lang="en" className={`${fraunces.variable} ${geist.variable} ${inter.variable} ${jetbrains.variable}`}>
+    <html lang="en" className={`${geist.variable} ${inter.variable} ${jetbrains.variable}`}>
       <body className="min-h-screen flex flex-col">
         <RootShell>{children}</RootShell>
       </body>
