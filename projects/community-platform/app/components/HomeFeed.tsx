@@ -52,7 +52,7 @@ function ShipCard({ item }: { item: FeedItem }): React.JSX.Element {
         <span className="font-voice font-bold text-dust">@{item.author}</span>
       ) : null}
       <a
-        className="font-display italic flex-1 text-ink hover:underline"
+        className="font-display font-semibold flex-1 text-ink hover:underline"
         href={item.href}
       >
         {item.title}

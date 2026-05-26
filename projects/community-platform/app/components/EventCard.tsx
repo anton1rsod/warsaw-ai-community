@@ -51,7 +51,7 @@ export function EventCard({
         <span className="text-[8px] font-normal">{month}</span>
       </div>
       <div className="flex-1">
-        <div className="font-display italic font-bold text-[14px] text-ink">{title}</div>
+        <div className="font-display font-semibold text-[14px] text-ink">{title}</div>
         {metaParts.length > 0 && (
           <div className="font-voice text-[10px] text-ink mt-1">{metaParts.join(" · ")}</div>
         )}

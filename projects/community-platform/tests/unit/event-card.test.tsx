@@ -19,11 +19,12 @@ describe("EventCard", () => {
     expect(screen.getByRole("link")).toHaveAttribute("href", "/events/2026-05-21-meetup-4");
   });
 
-  it("renders Fraunces italic title with the event title", () => {
+  it("renders Geist 600 title with the event title", () => {
     render(<EventCard {...baseProps} />);
     const title = screen.getByText(baseProps.title);
     expect(title.className).toMatch(/font-display/);
-    expect(title.className).toMatch(/italic/);
+    expect(title.className).toMatch(/font-semibold/);
+    expect(title.className).not.toMatch(/italic/);
   });
 
   it("date-badge shows day + 3-char uppercase month", () => {
