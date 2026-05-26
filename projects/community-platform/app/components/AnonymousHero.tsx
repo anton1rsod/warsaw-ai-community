@@ -24,8 +24,8 @@ interface AnonymousHeroProps {
  * Anonymous `/` hero — v0.6 visual redesign (chat-35 Phase 3.1).
  *
  * Composes the Phase 1 primitives (MonoLabel, AmberTag, Pill) per spec §16:
- * mono pre-header, Fraunces italic Q1.2 ambition sentence with amber-tag
- * accent on "public.", subtagline, optional "tonight" next-event card, dual
+ * mono pre-header, Geist 600 headline with AmberTag accent on "public.",
+ * subtagline, optional "tonight" next-event card, dual
  * CTA row (sign-in + telegram).
  *
  * The next-event card framing is NEUTRAL only — no scarcity, no countdown
