@@ -1,5 +1,6 @@
 import { SafeHtml } from "@/app/components/SafeHtml";
 import { MonoLabel } from "@/app/components/MonoLabel";
+import { s } from "@/lib/i18n/strings";
 
 export function PersonaPanel({
   html,
@@ -11,9 +12,9 @@ export function PersonaPanel({
   if (!html) {
     return (
       <section className="border border-dashed border-ink p-4">
-        <MonoLabel>Persona</MonoLabel>
+        <MonoLabel>{s("members.detail.personaSection")}</MonoLabel>
         <p className="mt-1 font-voice text-[11px] text-dust">
-          No persona yet for <code className="font-voice text-dust">{slug}</code>. See the persona-builder process.
+          {s("members.detail.noPersonaFmt").replace("{slug}", slug)}
         </p>
       </section>
     );
@@ -21,7 +22,7 @@ export function PersonaPanel({
 
   return (
     <section className="border-[1.5px] border-ink bg-paper p-4">
-      <MonoLabel>Persona</MonoLabel>
+      <MonoLabel>{s("members.detail.personaSection")}</MonoLabel>
       <SafeHtml html={html} className="prose-warm mt-2" />
     </section>
   );

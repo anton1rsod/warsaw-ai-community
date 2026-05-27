@@ -12,7 +12,7 @@ export default function LoginPage(): React.JSX.Element {
           <h1 className="font-display font-semibold text-3xl text-ink">
             {env.COMMUNITY_NAME}
           </h1>
-          <p className="font-body text-ink opacity-70">
+          <p className="font-body text-dust">
             {s("login.description")}
           </p>
         </div>

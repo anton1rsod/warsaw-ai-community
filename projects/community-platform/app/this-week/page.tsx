@@ -193,7 +193,7 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
                 </div>
                 <SafeHtml
                   html={o.html}
-                  className="prose prose-neutral mt-2 max-w-none text-sm"
+                  className="prose-warm mt-2 text-sm"
                 />
                 <time
                   dateTime={o.lastModified}

@@ -103,10 +103,7 @@ export default async function MemberPage({
                 {s("members.detail.editYourProfile")}
               </Link>
             ) : (
-              <>
-                {member.name} hasn&apos;t filled out a profile yet. Members can edit{" "}
-                <code className="font-voice text-dust">community/members/{member.slug}.md</code> directly via git.
-              </>
+              s("members.detail.noProfileFmt").replace("{name}", member.name).replace("{slug}", member.slug)
             )}
           </p>
         </section>

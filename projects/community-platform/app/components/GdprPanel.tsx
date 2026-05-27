@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { s } from "@/lib/i18n/strings";
 
 const CONFIRM_MESSAGE =
   "Delete your profile and all status updates? This cannot be undone " +
@@ -52,7 +53,7 @@ export function GdprPanel(): React.JSX.Element {
 
   return (
     <section className="border border-alert p-4">
-      <h3 className="font-display font-semibold text-ink">Data controls</h3>
+      <h3 className="font-display font-semibold text-ink">{s("members.detail.dataControls")}</h3>
       <p className="mt-1 font-voice text-[11px] text-dust">
         Export or delete your data. Deletion removes your profile file and all
         status updates from the repo&apos;s main branch; commits in history

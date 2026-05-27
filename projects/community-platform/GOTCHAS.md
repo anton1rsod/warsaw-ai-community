@@ -162,6 +162,18 @@ To verify, `vercel env ls preview` should show the row, and `vercel env pull --e
 
 ---
 
+## 12. `dark:` variants are inert — `darkMode: "selector"` requires a `.dark` ancestor class
+
+**Symptom.** A `dark:` Tailwind variant appears to have no effect at runtime, even on machines with the OS dark-mode setting enabled. No visible toggle, no color change.
+
+**Root cause.** As of v0.9, `tailwind.config.ts` sets `darkMode: "selector"`. In this mode Tailwind generates `dark:` variants that only activate when a `.dark` CSS class is present on an ancestor element — the OS `prefers-color-scheme` media query is ignored entirely. No `.dark` class is applied anywhere in the app (Header, layout, body), so all `dark:` variants are permanently inert by design. Dark mode is a deferred feature; the selector mode is set in preparation for a future explicit toggle.
+
+**Recovery.** Do not add `dark:` classes to files under `app/` — the `tests/unit/no-dark-variants.test.ts` (H98) guard will fail CI if any are introduced. If dark mode is ever activated, add a `.dark` class to `<html>` or `<body>` via a theme-context provider, then the existing `dark:` variants will light up automatically.
+
+**First observed.** v0.9 redesign-completion (2026-05-27). Tailwind `darkMode` was flipped from `"media"` to `"selector"` per spec §19 D5 / H99 to prevent accidental dark-mode activation before a proper dark theme ships.
+
+---
+
 ## Meta — when to add a row
 
 A new gotcha earns a row when ALL of:

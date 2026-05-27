@@ -46,7 +46,7 @@ export default async function MeetingsIndex(): Promise<React.JSX.Element> {
             return (
               <section key={month} aria-labelledby={headingId}>
                 <MonoLabel>{monthLabel(month)}</MonoLabel>
-                <h2 id={headingId} className="sr-only" aria-hidden="true">
+                <h2 id={headingId} className="sr-only">
                   {monthLabel(month)}
                 </h2>
                 <ul className="mt-2 flex flex-col gap-2">

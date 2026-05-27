@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ProjectContribution } from "@/lib/contributions";
 import { Avatar } from "@/app/components/Avatar";
 import { MonoLabel } from "@/app/components/MonoLabel";
+import { s } from "@/lib/i18n/strings";
 
 interface TopContributorsProps {
   contributors: readonly ProjectContribution[];
@@ -22,16 +23,16 @@ export function TopContributors({
   if (contributors.length === 0) {
     return (
       <section className="mt-6 border border-dashed border-ink p-4">
-        <p className="font-voice text-[11px] text-dust">No contributors yet.</p>
+        <p className="font-voice text-[11px] text-dust">{s("projects.detail.noContributors")}</p>
       </section>
     );
   }
 
   return (
     <section className="mt-6 border-[1.5px] border-ink bg-paper p-4">
-      <MonoLabel as="h2">Top contributors</MonoLabel>
+      <MonoLabel as="h2">{s("projects.detail.topContributors")}</MonoLabel>
       <p className="mt-1 font-voice text-[10px] text-dust">
-        Derived from git history. Bot commits excluded.
+        {s("projects.detail.contributorsNote")}
       </p>
       <ol className="mt-3 space-y-1">
         {contributors.map((c) => (

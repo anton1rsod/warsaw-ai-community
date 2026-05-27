@@ -37,7 +37,7 @@ export default function DecisionsPage(): React.JSX.Element {
                       <Tag
                         label={d.status}
                         variant="status"
-                        value={d.status}
+                        value={d.status.toLowerCase()}
                       />
                     ) : undefined
                   }

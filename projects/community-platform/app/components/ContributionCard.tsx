@@ -1,4 +1,5 @@
 import type { Contributions } from "@/lib/contributions";
+import { s } from "@/lib/i18n/strings";
 
 interface ContributionCardProps {
   contributions: Contributions;
@@ -16,9 +17,9 @@ export function ContributionCard({
 
   return (
     <section className="border-[1.5px] border-ink bg-paper p-4">
-      <h3 className="font-display font-semibold text-ink">Contributions</h3>
+      <h3 className="font-display font-semibold text-ink">{s("members.detail.contributions")}</h3>
       <p className="mt-1 font-voice text-[10px] text-dust">
-        Derived from git history. Bot commits excluded.
+        {s("members.detail.contributionsNote")}
       </p>
       <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {items.map((it) => (
