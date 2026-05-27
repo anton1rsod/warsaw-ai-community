@@ -197,7 +197,7 @@ export default async function EventPage({
         </div>
       ) : null}
       {event.status === "cancelled" ? (
-        <p className="mt-3 rounded bg-red-50 px-3 py-1 text-sm text-red-800 dark:bg-red-900/40 dark:text-red-200">
+        <p className="mt-3 rounded bg-red-50 px-3 py-1 text-sm text-red-800">
           This event has been cancelled.
         </p>
       ) : null}
@@ -211,7 +211,7 @@ export default async function EventPage({
         <AddToCalendarButton ics={ics} filename={`${event.slug}.ics`} />
       </div>
 
-      <article className="prose mt-8 bg-paper border-[1.5px] border-ink p-5 dark:prose-invert">
+      <article className="prose mt-8 bg-paper border-[1.5px] border-ink p-5">
         <SafeHtml html={html} />
       </article>
 
