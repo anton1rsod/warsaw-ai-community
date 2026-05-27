@@ -16,6 +16,45 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.9.0] — 2026-05-27 (chat-45 — redesign completion + `dark:` landmine resolution)
+
+Reader-surface redesign completion applying the v0.6→v0.8 warm system to all remaining un-reskinned pages and components, plus full resolution of the platform-wide `dark:` Tailwind landmine. **No new business logic or auth surfaces.** Design at `docs/specs/2026-05-27-community-platform-v0-9-redesign-completion-design.md`. Plan at `projects/community-platform/v0.9.0-plan.md`. Spec at `projects/community-platform/spec.md` §19.
+
+### Added
+
+- **`.prose-warm` CSS utility** (`app/globals.css`) — tokenized markdown styling class (Geist body / ink text / mono dust code / accent underlinks). Replaces the no-op `prose prose-neutral`-style classes that were present on detail pages before the `@tailwindcss/typography` plugin was confirmed absent. Apply to any rich-text container rendering markdown output.
+- **`Tag` warm reskin** — strips gray/neutral scaffolding; applies cream-deep background + dust text, with the `status:proposed` amber-field override preserved per O12 (H100).
+- **`Pill` ≥24px touch target** — WCAG 2.2 SC 2.5.8 compliance; min-height 24px enforced on the Pill component (H101).
+- **Functional E2E specs** — discovery/nav, ICS/AddToCalendar, RSVP/Thanks/status write-path E2E coverage (H102). Four new spec files under `e2e/`.
+- **`tests/unit/no-dark-variants.test.ts`** — hermetic fs-walk guard: asserts zero `dark:` variants remain in any `app/` source file (H98).
+- **`tests/unit/reader-recipe-invariant.test.ts`** — source-scan guard: asserts all 7 reader pages (`/calendar`, `/decisions`, `/meetings`, `/members`, `/this-week`, `/handbook`, `/projects`) each have exactly one `<main id="main">` and one `<h1>` (H103).
+
+### Changed
+
+- **Reader surface redesign** — the following pages and their components migrated from v0.1 neutral/gray scaffolding to the cream/ink/dust warm token system (Geist display + mono voice + MonoLabel/AmberTag/Pill primitives):
+  - `/calendar` — event grid, date badge, empty state
+  - `/decisions` + `/decisions/[slug]` — index list + detail prose
+  - `/meetings` + `/meetings/[slug]` — index list + detail prose
+  - `/members` + `/members/[slug]` — roster grid + member detail (contribution card, persona panel)
+  - `/projects` + `/projects/[slug]` — portfolio grid + project detail
+  - `/this-week` — YourWeekPane + status cards
+  - `/handbook` + `/handbook/[slug]` — FormalEntityMasthead + section list + detail prose
+  - `/login` — warm CTA button (ink/cream), AA-safe contrast (H99)
+- **`darkMode` flip** (`tailwind.config.ts`) — changed from `"media"` (default) to `"selector"`. With no `.dark` ancestor ever rendered, all `dark:` utility variants are permanently dead-coded. This is the H97 root-cause safety net that neutralizes the landmine platform-wide without requiring per-file changes on every reskinned surface.
+- **`dark:` sweep** (H98) — all residual `dark:` tokens removed from the 8 remaining `app/` source files (`globals.css` comment, `EventRsvpButton.tsx`, `ConsentModal.tsx`, `ProfileEditor.tsx`, `me/edit/page.tsx`, `ConsentClient.tsx`, `admin/health/page.tsx`, `no-access/page.tsx`). Zero `dark:` in `app/` confirmed by guard test.
+
+### Scope note (deferred to v0.9.1)
+
+Forms, admin, and write-path surfaces (`/me/edit`, `/consent`, `/onboard`, `/admin/*`, `/no-access`, plus write-path E2E spec execution) intentionally stay on v0.1 scaffolding. Their `dark:` tokens have been stripped (dead-code removal), but full warm reskin is deferred to v0.9.1. See `V0_5_BACKLOG.md`.
+
+### Tests
+
+- **Tests green** (count in Phase 7 closeout). `pnpm tsc --noEmit` clean. `pnpm lint` clean. Coverage ≥80% gate.
+- New: `tests/unit/no-dark-variants.test.ts` (H98 guard — 1 test), `tests/unit/reader-recipe-invariant.test.ts` (H103 guard — 7 tests), plus a11y + functional E2E specs under `e2e/` (H102).
+- All 7 reader page invariants pass on first run (no fixes needed).
+
+---
+
 ## [0.8.1] — 2026-05-26 (chat-44 followup — Anton-smoke triage)
 
 Three small fixes surfaced by Anton's post-v0.8.0 prod smoke. **No business-logic changes; pure UI/chrome.** Spec amendment at `projects/community-platform/spec.md` §18.1.

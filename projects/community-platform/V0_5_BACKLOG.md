@@ -133,11 +133,16 @@
 
 > Context: v0.6→v0.8 redesigned the 4 hero surfaces (`/`, `/home`, `/events`, `/events/[slug]`) + shared chrome (Header/Footer) + brand wire-in. Anton's v0.8.1 smoke caught the `/projects` dark-mode hover bug, which exposed two systemic debts below.
 
-### v0.9 candidate — redesign completion + `dark:` landmine resolution (RECOMMENDED next)
+### ~~v0.9 candidate — redesign completion + `dark:` landmine resolution~~ DONE (v0.9.0, 2026-05-27, chat-45)
 
-1. **Platform-wide `dark:` Tailwind landmine** — **27 files in `app/` still carry `dark:` variants** (`grep -rln 'dark:' app/`). Tailwind defaults to `darkMode: "media"`, so these fire under macOS `prefers-color-scheme: dark`, but `globals.css` implements NO dark-mode token overrides (only anticipatory comments at :26/:39) → broken contrast wherever they fire. The v0.8.1 Bug 3 was one instance, fixed only on `/projects/page.tsx`. The platform is a deliberate FIXED cream/ink warm aesthetic (brand.md, v0.6) — no dark mode by intent. **Open posture (brainstorm):** (a) flip `tailwind.config.ts` `darkMode: "media"` → `"class"` — one line, instantly neutralizes all 27 files' variants since no `.dark` ancestor is ever rendered (fastest root-cause safety net); (b) purge the `dark:` variants file-by-file for cleanliness; (c) actually build dark mode (the v0.4-deferred "Dark mode" item — 200+ contrast pairs + toggle UX). Lean: (a) immediately + (b) opportunistically during the page redesigns.
+1. ~~**Platform-wide `dark:` Tailwind landmine**~~ — RESOLVED. `darkMode` flipped to `"selector"` (H97) in `tailwind.config.ts`; all residual `dark:` tokens purged from `app/` (H98); zero `dark:` confirmed by guard test `tests/unit/no-dark-variants.test.ts`.
 
-2. **Un-redesigned page templates** — pages still on v0.1-scaffolding Tailwind defaults (neutral-*/gray-*/`rounded border`/`text-Nxl`) instead of the cream/ink/dust + Geist/mono + MonoLabel/AmberTag system: `/calendar`, `/decisions` (+ `[slug]`), `/meetings` (+ `[slug]`), `/members` (+ `[slug]`), `/handbook`, `/this-week`, `/onboard`, `/admin/*`, `/login`, `/no-access`, plus ~15 components (ContributionCard, PersonaPanel, ThankButton, KudosCount, GdprPanel, ProfileEditor, StatusEditor, EventForm, OnboardForm, InviteForm, Tag, AddToCalendarButton, TopContributors, ConsentModal, AskGBrainButton). Hero surfaces + chrome are done; everything else is visually inconsistent. **Scope: big → phase it** (reader surfaces first: calendar/decisions/meetings/members; then forms; then admin). Start `superpowers:brainstorming` to lock scope + dark-mode posture, then spec → plan → subagent-driven execution (the v0.6/v0.8 playbook). Also fold in the cosmetic warts: `/projects` duplicate "Home" link + `rounded border` framing (v0.8.1 deferred).
+2. ~~**Un-redesigned reader page templates**~~ — DONE. `/calendar`, `/decisions`(+`[slug]`), `/meetings`(+`[slug]`), `/members`(+`[slug]`), `/projects`(+`[slug]`), `/this-week`, `/handbook`, `/login` all migrated to warm system (cream/ink/dust + Geist/mono + MonoLabel/AmberTag/Pill). H103 reader recipe invariant guard added.
+
+### v0.9.1 candidate — forms/admin warm reskin + write-path E2E (NEXT RECOMMENDED)
+
+- **Forms + admin surface warm reskin** — `/me/edit`, `/consent`, `/onboard`, `/admin/health`, `/no-access`, plus associated components (`ProfileEditor`, `ConsentModal`, `StatusEditor`, `EventForm`, `OnboardForm`, `InviteForm`, `GdprPanel`, `AskGBrainButton`, `ThankButton`, `KudosCount`) still carry v0.1 neutral/gray scaffolding. `dark:` tokens stripped (dead-code cleanup in v0.9.0 H98); full warm reskin deferred here. Start brainstorm → spec → plan → subagent-driven execution.
+- **Write-path E2E spec execution** — E2E specs for discovery/nav, ICS/AddToCalendar, RSVP/Thanks/status written in v0.9.0 (H102); execution against real Playwright driver deferred to v0.9.1 (requires local dev server or Vercel preview).
 
 ### Still-open from earlier (re-confirmed actionable now that templates are stable)
 
@@ -148,4 +153,4 @@
 
 ---
 
-*Updated 2026-05-27 (chat-44) with v0.9 redesign-completion + `dark:` landmine findings (27 files) from v0.8.1 close. Updated 2026-05-20 with chat-31 admin event-creation UI brainstorm seed. Updated 2026-05-20 with chat-29 admin event-creation UI deferral. Updated 2026-05-18 with chat-22 brainstorm deferrals. Original scaffold drafted 2026-05-17 in chat-21-prep close-out. Lives at `projects/community-platform/V0_5_BACKLOG.md` per "lean handoffs + deferred items get a home" convention.*
+*Updated 2026-05-27 (chat-45) — v0.9.0 shipped: marked v0.9 redesign-completion + dark: landmine item DONE; added v0.9.1 forms/admin reskin + write-path E2E item. Updated 2026-05-27 (chat-44) with v0.9 redesign-completion + `dark:` landmine findings (27 files) from v0.8.1 close. Updated 2026-05-20 with chat-31 admin event-creation UI brainstorm seed. Updated 2026-05-20 with chat-29 admin event-creation UI deferral. Updated 2026-05-18 with chat-22 brainstorm deferrals. Original scaffold drafted 2026-05-17 in chat-21-prep close-out. Lives at `projects/community-platform/V0_5_BACKLOG.md` per "lean handoffs + deferred items get a home" convention.*
