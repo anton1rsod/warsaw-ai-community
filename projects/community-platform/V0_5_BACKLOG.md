@@ -129,4 +129,23 @@
 
 ---
 
-*Updated 2026-05-20 with chat-31 admin event-creation UI brainstorm seed. Updated 2026-05-20 with chat-29 admin event-creation UI deferral. Updated 2026-05-18 with chat-22 brainstorm deferrals. Original scaffold drafted 2026-05-17 in chat-21-prep close-out. Lives at `projects/community-platform/V0_5_BACKLOG.md` per "lean handoffs + deferred items get a home" convention.*
+## From chat-44 (v0.8.0 + v0.8.1 close — 2026-05-27)
+
+> Context: v0.6→v0.8 redesigned the 4 hero surfaces (`/`, `/home`, `/events`, `/events/[slug]`) + shared chrome (Header/Footer) + brand wire-in. Anton's v0.8.1 smoke caught the `/projects` dark-mode hover bug, which exposed two systemic debts below.
+
+### v0.9 candidate — redesign completion + `dark:` landmine resolution (RECOMMENDED next)
+
+1. **Platform-wide `dark:` Tailwind landmine** — **27 files in `app/` still carry `dark:` variants** (`grep -rln 'dark:' app/`). Tailwind defaults to `darkMode: "media"`, so these fire under macOS `prefers-color-scheme: dark`, but `globals.css` implements NO dark-mode token overrides (only anticipatory comments at :26/:39) → broken contrast wherever they fire. The v0.8.1 Bug 3 was one instance, fixed only on `/projects/page.tsx`. The platform is a deliberate FIXED cream/ink warm aesthetic (brand.md, v0.6) — no dark mode by intent. **Open posture (brainstorm):** (a) flip `tailwind.config.ts` `darkMode: "media"` → `"class"` — one line, instantly neutralizes all 27 files' variants since no `.dark` ancestor is ever rendered (fastest root-cause safety net); (b) purge the `dark:` variants file-by-file for cleanliness; (c) actually build dark mode (the v0.4-deferred "Dark mode" item — 200+ contrast pairs + toggle UX). Lean: (a) immediately + (b) opportunistically during the page redesigns.
+
+2. **Un-redesigned page templates** — pages still on v0.1-scaffolding Tailwind defaults (neutral-*/gray-*/`rounded border`/`text-Nxl`) instead of the cream/ink/dust + Geist/mono + MonoLabel/AmberTag system: `/calendar`, `/decisions` (+ `[slug]`), `/meetings` (+ `[slug]`), `/members` (+ `[slug]`), `/handbook`, `/this-week`, `/onboard`, `/admin/*`, `/login`, `/no-access`, plus ~15 components (ContributionCard, PersonaPanel, ThankButton, KudosCount, GdprPanel, ProfileEditor, StatusEditor, EventForm, OnboardForm, InviteForm, Tag, AddToCalendarButton, TopContributors, ConsentModal, AskGBrainButton). Hero surfaces + chrome are done; everything else is visually inconsistent. **Scope: big → phase it** (reader surfaces first: calendar/decisions/meetings/members; then forms; then admin). Start `superpowers:brainstorming` to lock scope + dark-mode posture, then spec → plan → subagent-driven execution (the v0.6/v0.8 playbook). Also fold in the cosmetic warts: `/projects` duplicate "Home" link + `rounded border` framing (v0.8.1 deferred).
+
+### Still-open from earlier (re-confirmed actionable now that templates are stable)
+
+- **Task 4.2 — functional E2E backfill** (deferred chat-21 pending v0.4 restructure; templates now stable through v0.8.1). Platform has only a11y E2E (`v0-4-a11y`, `v0-6-a11y`) — **zero functional E2E** for discovery / RSVP / ICS-subscribe / AddToCalendar / Thanks flows. Strong quality/safety candidate; pairs well with the v0.9 redesign (author E2E against new templates rather than re-author later). Ref `v0.3.0-plan.md:4998-5196`.
+- **CSP + security headers** (chat-23 §7) — no CSP / X-Frame-Options beyond Vercel defaults. Own security-mode scope.
+- **Strategic features** (Skills directory, GBrain Q&A cmd-K palette, Academy, Personas v2, AI bots) — each needs its own brainstorm; bigger than a single polish chat.
+- **Mark Spasonov roster backfill** — still waiting on Mark's real Telegram handle + git email (PR #3 Draft).
+
+---
+
+*Updated 2026-05-27 (chat-44) with v0.9 redesign-completion + `dark:` landmine findings (27 files) from v0.8.1 close. Updated 2026-05-20 with chat-31 admin event-creation UI brainstorm seed. Updated 2026-05-20 with chat-29 admin event-creation UI deferral. Updated 2026-05-18 with chat-22 brainstorm deferrals. Original scaffold drafted 2026-05-17 in chat-21-prep close-out. Lives at `projects/community-platform/V0_5_BACKLOG.md` per "lean handoffs + deferred items get a home" convention.*
