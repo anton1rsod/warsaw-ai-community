@@ -22,7 +22,9 @@ test.describe("archives", () => {
   test("/decisions lists ADRs and opens one", async ({ page }) => {
     await page.goto("/decisions");
     await expect(page.getByRole("heading", { name: "Decisions" })).toBeVisible();
-    const first = page.locator("li a").first();
+    // Scope to the decisions section to avoid matching nav <li> items.
+    const decisionsSection = page.locator("section[aria-labelledby='decisions-heading']");
+    const first = decisionsSection.locator("li a").first();
     await first.click();
     await expect(page).toHaveURL(/\/decisions\/\d{4}-/);
     await expect(page.locator("article")).toBeVisible();
