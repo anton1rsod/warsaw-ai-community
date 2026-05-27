@@ -51,9 +51,9 @@ export function GdprPanel(): React.JSX.Element {
   };
 
   return (
-    <section className="rounded border border-red-200 p-4 dark:border-red-900">
-      <h3 className="text-lg font-medium">Data controls</h3>
-      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+    <section className="border border-alert p-4">
+      <h3 className="font-display font-semibold text-ink">Data controls</h3>
+      <p className="mt-1 font-voice text-[11px] text-dust">
         Export or delete your data. Deletion removes your profile file and all
         status updates from the repo&apos;s main branch; commits in history
         remain attributable to your GitHub handle.
@@ -63,7 +63,7 @@ export function GdprPanel(): React.JSX.Element {
           type="button"
           onClick={exportData}
           disabled={busy}
-          className="rounded border px-3 py-1.5 text-sm hover:bg-neutral-100 disabled:opacity-50 dark:hover:bg-neutral-900"
+          className="min-h-[24px] inline-flex items-center px-[11px] py-[4px] font-voice font-bold text-[10px] border-[1.5px] border-solid border-ink text-ink bg-transparent hover:bg-ink hover:text-cream transition-colors duration-150 disabled:opacity-50"
         >
           Export my data
         </button>
@@ -71,11 +71,11 @@ export function GdprPanel(): React.JSX.Element {
           type="button"
           onClick={deleteData}
           disabled={busy}
-          className="rounded border border-red-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+          className="min-h-[24px] inline-flex items-center px-[11px] py-[4px] font-voice font-bold text-[10px] border-[1.5px] border-solid border-alert text-alert bg-transparent hover:bg-alert hover:text-cream transition-colors duration-150 disabled:opacity-50"
         >
           Delete my data
         </button>
-        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+        <span className="font-voice text-[10px] text-dust">
           {message}
         </span>
       </div>

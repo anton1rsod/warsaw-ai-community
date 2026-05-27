@@ -13,6 +13,8 @@ import { GdprPanel } from "@/app/components/GdprPanel";
 import { KudosCount } from "@/app/components/KudosCount";
 import { PersonaPanel } from "@/app/components/PersonaPanel";
 import { SafeHtml } from "@/app/components/SafeHtml";
+import { MonoLabel } from "@/app/components/MonoLabel";
+import { s } from "@/lib/i18n/strings";
 import { filterOrphanSlugs, type EventSlug } from "@/lib/events";
 import { ProfileFrontmatterSchema } from "@/lib/profile-editor";
 
@@ -58,13 +60,15 @@ export default async function MemberPage({
     : [];
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
-      <Link href="/members" className="text-sm underline">
-        ← Members
+    <main id="main" className="mx-auto max-w-3xl px-6 py-10">
+      <Link href="/members" className="font-voice text-[11px] text-dust underline underline-offset-2">
+        {s("members.detail.backLink")}
       </Link>
-      <h1 className="mt-4 text-3xl font-semibold">{member.name}</h1>
-      <p className="mt-1 text-neutral-600 dark:text-neutral-400">
-        <a className="underline" href={`https://github.com/${member.githubHandle}`}>
+      <h1 className="mt-4 font-display font-semibold text-[40px] leading-[0.95] tracking-tight text-ink">
+        {member.name}
+      </h1>
+      <p className="mt-1 font-voice text-[11px] text-dust">
+        <a className="underline underline-offset-2 hover:text-ink" href={`https://github.com/${member.githubHandle}`}>
           @{member.githubHandle}
         </a>
       </p>
@@ -76,33 +80,35 @@ export default async function MemberPage({
       {profileHtml ? (
         <section className="mt-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-medium">Profile</h2>
+            <MonoLabel>{s("members.detail.profileSection")}</MonoLabel>
             {isSelf ? (
               <Link
                 href="/me/edit"
-                className="text-sm underline"
+                className="font-voice text-[11px] text-dust underline underline-offset-2 hover:text-ink"
               >
-                Edit profile →
+                {s("members.detail.editProfile")}
               </Link>
             ) : null}
           </div>
           <SafeHtml
             html={profileHtml}
-            className="prose prose-neutral dark:prose-invert mt-2 max-w-none"
+            className="prose-warm mt-2"
           />
         </section>
       ) : (
-        <section className="mt-6 rounded border border-dashed p-4 text-sm text-neutral-600 dark:text-neutral-400">
-          {isSelf ? (
-            <Link href="/me/edit" className="underline">
-              Edit your profile →
-            </Link>
-          ) : (
-            <>
-              {member.name} hasn&apos;t filled out a profile yet. Members can edit{" "}
-              <code>community/members/{member.slug}.md</code> directly via git.
-            </>
-          )}
+        <section className="mt-6 border border-dashed border-ink p-4">
+          <p className="font-voice text-[11px] text-dust">
+            {isSelf ? (
+              <Link href="/me/edit" className="underline underline-offset-2 hover:text-ink">
+                {s("members.detail.editYourProfile")}
+              </Link>
+            ) : (
+              <>
+                {member.name} hasn&apos;t filled out a profile yet. Members can edit{" "}
+                <code className="font-voice text-dust">community/members/{member.slug}.md</code> directly via git.
+              </>
+            )}
+          </p>
         </section>
       )}
 
@@ -118,21 +124,19 @@ export default async function MemberPage({
 
       {validGoing.length + validInterested.length > 0 ? (
         <section className="mt-8">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-            Events
-          </h2>
+          <MonoLabel>{s("members.detail.eventsSection")}</MonoLabel>
           <ul className="mt-2 space-y-1">
-            {validGoing.map((slug) => (
-              <li key={slug}>
-                <a className="hover:underline" href={`/events/${slug}`}>
-                  ✓ Going — {slug}
+            {validGoing.map((evtSlug) => (
+              <li key={evtSlug}>
+                <a className="font-voice text-[11px] text-ink hover:underline" href={`/events/${evtSlug}`}>
+                  ✓ Going — {evtSlug}
                 </a>
               </li>
             ))}
-            {validInterested.map((slug) => (
-              <li key={slug}>
-                <a className="hover:underline" href={`/events/${slug}`}>
-                  ★ Interested — {slug}
+            {validInterested.map((evtSlug) => (
+              <li key={evtSlug}>
+                <a className="font-voice text-[11px] text-dust hover:underline" href={`/events/${evtSlug}`}>
+                  ★ Interested — {evtSlug}
                 </a>
               </li>
             ))}
