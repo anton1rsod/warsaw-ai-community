@@ -85,7 +85,8 @@ export const strings = {
   "members.detail.personaSection": "Persona",
   "members.detail.dataControls": "Data controls",
   "members.detail.noPersonaFmt": "No persona yet for {slug}. See the persona-builder process.",
-  "members.detail.noProfileFmt": "{name} hasn't filled out a profile yet. Members can edit community/members/{slug}.md directly via git.",
+  "members.detail.noProfileFmt": "{name} hasn't filled out a profile yet. Members can edit {path} directly via git.",
+  "members.detail.noProfilePathFmt": "community/members/{slug}.md",
 
   // ─── projects.index.* (/projects route) ──────────────────────────────────
   "projects.index.title": "Projects.",
