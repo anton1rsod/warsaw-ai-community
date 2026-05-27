@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Pill } from "@/app/components/Pill";
 
 export type StatusActionResponse =
   | { ok: true; sha: string }
@@ -110,24 +111,20 @@ export function StatusEditor({
         disabled={isPending}
       />
       <div className="mt-3 flex items-center gap-3">
-        <button
-          type="submit"
-          className="min-h-[24px] inline-flex items-center px-[11px] py-[4px] font-voice font-bold text-[10px] border-[1.5px] border-solid border-ink text-ink bg-transparent hover:bg-ink hover:text-cream focus-visible:bg-ink focus-visible:text-cream disabled:opacity-50 transition-colors duration-150"
-          disabled={submitDisabled}
-        >
+        <Pill variant="solid" type="submit" disabled={submitDisabled}>
           {sha ? "Update" : "Post"}
-        </button>
+        </Pill>
         {sha ? (
-          <button
+          <Pill
+            variant="dashed"
             type="button"
             onClick={() => {
               removeWithSha(sha);
             }}
-            className="min-h-[24px] inline-flex items-center px-[11px] py-[4px] font-voice font-bold text-[10px] border-[1.5px] border-dashed border-ink text-ink bg-transparent hover:bg-ink hover:text-cream focus-visible:bg-ink focus-visible:text-cream disabled:opacity-50 transition-colors duration-150"
             disabled={isPending}
           >
             Delete
-          </button>
+          </Pill>
         ) : null}
         {message ? (
           <span
