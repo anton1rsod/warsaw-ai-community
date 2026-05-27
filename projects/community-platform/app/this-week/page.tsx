@@ -24,6 +24,10 @@ import {
   isE2EMode,
   mockStatusActions,
 } from "@/app/actions/_test-status-store";
+import {
+  isE2EMode as isE2EModeThank,
+  mockThankActions,
+} from "@/app/actions/_test-thank-store";
 import { createGitHubApp } from "@/lib/github-app";
 import {
   parseProfileFrontmatter,
@@ -75,7 +79,13 @@ async function loadViewerProfile(
   slug: string | undefined,
 ): Promise<{ fm: ProfileFrontmatter | undefined; sha: string | undefined }> {
   if (!slug) return { fm: undefined, sha: undefined };
-  if (isE2EMode()) return { fm: undefined, sha: undefined };
+  // E2E mode: return a stable mock sha from the thanks store so ThankButton
+  // receives a non-empty profileSha and can call thankStatus. No GitHub App
+  // call is made; the fork is dead in production (isProductionRuntime() guard
+  // sits in thankStatus itself).
+  if (isE2EModeThank()) {
+    return { fm: undefined, sha: mockThankActions.getProfileSha(slug) };
+  }
   try {
     const client = createGitHubApp({
       appId: env.GITHUB_APP_ID,
