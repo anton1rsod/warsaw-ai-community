@@ -87,11 +87,12 @@ body {
  * before the typography plugin was confirmed absent.
  */
 @layer components {
-  .prose-warm { @apply font-body text-ink max-w-none leading-relaxed; }
+  .prose-warm { @apply font-body text-ink max-w-none leading-relaxed break-words; }
   .prose-warm :where(h1, h2, h3, h4) { @apply font-display font-semibold text-ink mt-8 mb-3; }
   .prose-warm :where(p, li) { @apply text-ink; }
   .prose-warm :where(a) { @apply text-ink underline underline-offset-2 hover:text-dust; }
   .prose-warm :where(code, pre) { @apply font-voice text-dust; }
+  .prose-warm :where(pre) { @apply overflow-x-auto max-w-full; }
   .prose-warm :where(strong) { @apply text-ink font-semibold; }
   .prose-warm :where(blockquote) { @apply border-l-[3px] border-l-ink pl-4 text-dust; }
   .prose-warm :where(ul, ol) { @apply my-3 pl-5; }

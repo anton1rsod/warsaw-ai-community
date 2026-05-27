@@ -10,4 +10,7 @@ describe("v0.9 .prose-warm — tokenized markdown styling (no typography plugin)
   it("styles headings with font-display and body with ink", () => {
     expect(css).toMatch(/\.prose-warm\s+:where\((h1|h2|h3)/);
   });
+  it("contains wide code blocks: <pre> scrolls horizontally instead of overflowing the page", () => {
+    expect(css).toMatch(/\.prose-warm\s+:where\(pre\)\s*\{[^}]*overflow-x-auto/);
+  });
 });
