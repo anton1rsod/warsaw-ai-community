@@ -1,6 +1,7 @@
-import Link from "next/link";
 import type { Route } from "next";
 import { s } from "@/lib/i18n/strings";
+import { MonoLabel } from "@/app/components/MonoLabel";
+import { Pill } from "@/app/components/Pill";
 import { ListItem } from "@/app/components/ListItem";
 import { EmptyState } from "@/app/components/EmptyState";
 import {
@@ -23,14 +24,6 @@ interface CalendarItem {
   href: Route;
   title: string;
   date: string;
-}
-
-function filterChipClasses(active: boolean): string {
-  const base = "inline-flex items-center rounded-full px-4 py-1.5 text-sm border";
-  if (active) {
-    return `${base} border-accent-600 bg-accent-50 text-accent-700`;
-  }
-  return `${base} border-neutral-200 text-neutral-700 hover:bg-neutral-50`;
 }
 
 export default async function CalendarPage({
@@ -67,31 +60,38 @@ export default async function CalendarPage({
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 
   return (
-    <main id="main" className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="text-3xl font-semibold mb-6">{s("calendar.title")}</h1>
+    <main id="main" className="mx-auto max-w-3xl px-6 py-10">
+      <MonoLabel>{s("calendar.kicker")}</MonoLabel>
+      <h1 className="mt-2 font-display font-semibold text-[40px] leading-[0.95] tracking-tight text-ink">
+        {s("calendar.title")}
+      </h1>
 
-      {/* H62: filter chips encode state in URL */}
-      <nav aria-label="Filter" className="flex flex-wrap gap-2 mb-8">
-        <Link href={"/calendar" as Route} className={filterChipClasses(filter === "all")}>
+      {/* H62: filter chips encode state in URL — using Pill; active = going (bg-ink), inactive = dashed */}
+      <nav aria-label="Filter" className="mt-3 flex flex-wrap gap-2">
+        <Pill variant={filter === "all" ? "going" : "dashed"} href={"/calendar" as Route}>
           {s("calendar.filter.all")}
-        </Link>
-        <Link
+        </Pill>
+        <Pill
+          variant={filter === "events" ? "going" : "dashed"}
           href={"/calendar?filter=events" as Route}
-          className={filterChipClasses(filter === "events")}
         >
           {s("calendar.filter.events")}
-        </Link>
-        <Link
+        </Pill>
+        <Pill
+          variant={filter === "meetings" ? "going" : "dashed"}
           href={"/calendar?filter=meetings" as Route}
-          className={filterChipClasses(filter === "meetings")}
         >
           {s("calendar.filter.meetings")}
-        </Link>
+        </Pill>
+        <Pill variant="dashed" href={"/api/calendar.ics" as Route}>
+          {s("calendar.subscribe")}
+        </Pill>
       </nav>
 
-      <section>
-        <h2 className="text-xs uppercase tracking-wider text-neutral-500 mb-3">
-          {s("calendar.upcoming")}
+      <section aria-labelledby="upcoming-heading" className="mt-8">
+        <MonoLabel>{s("calendar.upcoming")}</MonoLabel>
+        <h2 id="upcoming-heading" className="sr-only">
+          Upcoming
         </h2>
         {upcoming.length === 0 ? (
           <EmptyState
@@ -99,7 +99,7 @@ export default async function CalendarPage({
             calibration={s("empty.calendar.calibration")}
           />
         ) : (
-          <ul className="divide-y divide-neutral-200">
+          <ul className="mt-2 flex flex-col gap-2">
             {upcoming.map((item) => (
               <li key={`${item.type}-${item.href}`}>
                 <ListItem
@@ -112,15 +112,6 @@ export default async function CalendarPage({
           </ul>
         )}
       </section>
-
-      <div className="mt-12">
-        <Link
-          href={"/api/calendar.ics" as Route}
-          className="inline-flex items-center text-sm text-accent-700 underline"
-        >
-          {s("calendar.subscribe")}
-        </Link>
-      </div>
     </main>
   );
 }

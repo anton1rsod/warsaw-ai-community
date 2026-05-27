@@ -148,7 +148,7 @@ export function ProfileEditor({
   return (
     <section className="mt-6">
       {draftRestored ? (
-        <div className="mb-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950">
+        <div className="mb-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm">
           Restored draft from {draftRestored.toLocaleString()}.{" "}
           <button
             type="button"
@@ -196,7 +196,7 @@ export function ProfileEditor({
           ) : (
             <SafeHtml
               html={previewHtml}
-              className="prose prose-neutral dark:prose-invert max-w-none"
+              className="prose prose-neutral max-w-none"
             />
           )}
         </div>
@@ -207,18 +207,18 @@ export function ProfileEditor({
           type="button"
           onClick={onSave}
           disabled={save.kind === "saving"}
-          className="rounded border bg-neutral-900 px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
+          className="rounded border bg-neutral-900 px-4 py-2 text-sm text-white disabled:opacity-50"
         >
           {save.kind === "saving" ? "Saving…" : "Save"}
         </button>
         {save.kind === "saved" ? (
-          <span className="text-sm text-neutral-600 dark:text-neutral-400">
+          <span className="text-sm text-neutral-600">
             Saved. Your profile is rebuilding and will appear on /members/{slug}{" "}
             in ~60-90s after the next deploy completes.
           </span>
         ) : null}
         {save.kind === "error" ? (
-          <span className="text-sm text-red-700 dark:text-red-400">
+          <span className="text-sm text-red-700">
             {save.message}
           </span>
         ) : null}

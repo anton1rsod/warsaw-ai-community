@@ -7,6 +7,10 @@
  * action or you-are-here").
  *
  * Every other chip is neutral. Restraint is the brand.
+ *
+ * v0.9 warm reskin (H100): migrated from scaffolding neutrals to warm tokens.
+ * `bg-cream-deep` replaces old bg; `text-dust` replaces de-emphasis;
+ * `text-ink` replaces old text-dark; border-radius removed per D6.
  */
 type TagVariant = "stage" | "status" | "type";
 
@@ -17,13 +21,13 @@ interface TagProps {
 }
 
 function classesFor(variant: TagVariant | undefined, value: string | undefined): string {
-  const base = "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium";
+  const base = "inline-flex items-center px-2 py-0.5 font-voice text-[10px] uppercase tracking-[0.5px]";
 
   if (variant === "stage") {
     if (value === "complete" || value === "paused") {
-      return `${base} bg-neutral-100 text-neutral-500`;
+      return `${base} bg-cream-deep text-dust`;
     }
-    return `${base} bg-neutral-100 text-neutral-700`;
+    return `${base} bg-cream-deep text-ink`;
   }
 
   if (variant === "status") {
@@ -32,17 +36,17 @@ function classesFor(variant: TagVariant | undefined, value: string | undefined):
       return `${base} bg-accent-50 text-accent-700`;
     }
     if (value === "superseded") {
-      return `${base} bg-neutral-100 text-neutral-400 line-through`;
+      return `${base} bg-cream-deep text-dust line-through`;
     }
-    return `${base} bg-neutral-100 text-neutral-700`;
+    return `${base} bg-cream-deep text-ink`;
   }
 
   if (variant === "type") {
-    return `${base} bg-neutral-100 text-neutral-700`;
+    return `${base} bg-cream-deep text-ink`;
   }
 
-  // No variant — generic neutral chip
-  return `${base} bg-neutral-100 text-neutral-700`;
+  // No variant — generic warm chip
+  return `${base} bg-cream-deep text-ink`;
 }
 
 export function Tag({ label, variant, value }: TagProps): React.JSX.Element {

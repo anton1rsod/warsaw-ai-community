@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   cleanup,
   fireEvent,
@@ -192,5 +194,22 @@ describe("StatusEditor", () => {
       <StatusEditor week="2026-W42" current={null} actions={fakeActions()} />,
     );
     expect(screen.getByLabelText(/2026-W42/i)).toBeInTheDocument();
+  });
+});
+
+describe("StatusEditor v0.9 — warm-aesthetic, no dark:/scaffolding (H99)", () => {
+  const src = readFileSync(
+    resolve(__dirname, "../../app/components/StatusEditor.tsx"),
+    "utf8",
+  );
+  it("uses no Tailwind `dark:` variants", () => { expect(src).not.toMatch(/\bdark:/); });
+  it("uses no neutral-* / gray-* color scale", () => {
+    expect(src).not.toMatch(/\b(text|bg|border)-neutral-/);
+    expect(src).not.toMatch(/\b(text|bg|border)-gray-/);
+  });
+  it("uses no rounded-border scaffolding", () => { expect(src).not.toMatch(/\brounded\b/); });
+  it("uses warm tokens on the form (bg-paper / font-body / text-ink / text-alert)", () => {
+    expect(src).toMatch(/bg-paper|bg-cream-deep/);
+    expect(src).toMatch(/text-ink|text-dust/);
   });
 });

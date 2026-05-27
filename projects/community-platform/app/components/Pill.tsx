@@ -13,7 +13,9 @@ export type PillProps = PillCommon &
     | { type: "button" | "submit"; href?: never; external?: never; onClick?: () => void; disabled?: boolean }
   );
 
-const BASE = "px-[11px] py-[4px] inline-block font-voice font-bold text-[10px] transition-colors duration-150";
+// v0.9 H101: min-h-[24px] + inline-flex + items-center meets WCAG 2.2 SC 2.5.8 target size.
+// inline-block replaced by inline-flex so items-center works; visible chip size unchanged.
+const BASE = "min-h-[24px] inline-flex items-center px-[11px] py-[4px] font-voice font-bold text-[10px] transition-colors duration-150";
 
 const VARIANT: Record<PillVariant, string> = {
   going:  "bg-ink text-cream hover:bg-accent-500 hover:text-ink focus-visible:bg-accent-500 focus-visible:text-ink",

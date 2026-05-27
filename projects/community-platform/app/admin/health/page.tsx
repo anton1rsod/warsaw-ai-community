@@ -81,7 +81,7 @@ export default async function AdminHealthPage(): Promise<React.JSX.Element> {
         <p className="mt-2 text-4xl font-semibold tabular-nums">
           {current.metric.activePosters} / {current.metric.totalMembers}
         </p>
-        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+        <p className="mt-1 text-sm text-neutral-600">
           {(current.metric.ratio * 100).toFixed(0)}% active posters this week
         </p>
         <p className="mt-2 text-xs text-neutral-500">

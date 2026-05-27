@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import CalendarPage from "@/app/calendar/page";
@@ -56,9 +58,9 @@ describe("/calendar — Q2.2 / D27 unified events+meetings", () => {
     expect(screen.queryByText("AI Hackathon")).toBeNull();
   });
 
-  it("renders Subscribe-to-calendar button → /api/calendar.ics", async () => {
+  it("renders subscribe ICS link → /api/calendar.ics", async () => {
     render(await CalendarPage({ searchParams: Promise.resolve({}) }));
-    const link = screen.getByRole("link", { name: /Subscribe to calendar/ });
+    const link = screen.getByRole("link", { name: /subscribe/i });
     expect(link.getAttribute("href")).toBe("/api/calendar.ics");
   });
 
@@ -75,13 +77,35 @@ describe("/calendar — Q2.2 / D27 unified events+meetings", () => {
     ).toBeInTheDocument();
   });
 
-  it("filter chips render with current selection highlighted", async () => {
+  it("filter chips render with current selection highlighted (Pill going = bg-ink)", async () => {
     render(
       await CalendarPage({
         searchParams: Promise.resolve({ filter: "events" }),
       }),
     );
+    // Active filter uses Pill variant="going" (bg-ink text-cream) for visual distinction.
     const eventsChip = screen.getByRole("link", { name: "Events" });
-    expect(eventsChip.className).toMatch(/accent/);
+    expect(eventsChip.className).toMatch(/bg-ink/);
+  });
+});
+
+describe("/calendar v0.9 — warm-aesthetic, no dark:/scaffolding (H99)", () => {
+  const src = readFileSync(
+    resolve(__dirname, "../../app/calendar/page.tsx"),
+    "utf8",
+  );
+  it("uses no Tailwind `dark:` variants", () => { expect(src).not.toMatch(/\bdark:/); });
+  it("uses no neutral-* / gray-* color scale", () => {
+    expect(src).not.toMatch(/\b(text|bg|border)-neutral-/);
+    expect(src).not.toMatch(/\b(text|bg|border)-gray-/);
+  });
+  it("uses no rounded-border scaffolding", () => { expect(src).not.toMatch(/\brounded\b/); });
+  it("uses recipe tokens (font-display heading on ink)", () => {
+    expect(src).toMatch(/font-display/);
+    expect(src).toMatch(/text-ink|text-dust/);
+  });
+  it("uses Pill for filter chips (not raw accent-600/neutral-200)", () => {
+    expect(src).toMatch(/Pill/);
+    expect(src).not.toMatch(/filterChipClasses/);
   });
 });

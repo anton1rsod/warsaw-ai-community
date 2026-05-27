@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 import config from "../../tailwind.config";
 
+describe("H97: dark mode neutralized via selector strategy", () => {
+  it("sets darkMode to 'selector' (not 'media' — dead-codes all dark: variants since no .dark ancestor is rendered)", () => {
+    expect(config.darkMode).toBe("selector");
+  });
+});
+
 describe("v0.6 tailwind.config — theme extensions", () => {
   it("extends colors with v0.6 tokens mapped to CSS vars", () => {
     const colors = config.theme?.extend?.colors as Record<string, string | Record<string, string>>;

@@ -1,5 +1,8 @@
 import Link from "next/link";
 import type { ProjectContribution } from "@/lib/contributions";
+import { Avatar } from "@/app/components/Avatar";
+import { MonoLabel } from "@/app/components/MonoLabel";
+import { s } from "@/lib/i18n/strings";
 
 interface TopContributorsProps {
   contributors: readonly ProjectContribution[];
@@ -19,28 +22,29 @@ export function TopContributors({
 }: TopContributorsProps): React.JSX.Element {
   if (contributors.length === 0) {
     return (
-      <section className="mt-6 rounded border border-dashed p-4 text-sm text-neutral-600 dark:text-neutral-400">
-        No contributors yet.
+      <section className="mt-6 border border-dashed border-ink p-4">
+        <p className="font-voice text-[11px] text-dust">{s("projects.detail.noContributors")}</p>
       </section>
     );
   }
 
   return (
-    <section className="mt-6 rounded border p-4">
-      <h2 className="text-lg font-medium">Top contributors</h2>
-      <p className="mt-1 text-xs text-neutral-500">
-        Derived from git history. Bot commits excluded.
+    <section className="mt-6 border-[1.5px] border-ink bg-paper p-4">
+      <MonoLabel as="h2">{s("projects.detail.topContributors")}</MonoLabel>
+      <p className="mt-1 font-voice text-[10px] text-dust">
+        {s("projects.detail.contributorsNote")}
       </p>
       <ol className="mt-3 space-y-1">
         {contributors.map((c) => (
           <li key={c.handle} className="flex items-center justify-between">
             <Link
               href={`/members/${slugFor(c.handle)}`}
-              className="text-sm underline"
+              className="inline-flex items-center gap-2 font-voice text-[11px] text-ink underline underline-offset-2 hover:text-dust"
             >
+              <Avatar name={c.handle} handle={c.handle} size={20} decorative />
               @{c.handle}
             </Link>
-            <span className="text-sm tabular-nums">{c.commits}</span>
+            <span className="font-voice text-[11px] text-dust tabular-nums">{c.commits}</span>
           </li>
         ))}
       </ol>

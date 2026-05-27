@@ -1,8 +1,21 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { cleanup, render, screen, fireEvent } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { Pill } from "@/app/components/Pill";
 
 afterEach(cleanup);
+
+describe("H101: Pill meets WCAG 2.2 SC 2.5.8 target size (>=24px)", () => {
+  const src = readFileSync(resolve(__dirname, "../../app/components/Pill.tsx"), "utf8");
+  it("declares a >=24px min target height", () => {
+    expect(src).toMatch(/min-h-\[24px\]/);
+  });
+  it("centers content so the visible chip stays compact", () => {
+    expect(src).toMatch(/inline-flex/);
+    expect(src).toMatch(/items-center/);
+  });
+});
 
 describe("Pill", () => {
   describe("variant=going", () => {

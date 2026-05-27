@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createAppAuth } from "@octokit/auth-app";
 import { auth } from "@/lib/auth";
+import { s } from "@/lib/i18n/strings";
+import { MonoLabel } from "@/app/components/MonoLabel";
 import { env } from "@/lib/env";
 import { findMemberByHandle, listMeetingsFromSnapshot, listEventsFromSnapshot } from "@/lib/content-snapshot";
 import { currentWeek } from "@/lib/week";
@@ -134,22 +136,29 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
 
   const myStripped = my ? parseMarkdown(my.body).body : null;
 
+  const kickerText = s("thisweek.kickerFmt").replace("{week}", week);
+  const othersLabel = s("thisweek.othersLabelFmt").replace(
+    "{count}",
+    String(renderedOthers.length),
+  );
+
   return (
-    <main className="mx-auto max-w-3xl p-8">
-      <header className="flex items-baseline justify-between">
-        <h1 className="text-3xl font-semibold">This week — {week}</h1>
-        <Link href="/home" className="text-sm underline">
-          Home
-        </Link>
-      </header>
+    <main id="main" className="mx-auto max-w-3xl px-6 py-10">
+      <MonoLabel>{kickerText}</MonoLabel>
+      <h1 className="mt-2 font-display font-semibold text-[40px] leading-[0.95] tracking-tight text-ink">
+        {s("thisweek.title")}
+      </h1>
 
       <div className="mt-6">
         <HomeFeed feed={feed} showRecent={false} />
       </div>
 
       {member ? (
-        <section className="mt-6">
-          <h2 className="text-xl font-medium">Your update</h2>
+        <section aria-labelledby="your-update-heading" className="mt-8">
+          <MonoLabel>{s("thisweek.yourUpdate")}</MonoLabel>
+          <h2 id="your-update-heading" className="sr-only">
+            Your update
+          </h2>
           <div className="mt-2">
             <StatusEditor
               week={week}
@@ -164,30 +173,31 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
         </section>
       ) : null}
 
-      <section className="mt-8">
-        <h2 className="text-xl font-medium">
-          Others ({renderedOthers.length})
+      <section aria-labelledby="others-heading" className="mt-8">
+        <MonoLabel>{othersLabel}</MonoLabel>
+        <h2 id="others-heading" className="sr-only">
+          Others
         </h2>
         {renderedOthers.length === 0 ? (
-          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+          <p className="mt-2 font-voice text-[12px] text-dust">
             No other status updates yet.
           </p>
         ) : (
-          <ul className="mt-3 space-y-3">
+          <ul className="mt-2 flex flex-col gap-2">
             {renderedOthers.map((o) => (
-              <li key={o.slug} className="rounded border p-4">
-                <div className="text-sm font-medium">
-                  <Link href={`/members/${o.slug}`} className="underline">
+              <li key={o.slug} className="bg-paper border-l-[3px] border-l-ink px-4 py-3">
+                <div className="font-display font-semibold text-ink text-[13px]">
+                  <Link href={`/members/${o.slug}`} className="text-ink underline">
                     {o.slug}
                   </Link>
                 </div>
                 <SafeHtml
                   html={o.html}
-                  className="prose prose-neutral mt-2 max-w-none text-sm dark:prose-invert"
+                  className="prose-warm mt-2 text-sm"
                 />
                 <time
                   dateTime={o.lastModified}
-                  className="mt-2 block text-xs text-neutral-500"
+                  className="mt-2 block font-voice text-[10px] text-dust"
                 >
                   {o.lastModified}
                 </time>

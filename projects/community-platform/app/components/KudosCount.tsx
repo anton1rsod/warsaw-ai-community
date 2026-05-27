@@ -16,17 +16,17 @@ export function KudosCount({ memberSlug }: KudosCountProps): React.JSX.Element {
 
   if (!entry || entry.total === 0) {
     return (
-      <p className="text-sm text-neutral-600 dark:text-neutral-400">No thanks yet.</p>
+      <p className="font-voice text-[11px] text-dust">No thanks yet.</p>
     );
   }
 
   return (
     <div className="space-y-2">
-      <span className="inline-flex items-center rounded-full bg-rose-50 px-3 py-1 text-sm font-medium text-rose-800 dark:bg-rose-900/40 dark:text-rose-200">
+      <span className="min-h-[24px] inline-flex items-center px-[11px] py-[4px] font-voice font-bold text-[10px] bg-accent-50 text-accent-700 border-[1.5px] border-solid border-accent-700">
         ♥ Thanked {entry.total} times
       </span>
       {entry.recent.length > 0 ? (
-        <p className="text-xs text-neutral-500">
+        <p className="font-voice text-[10px] text-dust">
           Recent: {entry.recent.map((r) => `@${r.giver}`).join(", ")}
         </p>
       ) : null}

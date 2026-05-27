@@ -50,12 +50,59 @@ export const strings = {
     "No upcoming events — next weekly sync is Wednesday at 18:30.",
 
   // ─── calendar.* (/calendar route) ───────────────────────────────────────
-  "calendar.title": "Calendar",
+  "calendar.title": "Calendar.",
+  "calendar.kicker": "// calendar",
   "calendar.filter.all": "All",
   "calendar.filter.events": "Events",
   "calendar.filter.meetings": "Meetings",
-  "calendar.upcoming": "Upcoming",
-  "calendar.subscribe": "Subscribe to calendar",
+  "calendar.upcoming": "// upcoming",
+  "calendar.subscribe": "subscribe (ICS)",
+
+  // ─── decisions.* (/decisions route) ─────────────────────────────────────
+  "decisions.title": "Decisions.",
+  "decisions.kicker": "// decisions · ADR log",
+  "decisions.sectionLabel": "// all records",
+  "decisions.detail.backLink": "← Decisions",
+
+  // ─── meetings.index.* (/meetings route) ──────────────────────────────────
+  "meetings.index.title": "Meetings.",
+  "meetings.index.kicker": "// meetings",
+  "meetings.index.subscribeIcs": "subscribe (ICS)",
+  "meetings.detail.backLink": "← Meetings",
+  "meetings.detail.addToCalendar": "Add to Calendar",
+
+  // ─── members.index.* (/members route) ────────────────────────────────────
+  "members.index.title": "Members.",
+  "members.index.kickerFmt": "// members · {count}",
+  "members.index.sectionLabel": "// community",
+  "members.detail.backLink": "← Members",
+  "members.detail.contributions": "Contributions",
+  "members.detail.contributionsNote": "Derived from git history. Bot commits excluded.",
+  "members.detail.editProfile": "Edit profile →",
+  "members.detail.editYourProfile": "Edit your profile →",
+  "members.detail.profileSection": "Profile",
+  "members.detail.eventsSection": "// events",
+  "members.detail.personaSection": "Persona",
+  "members.detail.dataControls": "Data controls",
+  "members.detail.noPersonaFmt": "No persona yet for {slug}. See the persona-builder process.",
+  "members.detail.noProfileFmt": "{name} hasn't filled out a profile yet. Members can edit community/members/{slug}.md directly via git.",
+
+  // ─── projects.index.* (/projects route) ──────────────────────────────────
+  "projects.index.title": "Projects.",
+  "projects.index.kicker": "// projects",
+  "projects.index.sectionLabel": "// active",
+  "projects.detail.backLink": "← Projects",
+  "projects.detail.topContributors": "Top contributors",
+  "projects.detail.contributorsNote": "Derived from git history. Bot commits excluded.",
+  "projects.detail.recognizeContributors": "// recognize contributors",
+  "projects.detail.askGbrain": "Ask GBrain about this project →",
+  "projects.detail.noContributors": "No contributors yet.",
+
+  // ─── thisweek.* (/this-week route) ──────────────────────────────────────
+  "thisweek.title": "This week.",
+  "thisweek.kickerFmt": "// this week · {week}",
+  "thisweek.yourUpdate": "// your update",
+  "thisweek.othersLabelFmt": "// others · {count}",
 
   // ─── handbook.* (/handbook route) ───────────────────────────────────────
   "handbook.title": "Handbook",
@@ -205,6 +252,11 @@ export const strings = {
   "chrome.footer.telegram": "telegram",
   "chrome.footer.github": "github",
   "chrome.footer.license": "license",
+
+  // ─── login.* (/login route — v0.9 reskin) ──────────────────────────────────
+  "login.kicker": "// members only",
+  "login.description":
+    "Sign in with the GitHub account associated with your roster entry.",
 
   // ─── masthead.* (v0.7 — /handbook formal entity masthead per brand.md §4.4) ───────────────────
   "masthead.foundedFmt": "Founded 2026 · Warsaw",

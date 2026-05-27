@@ -1,5 +1,6 @@
 import { s } from "@/lib/i18n/strings";
 import { FormalEntityMasthead } from "@/app/components/FormalEntityMasthead";
+import { MonoLabel } from "@/app/components/MonoLabel";
 
 /**
  * /handbook — Q2.3 / D29 / Q6.1 (i) / O4.
@@ -23,65 +24,61 @@ export default async function HandbookPage(): Promise<React.JSX.Element> {
   return (
     <>
       <FormalEntityMasthead />
-      <main id="main" className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="text-3xl font-semibold mb-8">{s("handbook.title")}</h1>
+      <main id="main" className="mx-auto max-w-3xl px-6 py-10">
+        <h1 className="font-display font-semibold text-[40px] leading-[0.95] tracking-tight text-ink mb-8">
+          {s("handbook.title")}
+        </h1>
 
-      <section className="mb-10">
-        <h2 className="text-xs uppercase tracking-wider text-neutral-500 mb-3">
-          {s("handbook.charter")}
-        </h2>
-        <p className="text-sm text-neutral-700">
-          <a
-            href={CHARTER_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-accent-700 underline"
-          >
-            {s("handbook.charterCta")}
-          </a>
-        </p>
-      </section>
+        <section className="mb-10">
+          <MonoLabel>{s("handbook.charter")}</MonoLabel>
+          <p className="mt-2 font-voice text-[11px]">
+            <a
+              href={CHARTER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-ink underline underline-offset-2 hover:text-dust"
+            >
+              {s("handbook.charterCta")}
+            </a>
+          </p>
+        </section>
 
-      <section className="mb-10">
-        <h2 className="text-xs uppercase tracking-wider text-neutral-500 mb-3">
-          {s("handbook.roadmap")}
-        </h2>
-        <p className="text-sm text-neutral-700">
-          <a
-            href={PROJECTS_MD_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-accent-700 underline"
-          >
-            {s("handbook.roadmapCta")}
-          </a>
-        </p>
-      </section>
+        <section className="mb-10">
+          <MonoLabel>{s("handbook.roadmap")}</MonoLabel>
+          <p className="mt-2 font-voice text-[11px]">
+            <a
+              href={PROJECTS_MD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-ink underline underline-offset-2 hover:text-dust"
+            >
+              {s("handbook.roadmapCta")}
+            </a>
+          </p>
+        </section>
 
-      <section className="mb-10">
-        <h2 className="text-xs uppercase tracking-wider text-neutral-500 mb-3">
-          {s("handbook.decisions")}
-        </h2>
-        <p className="text-sm text-neutral-700">
-          <a
-            href={DECISIONS_TREE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-accent-700 underline"
-          >
-            {s("handbook.decisionsCta")}
-          </a>
-        </p>
-      </section>
+        <section className="mb-10">
+          <MonoLabel>{s("handbook.decisions")}</MonoLabel>
+          <p className="mt-2 font-voice text-[11px]">
+            <a
+              href={DECISIONS_TREE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-ink underline underline-offset-2 hover:text-dust"
+            >
+              {s("handbook.decisionsCta")}
+            </a>
+          </p>
+        </section>
 
-      <section>
-        <ul className="text-sm text-neutral-600 space-y-2">
-          <li>{s("handbook.placeholders.skills")}</li>
-          <li>{s("handbook.placeholders.academy")}</li>
-          <li>{s("handbook.placeholders.gbrain")}</li>
-        </ul>
-      </section>
-    </main>
+        <section>
+          <ul className="font-voice text-[11px] text-dust space-y-2">
+            <li>{s("handbook.placeholders.skills")}</li>
+            <li>{s("handbook.placeholders.academy")}</li>
+            <li>{s("handbook.placeholders.gbrain")}</li>
+          </ul>
+        </section>
+      </main>
     </>
   );
 }

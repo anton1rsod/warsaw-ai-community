@@ -1,3 +1,6 @@
+import { Pill } from "@/app/components/Pill";
+import { s } from "@/lib/i18n/strings";
+
 interface AskGBrainButtonProps {
   projectSlug: string;
   baseUrl: string | null;
@@ -10,13 +13,8 @@ export function AskGBrainButton({
   if (!baseUrl) return null;
   const href = `${baseUrl}/?project=${encodeURIComponent(projectSlug)}`;
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 rounded border px-3 py-1.5 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-900"
-    >
-      Ask GBrain about this project →
-    </a>
+    <Pill href={href} variant="dashed" external>
+      {s("projects.detail.askGbrain")}
+    </Pill>
   );
 }

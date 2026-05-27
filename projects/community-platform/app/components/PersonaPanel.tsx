@@ -1,4 +1,6 @@
 import { SafeHtml } from "@/app/components/SafeHtml";
+import { MonoLabel } from "@/app/components/MonoLabel";
+import { s } from "@/lib/i18n/strings";
 
 export function PersonaPanel({
   html,
@@ -9,19 +11,19 @@ export function PersonaPanel({
 }): React.JSX.Element {
   if (!html) {
     return (
-      <section className="rounded border p-4">
-        <h3 className="text-lg font-medium">Persona</h3>
-        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-          No persona yet for <code>{slug}</code>. See the persona-builder process.
+      <section className="border border-dashed border-ink p-4">
+        <MonoLabel>{s("members.detail.personaSection")}</MonoLabel>
+        <p className="mt-1 font-voice text-[11px] text-dust">
+          {s("members.detail.noPersonaFmt").replace("{slug}", slug)}
         </p>
       </section>
     );
   }
 
   return (
-    <section className="rounded border p-4">
-      <h3 className="text-lg font-medium">Persona</h3>
-      <SafeHtml html={html} className="prose prose-neutral dark:prose-invert mt-2 max-w-none" />
+    <section className="border-[1.5px] border-ink bg-paper p-4">
+      <MonoLabel>{s("members.detail.personaSection")}</MonoLabel>
+      <SafeHtml html={html} className="prose-warm mt-2" />
     </section>
   );
 }

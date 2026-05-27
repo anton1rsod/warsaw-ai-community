@@ -23,4 +23,12 @@ describe("MonoLabel", () => {
     render(<MonoLabel as="span">// inline</MonoLabel>);
     expect(screen.getByText("// inline").tagName).toBe("SPAN");
   });
+
+  it("renders a real heading (role) when as='h2', keeping mono styling", () => {
+    render(<MonoLabel as="h2">Top contributors</MonoLabel>);
+    const el = screen.getByRole("heading", { name: "Top contributors" });
+    expect(el.tagName).toBe("H2");
+    expect(el).toHaveClass("font-voice");
+    expect(el).toHaveClass("uppercase");
+  });
 });
