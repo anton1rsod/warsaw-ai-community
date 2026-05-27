@@ -255,6 +255,11 @@ export const strings = {
   "chrome.footer.github": "github",
   "chrome.footer.license": "license",
 
+  // ─── login.* (/login route — v0.9 reskin) ──────────────────────────────────
+  "login.kicker": "// members only",
+  "login.description":
+    "Sign in with the GitHub account associated with your roster entry.",
+
   // ─── masthead.* (v0.7 — /handbook formal entity masthead per brand.md §4.4) ───────────────────
   "masthead.foundedFmt": "Founded 2026 · Warsaw",
   "masthead.formalEntityLead": "Professional",
