@@ -62,6 +62,7 @@ export const strings = {
   "decisions.title": "Decisions.",
   "decisions.kicker": "// decisions · ADR log",
   "decisions.sectionLabel": "// all records",
+  "decisions.detail.backLink": "← Decisions",
 
   // ─── meetings.index.* (/meetings route) ──────────────────────────────────
   "meetings.index.title": "Meetings.",
