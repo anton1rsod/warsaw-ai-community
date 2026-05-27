@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { CreateEventResult } from "@/app/actions/create-event";
 import { deriveEventSlug } from "@/lib/event-author";
 import { SafeHtml } from "@/app/components/SafeHtml";
+import { Pill } from "@/app/components/Pill";
 import { s } from "@/lib/i18n/strings";
 
 export interface EventFormDefaults {
@@ -65,14 +66,14 @@ export function EventForm({
       });
       if (!res.ok) {
         setPreviewHtml(
-          `<p class="text-red-700">${s("event.create.preview.failed")}</p>`,
+          `<p class="text-alert">${s("event.create.preview.failed")}</p>`,
         );
         return;
       }
       const data: { html?: string } = await res.json();
       setPreviewHtml(data.html ?? "");
     } catch {
-      setPreviewHtml('<p class="text-red-700">Preview failed.</p>');
+      setPreviewHtml('<p class="text-alert">Preview failed.</p>');
     } finally {
       setPreviewLoading(false);
     }
@@ -101,7 +102,7 @@ export function EventForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-6 space-y-4">
+    <form onSubmit={onSubmit} className="mt-6 bg-paper border-l-[3px] border-l-ink px-4 py-4 space-y-4">
       <Field id="title" label={s("event.create.field.title")} required>
         <input
           id="title"
@@ -111,7 +112,7 @@ export function EventForm({
           maxLength={200}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
       </Field>
 
@@ -123,7 +124,7 @@ export function EventForm({
           required
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
       </Field>
 
@@ -134,7 +135,7 @@ export function EventForm({
             name="startTime"
             type="time"
             defaultValue={defaults.startTime}
-            className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+            className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
           />
         </Field>
         <Field id="durationMinutes" label={s("event.create.field.duration")}>
@@ -145,7 +146,7 @@ export function EventForm({
             min={1}
             max={600}
             defaultValue={defaults.durationMinutes}
-            className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+            className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
           />
         </Field>
       </div>
@@ -157,7 +158,7 @@ export function EventForm({
           type="text"
           maxLength={200}
           defaultValue={defaults.location}
-          className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
       </Field>
 
@@ -168,7 +169,7 @@ export function EventForm({
           type="text"
           maxLength={80}
           defaultValue={defaults.host}
-          className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
       </Field>
 
@@ -177,7 +178,7 @@ export function EventForm({
           id="url"
           name="url"
           type="url"
-          className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
       </Field>
 
@@ -189,9 +190,9 @@ export function EventForm({
           placeholder={derivedSlug}
           value={slugOverride}
           onChange={(e) => setSlugOverride(e.target.value)}
-          className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 font-mono text-sm"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm font-voice focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
-        <p className="mt-1 text-xs text-gray-500">{s("event.create.slug.hint")}</p>
+        <p className="mt-1 font-voice text-[11px] text-dust">{s("event.create.slug.hint")}</p>
       </Field>
 
       <Field id="body" label={s("event.create.field.body")}>
@@ -200,48 +201,44 @@ export function EventForm({
           name="body"
           rows={12}
           maxLength={50_000}
-          className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 font-mono text-sm"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm font-voice focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
           value={body}
           onChange={(e) => setBody(e.target.value)}
         />
       </Field>
 
       <div className="flex items-center gap-3">
-        <button
+        <Pill
           type="button"
+          variant="dashed"
           onClick={togglePreview}
           disabled={previewLoading}
-          className="rounded border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50 disabled:opacity-50"
         >
           {previewLoading
             ? s("event.create.preview.loading")
             : previewHtml !== null
               ? s("event.create.preview.hide")
               : s("event.create.preview.show")}
-        </button>
+        </Pill>
       </div>
 
       {previewHtml !== null ? (
         <div data-testid="event-body-preview">
           <SafeHtml
             html={previewHtml}
-            className="rounded border border-gray-200 bg-gray-50 p-3 prose prose-sm max-w-none"
+            className="bg-cream-deep border-l-[2px] border-l-ink p-3 prose prose-sm max-w-none"
           />
         </div>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded bg-gray-900 px-4 py-2 font-medium text-white disabled:opacity-50"
-      >
+      <Pill type="submit" variant="solid" disabled={submitting}>
         {submitting
           ? s("event.create.submit.pending")
           : s("event.create.submit.idle")}
-      </button>
+      </Pill>
 
       {error ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="font-voice text-[11px] text-alert">
           {error}
         </p>
       ) : null}
@@ -262,9 +259,12 @@ function Field({
 }): React.JSX.Element {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium">
+      <label
+        htmlFor={id}
+        className="block font-voice text-[11px] uppercase tracking-[1px] text-dust"
+      >
         {label}
-        {required ? <span className="ml-1 text-red-600">*</span> : null}
+        {required ? <span className="ml-1 text-alert">*</span> : null}
       </label>
       {children}
     </div>
