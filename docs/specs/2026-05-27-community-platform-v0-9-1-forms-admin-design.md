@@ -62,9 +62,9 @@ Two material decisions changed the plan's size and risk — scope breadth (named
 |---|----------|--------|-----------|
 | D1 | Reskin scope | **Complete rollout** — all remaining scaffolding-dirty surfaces incl. `/admin/invite`+`InviteForm`+`InviteUrlDisplay` and `/admin/events/new`+`EventForm` | "Finish the rollout" + the grep-discipline philosophy (close the book) + a warm admin page wrapping a neutral form reads as broken. Admin forms are admin-only (low blast radius); the cost of a third cleanup chat > one more implementer phase now. |
 | D2 | Write-path E2E | **Build E2E-mode in-memory mocks** for `rsvpEvent` + `thankStatus`; un-skip 5.4a/5.4b (keep the repo's `_test-*-store` pattern) | Literally what "backfill the write-path E2E" means; the `_test-status-store` precedent proves the pattern is clean; functional E2E for the two highest-value member writes is exactly the safety net the platform lacks. *Standards note:* the cleaner 2026 pattern is MSW server-side interception (mock the GitHub RPC boundary; no test forks in action code), but introducing it for only 2 of 6 write actions would fracture the suite + add a dep + non-trivial wiring → kept the consistent in-app pattern; suite-wide MSW migration logged to backlog (§13). |
-| D3 | Form-field styling | **`StatusEditor` verbatim (C6)** | Already the canonical shipped reskinned form; its buttons are byte-identical to `Pill` `solid`/`dashed` + `disabled:opacity-50`. No invention. |
-| D4 | Modal styling | **Native `<dialog>` + `.showModal()` (C7)** — warm tokens (`backdrop:bg-ink/50`, `bg-cream`/`border-ink` card, `font-display` title, `Pill` buttons) | Standards upgrade (2026 best practice): replaces the hand-rolled `role="dialog"` div with the native element → built-in Escape, top-layer, `inert` background, `::backdrop`; no manual focus trap needed (modern WAI-APA consensus). Closes the modal a11y gap **in v0.9.1** with *less* code than the raw `bg-black/40` + `bg-white rounded` + `neutral-*` buttons it replaces. |
-| D5 | Admin metrics | **Metric-tile + table recipe (C8)** — `bg-paper border-l-[3px] border-l-ink` tile + `font-voice tabular-nums text-ink` number + tokenized table | Maps cleanly onto existing tokens; drops `rounded border` + `neutral-600/500`. |
+| D3 | Form-field styling | **`StatusEditor` verbatim (C7)** | Already the canonical shipped reskinned form; its buttons are byte-identical to `Pill` `solid`/`dashed` + `disabled:opacity-50`. No invention. |
+| D4 | Modal styling | **Native `<dialog>` + `.showModal()` (C8)** — warm tokens (`backdrop:bg-ink/50`, `bg-cream`/`border-ink` card, `font-display` title, `Pill` buttons) | Standards upgrade (2026 best practice): replaces the hand-rolled `role="dialog"` div with the native element → built-in Escape, top-layer, `inert` background, `::backdrop`; no manual focus trap needed (modern WAI-APA consensus). Closes the modal a11y gap **in v0.9.1** with *less* code than the raw `bg-black/40` + `bg-white rounded` + `neutral-*` buttons it replaces. |
+| D5 | Admin metrics | **Metric-tile + table recipe (C9)** — `bg-paper border-l-[3px] border-l-ink` tile + `font-voice tabular-nums text-ink` number + tokenized table | Maps cleanly onto existing tokens; drops `rounded border` + `neutral-600/500`. |
 | D6 | `Pill` extension | **Add `disabled:opacity-50` (BASE) + a `danger` variant; refactor `StatusEditor` + `GdprPanel` to consume `Pill`** | The followup's "accept `disabled` cleanly": Pill already takes a `disabled` *prop* but has no disabled *visual*; `GdprPanel` also hand-rolls an alert-bordered delete → needs a `danger` variant. Touches the shipped `Pill` → re-smoke heroes (same discipline as v0.9 D5). |
 | D7 | ConsentModal a11y | **REVISED after standards validation → adopt native `<dialog>` now (no v0.9.2 deferral)** | Originally I deferred focus management to keep the reskin className-only. The 2026 standards check showed native `<dialog>` + `.showModal()` delivers conformant modal behavior with *less* code than a manual trap — so it's both the standard and the smaller change. ConsentModal is a leaf presentational component (logic in `ConsentClient` untouched), so the behavioral upgrade is low-risk and in-scope. |
 | D8 | Spec doc home | **§19.1 sub-section** (matching the §18.1 point-release precedent) | v0.9.1 is §19's own explicitly-deferred slice ("forms/admin slice → v0.9.1"), not a new theme. |
@@ -75,7 +75,7 @@ Two material decisions changed the plan's size and risk — scope breadth (named
 
 The reader recipe (`v0.9.0-plan.md` **C1**–**C5**) is reused verbatim. v0.9.1 documents three additions in the plan's Conventions block. None is a new component; each is a documented convention lifted from shipped code + tokens.
 
-### C6 — form-field recipe (= `StatusEditor` verbatim)
+### C7 — form-field recipe (= `StatusEditor` verbatim)
 ```
 form:     bg-paper border-l-[3px] border-l-ink px-4 py-4
 label:    block font-voice text-[11px] uppercase tracking-[1px] text-dust
@@ -86,7 +86,7 @@ message:  font-voice text-[11px]  →  text-alert (error) | text-dust (ok)
 ```
 Applies to: `ProfileEditor` (textarea + tabs), `OnboardForm`, `EventForm`, `InviteForm`. Markdown previews use **`.prose-warm`** (C2) — `@tailwindcss/typography` is not installed, so `prose prose-neutral` is a no-op today.
 
-### C7 — modal recipe (native `<dialog>` — standards upgrade)
+### C8 — modal recipe (native `<dialog>` — standards upgrade)
 **Use the native HTML `<dialog>` element opened with `.showModal()`** — the current (2026) best practice for accessible modals (W3C APG / WCAG 2.2). It puts the dialog in the top layer, marks background content `inert`, and provides Escape-to-close + `::backdrop` natively; the modern WAI-APA consensus is that a manual JS focus trap is **not** needed (and is discouraged — users must retain access to browser chrome). This *replaces* the hand-rolled `role="dialog"` div, which today has **no** focus management at all.
 ```
 element:  <dialog ref> — ref.showModal() on mount; .close() via onAccept/onCancel
@@ -100,7 +100,7 @@ a11y:     implicit role="dialog" + aria-modal="true" (from showModal); keep expl
 ```
 Applies to: `ConsentModal` (leaf presentational component — `ConsentClient`'s consent *logic* untouched).
 
-### C8 — metric-tile + table recipe
+### C9 — metric-tile + table recipe
 ```
 tile:     bg-paper border-l-[3px] border-l-ink p-4
 number:   font-voice text-[40px] tabular-nums text-ink
@@ -137,9 +137,9 @@ Applies to: `/admin/health`.
 
 | Phase | Work | Notes |
 |---|---|---|
-| **1 — Shared contracts + Pill** | Add `disabled:opacity-50` + `danger` to `Pill`; document C6/C7/C8; refactor `StatusEditor` (solid+dashed) + `GdprPanel` (solid+danger) to consume `Pill` | Touches shipped `Pill` → **re-smoke the 4 hero surfaces** |
-| **2 — Member forms** | `/me/edit`+`ProfileEditor` (incl. `.prose-warm` preview + tabs), `/consent`+`ConsentClient`+`ConsentModal` (C7 — **upgrade to native `<dialog>`**), `/onboard`+`OnboardForm`+`/onboard/error`, `/no-access` | className-only on auth/consent/save logic; ConsentModal `<dialog>` upgrade is a leaf-component behavioral change (consent logic untouched) |
-| **3 — Admin surfaces** | `/admin/health` (C8), `/admin/invite`+`InviteForm`+`InviteUrlDisplay`, `/admin/events/new`+`EventForm` (C6 ×many fields) | admin-gated; className-only on RBAC + write actions |
+| **1 — Shared contracts + Pill** | Add `disabled:opacity-50` + `danger` to `Pill`; document C7/C8/C9; refactor `StatusEditor` (solid+dashed) + `GdprPanel` (solid+danger) to consume `Pill` | Touches shipped `Pill` → **re-smoke the 4 hero surfaces** |
+| **2 — Member forms** | `/me/edit`+`ProfileEditor` (incl. `.prose-warm` preview + tabs), `/consent`+`ConsentClient`+`ConsentModal` (C8 — **upgrade to native `<dialog>`**), `/onboard`+`OnboardForm`+`/onboard/error`, `/no-access` | className-only on auth/consent/save logic; ConsentModal `<dialog>` upgrade is a leaf-component behavioral change (consent logic untouched) |
+| **3 — Admin surfaces** | `/admin/health` (C9), `/admin/invite`+`InviteForm`+`InviteUrlDisplay`, `/admin/events/new`+`EventForm` (C7 ×many fields) | admin-gated; className-only on RBAC + write actions |
 | **4 — Write-path E2E mocks** | `_test-rsvp-store.ts` + `_test-thank-store.ts` + `fromMock` forks + reset routes; un-skip 5.4a/5.4b | mirror `_test-status-store` exactly (prod double-guard + `globalThis` hop) |
 | **5 — E2E hygiene** | Update routing assertions to ADR-0012/0014 model; `test.skip` prod-only `v0-4-shell` specs when `PLAYWRIGHT_BASE_URL` ≠ prod | no coverage deleted |
 | **6 — Followup + closeout** | `members/[slug]` `<code>`; final `dark:` grep-guard (still 0); per-surface source-scan tests (H104–H110); CHANGELOG + STATE flip + tag `community-platform-v0.9.1` | |
@@ -198,9 +198,9 @@ className-only; no rendering-strategy changes. `/me/edit`, `/this-week`, `/membe
 | ID | Hardening | Test approach |
 |---|---|---|
 | **H104** | `Pill` gains `disabled:opacity-50` + `danger` variant; no consumer hand-rolls the Pill look (`StatusEditor`/`GdprPanel` migrated) | `Pill` source-scan + grep: hand-rolled `border-[1.5px] … border-ink` button classes absent from `StatusEditor`/`GdprPanel` |
-| **H105** | Form surfaces use the C6 recipe — no `neutral-*`/`gray-*`/`rounded border`; `bg-paper`/`bg-cream-deep` fields + `Pill` buttons | per-surface source-scan (C4-derived) |
-| **H106** | `ConsentModal` uses native `<dialog>`+`.showModal()` (C7) — `backdrop:bg-ink/50`, `bg-cream`/`border-ink` card, `Pill` buttons, explicit `aria-labelledby`; no manual focus-trap lib | source-scan (`<dialog>` + `showModal` present; old `role="dialog"` div absent) + a11y assertion |
-| **H107** | `/admin/health` tile + table tokenized (C8) — `border-l-ink` tile, `tabular-nums` number, no `rounded border`/`neutral-*` | source-scan |
+| **H105** | Form surfaces use the C7 recipe — no `neutral-*`/`gray-*`/`rounded border`; `bg-paper`/`bg-cream-deep` fields + `Pill` buttons | per-surface source-scan (C4-derived) |
+| **H106** | `ConsentModal` uses native `<dialog>`+`.showModal()` (C8) — `backdrop:bg-ink/50`, `bg-cream`/`border-ink` card, `Pill` buttons, explicit `aria-labelledby`; no manual focus-trap lib | source-scan (`<dialog>` + `showModal` present; old `role="dialog"` div absent) + a11y assertion |
+| **H107** | `/admin/health` tile + table tokenized (C9) — `border-l-ink` tile, `tabular-nums` number, no `rounded border`/`neutral-*` | source-scan |
 | **H108** | `ProfileEditor` preview uses `.prose-warm` (replaces no-op `prose prose-neutral`) | source-scan |
 | **H109** | RSVP + Thanks E2E mocks carry the prod double-guard `!isProductionRuntime() && isE2EMode()` | source-scan asserts the guard literal; E2E green |
 | **H110** | `members/[slug]` empty-state path/slug rendered in `<code>` (mono affordance restored) | source-scan + render test |
@@ -223,7 +223,7 @@ className-only; no rendering-strategy changes. `/me/edit`, `/this-week`, `/membe
 ## 12. Risks & watch-items
 
 - **`Pill` change touches a shipped primitive** used on heroes → re-smoke `/`, `/home`, `/events`, `/events/[slug]` (the `danger` variant is additive; existing 3 variants untouched, but `disabled:opacity-50` is new on BASE).
-- **`EventForm` (272 LOC, 13 hits) is the heaviest reskin** — many fields; mechanical via C6 but the largest single diff. Keep the create-event server action + Zod schema untouched.
+- **`EventForm` (272 LOC, 13 hits) is the heaviest reskin** — many fields; mechanical via C7 but the largest single diff. Keep the create-event server action + Zod schema untouched.
 - **Mock forks add behavior to write-path logic** — strictly test-mode-guarded (D2/H109); the security lane gates this. Mirror `_test-status-store` rather than inventing.
 - **`/me/edit`, `/admin/*`, `/this-week`, `/members/[slug]`** are `force-dynamic` + auth/RBAC — reskins stay className-only.
 - **ConsentModal `<dialog>` upgrade** (D7, standards-driven) is the one behavioral change across the reskin phases — wire `.showModal()` on mount + map Escape/`cancel` → `onCancel` + the two `Pill` actions; verify in smoke that focus moves into the dialog on open and returns to the trigger on `.close()`. `ConsentClient`'s consent logic stays untouched.
@@ -256,7 +256,7 @@ Validated the spec's pattern choices against current industry standards (Anton's
 
 | Area | Verdict | Action |
 |---|---|---|
-| **Modal** | Native `<dialog>`+`.showModal()` is the 2026 best practice (top-layer, `inert` background, Escape, `::backdrop`); modern WAI-APA consensus: **no manual focus trap** (that guidance predates `<dialog>`/`inert`; users must keep browser-chrome access). | **Improved** — C7 now uses native `<dialog>`; retired the D7 v0.9.2 focus-mgmt deferral (the standard *and* less code). |
+| **Modal** | Native `<dialog>`+`.showModal()` is the 2026 best practice (top-layer, `inert` background, Escape, `::backdrop`); modern WAI-APA consensus: **no manual focus trap** (that guidance predates `<dialog>`/`inert`; users must keep browser-chrome access). | **Improved** — C8 now uses native `<dialog>`; retired the D7 v0.9.2 focus-mgmt deferral (the standard *and* less code). |
 | **Playwright** | `getByRole` + web-first assertions + `trace:'on-first-retry'` + programmatic auth confirmed current; `storageState` setup-project is the caching optimization. | **Confirmed** — already in spec; added `storageState` as an optional optimization (§6). |
 | **Server-action E2E mocking** | Two valid patterns: in-app flag-gated mock (repo's `_test-*-store`) vs MSW server-side RPC interception (cleaner; "mock the boundary, not the action"). | **Confirmed + backlogged** — kept the consistent in-app pattern (4-store precedent, proven, scope-contained); suite-wide MSW migration → §13. Prod double-guard (H109) is defense-in-depth, already aligned. |
 | **WCAG 2.2** | Target 2.5.8 (24px), contrast 1.4.3/1.4.11, focus 2.4.7/2.4.11, dialog name/role/value 4.1.2 — all already addressed. | **Confirmed** — no corrections. |
