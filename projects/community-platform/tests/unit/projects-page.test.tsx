@@ -27,17 +27,35 @@ describe("Projects page v0.8.1 — cream-aesthetic, no dark: variants", () => {
     expect(src).not.toMatch(/\bdark:/);
   });
 
-  it("uses cream-aesthetic hover token (bg-cream-deep)", () => {
-    expect(src).toMatch(/hover:bg-cream-deep/);
+  it("uses cream-aesthetic tokens (bg-paper via ListItem)", () => {
+    // v0.9: cards use ListItem (bg-paper / hover:bg-cream inside that primitive)
+    expect(src).toMatch(/ListItem/);
   });
 
-  it("uses font-voice + text-dust on the slug line (v0.8 §5.2 voice contract)", () => {
-    expect(src).toMatch(/font-voice/);
-    expect(src).toMatch(/text-dust/);
+  it("passes slug as subtitle to ListItem (v0.8 §5.2 voice contract — now via ListItem)", () => {
+    // v0.9: slug rendered as ListItem subtitle (ListItem renders font-voice text-dust internally)
+    expect(src).toMatch(/subtitle/);
+    expect(src).toMatch(/ListItem/);
   });
 
   it("no longer uses the neutral-* color scale", () => {
     expect(src).not.toMatch(/\btext-neutral-/);
     expect(src).not.toMatch(/\bbg-neutral-/);
+  });
+
+  // v0.9 Phase 2.5 additions
+  it("uses font-display h1 (Geist heading per v0.9 recipe)", () => {
+    expect(src).toMatch(/font-display/);
+    expect(src).toMatch(/text-ink/);
+  });
+
+  it("has no duplicate in-page Home link (lives in global Header)", () => {
+    expect((src.match(/>Home</g) ?? []).length).toBe(0);
+  });
+
+  it("uses no rounded/border scaffolding framing on cards", () => {
+    expect(src).not.toMatch(/\brounded\b/);
+    // No raw border class on card wrapper (ListItem or flat bg-paper card is fine)
+    expect(src).not.toMatch(/className=".*\bborder\b[^-]/);
   });
 });
