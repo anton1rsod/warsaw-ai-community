@@ -3801,3 +3801,44 @@ Three small fixes surfaced by Anton's post-v0.8.0 prod smoke. **No business-logi
 ### Amendment 3 — Projects page hover contrast (out-of-scope cleanup, v0.1 scaffolding leftover)
 
 `app/projects/page.tsx` was never refactored through the v0.4 / v0.6 / v0.7 redesigns and carried Tailwind `dark:` variants from the original v0.1 scaffolding. macOS-dark-mode viewers saw an unreadable dark-text-on-dark-flipped-bg hover state on project cards. v0.8.1 strips the `dark:` variants from this file and brings the project-card hover into the platform's cream-aesthetic contract: `hover:bg-cream-deep`, slug rendered in `font-voice text-[12px] text-dust`. **Larger Projects-page typographic polish (Geist h1, drop the duplicate "Home" link, replace `rounded border` with the v0.6 flat aesthetic) is explicitly deferred to a future v0.9 page-by-page sweep.**
+
+## §19 v0.9 — Redesign completion (reader surfaces) + `dark:` landmine resolution (chat-45 / 2026-05-27)
+
+Applies the locked v0.6→v0.8 warm-maximalist system (cream/ink/dust tokens + Geist/Inter/JetBrains + `MonoLabel`/`Pill`/`ListItem`/`EventCard`/`EmptyState`) to the un-redesigned **reader** surfaces, and resolves a platform-wide **`dark:` Tailwind landmine** (27 files / 74 variants firing under macOS dark mode against a palette that was never built). Picks up the "future v0.9 page-by-page sweep" named in §18.1. **Application, not invention** — design language, tokens, and primitives are all live in production; `ListItem`'s docstring already named `/calendar`//`members`//`projects`//`decisions` as intended consumers. **Design (canonical):** `docs/specs/2026-05-27-community-platform-v0-9-redesign-completion-design.md`. **Plan:** `projects/community-platform/v0.9.0-plan.md` (via `superpowers:writing-plans`). **Scope sliced:** readers + `/login` = **v0.9.0**; stateful forms/admin (`/me/edit`, `/consent`, `/onboard`, `/admin/*`, `/no-access`) = **v0.9.1** (kept safe by the Phase-1 flip).
+
+### Scope (6 phases — subagent-driven, one implementer per phase)
+
+1. **Foundation** — flip `tailwind.config.ts` `darkMode: "selector"` (dead-codes all 74 variants; no `.dark` ancestor is ever rendered — grep-proven); re-skin `Tag.tsx` in place; enlarge `Pill` hit target to ≥24px (`min-h-[24px]` + `inline-flex items-center`); clean the `dark:` leftover on `/events/[slug]`; write the reader-page recipe + `.prose-warm` convention.
+2. **Reader indexes** — `/calendar`, `/decisions`, `/meetings`, `/members` (reskin the 2-col card grid), `/projects` (finish §18.1 deferrals: Geist h1, drop duplicate "Home" link, flat aesthetic), `/this-week`.
+3. **Reader details + handbook** — `/decisions/[slug]`, `/meetings/[slug]`, `/members/[slug]`, `/projects/[slug]`, `/handbook` (`.prose-warm` tokenized prose; `/members/[slug]` + `/this-week` reskins stay className-only — force-dynamic auth surfaces).
+4. **`/login`** — sign-in CTA via `Pill` (AA-safe ink-on-amber, not the v0.4-failed `text-white` on `bg-accent-500`).
+5. **Functional E2E (per-slice)** — discovery/nav, ICS subscribe, AddToCalendar, RSVP toggle, Thanks, status post — Playwright 1.59 standards (role-based locators, web-first assertions, no `waitForTimeout`); + extend the axe a11y sweep to every new reader surface.
+6. **Closeout** — `dark:` final sweep (grep-guard zero in `app/`) + CHANGELOG + STATE flip + tag `community-platform-v0.9.0`.
+
+### Out of scope (deferred)
+
+- **Forms / admin surfaces + their write-path E2E** → v0.9.1 (safe after the flip).
+- **Tailwind v4 migration** — v4 is the industry-current major; we're on latest v3 (3.4.19). Breaking, repo-wide effort; out of scope for a CSS reskin (own future cycle).
+- **Real dark mode** (200+ contrast pairs + toggle) — contradicts the fixed-cream brand (v0.6 O8); needs an ADR if ever greenlit.
+- **CSP / security headers** (chat-23 §7) — separate security-mode scope.
+
+### Decisions (locked in chat-45 brainstorm + standards verification)
+
+D1 dark posture = flip + opportunistic purge + final sweep · D2 `darkMode: "selector"` (not `"class"` — `selector` replaced `class` in Tailwind 3.4.1) · D3 scope = readers + `/login`, defer forms/admin → v0.9.1 · D4 per-slice E2E against final templates · D5 `Pill` enlarged to 24px (WCAG 2.2 SC 2.5.8 AA; touches shipped primitive → re-smoke heroes) · D6 `Tag` re-skinned in place (keeps label role + O12 accent-for-`proposed`) · D7 `/members` keeps card grid · D8 `StatusEditor` post-status E2E authored in v0.9.
+
+### Hardenings
+
+H97. `darkMode === "selector"` config source-scan (no silent revert to media). · H98. Zero `dark:` variants in `app/` after final sweep (grep-guard). · H99. Reader surfaces use recipe tokens — no `neutral-*`/`gray-*`/`rounded border` scaffolding (per-surface source-scan). · H100. `Tag.tsx` re-skin meets AA contrast. · H101. Interactive chips meet 24×24 target (or documented Spacing exception); `Pill` asserts `min-h-[24px]`. · H102. axe a11y sweep covers every v0.9 reader surface. · H103. Recipe a11y invariant — `<main id="main">`, single `<h1>`, `MonoLabel` section labels, focus-visible on interactives.
+
+### Tests
+
+- Per-surface source-scan tests (generalize v0.8.1 `projects-page.test.tsx`: no `dark:`, no scaffolding classes, recipe tokens present).
+- Per-phase full-suite verify (`pnpm test` + `tsc --noEmit` + `lint`) at every boundary; extended axe sweep after each phase.
+- 3-lane reviewer triage (security / typescript / code-quality) before merge.
+- **Mandatory soft-nav + hover/focus smoke** on every reskinned surface (`browser_click` a nav link + `browser_hover` cards — not just `goto`+screenshot; per `feedback_visual_smoke_soft_nav_hover`). Re-smoke the 4 hero surfaces after the Pill 24px change.
+
+### ADR note
+
+No new ADR — `darkMode: "selector"` is reversible config; the redesign applies ADR-0014's locked warm-amber system to more surfaces. A real dark-mode build would need its own ADR.
+
+*This § (§19) drafted 2026-05-27 in chat-45 from the brainstorm + standards-verification locks captured at `docs/specs/2026-05-27-community-platform-v0-9-redesign-completion-design.md`. All scope/posture decisions D1–D8 locked inline; standards verified against current sources (Tailwind v3.4 docs, WCAG 2.2 SC 2.5.8). Reader-surface RESKIN verdicts (zero layout rethinks) from an Explore inventory. Next chat: `superpowers:writing-plans` → `v0.9.0-plan.md`.*
