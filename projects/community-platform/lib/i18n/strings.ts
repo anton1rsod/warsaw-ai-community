@@ -50,12 +50,39 @@ export const strings = {
     "No upcoming events — next weekly sync is Wednesday at 18:30.",
 
   // ─── calendar.* (/calendar route) ───────────────────────────────────────
-  "calendar.title": "Calendar",
+  "calendar.title": "Calendar.",
+  "calendar.kicker": "// calendar",
   "calendar.filter.all": "All",
   "calendar.filter.events": "Events",
   "calendar.filter.meetings": "Meetings",
-  "calendar.upcoming": "Upcoming",
-  "calendar.subscribe": "Subscribe to calendar",
+  "calendar.upcoming": "// upcoming",
+  "calendar.subscribe": "subscribe (ICS)",
+
+  // ─── decisions.* (/decisions route) ─────────────────────────────────────
+  "decisions.title": "Decisions.",
+  "decisions.kicker": "// decisions · ADR log",
+  "decisions.sectionLabel": "// all records",
+
+  // ─── meetings.index.* (/meetings route) ──────────────────────────────────
+  "meetings.index.title": "Meetings.",
+  "meetings.index.kicker": "// meetings",
+  "meetings.index.subscribeIcs": "subscribe (ICS)",
+
+  // ─── members.index.* (/members route) ────────────────────────────────────
+  "members.index.title": "Members.",
+  "members.index.kickerFmt": "// members · {count}",
+  "members.index.sectionLabel": "// community",
+
+  // ─── projects.index.* (/projects route) ──────────────────────────────────
+  "projects.index.title": "Projects.",
+  "projects.index.kicker": "// projects",
+  "projects.index.sectionLabel": "// active",
+
+  // ─── thisWeek.* (/this-week route) ───────────────────────────────────────
+  "thisWeek.title": "This week.",
+  "thisWeek.kickerFmt": "// this week · {week}",
+  "thisWeek.yourUpdate": "// your update",
+  "thisWeek.othersLabelFmt": "// others · {count}",
 
   // ─── handbook.* (/handbook route) ───────────────────────────────────────
   "handbook.title": "Handbook",
