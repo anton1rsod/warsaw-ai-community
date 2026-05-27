@@ -8,6 +8,14 @@ import {
 } from "@/lib/content-snapshot";
 import { parseProfileFrontmatter } from "@/lib/profile-editor";
 import { EventSlugSchema } from "@/lib/events";
+import {
+  isE2EMode,
+  mockRsvpActions,
+} from "@/app/actions/_test-rsvp-store";
+
+function isProductionRuntime(): boolean {
+  return process.env.NODE_ENV === "production";
+}
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +79,18 @@ export async function GET(req: Request): Promise<Response> {
     return jsonError("invalid_slug", 400);
   }
   const slug = parsedSlug.data;
+
+  if (!isProductionRuntime() && isE2EMode()) {
+    const mockState = await mockRsvpActions.getState(slug);
+    // getState returns null only when auth fails (not_authenticated /
+    // not_a_member). In that case the 401/403 path above already returned,
+    // but guard defensively. Use a stable non-empty sha so the client's
+    // isHydrationResponse guard (profileSha.length > 0) is satisfied.
+    return NextResponse.json(
+      mockState ?? { state: "none" as const, profileSha: "mockrsvpsha-0" },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
+  }
 
   const known = listEventsFromSnapshot().some((e) => e.slug === slug);
   if (!known) {
