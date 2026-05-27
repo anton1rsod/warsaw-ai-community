@@ -93,6 +93,12 @@ export const strings = {
   "projects.index.title": "Projects.",
   "projects.index.kicker": "// projects",
   "projects.index.sectionLabel": "// active",
+  "projects.detail.backLink": "← Projects",
+  "projects.detail.topContributors": "Top contributors",
+  "projects.detail.contributorsNote": "Derived from git history. Bot commits excluded.",
+  "projects.detail.recognizeContributors": "// recognize contributors",
+  "projects.detail.askGbrain": "Ask GBrain about this project →",
+  "projects.detail.noContributors": "No contributors yet.",
 
   // ─── thisweek.* (/this-week route) ──────────────────────────────────────
   "thisweek.title": "This week.",

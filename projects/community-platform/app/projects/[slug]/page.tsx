@@ -9,9 +9,11 @@ import {
 import { TopContributors } from "@/app/components/TopContributors";
 import { AskGBrainButton } from "@/app/components/AskGBrainButton";
 import { ThankButton } from "@/app/components/ThankButton";
+import { MonoLabel } from "@/app/components/MonoLabel";
 import { renderMarkdownToHtml } from "@/lib/markdown";
 import { SafeHtml } from "@/app/components/SafeHtml";
 import { env } from "@/lib/env";
+import { s } from "@/lib/i18n/strings";
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   return listProjectDetails().map((p) => ({ slug: p.slug }));
@@ -43,19 +45,21 @@ export default async function ProjectPage({
   ];
 
   const rendered: RenderedSection[] = await Promise.all(
-    sections.map(async (s) => ({
-      title: s.title,
-      html: s.body ? await renderMarkdownToHtml(s.body) : null,
+    sections.map(async (sec) => ({
+      title: sec.title,
+      html: sec.body ? await renderMarkdownToHtml(sec.body) : null,
     })),
   );
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
-      <Link href="/projects" className="text-sm underline">
-        ← Projects
+    <main id="main" className="mx-auto max-w-3xl px-6 py-10">
+      <Link href="/projects" className="font-voice text-[11px] text-dust underline underline-offset-2">
+        {s("projects.detail.backLink")}
       </Link>
-      <h1 className="mt-4 text-3xl font-semibold">{project.title}</h1>
-      <p className="mt-1 font-mono text-sm text-neutral-600 dark:text-neutral-400">
+      <h1 className="mt-4 font-display font-semibold text-[40px] leading-[0.95] tracking-tight text-ink">
+        {project.title}
+      </h1>
+      <p className="mt-1 font-voice text-[11px] text-dust">
         projects/{project.slug}/
       </p>
 
@@ -70,13 +74,11 @@ export default async function ProjectPage({
 
       {contributors.length > 0 ? (
         <section className="mt-6">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-            Recognize contributors
-          </h2>
+          <MonoLabel>{s("projects.detail.recognizeContributors")}</MonoLabel>
           <ul className="mt-2 space-y-1">
             {contributors.map((c) => (
-              <li key={c.handle} className="flex items-center gap-3 text-sm">
-                <span className="text-neutral-700 dark:text-neutral-300">
+              <li key={c.handle} className="flex items-center gap-3">
+                <span className="font-voice text-[11px] text-ink">
                   @{slugFor(c.handle)}
                 </span>
                 <ThankButton
@@ -91,17 +93,17 @@ export default async function ProjectPage({
         </section>
       ) : null}
 
-      {rendered.map((s) => (
-        <section key={s.title} className="mt-8">
-          <h2 className="text-xl font-medium">{s.title}</h2>
-          {s.html ? (
+      {rendered.map((sec) => (
+        <section key={sec.title} className="mt-8">
+          <MonoLabel>{sec.title}</MonoLabel>
+          {sec.html ? (
             <SafeHtml
-              html={s.html}
-              className="prose prose-neutral dark:prose-invert mt-2 max-w-none"
+              html={sec.html}
+              className="prose-warm mt-2"
             />
           ) : (
-            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-              No <code>{s.title.toLowerCase()}.md</code>.
+            <p className="mt-2 font-voice text-[11px] text-dust">
+              No <code className="font-voice text-dust">{sec.title.toLowerCase()}.md</code>.
             </p>
           )}
         </section>
