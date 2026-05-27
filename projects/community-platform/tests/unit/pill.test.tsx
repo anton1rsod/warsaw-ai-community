@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Pill } from "@/app/components/Pill";
 
+const pillSrc = readFileSync(resolve(__dirname, "../../app/components/Pill.tsx"), "utf8");
+
 afterEach(cleanup);
 
 describe("H101: Pill meets WCAG 2.2 SC 2.5.8 target size (>=24px)", () => {
@@ -74,5 +76,22 @@ describe("Pill", () => {
       expect(el.className).toMatch(/focus-visible:bg-accent-500/);
       expect(el.className).toMatch(/focus-visible:text-ink/);
     });
+  });
+});
+
+describe("v0.9.1 H104: Pill disabled visual + danger variant", () => {
+  it("BASE includes a disabled-opacity treatment", () => {
+    expect(pillSrc).toMatch(/disabled:opacity-50/);
+  });
+  it("exposes a `danger` variant (alert border/text)", () => {
+    const { container } = render(<Pill variant="danger" type="button">Delete</Pill>);
+    const cls = container.querySelector("button")?.className ?? "";
+    expect(cls).toMatch(/border-alert/);
+    expect(cls).toMatch(/text-alert/);
+    expect(cls).toMatch(/hover:bg-alert/);
+  });
+  it("renders a disabled button when disabled", () => {
+    const { container } = render(<Pill variant="solid" type="button" disabled>X</Pill>);
+    expect(container.querySelector("button")?.disabled).toBe(true);
   });
 });
