@@ -68,6 +68,8 @@ export const strings = {
   "meetings.index.title": "Meetings.",
   "meetings.index.kicker": "// meetings",
   "meetings.index.subscribeIcs": "subscribe (ICS)",
+  "meetings.detail.backLink": "← Meetings",
+  "meetings.detail.addToCalendar": "Add to Calendar",
 
   // ─── members.index.* (/members route) ────────────────────────────────────
   "members.index.title": "Members.",

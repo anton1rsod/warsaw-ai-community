@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { Pill } from "@/app/components/Pill";
 
 interface AddToCalendarButtonProps {
   ics: string;
@@ -27,12 +28,8 @@ export function AddToCalendarButton({
   }, [ics, filename]);
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="rounded border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
-    >
+    <Pill type="button" variant="dashed" onClick={handleClick}>
       Add to Calendar
-    </button>
+    </Pill>
   );
 }

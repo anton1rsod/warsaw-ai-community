@@ -30,7 +30,7 @@ export function ThankButton({
     return (
       <a
         href="/login?callbackUrl=/this-week"
-        className="text-xs text-neutral-500 hover:underline"
+        className="font-voice text-[10px] text-dust underline underline-offset-2 hover:text-ink"
       >
         Sign in to thank
       </a>
@@ -62,23 +62,21 @@ export function ThankButton({
   }
 
   return (
-    <span className="inline-block">
+    <span className="inline-flex items-center gap-2">
       <button
         type="button"
         onClick={submit}
         disabled={isPending || state === "thanked"}
-        className={`rounded-full px-2 py-0.5 text-xs font-medium transition ${
+        className={`min-h-[24px] inline-flex items-center px-[11px] py-[4px] font-voice font-bold text-[10px] transition-colors duration-150 ${
           state === "thanked"
-            ? "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200"
-            : "border border-neutral-300 text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-900"
+            ? "bg-accent-50 text-accent-700 border-[1.5px] border-solid border-accent-700"
+            : "border-[1.5px] border-dashed border-ink text-ink bg-transparent hover:bg-ink hover:text-cream"
         }`}
       >
         {state === "thanked" ? "♥ Thanked" : "+ Thanks"}
       </button>
       {errMsg ? (
-        <span className="ml-2 text-xs text-red-700 dark:text-red-300">
-          {errMsg}
-        </span>
+        <span className="font-voice text-[10px] text-alert">{errMsg}</span>
       ) : null}
     </span>
   );
