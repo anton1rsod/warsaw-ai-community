@@ -21,10 +21,13 @@ test.describe("members", () => {
 
   test("clicking a member opens profile with persona panel", async ({ page }) => {
     await page.goto("/members");
-    const firstLink = page.locator("li a").first();
+    // Scope to the members grid section to avoid matching nav <li> items.
+    const membersSection = page.locator("section[aria-labelledby='members-heading']");
+    const firstLink = membersSection.locator("li a").first();
     await firstLink.click();
     await expect(page).toHaveURL(/\/members\/[\w-]+$/);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByRole("heading", { name: /persona/i, level: 3 })).toBeVisible();
+    // PersonaPanel renders "Persona" as a MonoLabel (<p>), not an <h3>.
+    await expect(page.getByText("Persona", { exact: true })).toBeVisible();
   });
 });
