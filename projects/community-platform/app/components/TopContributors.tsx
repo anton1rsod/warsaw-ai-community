@@ -29,7 +29,7 @@ export function TopContributors({
 
   return (
     <section className="mt-6 border-[1.5px] border-ink bg-paper p-4">
-      <MonoLabel>Top contributors</MonoLabel>
+      <MonoLabel as="h2">Top contributors</MonoLabel>
       <p className="mt-1 font-voice text-[10px] text-dust">
         Derived from git history. Bot commits excluded.
       </p>
