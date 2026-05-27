@@ -78,11 +78,11 @@ export const strings = {
   "projects.index.kicker": "// projects",
   "projects.index.sectionLabel": "// active",
 
-  // ─── thisWeek.* (/this-week route) ───────────────────────────────────────
-  "thisWeek.title": "This week.",
-  "thisWeek.kickerFmt": "// this week · {week}",
-  "thisWeek.yourUpdate": "// your update",
-  "thisWeek.othersLabelFmt": "// others · {count}",
+  // ─── thisweek.* (/this-week route) ──────────────────────────────────────
+  "thisweek.title": "This week.",
+  "thisweek.kickerFmt": "// this week · {week}",
+  "thisweek.yourUpdate": "// your update",
+  "thisweek.othersLabelFmt": "// others · {count}",
 
   // ─── handbook.* (/handbook route) ───────────────────────────────────────
   "handbook.title": "Handbook",

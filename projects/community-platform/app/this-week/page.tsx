@@ -136,8 +136,8 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
 
   const myStripped = my ? parseMarkdown(my.body).body : null;
 
-  const kickerText = s("thisWeek.kickerFmt").replace("{week}", week);
-  const othersLabel = s("thisWeek.othersLabelFmt").replace(
+  const kickerText = s("thisweek.kickerFmt").replace("{week}", week);
+  const othersLabel = s("thisweek.othersLabelFmt").replace(
     "{count}",
     String(renderedOthers.length),
   );
@@ -146,7 +146,7 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
     <main id="main" className="mx-auto max-w-3xl px-6 py-10">
       <MonoLabel>{kickerText}</MonoLabel>
       <h1 className="mt-2 font-display font-semibold text-[40px] leading-[0.95] tracking-tight text-ink">
-        {s("thisWeek.title")}
+        {s("thisweek.title")}
       </h1>
 
       <div className="mt-6">
@@ -155,7 +155,7 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
 
       {member ? (
         <section aria-labelledby="your-update-heading" className="mt-8">
-          <MonoLabel>{s("thisWeek.yourUpdate")}</MonoLabel>
+          <MonoLabel>{s("thisweek.yourUpdate")}</MonoLabel>
           <h2 id="your-update-heading" className="sr-only">
             Your update
           </h2>
