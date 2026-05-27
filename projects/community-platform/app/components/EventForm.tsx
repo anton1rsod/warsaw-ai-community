@@ -190,7 +190,7 @@ export function EventForm({
           placeholder={derivedSlug}
           value={slugOverride}
           onChange={(e) => setSlugOverride(e.target.value)}
-          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm font-voice focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 text-ink text-sm font-voice focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
         <p className="mt-1 font-voice text-[11px] text-dust">{s("event.create.slug.hint")}</p>
       </Field>
@@ -201,7 +201,7 @@ export function EventForm({
           name="body"
           rows={12}
           maxLength={50_000}
-          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm font-voice focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 text-ink text-sm font-voice focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
           value={body}
           onChange={(e) => setBody(e.target.value)}
         />
@@ -226,7 +226,7 @@ export function EventForm({
         <div data-testid="event-body-preview">
           <SafeHtml
             html={previewHtml}
-            className="bg-cream-deep border-l-[2px] border-l-ink p-3 prose prose-sm max-w-none"
+            className="bg-cream-deep border-l-[2px] border-l-ink p-3 prose-warm max-w-none"
           />
         </div>
       ) : null}

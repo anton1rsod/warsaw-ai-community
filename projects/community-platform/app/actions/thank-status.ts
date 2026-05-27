@@ -91,7 +91,7 @@ function fromMockThank(result: MockThankResult): ThankResult {
   if (result.ok) return { ok: true, already_thanked: result.already_thanked };
   return {
     ok: false,
-    error: result.error as Extract<ThankResult, { ok: false }>["error"],
+    error: result.error,
   };
 }
 

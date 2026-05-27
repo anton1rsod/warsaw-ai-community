@@ -105,7 +105,9 @@ export default async function MemberPage({
             ) : (
               (() => {
               const tmpl = s("members.detail.noProfileFmt").replace("{name}", member.name);
-              const [pre, post] = tmpl.split("{path}");
+              const parts = tmpl.split("{path}");
+              const pre = parts[0] ?? "";
+              const post = parts[1] ?? "";
               const path = s("members.detail.noProfilePathFmt").replace("{slug}", member.slug);
               return (<>{pre}<code className="font-voice text-ink">{path}</code>{post}</>);
             })()

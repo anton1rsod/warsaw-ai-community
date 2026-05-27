@@ -87,19 +87,19 @@ test.describe("5.4a: RSVP button — authenticated view", () => {
 
     // Wait for hydration: the "not-signed-in" CTA should disappear and
     // the Going button (outline state) should appear.
-    const goingBtn = page.getByRole("button", { name: "Going" });
+    const goingBtn = page.getByRole("button", { name: "Going" }).first();
     await expect(goingBtn).toBeVisible({ timeout: 8000 });
 
     // Click Going → selected state label is "✓ Going"
     await goingBtn.click();
     await expect(
-      page.getByRole("button", { name: "✓ Going" }),
+      page.getByRole("button", { name: "✓ Going" }).first(),
     ).toBeVisible({ timeout: 5000 });
 
     // Click again to toggle off → back to outline "Going"
-    await page.getByRole("button", { name: "✓ Going" }).click();
+    await page.getByRole("button", { name: "✓ Going" }).first().click();
     await expect(
-      page.getByRole("button", { name: "Going" }),
+      page.getByRole("button", { name: "Going" }).first(),
     ).toBeVisible({ timeout: 5000 });
   });
 });
@@ -147,13 +147,13 @@ test.describe("5.4b: Thanks button — authenticated view", () => {
     await page.goto("/this-week", { waitUntil: "networkidle" });
 
     // The "+ Thanks" button should be visible for Mark's status card.
-    const thankBtn = page.getByRole("button", { name: "+ Thanks" });
+    const thankBtn = page.getByRole("button", { name: "+ Thanks" }).first();
     await expect(thankBtn).toBeVisible({ timeout: 8000 });
 
     // Click "+ Thanks" → post-click state is "♥ Thanked"
     await thankBtn.click();
     await expect(
-      page.getByRole("button", { name: "♥ Thanked" }),
+      page.getByRole("button", { name: "♥ Thanked" }).first(),
     ).toBeVisible({ timeout: 5000 });
   });
 });

@@ -38,8 +38,11 @@ function nextSha(): string {
 
 function curSha(slug: string): string {
   const s = shared();
-  if (!s.sha.has(slug)) s.sha.set(slug, nextSha());
-  return s.sha.get(slug) as string;
+  const existing = s.sha.get(slug);
+  if (existing !== undefined) return existing;
+  const sha = nextSha();
+  s.sha.set(slug, sha);
+  return sha;
 }
 
 async function resolveAuthState(): Promise<
@@ -55,7 +58,7 @@ async function resolveAuthState(): Promise<
 
 export type MockThankResult =
   | { ok: true; already_thanked?: boolean }
-  | { ok: false; error: string };
+  | { ok: false; error: "not_authenticated" | "not_a_member" | "self_thank_blocked" | "refresh_needed" };
 
 export const mockThankActions = {
   async thank(input: {

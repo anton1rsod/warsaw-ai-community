@@ -19,7 +19,7 @@ export default function OnboardErrorPage(): React.JSX.Element {
       <h1 className="mt-2 font-display font-semibold text-[40px] leading-[0.95] tracking-tight text-ink">
         This invitation can&apos;t be completed.
       </h1>
-      <p className="mt-4 font-body text-ink text-dust">
+      <p className="mt-4 font-body text-dust">
         Please reach out to a community organizer if you need a new invitation.
       </p>
     </main>

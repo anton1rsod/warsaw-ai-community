@@ -60,7 +60,7 @@ function fromMock(result: MockRsvpResult): RsvpResult {
   if (result.ok) return { ok: true, state: result.state };
   return {
     ok: false,
-    error: result.error as Extract<RsvpResult, { ok: false }>["error"],
+    error: result.error,
   };
 }
 
