@@ -81,9 +81,9 @@ async function loadViewerProfile(
   if (!slug) return { fm: undefined, sha: undefined };
   // E2E mode: return a stable mock sha from the thanks store so ThankButton
   // receives a non-empty profileSha and can call thankStatus. No GitHub App
-  // call is made; the fork is dead in production (isProductionRuntime() guard
-  // sits in thankStatus itself).
-  if (isE2EModeThank()) {
+  // call is made. Double-guarded (NODE_ENV + E2E flag) so the fork is dead in
+  // production even if NEXT_PUBLIC_E2E_MODE leaked into a prod build.
+  if (process.env.NODE_ENV !== "production" && isE2EModeThank()) {
     return { fm: undefined, sha: mockThankActions.getProfileSha(slug) };
   }
   try {
