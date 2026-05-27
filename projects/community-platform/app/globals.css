@@ -83,7 +83,7 @@ body {
 
 /* v0.9 .prose-warm — tokenized markdown styling (no @tailwindcss/typography plugin).
  * Apply to any rich-text container (<article>, <div>, etc.) that renders markdown output.
- * Replaces the no-op `prose prose-neutral dark:prose-invert` classes used on detail pages
+ * Replaces the no-op `prose prose-neutral`-style classes used on detail pages
  * before the typography plugin was confirmed absent.
  */
 @layer components {

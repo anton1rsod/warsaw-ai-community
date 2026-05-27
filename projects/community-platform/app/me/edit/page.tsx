@@ -68,7 +68,7 @@ export default async function MeEditPage(): Promise<React.JSX.Element> {
   return (
     <main className="mx-auto max-w-3xl p-8">
       <h1 className="text-3xl font-semibold">Edit profile</h1>
-      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+      <p className="mt-1 text-sm text-neutral-600">
         Your changes commit to{" "}
         <code className="font-mono text-xs">{path}</code> as{" "}
         <code className="font-mono text-xs">warsaw-ai-bot</code> with you in

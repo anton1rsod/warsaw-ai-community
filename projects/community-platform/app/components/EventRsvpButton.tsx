@@ -135,7 +135,7 @@ export function EventRsvpButton({
           {interestedActive ? "★ Interested" : "Interested"}
         </button>
       </div>
-      {errMsg ? <p className="text-sm text-red-700 dark:text-red-300">{errMsg}</p> : null}
+      {errMsg ? <p className="text-sm text-red-700">{errMsg}</p> : null}
     </div>
   );
 }
