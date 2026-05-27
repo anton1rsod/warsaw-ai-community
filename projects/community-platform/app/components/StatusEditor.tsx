@@ -90,18 +90,18 @@ export function StatusEditor({
 
   return (
     <form
-      className="rounded border p-4"
+      className="bg-paper border-l-[3px] border-l-ink px-4 py-4"
       onSubmit={(e) => {
         e.preventDefault();
         save();
       }}
     >
-      <label className="block text-sm font-medium" htmlFor="status-body">
+      <label className="block font-voice text-[11px] uppercase tracking-[1px] text-dust" htmlFor="status-body">
         What are you working on this week ({week})?
       </label>
       <textarea
         id="status-body"
-        className="mt-2 block w-full rounded border p-2 font-mono text-sm"
+        className="mt-2 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         rows={4}
         value={body}
         onChange={(e) => {
@@ -112,7 +112,7 @@ export function StatusEditor({
       <div className="mt-3 flex items-center gap-3">
         <button
           type="submit"
-          className="rounded bg-neutral-900 px-3 py-1.5 text-sm text-white disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
+          className="min-h-[24px] inline-flex items-center px-[11px] py-[4px] font-voice font-bold text-[10px] border-[1.5px] border-solid border-ink text-ink bg-transparent hover:bg-ink hover:text-cream focus-visible:bg-ink focus-visible:text-cream disabled:opacity-50 transition-colors duration-150"
           disabled={submitDisabled}
         >
           {sha ? "Update" : "Post"}
@@ -123,7 +123,7 @@ export function StatusEditor({
             onClick={() => {
               removeWithSha(sha);
             }}
-            className="rounded border px-3 py-1.5 text-sm hover:bg-neutral-100 disabled:opacity-50 dark:hover:bg-neutral-900"
+            className="min-h-[24px] inline-flex items-center px-[11px] py-[4px] font-voice font-bold text-[10px] border-[1.5px] border-dashed border-ink text-ink bg-transparent hover:bg-ink hover:text-cream focus-visible:bg-ink focus-visible:text-cream disabled:opacity-50 transition-colors duration-150"
             disabled={isPending}
           >
             Delete
@@ -134,8 +134,8 @@ export function StatusEditor({
             role="status"
             className={
               status === "error"
-                ? "text-sm text-red-600 dark:text-red-400"
-                : "text-sm text-neutral-600 dark:text-neutral-400"
+                ? "font-voice text-[11px] text-alert"
+                : "font-voice text-[11px] text-dust"
             }
           >
             {message}

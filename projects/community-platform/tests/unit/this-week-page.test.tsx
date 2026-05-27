@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { StatusUpdate } from "@/lib/status-reader";
@@ -123,5 +125,22 @@ describe("H53: ThankButton on /this-week (Task 3.7)", () => {
     expect(btn.getAttribute("data-state")).toBe("not-thanked");
     // No ThankButton for own post (self → ThankButton returns null)
     expect(screen.queryByTestId("thank-status-2026-W21/anton-safronov")).not.toBeInTheDocument();
+  });
+});
+
+describe("/this-week v0.9 — warm-aesthetic, no dark:/scaffolding (H99)", () => {
+  const src = readFileSync(
+    resolve(__dirname, "../../app/this-week/page.tsx"),
+    "utf8",
+  );
+  it("uses no Tailwind `dark:` variants", () => { expect(src).not.toMatch(/\bdark:/); });
+  it("uses no neutral-* / gray-* color scale", () => {
+    expect(src).not.toMatch(/\b(text|bg|border)-neutral-/);
+    expect(src).not.toMatch(/\b(text|bg|border)-gray-/);
+  });
+  it("uses no rounded-border scaffolding", () => { expect(src).not.toMatch(/\brounded\b/); });
+  it("uses recipe tokens (font-display heading on ink)", () => {
+    expect(src).toMatch(/font-display/);
+    expect(src).toMatch(/text-ink|text-dust/);
   });
 });
