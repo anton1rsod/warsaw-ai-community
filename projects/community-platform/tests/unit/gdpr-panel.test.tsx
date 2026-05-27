@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { GdprPanel } from "@/app/components/GdprPanel";
 
 interface UrlWithBlobApi {
@@ -15,6 +17,17 @@ afterEach(() => {
   vi.restoreAllMocks();
   (URL as unknown as UrlWithBlobApi).createObjectURL = originalCreate;
   (URL as unknown as UrlWithBlobApi).revokeObjectURL = originalRevoke;
+});
+
+describe("GdprPanel v0.9.1 — consumes Pill (H104)", () => {
+  const src = readFileSync(
+    resolve(__dirname, "../../app/components/GdprPanel.tsx"),
+    "utf8",
+  );
+  it("H104: uses Pill, not hand-rolled button classes", () => {
+    expect(src).toMatch(/from "@\/app\/components\/Pill"/);
+    expect(src).not.toMatch(/border-\[1\.5px\] border-solid border-(ink|alert)/);
+  });
 });
 
 describe("GdprPanel", () => {
