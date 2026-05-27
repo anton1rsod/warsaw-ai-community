@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { s } from "@/lib/i18n/strings";
+import { Pill } from "@/app/components/Pill";
 
 const CONFIRM_MESSAGE =
   "Delete your profile and all status updates? This cannot be undone " +
@@ -60,22 +61,12 @@ export function GdprPanel(): React.JSX.Element {
         remain attributable to your GitHub handle.
       </p>
       <div className="mt-3 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={exportData}
-          disabled={busy}
-          className="min-h-[24px] inline-flex items-center px-[11px] py-[4px] font-voice font-bold text-[10px] border-[1.5px] border-solid border-ink text-ink bg-transparent hover:bg-ink hover:text-cream transition-colors duration-150 disabled:opacity-50"
-        >
+        <Pill variant="solid" type="button" onClick={exportData} disabled={busy}>
           Export my data
-        </button>
-        <button
-          type="button"
-          onClick={deleteData}
-          disabled={busy}
-          className="min-h-[24px] inline-flex items-center px-[11px] py-[4px] font-voice font-bold text-[10px] border-[1.5px] border-solid border-alert text-alert bg-transparent hover:bg-alert hover:text-cream transition-colors duration-150 disabled:opacity-50"
-        >
+        </Pill>
+        <Pill variant="danger" type="button" onClick={deleteData} disabled={busy}>
           Delete my data
-        </button>
+        </Pill>
         <span className="font-voice text-[10px] text-dust">
           {message}
         </span>

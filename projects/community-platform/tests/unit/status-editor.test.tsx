@@ -197,6 +197,17 @@ describe("StatusEditor", () => {
   });
 });
 
+describe("StatusEditor v0.9.1 — consumes Pill (H104)", () => {
+  const src = readFileSync(
+    resolve(__dirname, "../../app/components/StatusEditor.tsx"),
+    "utf8",
+  );
+  it("H104: uses Pill, not hand-rolled button classes", () => {
+    expect(src).toMatch(/from "@\/app\/components\/Pill"/);
+    expect(src).not.toMatch(/border-\[1\.5px\] border-(solid|dashed) border-ink/);
+  });
+});
+
 describe("StatusEditor v0.9 — warm-aesthetic, no dark:/scaffolding (H99)", () => {
   const src = readFileSync(
     resolve(__dirname, "../../app/components/StatusEditor.tsx"),

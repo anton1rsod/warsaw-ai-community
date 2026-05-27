@@ -22,6 +22,11 @@ import {
   parseProfileFrontmatter,
   type ProfileFrontmatter,
 } from "@/lib/profile-editor";
+import {
+  isE2EMode,
+  mockThankActions,
+  type MockThankResult,
+} from "@/app/actions/_test-thank-store";
 
 const ItemTypeSchema = z.enum(["status", "contribution", "meeting"]);
 type ItemType = z.infer<typeof ItemTypeSchema>;
@@ -72,6 +77,24 @@ function isValidItemId(item_type: ItemType, item_id: string): boolean {
   return findMeetingBySlug(item_id) != null;
 }
 
+function isProductionRuntime(): boolean {
+  return process.env.NODE_ENV === "production";
+}
+
+/**
+ * Translates the mock store's discriminated MockThankResult into the strict
+ * ThankResult union. The mock only emits a closed set of error strings
+ * (not_authenticated, not_a_member, self_thank_blocked, refresh_needed)
+ * so the cast to ThankResult's error union is sound.
+ */
+function fromMockThank(result: MockThankResult): ThankResult {
+  if (result.ok) return { ok: true, already_thanked: result.already_thanked };
+  return {
+    ok: false,
+    error: result.error,
+  };
+}
+
 function buildClient(): GitHubAppClient {
   return createGitHubApp({
     appId: env.GITHUB_APP_ID,
@@ -107,6 +130,10 @@ export async function thankStatus(input: ThankInput): Promise<ThankResult> {
   const parsed = ThankInputSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid_input" };
   const { recipient, item_type, item_id, profileSha } = parsed.data;
+
+  if (!isProductionRuntime() && isE2EMode()) {
+    return fromMockThank(await mockThankActions.thank(parsed.data));
+  }
 
   const session = await auth();
   const handle = session?.githubHandle;

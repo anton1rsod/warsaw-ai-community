@@ -1,5 +1,6 @@
 "use client";
 import { useState, type FormEvent } from "react";
+import { Pill } from "@/app/components/Pill";
 
 export interface OnboardFormProps {
   readonly action: (
@@ -32,13 +33,13 @@ export function OnboardForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="bg-paper border-l-[3px] border-l-ink px-4 py-4 space-y-4">
       {hintTelegram && (
         <div
           role="alert"
-          className="rounded border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900"
+          className="bg-cream-deep border-l-[3px] border-l-ink p-3 font-voice text-[11px] text-dust"
         >
-          <strong>Note:</strong> This invitation was issued to{" "}
+          <strong className="font-voice text-ink">Note:</strong> This invitation was issued to{" "}
           <span className="font-mono">{hintTelegram}</span>. If that&apos;s not
           you, please don&apos;t proceed — close this page and ask the
           organizer for your own invitation.
@@ -46,7 +47,10 @@ export function OnboardForm({
       )}
 
       <div>
-        <label htmlFor="display_name" className="block text-sm font-medium">
+        <label
+          htmlFor="display_name"
+          className="block font-voice text-[11px] uppercase tracking-[1px] text-dust"
+        >
           Display name <span aria-hidden="true">*</span>
         </label>
         <input
@@ -55,12 +59,15 @@ export function OnboardForm({
           type="text"
           required
           maxLength={80}
-          className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
       </div>
 
       <div>
-        <label htmlFor="focus" className="block text-sm font-medium">
+        <label
+          htmlFor="focus"
+          className="block font-voice text-[11px] uppercase tracking-[1px] text-dust"
+        >
           Focus area (optional)
         </label>
         <input
@@ -68,12 +75,15 @@ export function OnboardForm({
           name="focus"
           type="text"
           maxLength={120}
-          className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
       </div>
 
       <div>
-        <label htmlFor="link" className="block text-sm font-medium">
+        <label
+          htmlFor="link"
+          className="block font-voice text-[11px] uppercase tracking-[1px] text-dust"
+        >
           Link (optional, https only)
         </label>
         <input
@@ -82,12 +92,15 @@ export function OnboardForm({
           type="url"
           maxLength={200}
           placeholder="https://"
-          className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
       </div>
 
       <div>
-        <label htmlFor="telegram" className="block text-sm font-medium">
+        <label
+          htmlFor="telegram"
+          className="block font-voice text-[11px] uppercase tracking-[1px] text-dust"
+        >
           Telegram handle <span aria-hidden="true">*</span>
         </label>
         <input
@@ -97,12 +110,15 @@ export function OnboardForm({
           required
           pattern="^@[a-zA-Z0-9_]{5,32}$"
           placeholder="@username"
-          className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
       </div>
 
       <div>
-        <label htmlFor="git_email_alias" className="block text-sm font-medium">
+        <label
+          htmlFor="git_email_alias"
+          className="block font-voice text-[11px] uppercase tracking-[1px] text-dust"
+        >
           Git email alias <span aria-hidden="true">*</span>
         </label>
         <input
@@ -111,9 +127,9 @@ export function OnboardForm({
           type="email"
           required
           maxLength={120}
-          className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
-        <p className="mt-1 text-xs text-gray-600">
+        <p className="mt-1 font-voice text-[11px] text-dust">
           Used to map your git commits to your roster entry.
         </p>
       </div>
@@ -127,20 +143,18 @@ export function OnboardForm({
           value="true"
           className="mt-1"
         />
-        <label htmlFor="consent_accepted" className="text-sm">
+        <label htmlFor="consent_accepted" className="font-body text-ink text-sm">
           I agree to be listed publicly on the community roster.
         </label>
       </div>
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded bg-gray-900 px-4 py-2 font-medium text-white disabled:opacity-50"
-      >
+      <Pill variant="solid" type="submit" disabled={submitting}>
         {submitting ? "Completing…" : "Complete registration"}
-      </button>
+      </Pill>
 
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {error && (
+        <p className="font-voice text-[11px] text-alert">{error}</p>
+      )}
     </form>
   );
 }

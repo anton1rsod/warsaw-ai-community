@@ -47,8 +47,12 @@ test.describe("consent flow", () => {
     // smoke), so the snapshot includes it and the proxy short-circuits
     // — that's the wrong precondition for this test's "first-time
     // member" intent.
+    //
+    // ADR-0014 correction: /home is PUBLIC (in PUBLIC_PATHS) so the proxy
+    // consent gate never fires on that path. We use /this-week (gated) so
+    // the proxy's consent redirect actually applies.
     await loginAs(page, "markspas", { consented: false });
-    await page.goto("/home");
+    await page.goto("/this-week");
     await expect(page).toHaveURL(/\/consent$/);
     await expect(
       page.getByRole("heading", { name: /opt in/i }),

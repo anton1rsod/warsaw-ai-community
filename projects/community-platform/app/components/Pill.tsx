@@ -1,6 +1,6 @@
 import React from "react";
 
-export type PillVariant = "going" | "dashed" | "solid";
+export type PillVariant = "going" | "dashed" | "solid" | "danger";
 
 interface PillCommon {
   variant: PillVariant;
@@ -15,12 +15,13 @@ export type PillProps = PillCommon &
 
 // v0.9 H101: min-h-[24px] + inline-flex + items-center meets WCAG 2.2 SC 2.5.8 target size.
 // inline-block replaced by inline-flex so items-center works; visible chip size unchanged.
-const BASE = "min-h-[24px] inline-flex items-center px-[11px] py-[4px] font-voice font-bold text-[10px] transition-colors duration-150";
+const BASE = "min-h-[24px] inline-flex items-center px-[11px] py-[4px] font-voice font-bold text-[10px] transition-colors duration-150 disabled:opacity-50";
 
 const VARIANT: Record<PillVariant, string> = {
   going:  "bg-ink text-cream hover:bg-accent-500 hover:text-ink focus-visible:bg-accent-500 focus-visible:text-ink",
   dashed: "border-[1.5px] border-dashed border-ink text-ink bg-transparent hover:bg-ink hover:text-cream focus-visible:bg-ink focus-visible:text-cream",
   solid:  "border-[1.5px] border-solid border-ink text-ink bg-transparent hover:bg-ink hover:text-cream focus-visible:bg-ink focus-visible:text-cream",
+  danger: "border-[1.5px] border-solid border-alert text-alert bg-transparent hover:bg-alert hover:text-cream focus-visible:bg-alert focus-visible:text-cream",
 };
 
 export function Pill(props: PillProps): React.JSX.Element {

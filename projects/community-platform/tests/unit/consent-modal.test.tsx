@@ -2,6 +2,10 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConsentModal } from "@/app/components/ConsentModal";
 
+// jsdom does not implement HTMLDialogElement.showModal(), so <dialog> stays
+// closed (inert) after render. Use { hidden: true } to query inside it.
+// The typeof-guard in ConsentModal prevents a thrown TypeError in this env.
+
 afterEach(() => {
   cleanup();
 });
@@ -10,13 +14,13 @@ describe("ConsentModal", () => {
   it("renders consent text + accept + cancel buttons", () => {
     render(<ConsentModal onAccept={vi.fn()} onCancel={vi.fn()} disabled={false} />);
     expect(
-      screen.getByRole("heading", { name: /opt in/i }),
+      screen.getByRole("heading", { name: /opt in/i, hidden: true }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /accept/i }),
+      screen.getByRole("button", { name: /accept/i, hidden: true }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /cancel/i }),
+      screen.getByRole("button", { name: /cancel/i, hidden: true }),
     ).toBeInTheDocument();
   });
 
@@ -30,8 +34,8 @@ describe("ConsentModal", () => {
         disabled={false}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: /accept/i }));
-    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+    fireEvent.click(screen.getByRole("button", { name: /accept/i, hidden: true }));
+    fireEvent.click(screen.getByRole("button", { name: /cancel/i, hidden: true }));
     expect(onAccept).toHaveBeenCalledTimes(1);
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
@@ -40,8 +44,8 @@ describe("ConsentModal", () => {
     render(
       <ConsentModal onAccept={vi.fn()} onCancel={vi.fn()} disabled={true} />,
     );
-    expect(screen.getByRole("button", { name: /accept/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /cancel/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /accept/i, hidden: true })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /cancel/i, hidden: true })).toBeDisabled();
   });
 
   it("explains what consent covers (status updates, OSS license, export/delete)", () => {

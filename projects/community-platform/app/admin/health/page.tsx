@@ -7,6 +7,7 @@ import { isAdmin, listMembers } from "@/lib/content-snapshot";
 import { weekFromDate } from "@/lib/week";
 import { readWeekStatuses } from "@/lib/status-reader";
 import { computeHealthMetric, type HealthMetric } from "@/lib/health-metric";
+import { MonoLabel } from "@/app/components/MonoLabel";
 
 // Per execution-plan §9.2 — `/admin/health` makes 4 GitHub API calls
 // per render. Without ISR, refresh-spamming the page can blow the
@@ -68,45 +69,54 @@ export default async function AdminHealthPage(): Promise<React.JSX.Element> {
   }
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
-      <header className="flex items-baseline justify-between">
-        <h1 className="text-3xl font-semibold">Health metric</h1>
-        <Link href="/home" className="text-sm underline">
+    <main id="main" className="mx-auto max-w-3xl px-6 py-10">
+      <div className="flex items-baseline justify-between">
+        <div>
+          <MonoLabel>Admin</MonoLabel>
+          <h1 className="mt-2 font-display font-semibold text-[40px] leading-[0.95] tracking-tight text-ink">
+            Health metric
+          </h1>
+        </div>
+        <Link href="/home" className="font-voice text-[11px] text-dust underline">
           Home
         </Link>
-      </header>
+      </div>
 
-      <section className="mt-6 rounded border p-4">
-        <h2 className="text-xl font-medium">This week ({current.week})</h2>
-        <p className="mt-2 text-4xl font-semibold tabular-nums">
+      <section className="mt-6 bg-paper border-l-[3px] border-l-ink p-4">
+        <p className="font-voice text-[11px] uppercase tracking-[1px] text-dust">
+          This week — {current.week}
+        </p>
+        <p className="mt-2 font-voice text-[40px] tabular-nums text-ink">
           {current.metric.activePosters} / {current.metric.totalMembers}
         </p>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 font-voice text-[11px] text-dust">
           {(current.metric.ratio * 100).toFixed(0)}% active posters this week
         </p>
-        <p className="mt-2 text-xs text-neutral-500">
+        <p className="mt-2 font-voice text-[11px] text-dust">
           Targets: v0.1 launch 50%+ · v0.2 sustained 60% across 4 weeks · v0.3 sustained 70%
         </p>
       </section>
 
       <section className="mt-6">
-        <h2 className="text-xl font-medium">4-week trend</h2>
-        <table className="mt-3 w-full border-collapse text-sm">
+        <p className="font-voice text-[11px] uppercase tracking-[1px] text-dust">
+          4-week trend
+        </p>
+        <table className="mt-3 w-full border-collapse">
           <thead>
-            <tr className="text-left">
-              <th className="border-b py-2">Week</th>
-              <th className="border-b py-2">Posters</th>
-              <th className="border-b py-2">Ratio</th>
+            <tr>
+              <th className="font-voice text-[11px] uppercase tracking-[1px] text-dust text-left py-2">Week</th>
+              <th className="font-voice text-[11px] uppercase tracking-[1px] text-dust text-left py-2">Posters</th>
+              <th className="font-voice text-[11px] uppercase tracking-[1px] text-dust text-left py-2">Ratio</th>
             </tr>
           </thead>
           <tbody>
             {trend.map((t) => (
               <tr key={t.week}>
-                <td className="border-b py-2 font-mono">{t.week}</td>
-                <td className="border-b py-2 tabular-nums">
+                <td className="border-b border-ink/15 font-voice text-ink py-2">{t.week}</td>
+                <td className="border-b border-ink/15 font-voice text-ink tabular-nums py-2">
                   {t.metric.activePosters}
                 </td>
-                <td className="border-b py-2 tabular-nums">
+                <td className="border-b border-ink/15 font-voice text-dust tabular-nums py-2">
                   {(t.metric.ratio * 100).toFixed(0)}%
                 </td>
               </tr>

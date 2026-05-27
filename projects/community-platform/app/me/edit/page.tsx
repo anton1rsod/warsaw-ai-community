@@ -8,6 +8,7 @@ import {
 } from "@/lib/github-app";
 import { parseFrontmatter } from "@/lib/profile-editor";
 import { ProfileEditor } from "@/app/components/ProfileEditor";
+import { MonoLabel } from "@/app/components/MonoLabel";
 import { mockProfileStore } from "@/app/actions/_test-profile-store";
 
 export const dynamic = "force-dynamic";
@@ -66,9 +67,12 @@ export default async function MeEditPage(): Promise<React.JSX.Element> {
   const { body } = parseFrontmatter(file.content);
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
-      <h1 className="text-3xl font-semibold">Edit profile</h1>
-      <p className="mt-1 text-sm text-neutral-600">
+    <main id="main" className="mx-auto max-w-3xl px-6 py-10">
+      <MonoLabel>// profile</MonoLabel>
+      <h1 className="mt-2 font-display font-semibold text-[40px] leading-[0.95] tracking-tight text-ink">
+        Edit profile
+      </h1>
+      <p className="mt-1 font-voice text-[11px] text-dust">
         Your changes commit to{" "}
         <code className="font-mono text-xs">{path}</code> as{" "}
         <code className="font-mono text-xs">warsaw-ai-bot</code> with you in

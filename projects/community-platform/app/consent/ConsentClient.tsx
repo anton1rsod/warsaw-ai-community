@@ -30,7 +30,7 @@ export function ConsentClient(): React.JSX.Element {
   };
 
   return (
-    <main className="min-h-screen bg-neutral-50">
+    <main className="min-h-screen bg-cream">
       <ConsentModal
         onAccept={onAccept}
         onCancel={onCancel}

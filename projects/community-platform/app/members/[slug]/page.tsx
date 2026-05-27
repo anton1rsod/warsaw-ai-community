@@ -103,7 +103,14 @@ export default async function MemberPage({
                 {s("members.detail.editYourProfile")}
               </Link>
             ) : (
-              s("members.detail.noProfileFmt").replace("{name}", member.name).replace("{slug}", member.slug)
+              (() => {
+              const tmpl = s("members.detail.noProfileFmt").replace("{name}", member.name);
+              const parts = tmpl.split("{path}");
+              const pre = parts[0] ?? "";
+              const post = parts[1] ?? "";
+              const path = s("members.detail.noProfilePathFmt").replace("{slug}", member.slug);
+              return (<>{pre}<code className="font-voice text-ink">{path}</code>{post}</>);
+            })()
             )}
           </p>
         </section>

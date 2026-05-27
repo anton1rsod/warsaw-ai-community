@@ -1,6 +1,7 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import { InviteUrlDisplay } from "@/app/components/InviteUrlDisplay";
+import { Pill } from "@/app/components/Pill";
 
 export interface InviteFormProps {
   readonly action: (
@@ -33,9 +34,12 @@ export function InviteForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+    <form onSubmit={handleSubmit} className="mt-6 bg-paper border-l-[3px] border-l-ink px-4 py-4 space-y-4">
       <div>
-        <label htmlFor="hint_telegram" className="block text-sm font-medium">
+        <label
+          htmlFor="hint_telegram"
+          className="block font-voice text-[11px] uppercase tracking-[1px] text-dust"
+        >
           Telegram hint (optional)
         </label>
         <input
@@ -43,31 +47,32 @@ export function InviteForm({
           name="hint_telegram"
           type="text"
           placeholder="@username"
-          className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
-        <p className="mt-1 text-xs text-gray-600">
+        <p className="mt-1 font-voice text-[11px] text-dust">
           Records who you intended to invite. Stored in the audit ledger.
         </p>
       </div>
       <div>
-        <label htmlFor="hint_display_name" className="block text-sm font-medium">
+        <label
+          htmlFor="hint_display_name"
+          className="block font-voice text-[11px] uppercase tracking-[1px] text-dust"
+        >
           Display name hint (optional)
         </label>
         <input
           id="hint_display_name"
           name="hint_display_name"
           type="text"
-          className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+          className="mt-1 block w-full bg-cream-deep border-l-[2px] border-l-ink px-3 py-2 font-body text-ink text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
       </div>
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded bg-gray-900 px-4 py-2 font-medium text-white disabled:opacity-50"
-      >
+      <Pill type="submit" variant="solid" disabled={submitting}>
         {submitting ? "Minting…" : "Mint invitation URL"}
-      </button>
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      </Pill>
+      {error && (
+        <p className="font-voice text-[11px] text-alert">{error}</p>
+      )}
       <InviteUrlDisplay url={url} />
     </form>
   );

@@ -118,6 +118,21 @@ describe("/members/[slug] — Edit profile link", () => {
     expect(screen.queryByRole("link", { name: /edit/i })).toBeNull();
     expect(screen.getByText(/hasn't filled out a profile yet/i)).toBeInTheDocument();
   });
+
+  it("H110: renders file path inside <code> on no-profile empty-state for non-self viewer", async () => {
+    vi.mocked(auth).mockResolvedValue({ githubHandle: "someone-else" } as never);
+    vi.mocked(findMemberBySlug).mockReturnValue(ANTON_NO_PROFILE as never);
+
+    const tree = await MemberPage({
+      params: Promise.resolve({ slug: "anton-safronov" }),
+    });
+    render(tree);
+
+    // The file path must be inside a <code> element.
+    const codeEl = document.querySelector("code");
+    expect(codeEl).not.toBeNull();
+    expect(codeEl?.textContent).toContain("community/members/anton-safronov.md");
+  });
 });
 
 // Valid event slug for testing (matches EventSlugSchema YYYY-MM-DD-kebab pattern).

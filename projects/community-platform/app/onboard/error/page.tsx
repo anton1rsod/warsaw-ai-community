@@ -1,3 +1,5 @@
+import { MonoLabel } from "@/app/components/MonoLabel";
+
 /**
  * Generic-error page for ALL invitation redemption failure modes
  * (INVALID, EXPIRED, REVOKED, REPLAYED, ALREADY-MEMBER, NO-COOKIE).
@@ -12,11 +14,12 @@
  */
 export default function OnboardErrorPage(): React.JSX.Element {
   return (
-    <main className="mx-auto max-w-prose p-6">
-      <h1 className="text-2xl font-semibold">
+    <main id="main" className="mx-auto max-w-prose px-6 py-10">
+      <MonoLabel>// onboard</MonoLabel>
+      <h1 className="mt-2 font-display font-semibold text-[40px] leading-[0.95] tracking-tight text-ink">
         This invitation can&apos;t be completed.
       </h1>
-      <p className="mt-4">
+      <p className="mt-4 font-body text-dust">
         Please reach out to a community organizer if you need a new invitation.
       </p>
     </main>

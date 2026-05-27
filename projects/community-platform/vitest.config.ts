@@ -28,8 +28,10 @@ export default defineConfig({
         "**/*.test.{ts,tsx}",
         "**/*.spec.{ts,tsx}",
         "app/api/test-auth/**",
-        // E2E-only mock store; exercised by Playwright, not Vitest.
+        // E2E-only mock stores; exercised by Playwright, not Vitest.
         "app/actions/_test-status-store.ts",
+        "app/actions/_test-rsvp-store.ts",
+        "app/actions/_test-thank-store.ts",
       ],
       thresholds: { lines: 80, branches: 80, functions: 80, statements: 80 },
     },

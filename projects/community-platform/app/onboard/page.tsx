@@ -6,6 +6,8 @@ import { findMemberByHandle } from "@/lib/content-snapshot";
 import { INVITE_COOKIE_NAME, verifyToken } from "@/lib/invitations";
 import { OnboardForm } from "@/app/components/OnboardForm";
 import { redeemInvitation as redeemAction } from "@/app/actions/redeem-invitation";
+import { MonoLabel } from "@/app/components/MonoLabel";
+import { Pill } from "@/app/components/Pill";
 
 // auth() + cookies() + searchParams all force this route dynamic.
 export const dynamic = "force-dynamic";
@@ -65,9 +67,12 @@ export default async function OnboardPage({
   const session = await auth();
   if (!session?.githubHandle) {
     return (
-      <main className="mx-auto max-w-prose p-6">
-        <h1 className="text-2xl font-semibold">Welcome</h1>
-        <p className="mt-2 text-sm text-gray-700">
+      <main id="main" className="mx-auto max-w-prose px-6 py-10">
+        <MonoLabel>// onboard</MonoLabel>
+        <h1 className="mt-2 font-display font-semibold text-[40px] leading-[0.95] tracking-tight text-ink">
+          Welcome
+        </h1>
+        <p className="mt-2 font-voice text-[11px] text-dust">
           Sign in with GitHub to complete your invitation.
         </p>
         <form
@@ -76,12 +81,7 @@ export default async function OnboardPage({
           className="mt-4"
         >
           <input type="hidden" name="callbackUrl" value="/onboard" />
-          <button
-            type="submit"
-            className="rounded bg-gray-900 px-4 py-2 font-medium text-white"
-          >
-            Sign in with GitHub
-          </button>
+          <Pill variant="going" type="submit">Sign in with GitHub</Pill>
         </form>
       </main>
     );
@@ -93,9 +93,12 @@ export default async function OnboardPage({
   }
 
   return (
-    <main className="mx-auto max-w-prose p-6">
-      <h1 className="text-2xl font-semibold">Complete your registration</h1>
-      <p className="mt-2 mb-4 text-sm text-gray-700">
+    <main id="main" className="mx-auto max-w-prose px-6 py-10">
+      <MonoLabel>// onboard</MonoLabel>
+      <h1 className="mt-2 font-display font-semibold text-[40px] leading-[0.95] tracking-tight text-ink">
+        Complete your registration
+      </h1>
+      <p className="mt-2 mb-4 font-voice text-[11px] text-dust">
         Signed in as{" "}
         <span className="font-mono">@{session.githubHandle}</span>.
       </p>

@@ -20,6 +20,11 @@ import {
 import { EventSlugSchema, type EventSlug } from "@/lib/events";
 import { safeHandle as toSafeHandle } from "@/lib/handles";
 import { log } from "@/lib/log";
+import {
+  isE2EMode,
+  mockRsvpActions,
+  type MockRsvpResult,
+} from "@/app/actions/_test-rsvp-store";
 
 const RsvpInputSchema = z.object({
   eventSlug: z.string(),
@@ -40,6 +45,24 @@ export type RsvpResult =
         | "refresh_needed"
         | "internal_error";
     };
+
+function isProductionRuntime(): boolean {
+  return process.env.NODE_ENV === "production";
+}
+
+/**
+ * Translates the mock store's discriminated MockRsvpResult into the strict
+ * RsvpResult union. The mock only emits a closed set of error strings
+ * (not_authenticated, not_a_member, refresh_needed) so the cast to
+ * RsvpResult's error union is sound.
+ */
+function fromMock(result: MockRsvpResult): RsvpResult {
+  if (result.ok) return { ok: true, state: result.state };
+  return {
+    ok: false,
+    error: result.error,
+  };
+}
 
 function buildClient(): GitHubAppClient {
   return createGitHubApp({
@@ -108,6 +131,10 @@ function commitMessage(
 export async function rsvpEvent(input: RsvpInput): Promise<RsvpResult> {
   const parsed = RsvpInputSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid_input" };
+
+  if (!isProductionRuntime() && isE2EMode()) {
+    return fromMock(await mockRsvpActions.toggle(parsed.data));
+  }
 
   const session = await auth();
   const handle = session?.githubHandle;
