@@ -8,22 +8,13 @@
  *   is shared with subsequent page.goto() calls.
  *
  * E2E mode notes:
- *   • status.ts HAS an in-memory E2E mock → postStatus is fully testable.
- *   • rsvp-event.ts calls the real GitHub App (no E2E mock). The RSVP button
- *     renders for signed-in users (Going / Interested buttons visible) and
- *     the hydration fetch to /api/event-rsvp-state also calls the real GitHub App.
- *     We assert the button UI is present (what can be observed), and skip the
- *     toggle-write assertion that would trigger a real git commit.
- *   • thank-status.ts also calls the real GitHub App — Thanks write is skipped.
- *
- * Manual smoke (for Anton) when running against production or a fully-keyed
- * dev server:
- *   1. RSVP: visit /events/2026-05-21-meetup-4 signed in → click "Going" →
- *      expect button fills to "✓ Going"; click again → reverts to outline.
- *   2. Thanks: visit /this-week signed in, find a status post by another member,
- *      click "+ Thanks" → expect "♥ Thanked" state.
- *   3. Status post: visit /this-week signed in → fill textarea → click "Post" →
- *      expect the success status toast says "posted".
+ *   • status.ts   → in-memory mock (mockStatusActions) — fully testable.
+ *   • rsvp-event.ts → in-memory mock (mockRsvpActions) — fully testable.
+ *     /api/event-rsvp-state also forks to mockRsvpActions.getState() so
+ *     the hydration round-trip is deterministic and side-effect-free.
+ *   • thank-status.ts → in-memory mock (mockThankActions) — fully testable.
+ *     /this-week loadViewerProfile forks to mockThankActions.getProfileSha()
+ *     so ThankButton receives a non-empty profileSha from the server render.
  */
 
 import { expect, test, type Page } from "@playwright/test";
@@ -43,25 +34,28 @@ async function resetStatusStore(page: Page): Promise<void> {
   expect(res.ok()).toBe(true);
 }
 
-// ─── 5.4a: RSVP button visibility (authenticated) ─────────────────────────
+async function resetRsvpStore(page: Page): Promise<void> {
+  const res = await page.request.post("/api/test-reset-rsvp");
+  expect(res.ok()).toBe(true);
+}
+
+async function resetThankStore(page: Page): Promise<void> {
+  const res = await page.request.post("/api/test-reset-thank");
+  expect(res.ok()).toBe(true);
+}
+
+// ─── 5.4a: RSVP button toggle (E2E-mode in-memory mock) ───────────────────
 //
-// The toggle-write test (clicking Going/Interested and asserting state change)
-// is skip-gated because rsvp-event.ts calls the real GitHub App — it would
-// commit to the live repo. The hydration fetch (/api/event-rsvp-state) also
-// calls the real GitHub App to read profileSha.
-//
-// What IS testable without real GitHub writes: the button renders in "not-
-// signed-in" state initially (force-dynamic SSG renders initialState based on
-// the server-side loadViewerRsvp call, which in E2E mode may or may not have
-// GitHub App env vars set). We assert the RSVP control area is present.
-//
-// If GITHUB_APP_ID / GITHUB_APP_PRIVATE_KEY are configured in the dev server,
-// loadViewerRsvp will succeed and render the Going/Interested buttons;
-// otherwise it falls back to the "Sign in to RSVP" CTA (which is still the
-// correct RSVP control area).
+// rsvp-event.ts and /api/event-rsvp-state both fork to mockRsvpActions when
+// NEXT_PUBLIC_E2E_MODE=1. The button hydrates from "not-signed-in" to the
+// mock state (initially "none" → Going/Interested visible) via the forked
+// /api/event-rsvp-state route.
 
 test.describe("5.4a: RSVP button — authenticated view", () => {
+  test.describe.configure({ mode: "serial" });
+
   test.beforeEach(async ({ page }) => {
+    await resetRsvpStore(page);
     await loginAs(page, "anton1rsod");
   });
 
@@ -81,27 +75,51 @@ test.describe("5.4a: RSVP button — authenticated view", () => {
     await expect(goingBtn.or(signInCta)).toBeVisible({ timeout: 8000 });
   });
 
-  test("RSVP toggle write — skip: real GitHub App required", async () => {
-    // rsvp-event.ts calls the real GitHub App (no E2E mock). Skipped.
-    // Manual smoke: sign in → /events/${EVENT_SLUG} → click Going →
-    // expect '✓ Going' button state; click again → reverts to outline.
-    test.skip(
-      true,
-      "rsvp-event.ts calls real GitHub App (no E2E mock). " +
-        "Run manually against a fully-keyed dev server.",
-    );
+  test("RSVP toggle write — Going → ✓ Going → back to Going", async ({
+    page,
+  }) => {
+    // The event page is SSG (force-static), so the server HTML ships
+    // initialState="not-signed-in". On mount the client hydrates via
+    // /api/event-rsvp-state (forked to mockRsvpActions.getState) and
+    // transitions to the "none" state (Going + Interested buttons, both
+    // in outline style).
+    await page.goto(`/events/${EVENT_SLUG}`, { waitUntil: "networkidle" });
+
+    // Wait for hydration: the "not-signed-in" CTA should disappear and
+    // the Going button (outline state) should appear.
+    const goingBtn = page.getByRole("button", { name: "Going" });
+    await expect(goingBtn).toBeVisible({ timeout: 8000 });
+
+    // Click Going → selected state label is "✓ Going"
+    await goingBtn.click();
+    await expect(
+      page.getByRole("button", { name: "✓ Going" }),
+    ).toBeVisible({ timeout: 5000 });
+
+    // Click again to toggle off → back to outline "Going"
+    await page.getByRole("button", { name: "✓ Going" }).click();
+    await expect(
+      page.getByRole("button", { name: "Going" }),
+    ).toBeVisible({ timeout: 5000 });
   });
 });
 
-// ─── 5.4b: Thanks write — skip-gated ──────────────────────────────────────
+// ─── 5.4b: Thanks button toggle (E2E-mode in-memory mock) ─────────────────
 //
-// thank-status.ts calls the real GitHub App. No in-memory E2E mock exists.
-// Asserting the Thanks UI exists (visible) IS possible; asserting the write
-// succeeds requires a real GitHub App token.
+// thank-status.ts forks to mockThankActions when NEXT_PUBLIC_E2E_MODE=1.
+// /this-week's loadViewerProfile also forks to mockThankActions.getProfileSha()
+// so the ThankButton receives a non-empty profileSha from the server render.
+//
+// Seeding strategy: log in as "markspas" (Mark Spasonov, the second member in
+// the production snapshot) and post a status; then switch to "anton1rsod"
+// (Anton) who can thank Mark's post. The giver ≠ recipient invariant holds.
 
 test.describe("5.4b: Thanks button — authenticated view", () => {
+  test.describe.configure({ mode: "serial" });
+
   test.beforeEach(async ({ page }) => {
     await resetStatusStore(page);
+    await resetThankStore(page);
     await loginAs(page, "anton1rsod");
   });
 
@@ -113,15 +131,30 @@ test.describe("5.4b: Thanks button — authenticated view", () => {
     );
   });
 
-  test("Thanks write — skip: real GitHub App required", async () => {
-    // thank-status.ts calls the real GitHub App (no E2E mock). Skipped.
-    // Manual smoke: sign in → /this-week → find a status card by another
-    // member → click '+ Thanks' → expect '♥ Thanked' state.
-    test.skip(
-      true,
-      "thank-status.ts calls real GitHub App (no E2E mock). " +
-        "Run manually against a fully-keyed dev server.",
+  test("Thanks write — click + Thanks → ♥ Thanked", async ({ page }) => {
+    // Step 1: seed a status from Mark (the second member) so Anton can thank it.
+    // Log in as markspas, post a status, then switch to anton1rsod.
+    await loginAs(page, "markspas");
+    await page.goto("/this-week");
+    await page.getByLabel(/what are you working on/i).fill(
+      "Mark's status for Thanks E2E test.",
     );
+    await page.getByRole("button", { name: /post/i }).click();
+    await expect(page.getByRole("status")).toContainText(/posted/i);
+
+    // Step 2: switch to Anton (the viewer who will thank Mark's post).
+    await loginAs(page, "anton1rsod");
+    await page.goto("/this-week", { waitUntil: "networkidle" });
+
+    // The "+ Thanks" button should be visible for Mark's status card.
+    const thankBtn = page.getByRole("button", { name: "+ Thanks" });
+    await expect(thankBtn).toBeVisible({ timeout: 8000 });
+
+    // Click "+ Thanks" → post-click state is "♥ Thanked"
+    await thankBtn.click();
+    await expect(
+      page.getByRole("button", { name: "♥ Thanked" }),
+    ).toBeVisible({ timeout: 5000 });
   });
 });
 
