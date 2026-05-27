@@ -61,12 +61,12 @@ Two material decisions changed the plan's size and risk — scope breadth (named
 | # | Decision | Choice | Rationale |
 |---|----------|--------|-----------|
 | D1 | Reskin scope | **Complete rollout** — all remaining scaffolding-dirty surfaces incl. `/admin/invite`+`InviteForm`+`InviteUrlDisplay` and `/admin/events/new`+`EventForm` | "Finish the rollout" + the grep-discipline philosophy (close the book) + a warm admin page wrapping a neutral form reads as broken. Admin forms are admin-only (low blast radius); the cost of a third cleanup chat > one more implementer phase now. |
-| D2 | Write-path E2E | **Build E2E-mode in-memory mocks** for `rsvpEvent` + `thankStatus`; un-skip 5.4a/5.4b | Literally what "backfill the write-path E2E" means; the `_test-status-store` precedent proves the pattern is clean; functional E2E for the two highest-value member writes is exactly the safety net the platform lacks. |
+| D2 | Write-path E2E | **Build E2E-mode in-memory mocks** for `rsvpEvent` + `thankStatus`; un-skip 5.4a/5.4b (keep the repo's `_test-*-store` pattern) | Literally what "backfill the write-path E2E" means; the `_test-status-store` precedent proves the pattern is clean; functional E2E for the two highest-value member writes is exactly the safety net the platform lacks. *Standards note:* the cleaner 2026 pattern is MSW server-side interception (mock the GitHub RPC boundary; no test forks in action code), but introducing it for only 2 of 6 write actions would fracture the suite + add a dep + non-trivial wiring → kept the consistent in-app pattern; suite-wide MSW migration logged to backlog (§13). |
 | D3 | Form-field styling | **`StatusEditor` verbatim (C6)** | Already the canonical shipped reskinned form; its buttons are byte-identical to `Pill` `solid`/`dashed` + `disabled:opacity-50`. No invention. |
-| D4 | Modal styling | **Warm modal recipe (C7)** — `bg-ink/50` scrim + centered `bg-cream border border-ink` (zero radius) card + `font-display` title + `Pill` buttons | The one genuinely new *shape*; tokenizes the raw `bg-black/40` + `bg-white rounded` + `neutral-900`/`neutral-100` buttons. |
+| D4 | Modal styling | **Native `<dialog>` + `.showModal()` (C7)** — warm tokens (`backdrop:bg-ink/50`, `bg-cream`/`border-ink` card, `font-display` title, `Pill` buttons) | Standards upgrade (2026 best practice): replaces the hand-rolled `role="dialog"` div with the native element → built-in Escape, top-layer, `inert` background, `::backdrop`; no manual focus trap needed (modern WAI-APA consensus). Closes the modal a11y gap **in v0.9.1** with *less* code than the raw `bg-black/40` + `bg-white rounded` + `neutral-*` buttons it replaces. |
 | D5 | Admin metrics | **Metric-tile + table recipe (C8)** — `bg-paper border-l-[3px] border-l-ink` tile + `font-voice tabular-nums text-ink` number + tokenized table | Maps cleanly onto existing tokens; drops `rounded border` + `neutral-600/500`. |
 | D6 | `Pill` extension | **Add `disabled:opacity-50` (BASE) + a `danger` variant; refactor `StatusEditor` + `GdprPanel` to consume `Pill`** | The followup's "accept `disabled` cleanly": Pill already takes a `disabled` *prop* but has no disabled *visual*; `GdprPanel` also hand-rolls an alert-bordered delete → needs a `danger` variant. Touches the shipped `Pill` → re-smoke heroes (same discipline as v0.9 D5). |
-| D7 | ConsentModal focus management | **Keep reskin className-only; log focus-trap/Escape as a v0.9.2 a11y followup** | The modal has no focus-trap/Escape/return-focus today — a pre-existing a11y defect, not introduced by v0.9.1. Adding it is behavior beyond a reskin; surgical-changes says don't expand scope. |
+| D7 | ConsentModal a11y | **REVISED after standards validation → adopt native `<dialog>` now (no v0.9.2 deferral)** | Originally I deferred focus management to keep the reskin className-only. The 2026 standards check showed native `<dialog>` + `.showModal()` delivers conformant modal behavior with *less* code than a manual trap — so it's both the standard and the smaller change. ConsentModal is a leaf presentational component (logic in `ConsentClient` untouched), so the behavioral upgrade is low-risk and in-scope. |
 | D8 | Spec doc home | **§19.1 sub-section** (matching the §18.1 point-release precedent) | v0.9.1 is §19's own explicitly-deferred slice ("forms/admin slice → v0.9.1"), not a new theme. |
 
 ---
@@ -86,16 +86,19 @@ message:  font-voice text-[11px]  →  text-alert (error) | text-dust (ok)
 ```
 Applies to: `ProfileEditor` (textarea + tabs), `OnboardForm`, `EventForm`, `InviteForm`. Markdown previews use **`.prose-warm`** (C2) — `@tailwindcss/typography` is not installed, so `prose prose-neutral` is a no-op today.
 
-### C7 — modal recipe
+### C7 — modal recipe (native `<dialog>` — standards upgrade)
+**Use the native HTML `<dialog>` element opened with `.showModal()`** — the current (2026) best practice for accessible modals (W3C APG / WCAG 2.2). It puts the dialog in the top layer, marks background content `inert`, and provides Escape-to-close + `::backdrop` natively; the modern WAI-APA consensus is that a manual JS focus trap is **not** needed (and is discouraged — users must retain access to browser chrome). This *replaces* the hand-rolled `role="dialog"` div, which today has **no** focus management at all.
 ```
-overlay:  fixed inset-0 z-50 flex items-center justify-center bg-ink/50
-card:     mx-4 max-w-md bg-cream border border-ink p-6        (zero radius)
-title:    font-display font-semibold text-ink
+element:  <dialog ref> — ref.showModal() on mount; .close() via onAccept/onCancel
+scrim:    backdrop:bg-ink/50           (Tailwind `backdrop:` variant → dialog::backdrop)
+card:     bg-cream border border-ink p-6 max-w-md   (zero radius; the <dialog> IS the card)
+title:    font-display font-semibold text-ink + id → aria-labelledby
 body:     font-body text-ink / font-voice text-dust meta
-buttons:  <Pill variant="solid">Accept</Pill>  <Pill variant="dashed">Cancel</Pill>
-a11y:     role="dialog" aria-modal aria-labelledby  (preserved; focus-trap = D7 followup)
+buttons:  <Pill variant="solid" autoFocus>Accept</Pill>  <Pill variant="dashed">Cancel</Pill>
+a11y:     implicit role="dialog" + aria-modal="true" (from showModal); keep explicit aria-labelledby;
+          Escape → onCancel (cancel event); browser returns focus to trigger on .close() (verify in smoke)
 ```
-Applies to: `ConsentModal`.
+Applies to: `ConsentModal` (leaf presentational component — `ConsentClient`'s consent *logic* untouched).
 
 ### C8 — metric-tile + table recipe
 ```
@@ -124,7 +127,7 @@ Applies to: `/admin/health`.
 **Followup:** `members/[slug]` empty-state `<code>` restore.
 
 ### 4.2 OUT — deferred
-- **ConsentModal focus-trap/Escape** → v0.9.2 a11y followup (D7).
+- **MSW server-side E2E interception (suite-wide)** → own cycle (D2; cleaner 2026 standard, applied across *all* `_test-*-store` actions — not piecemeal in v0.9.1). *(ConsentModal a11y is no longer deferred — D7 was revised to adopt native `<dialog>` in-scope.)*
 - **Dead `--color-neutral-*` token definitions in `globals.css`** — once forms stop using them, the CSS-var *definitions* may be removable; that's a separate dead-code task (harmless to leave). Log as a followup, not v0.9.1 scope.
 - **Tailwind v4 migration / real dark mode / CSP** — unchanged from §19 non-goals.
 
@@ -135,7 +138,7 @@ Applies to: `/admin/health`.
 | Phase | Work | Notes |
 |---|---|---|
 | **1 — Shared contracts + Pill** | Add `disabled:opacity-50` + `danger` to `Pill`; document C6/C7/C8; refactor `StatusEditor` (solid+dashed) + `GdprPanel` (solid+danger) to consume `Pill` | Touches shipped `Pill` → **re-smoke the 4 hero surfaces** |
-| **2 — Member forms** | `/me/edit`+`ProfileEditor` (incl. `.prose-warm` preview + tabs), `/consent`+`ConsentClient`+`ConsentModal` (C7), `/onboard`+`OnboardForm`+`/onboard/error`, `/no-access` | className-only on auth/consent/save logic |
+| **2 — Member forms** | `/me/edit`+`ProfileEditor` (incl. `.prose-warm` preview + tabs), `/consent`+`ConsentClient`+`ConsentModal` (C7 — **upgrade to native `<dialog>`**), `/onboard`+`OnboardForm`+`/onboard/error`, `/no-access` | className-only on auth/consent/save logic; ConsentModal `<dialog>` upgrade is a leaf-component behavioral change (consent logic untouched) |
 | **3 — Admin surfaces** | `/admin/health` (C8), `/admin/invite`+`InviteForm`+`InviteUrlDisplay`, `/admin/events/new`+`EventForm` (C6 ×many fields) | admin-gated; className-only on RBAC + write actions |
 | **4 — Write-path E2E mocks** | `_test-rsvp-store.ts` + `_test-thank-store.ts` + `fromMock` forks + reset routes; un-skip 5.4a/5.4b | mirror `_test-status-store` exactly (prod double-guard + `globalThis` hop) |
 | **5 — E2E hygiene** | Update routing assertions to ADR-0012/0014 model; `test.skip` prod-only `v0-4-shell` specs when `PLAYWRIGHT_BASE_URL` ≠ prod | no coverage deleted |
@@ -160,6 +163,10 @@ The pattern is proven across four actions (status / profile / invitation / conse
 - **Reset routes** `app/api/test-reset-rsvp/route.ts` + `app/api/test-reset-thank/route.ts` (mirror `test-reset-status`).
 - **Un-skip** `e2e/v0-9-write-paths.spec.ts` 5.4a (RSVP toggle going↔none) + 5.4b (Thanks click), wiring `/api/test-auth` (handle `anton1rsod`) + reset between runs; Playwright 1.59 standards (role-based locators, web-first assertions, no `waitForTimeout`).
 
+**Standards notes (2026 validation):**
+- *Pattern choice:* the in-app mock keeps consistency with the four existing `_test-*-store` actions and is proven green (5.4c). The cleaner emerging standard is **MSW** server-side interception (mock the GitHub HTTP boundary; action code runs unchanged) — logged as a suite-wide backlog migration (§13), not adopted piecemeal here.
+- *Auth:* the suite's programmatic `/api/test-auth` login is a recommended pattern (avoids UI-login flakiness). Optional optimization: cache it once via a Playwright setup-project + `storageState` reused across specs; not required for v0.9.1.
+
 ---
 
 ## 7. E2E hygiene approach
@@ -175,7 +182,7 @@ The pattern is proven across four actions (status / profile / invitation / conse
 
 - **Target size (WCAG 2.2 SC 2.5.8, AA 24×24):** `Pill` already meets it (H101). Audit form buttons + the new `danger` Pill keep `min-h-[24px]`.
 - **Contrast (1.4.3 / 1.4.11):** `dust`(`#886c37`) on the new backgrounds — `bg-paper`(`#fff`) and `bg-cream`/`bg-cream-deep` — must hold 4.5:1 for small text; gated by the extended axe sweep (don't introduce `dust` on an untested bg). `text-alert` on cream verified for the danger-button + error copy.
-- **Forms a11y:** preserve `<label htmlFor>` ↔ field `id`, `role="status"` on async messages, `aria-selected` on ProfileEditor tabs, `role="dialog"`/`aria-modal`/`aria-labelledby` on ConsentModal (focus-trap = D7 followup).
+- **Forms a11y:** preserve `<label htmlFor>` ↔ field `id`, `role="status"` on async messages, `aria-selected` on ProfileEditor tabs. **ConsentModal:** native `<dialog>`+`.showModal()` provides implicit `role="dialog"` + `aria-modal="true"` + Escape + `inert` background; keep an explicit `aria-labelledby` for the title and `autoFocus` on the primary action. Per the 2026 WAI-APA consensus, do **not** add a manual focus trap (users must retain access to browser chrome).
 - **a11y E2E:** extend the axe sweep to the auth-gated form surfaces via the per-slice functional E2E (`@axe-core/playwright`), signed-in through `/api/test-auth`.
 
 ---
@@ -192,7 +199,7 @@ className-only; no rendering-strategy changes. `/me/edit`, `/this-week`, `/membe
 |---|---|---|
 | **H104** | `Pill` gains `disabled:opacity-50` + `danger` variant; no consumer hand-rolls the Pill look (`StatusEditor`/`GdprPanel` migrated) | `Pill` source-scan + grep: hand-rolled `border-[1.5px] … border-ink` button classes absent from `StatusEditor`/`GdprPanel` |
 | **H105** | Form surfaces use the C6 recipe — no `neutral-*`/`gray-*`/`rounded border`; `bg-paper`/`bg-cream-deep` fields + `Pill` buttons | per-surface source-scan (C4-derived) |
-| **H106** | `ConsentModal` uses C7 — `bg-cream`/`border-ink` card + `Pill` buttons + `bg-ink/50` scrim; `role="dialog"`/`aria-modal` preserved | source-scan + a11y assertion |
+| **H106** | `ConsentModal` uses native `<dialog>`+`.showModal()` (C7) — `backdrop:bg-ink/50`, `bg-cream`/`border-ink` card, `Pill` buttons, explicit `aria-labelledby`; no manual focus-trap lib | source-scan (`<dialog>` + `showModal` present; old `role="dialog"` div absent) + a11y assertion |
 | **H107** | `/admin/health` tile + table tokenized (C8) — `border-l-ink` tile, `tabular-nums` number, no `rounded border`/`neutral-*` | source-scan |
 | **H108** | `ProfileEditor` preview uses `.prose-warm` (replaces no-op `prose prose-neutral`) | source-scan |
 | **H109** | RSVP + Thanks E2E mocks carry the prod double-guard `!isProductionRuntime() && isE2EMode()` | source-scan asserts the guard literal; E2E green |
@@ -219,13 +226,13 @@ className-only; no rendering-strategy changes. `/me/edit`, `/this-week`, `/membe
 - **`EventForm` (272 LOC, 13 hits) is the heaviest reskin** — many fields; mechanical via C6 but the largest single diff. Keep the create-event server action + Zod schema untouched.
 - **Mock forks add behavior to write-path logic** — strictly test-mode-guarded (D2/H109); the security lane gates this. Mirror `_test-status-store` rather than inventing.
 - **`/me/edit`, `/admin/*`, `/this-week`, `/members/[slug]`** are `force-dynamic` + auth/RBAC — reskins stay className-only.
-- **ConsentModal focus management** is a known pre-existing a11y gap, deliberately deferred (D7) — don't let the reskin silently regress the existing `role`/`aria` attributes.
+- **ConsentModal `<dialog>` upgrade** (D7, standards-driven) is the one behavioral change across the reskin phases — wire `.showModal()` on mount + map Escape/`cancel` → `onCancel` + the two `Pill` actions; verify in smoke that focus moves into the dialog on open and returns to the trigger on `.close()`. `ConsentClient`'s consent logic stays untouched.
 
 ---
 
-## 13. Non-goals (deliberate)
+## 13. Non-goals (deliberate) / backlog
 
-- **ConsentModal focus-trap/Escape** → v0.9.2 (D7).
+- **MSW server-side interception (suite-wide E2E migration)** → own cycle (D2). The cleaner 2026 standard for server-action E2E ("mock the RPC boundary, not the action"), but a consistency pass across *all* `_test-*-store` actions (status/profile/invitation/consent + the new rsvp/thank), not a piecemeal v0.9.1 change.
 - **Removing dead `--color-neutral-*` token definitions** → separate dead-code followup.
 - **Tailwind v4 / real dark mode / CSP** → unchanged from §19 non-goals (own future cycles).
 
@@ -240,3 +247,18 @@ className-only; no rendering-strategy changes. `/me/edit`, `/this-week`, `/membe
 ## 15. Execution & handoff
 
 Next: `superpowers:writing-plans` produces `projects/community-platform/v0.9.1-plan.md` referencing this design doc + spec §19.1 + the reused `v0.9.0-plan.md` conventions (C1–C5). The implementation chat runs `superpowers:subagent-driven-development` against the 6 phases above (one Sonnet implementer per phase, full-suite verification at each boundary), then 3-lane reviewer triage → authenticated smoke of the new form surfaces → PR → tag `community-platform-v0.9.1` → post-merge STATE flip. Same playbook as v0.6/v0.8/v0.9.
+
+---
+
+## Appendix — Standards validation (2026-05-27)
+
+Validated the spec's pattern choices against current industry standards (Anton's request). Method: parallel web search + authoritative-source fetch (W3C WAI, Playwright docs, CSS-Tricks, Next.js docs).
+
+| Area | Verdict | Action |
+|---|---|---|
+| **Modal** | Native `<dialog>`+`.showModal()` is the 2026 best practice (top-layer, `inert` background, Escape, `::backdrop`); modern WAI-APA consensus: **no manual focus trap** (that guidance predates `<dialog>`/`inert`; users must keep browser-chrome access). | **Improved** — C7 now uses native `<dialog>`; retired the D7 v0.9.2 focus-mgmt deferral (the standard *and* less code). |
+| **Playwright** | `getByRole` + web-first assertions + `trace:'on-first-retry'` + programmatic auth confirmed current; `storageState` setup-project is the caching optimization. | **Confirmed** — already in spec; added `storageState` as an optional optimization (§6). |
+| **Server-action E2E mocking** | Two valid patterns: in-app flag-gated mock (repo's `_test-*-store`) vs MSW server-side RPC interception (cleaner; "mock the boundary, not the action"). | **Confirmed + backlogged** — kept the consistent in-app pattern (4-store precedent, proven, scope-contained); suite-wide MSW migration → §13. Prod double-guard (H109) is defense-in-depth, already aligned. |
+| **WCAG 2.2** | Target 2.5.8 (24px), contrast 1.4.3/1.4.11, focus 2.4.7/2.4.11, dialog name/role/value 4.1.2 — all already addressed. | **Confirmed** — no corrections. |
+
+**Sources:** [W3C APG Dialog (Modal) Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/) · [CSS-Tricks — There Is No Need to Trap Focus on a `<dialog>`](https://css-tricks.com/there-is-no-need-to-trap-focus-on-a-dialog-element/) · [Playwright — Best Practices](https://playwright.dev/docs/best-practices) · [Playwright — Authentication](https://playwright.dev/docs/auth) · [Next.js — Testing (Playwright)](https://nextjs.org/docs/app/guides/testing) · [SafeDep — E2E Next.js + MSW + Playwright (Feb 2026)](https://safedep.io/end-to-end-test-nextjs-msw-playwright/) · [Next.js discussion #67136 — mocking server actions](https://github.com/vercel/next.js/discussions/67136)
