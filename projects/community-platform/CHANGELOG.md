@@ -16,6 +16,47 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.9.1] — 2026-05-27 (chat-48 — forms/admin warm reskin + write-path E2E + E2E hygiene)
+
+Completes the warm-system rollout on the form/admin surfaces v0.9.0 deferred, backfills the authenticated RSVP + Thanks write-path E2E, and makes `pnpm e2e` honest-green locally. **className-only on all auth/consent/RBAC/save/write logic** — the only behavioral changes are (a) `ConsentModal` upgraded to a native `<dialog>` (leaf component; consent logic untouched) and (b) test-mode-guarded in-memory mock forks in the two write actions, dead in production via `!isProductionRuntime() && isE2EMode()`. Design at `docs/specs/2026-05-27-community-platform-v0-9-1-forms-admin-design.md`. Plan at `projects/community-platform/v0.9.1-plan.md`. Spec §19.1.
+
+### Added
+
+- **`Pill` `danger` variant + `disabled:opacity-50` on BASE** (H104) — the shared primitive now expresses the alert-bordered destructive action; `StatusEditor` (solid+dashed) and `GdprPanel` (solid+danger) drop their hand-rolled buttons and consume `Pill`. The `danger` variant is byte-identical to GdprPanel's prior bespoke delete button (visual-neutral de-dup).
+- **Native `<dialog>` ConsentModal** (C8/H106) — replaces the hand-rolled `role="dialog"` div with `<dialog>` + `.showModal()` (top-layer, `inert` background, Escape→cancel, `::backdrop`); no manual focus trap (2026 WAI-APA consensus). Warm tokens + `Pill` actions + explicit `aria-labelledby`. jsdom-safe via a `typeof dialog.showModal === "function"` guard.
+- **Write-path E2E mock stores** (H109) — `app/actions/_test-rsvp-store.ts` + `_test-thank-store.ts` (in-memory `globalThis` stores mirroring `_test-status-store`), with double-guarded forks (`!isProductionRuntime() && isE2EMode()`) in `rsvp-event.ts`, `thank-status.ts`, `app/api/event-rsvp-state/route.ts`, and `app/this-week/page.tsx`; reset routes `api/test-reset-{rsvp,thank}`. Both stores coverage-excluded. Un-skips the RSVP-toggle + Thanks write-path Playwright tests (5.4a/5.4b).
+- **Per-surface source-scan tests** — one per reskinned form/admin surface (consent-modal, profile-editor, me-edit, onboard-form/page, no-access, admin-health, invite-form/url/page, event-form, admin-events-new) asserting warm tokens present + no `dark:`/`neutral-*`/`gray-*`/`rounded`.
+- **`members.detail.noProfilePathFmt` i18n key** (H110) — the `/members/[slug]` empty-state file path now renders inside a `<code>` (mono affordance restored).
+
+### Changed
+
+- **Form/admin warm reskin** (H105/H107/H108) — className-only migration of the last v0.1 neutral scaffolding to the cream/ink/dust system via recipes C7 (form-field) and C9 (metric tile + table):
+  - `/me/edit` + `ProfileEditor` — C7 fields/tabs + `.prose-warm` preview (replaces no-op `prose prose-neutral`) (H108)
+  - `/consent` + `ConsentClient` — `bg-cream` shell + native-`<dialog>` modal
+  - `/onboard` (+ sign-in branch + `/onboard/error`) + `OnboardForm` — C7 fields, `Pill` submit; sign-in button → `Pill variant="going"` (matches the canonical `LoginForm`)
+  - `/no-access` — C3 + `Pill` back button
+  - `/admin/health` — C9 metric tile (`border-l-[3px]` + `tabular-nums`) + tokenized 4-week trend table
+  - `/admin/invite` + `InviteForm` + `InviteUrlDisplay` — C7 fields + `Pill` submit/copy
+  - `/admin/events/new` + `EventForm` (272 LOC, heaviest reskin) — C7 across every field + `.prose-warm` preview + `Pill` submit
+- **H103 recipe invariant** extended to the form/admin pages that gained the recipe shell (`/me/edit`, `/no-access`, `/admin/health`, `/admin/invite`, `/admin/events/new`, `/onboard/error`). `/onboard` is intentionally excluded — two render branches → two `<main id="main">` in source; only one renders at runtime.
+- **E2E hygiene** (H111) — routing assertions in `smoke`/`auth`/`consent`/`members`/`archives` rewritten to the current ADR-0012/0014 model **verified against `proxy.ts` `PUBLIC_PATHS`** (discovery surfaces public; `/members`,`/decisions`,`/projects` + `/this-week`,`/me/edit`,`/admin/*` gated — correcting a routing-model inaccuracy in the plan that listed the reader routes as public); prod-edge-only `v0-4-shell` specs gated behind `PLAYWRIGHT_BASE_URL`.
+
+### Fixed
+
+- **`/members/[slug]` empty-state `<code>`** (H110) — file path restored to a `<code>` element (split out of `noProfileFmt` into a sibling i18n key).
+
+### Tests
+
+- **1439 unit/integration green** (+77 vs 1362 v0.9.0 baseline). `pnpm tsc --noEmit` clean. `pnpm lint` clean. `pnpm h67:scan` clean. Production `pnpm build` exit 0. `dark:` in `app/` = 0 (H98 holds; independently grep-verified).
+- Write-path E2E (5.4a RSVP toggle / 5.4b Thanks / 5.4c status) all green, 0 skips. Full local `pnpm e2e` = 72 passed / 3 skipped (prod-edge-only, with reason) / 0 unexpected failures.
+- **3-lane reviewer triage** — security 0C/0H (all four mock forks confirmed un-fireable in prod; no auth/RBAC/write logic moved); typescript + code-quality findings applied in one batched commit (tightened mock error unions + dropped cosmetic `as` casts → `tsc` now enforces mock/result sync; EventForm `font-voice`/`.prose-warm`; onboard-error token; `curSha`/React-import/split guards; E2E `.first()` locators). Deferred to followup: extract the 4× `isProductionRuntime()` helper (plan-sanctioned local copies); align `fetchStatuses` single-guard to the double-guard.
+
+### Visual smoke (pending — Anton, post-merge prod)
+
+Automated coverage is comprehensive (above); the authenticated visual smoke is deferred to Anton's post-merge prod validation (orchestrator Playwright MCP was blocked by a locked browser profile this session). **Priority checklist:** ConsentModal `<dialog>` (open → focus moves in; Escape → sign-out; trigger via a fresh member or by clearing the `waic-consented` cookie in DevTools); `.prose-warm` previews on `/me/edit` + `/admin/events/new` (watch for overflow — the v0.9.0 `<pre>` bug class); `/admin/health` C9 tile/table; `/no-access` + `/onboard`; hero `Pill` re-smoke (`/`, `/home`, `/events`, `/events/[slug]`); all under macOS-dark emulation + soft-nav + hover (per `feedback_visual_smoke_soft_nav_hover`).
+
+---
+
 ## [0.9.0] — 2026-05-27 (chat-45 — redesign completion + `dark:` landmine resolution)
 
 Reader-surface redesign completion applying the v0.6→v0.8 warm system to all remaining un-reskinned pages and components, plus full resolution of the platform-wide `dark:` Tailwind landmine. **No new business logic or auth surfaces.** Design at `docs/specs/2026-05-27-community-platform-v0-9-redesign-completion-design.md`. Plan at `projects/community-platform/v0.9.0-plan.md`. Spec at `projects/community-platform/spec.md` §19.
