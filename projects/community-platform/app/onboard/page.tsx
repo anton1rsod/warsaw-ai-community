@@ -7,6 +7,7 @@ import { INVITE_COOKIE_NAME, verifyToken } from "@/lib/invitations";
 import { OnboardForm } from "@/app/components/OnboardForm";
 import { redeemInvitation as redeemAction } from "@/app/actions/redeem-invitation";
 import { MonoLabel } from "@/app/components/MonoLabel";
+import { Pill } from "@/app/components/Pill";
 
 // auth() + cookies() + searchParams all force this route dynamic.
 export const dynamic = "force-dynamic";
@@ -80,12 +81,7 @@ export default async function OnboardPage({
           className="mt-4"
         >
           <input type="hidden" name="callbackUrl" value="/onboard" />
-          <button
-            type="submit"
-            className="bg-ink text-cream px-4 py-2 font-voice font-bold text-[10px]"
-          >
-            Sign in with GitHub
-          </button>
+          <Pill variant="going" type="submit">Sign in with GitHub</Pill>
         </form>
       </main>
     );
