@@ -21,7 +21,7 @@ export function StarterPack({ items }: StarterPackProps): React.JSX.Element | nu
       aria-labelledby="starter-pack-heading"
       className="bg-paper border-l-[3px] border-l-ink px-4 py-4"
     >
-      <MonoLabel>Start here</MonoLabel>
+      <MonoLabel>// curated</MonoLabel>
       <h2
         id="starter-pack-heading"
         className="mt-2 font-display font-semibold text-ink text-[18px] leading-tight tracking-tight"

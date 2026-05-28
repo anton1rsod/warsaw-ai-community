@@ -82,9 +82,10 @@ export async function notifyTelegram(
     }
     return { ok: true };
   } catch (err) {
-    return {
-      ok: false,
-      reason: err instanceof Error ? err.message : "unknown",
-    };
+    // Strip the bot-token segment from any URL the error message may
+    // include (undici/node-fetch echo the full URL into err.message).
+    const raw = err instanceof Error ? err.message : "unknown";
+    const redacted = raw.replace(/bot[^/]+\/sendMessage/, "bot[REDACTED]/sendMessage");
+    return { ok: false, reason: redacted };
   }
 }

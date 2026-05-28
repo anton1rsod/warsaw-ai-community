@@ -69,12 +69,13 @@ import { loadMemberProfileFresh } from "@/lib/content-snapshot";
 
 describe("postStatus → notifyTelegram (H118 opt-in + H121 fresh-fetch)", () => {
   beforeEach(() => {
+    // restoreAllMocks first so subsequent mock setup is the final state.
+    vi.restoreAllMocks();
     mockClient.readFile.mockReset();
     mockClient.writeFile.mockReset();
     mockClient.deleteFile.mockReset();
     vi.mocked(loadMemberProfileFresh).mockReset();
     vi.mocked(loadMemberProfileFresh).mockResolvedValue({ data: { telegramEcho: true } });
-    vi.restoreAllMocks();
   });
 
   it("fires fetch to api.telegram.org when opt-in is true (H118)", async () => {
@@ -83,9 +84,6 @@ describe("postStatus → notifyTelegram (H118 opt-in + H121 fresh-fetch)", () =>
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
-
-    // Re-register mock after restoreAllMocks cleared it.
-    vi.mocked(loadMemberProfileFresh).mockResolvedValue({ data: { telegramEcho: true } });
 
     const result = await postStatus({
       week: "2026-W22",

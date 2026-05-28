@@ -49,6 +49,11 @@ vi.mock("@/lib/content-snapshot", () => ({
       ? { slug: "anton-safronov", name: "Anton Safronov" }
       : undefined,
   ),
+  // H121 — fresh-fetch accessor for opt-in check. Defaults to null
+  // (no echo) so the existing tests' assertions about postStatus /
+  // editStatus / deleteStatus return values are unchanged. Tests that
+  // exercise the echo path live in tests/integration/status-telegram-echo.test.ts.
+  loadMemberProfileFresh: vi.fn(async () => null),
 }));
 
 import { auth } from "@/lib/auth";

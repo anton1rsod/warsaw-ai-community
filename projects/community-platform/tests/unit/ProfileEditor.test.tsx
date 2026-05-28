@@ -240,5 +240,17 @@ describe("ProfileEditor", () => {
       fireEvent.click(checkbox);
       expect(checkbox).toBeChecked();
     });
+
+    it("seeds the checkbox from initialTelegramEcho=true (post-triage)", () => {
+      render(<ProfileEditor {...baseProps} initialTelegramEcho={true} />);
+      const checkbox = screen.getByRole("checkbox", { name: /telegram echo/i });
+      expect(checkbox).toBeChecked();
+    });
+
+    it("seeds the checkbox unchecked when initialTelegramEcho=false (default)", () => {
+      render(<ProfileEditor {...baseProps} initialTelegramEcho={false} />);
+      const checkbox = screen.getByRole("checkbox", { name: /telegram echo/i });
+      expect(checkbox).not.toBeChecked();
+    });
   });
 });

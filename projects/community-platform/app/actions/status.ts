@@ -177,11 +177,17 @@ export async function postStatus(input: {
     try {
       const fresh = await loadMemberProfileFresh(author.slug, c);
       if (fresh && readTelegramEcho(fresh.data)) {
+        // Mirror what was written to the git file: shipping-log bodies
+        // are sanitized at write time (H116); the echo body must match.
+        const echoBody =
+          parsed.data.mode === "shipping-log"
+            ? sanitizeShippingLogBody(parsed.data.body)
+            : parsed.data.body;
         // H120 — rate-limit deferred to v0.10.1 (echo-per-edit acceptable).
         void notifyTelegram({
           handle: author.handle,
           week: parsed.data.week,
-          body: parsed.data.body,
+          body: echoBody,
           url: `${env.NEXTAUTH_URL}/this-week`,
           botToken: env.TELEGRAM_BOT_TOKEN,
           chatId: env.TELEGRAM_CHAT_ID,
@@ -229,10 +235,15 @@ export async function editStatus(input: {
     try {
       const fresh = await loadMemberProfileFresh(author.slug, ec);
       if (fresh && readTelegramEcho(fresh.data)) {
+        // Mirror what was written to the git file (H116 sanitize parity).
+        const echoBody =
+          parsed.data.mode === "shipping-log"
+            ? sanitizeShippingLogBody(parsed.data.body)
+            : parsed.data.body;
         void notifyTelegram({
           handle: author.handle,
           week: parsed.data.week,
-          body: parsed.data.body,
+          body: echoBody,
           url: `${env.NEXTAUTH_URL}/this-week`,
           botToken: env.TELEGRAM_BOT_TOKEN,
           chatId: env.TELEGRAM_CHAT_ID,

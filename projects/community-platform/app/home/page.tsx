@@ -123,13 +123,9 @@ export default async function HomePage(): Promise<React.JSX.Element> {
           excerpt: "",
         })),
       });
-    } catch (err) {
+    } catch {
       // H115 fail-safe: starter pack outage does NOT break /home. Render
-      // proceeds without the panel. Log to stderr in dev; silent in prod.
-      if (process.env.NODE_ENV !== "production") {
-         
-        console.error("StarterPack load failed", err);
-      }
+      // proceeds without the panel.
       starterPackResolved = null;
     }
   }

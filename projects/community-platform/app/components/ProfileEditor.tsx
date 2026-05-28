@@ -13,6 +13,9 @@ interface ProfileEditorProps {
   initialSha: string;
   slug: string;
   previewEndpoint: string;
+  // v0.10.0: seeded from profile frontmatter so an existing opt-in
+  // survives a profile save when the user didn't re-toggle the checkbox.
+  initialTelegramEcho?: boolean;
 }
 
 type Tab = "edit" | "preview";
@@ -63,6 +66,7 @@ export function ProfileEditor({
   initialSha,
   slug,
   previewEndpoint,
+  initialTelegramEcho = false,
 }: ProfileEditorProps): React.JSX.Element {
   const [body, setBody] = useState<string>(initialBody);
   const [draftRestored, setDraftRestored] = useState<Date | null>(null);
@@ -70,7 +74,7 @@ export function ProfileEditor({
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState<boolean>(false);
   const [save, setSave] = useState<SaveState>({ kind: "idle" });
-  const [telegramEcho, setTelegramEcho] = useState<boolean>(false);
+  const [telegramEcho, setTelegramEcho] = useState<boolean>(initialTelegramEcho);
   const [, startTransition] = useTransition();
 
   // Restore draft on mount. Only show the banner when the draft differs from
