@@ -12,8 +12,10 @@ import {
   readWeekStatuses,
   type StatusUpdate,
 } from "@/lib/status-reader";
+import matter from "gray-matter";
 import { parseMarkdown, renderMarkdownToHtml } from "@/lib/markdown";
 import { SafeHtml } from "@/app/components/SafeHtml";
+import { parseStatusMode } from "@/lib/shipping-log";
 import { StatusEditor } from "@/app/components/StatusEditor";
 import {
   deleteStatus,
@@ -133,16 +135,30 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
     await loadViewerProfile(mySlug);
 
   // Strip frontmatter for display: the action layer always emits
-  // `---\nweek/author/posted_at\n---\n\n<body>` so the user only sees
-  // their actual update text in the editor and on the feed.
+  // `---\nweek/author/mode/updated_at\n---\n\n<body>` so the user only
+  // sees their actual update text in the editor and on the feed.
   const renderedOthers = await Promise.all(
     statuses
       .filter((s) => s.slug !== mySlug)
       .map(async (s) => {
-        const { body } = parseMarkdown(s.body);
+        const parsed = matter(s.body);
+        let mode: "rich" | "shipping-log";
+        try {
+          mode = parseStatusMode(parsed.data.mode);
+        } catch {
+          // H117 read-time forward-compat: unknown modes default to rich
+          mode = "rich";
+        }
+        const bodyText = parsed.content.trim();
+        const html =
+          mode === "shipping-log"
+            ? null
+            : await renderMarkdownToHtml(bodyText);
         return {
           slug: s.slug,
-          html: await renderMarkdownToHtml(body),
+          mode,
+          html,
+          bodyText,
           lastModified: s.lastModified,
         };
       }),
@@ -205,10 +221,16 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
                     {o.slug}
                   </Link>
                 </div>
-                <SafeHtml
-                  html={o.html}
-                  className="prose-warm mt-2 text-sm"
-                />
+                {o.mode === "shipping-log" ? (
+                  <blockquote className="prose-warm mt-2 text-sm border-l-[2px] border-l-dust pl-3 italic">
+                    {o.bodyText}
+                  </blockquote>
+                ) : (
+                  <SafeHtml
+                    html={o.html ?? ""}
+                    className="prose-warm mt-2 text-sm"
+                  />
+                )}
                 <time
                   dateTime={o.lastModified}
                   className="mt-2 block font-voice text-[10px] text-dust"
