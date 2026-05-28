@@ -11,6 +11,9 @@ vi.mock("@/lib/env", () => ({
 vi.mock("@/lib/content-snapshot", () => ({
   listMeetingsFromSnapshot: () => [],
   listEventsFromSnapshot: () => [],
+  listDecisionsFromSnapshot: () => [],
+  listProjectDetails: () => [],
+  listMembers: () => [],
   findMemberByHandle: vi.fn(),
 }));
 
@@ -115,5 +118,18 @@ describe("/home — signed-in Your week pane (Phase A.2.4 / Q1.3 / D25)", () => 
     render(ui);
     // v0.6 Phase 3.2: no hero rendered when roster lookup fails.
     expect(document.getElementById("your-week")).toBeNull();
+  });
+});
+
+describe("/home page mounts StarterPack for signed-in viewers (Phase B.7)", () => {
+  it("imports StarterPack alongside HomeFeed", async () => {
+    const { promises: fs } = await import("node:fs");
+    const path = (await import("node:path")).default;
+    const src = await fs.readFile(
+      path.resolve(process.cwd(), "app/home/page.tsx"),
+      "utf8",
+    );
+    expect(src).toMatch(/import\s+\{\s*StarterPack\s*\}\s+from\s+"@\/app\/components\/StarterPack"/);
+    expect(src).toMatch(/<StarterPack\b/);
   });
 });

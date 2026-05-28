@@ -3,13 +3,20 @@ import {
   findMemberByHandle,
   listMeetingsFromSnapshot,
   listEventsFromSnapshot,
+  listDecisionsFromSnapshot,
+  listProjectDetails,
+  listMembers,
 } from "@/lib/content-snapshot";
 import type { MemberWithProfile } from "@/lib/content-snapshot";
 import { HomeFeed } from "@/app/components/HomeFeed";
 import { YourWeekPane } from "@/app/components/YourWeekPane";
+import { StarterPack } from "@/app/components/StarterPack";
 import { computeHomeFeed } from "@/lib/home-feed";
 import { computeYourWeek, type YourWeekData } from "@/lib/your-week";
 import { formatTimeUntil } from "@/lib/time-until";
+import { loadStarterPack, resolveStarterPackItems } from "@/lib/starter-pack";
+import type { ResolvedStarterPackItem } from "@/lib/starter-pack";
+import path from "node:path";
 import kudosJson from "@/lib/__generated__/kudos.json";
 
 /**
@@ -83,6 +90,50 @@ export default async function HomePage(): Promise<React.JSX.Element> {
   const handle = session?.githubHandle ?? null;
   const member = handle ? findMemberByHandle(handle) : undefined;
   const now = new Date();
+
+  // Phase B (v0.10.0) — Starter Pack on /home for signed-in viewers.
+  // Anonymous viewers never see this section; mounting guarded below.
+  let starterPackResolved: (ResolvedStarterPackItem | null)[] | null = null;
+  if (member) {
+    try {
+      const repoRoot = path.resolve(process.cwd(), "..", "..");
+      const pack = await loadStarterPack(
+        path.join(repoRoot, "community", "starter-pack.md"),
+      );
+      starterPackResolved = resolveStarterPackItems(pack.items, {
+        decisions: listDecisionsFromSnapshot().map((d) => ({
+          slug: d.slug,
+          title: d.title,
+          excerpt: "",
+        })),
+        projects: listProjectDetails().map((p) => ({
+          slug: p.slug,
+          title: p.title,
+          excerpt: "",
+        })),
+        events: listEventsFromSnapshot().map((e) => ({
+          slug: e.slug,
+          title: e.title,
+          excerpt: "",
+        })),
+        statuses: [],
+        members: listMembers().map((m) => ({
+          slug: m.slug,
+          title: m.name ?? m.slug,
+          excerpt: "",
+        })),
+      });
+    } catch (err) {
+      // H115 fail-safe: starter pack outage does NOT break /home. Render
+      // proceeds without the panel. Log to stderr in dev; silent in prod.
+      if (process.env.NODE_ENV !== "production") {
+         
+        console.error("StarterPack load failed", err);
+      }
+      starterPackResolved = null;
+    }
+  }
+
   const yourWeek = member ? loadYourWeekData(member, now) : null;
   const firstName = member ? firstNameFromMember(member, handle ?? "") : "";
   const timeUntil =
@@ -103,6 +154,9 @@ export default async function HomePage(): Promise<React.JSX.Element> {
           now={now}
         />
       )}
+      {starterPackResolved && member ? (
+        <StarterPack items={starterPackResolved} />
+      ) : null}
       <HomeFeed feed={feed} />
     </main>
   );
