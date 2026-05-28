@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { StarterPackSchema, type StarterPackItem } from "@/lib/starter-pack";
+import { loadStarterPack } from "@/lib/starter-pack";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import os from "node:os";
 
 describe("StarterPackSchema (H114)", () => {
   it("accepts a valid items list of mixed artifact types", () => {
@@ -49,5 +53,44 @@ describe("StarterPackSchema (H114)", () => {
     }));
     const result = StarterPackSchema.safeParse({ items });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("loadStarterPack", () => {
+  it("loads a valid starter-pack.md file", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "starter-pack-test-"));
+    const fpath = path.join(dir, "starter-pack.md");
+    await fs.writeFile(
+      fpath,
+      [
+        "---",
+        "items:",
+        "  - { type: decision, slug: 0016-telegram-echo-statuses }",
+        "  - { type: project, slug: gbrain }",
+        "---",
+        "",
+        "Initial seed 2026-05-28.",
+        "",
+      ].join("\n"),
+    );
+
+    const pack = await loadStarterPack(fpath);
+    expect(pack.items).toHaveLength(2);
+    expect(pack.items[0]).toEqual({ type: "decision", slug: "0016-telegram-echo-statuses" });
+    expect(pack.items[1]).toEqual({ type: "project", slug: "gbrain" });
+  });
+
+  it("throws a descriptive error on invalid YAML", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "starter-pack-test-"));
+    const fpath = path.join(dir, "starter-pack.md");
+    await fs.writeFile(fpath, "---\nitems: [oops\n---\n");
+    await expect(loadStarterPack(fpath)).rejects.toThrow(/starter-pack/i);
+  });
+
+  it("throws when items field is missing", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "starter-pack-test-"));
+    const fpath = path.join(dir, "starter-pack.md");
+    await fs.writeFile(fpath, "---\nfoo: bar\n---\n");
+    await expect(loadStarterPack(fpath)).rejects.toThrow();
   });
 });
