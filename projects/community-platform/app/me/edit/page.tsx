@@ -64,7 +64,13 @@ export default async function MeEditPage(): Promise<React.JSX.Element> {
     redirect("/consent");
   }
 
-  const { body } = parseFrontmatter(file.content);
+  const { data, body } = parseFrontmatter(file.content);
+  // v0.10.0 H118 — seed the opt-in checkbox from the existing
+  // frontmatter so re-saving a profile without re-toggling preserves
+  // the prior opt-in. FormData strings ("true"/"false") and raw booleans
+  // are both accepted.
+  const rawEcho = data.telegramEcho;
+  const initialTelegramEcho = rawEcho === true || rawEcho === "true";
 
   return (
     <main id="main" className="mx-auto max-w-3xl px-6 py-10">
@@ -83,6 +89,7 @@ export default async function MeEditPage(): Promise<React.JSX.Element> {
         initialSha={file.sha}
         slug={member.slug}
         previewEndpoint="/api/preview-markdown"
+        initialTelegramEcho={initialTelegramEcho}
       />
     </main>
   );

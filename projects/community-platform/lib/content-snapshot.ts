@@ -1,9 +1,11 @@
+import matter from "gray-matter";
 import type { RosterMember, MemberProfile } from "./roster";
 import type { ProjectDetail } from "./projects";
 import type { Decision } from "./decisions";
 import type { Meeting } from "./meetings";
 import type { Contributions, ProjectContribution } from "./contributions";
 import type { Event } from "./events";
+import type { GitHubAppClient } from "./github-app";
 import snapshotJson from "./__generated__/content-snapshot.json";
 import contributionsJson from "./__generated__/contributions.json";
 import projectContributionsJson from "./__generated__/project-contributions.json";
@@ -124,4 +126,22 @@ export function listEventsFromSnapshot(): readonly Event[] {
 
 export function findEventBySlug(slug: string): Event | undefined {
   return listEventsFromSnapshot().find((e) => e.slug === slug);
+}
+
+/**
+ * H121 — fresh fetch (bypasses build-time content snapshot).
+ *
+ * Reads the member profile markdown directly from GitHub so the caller
+ * sees the current frontmatter regardless of when the last build ran.
+ * Used by the status action to check `telegramEcho` at write time.
+ */
+export async function loadMemberProfileFresh(
+  slug: string,
+  client: GitHubAppClient,
+): Promise<{ data: Record<string, unknown> } | null> {
+  const path = `community/members/${slug}.md`;
+  const file = await client.readFile(path).catch(() => null);
+  if (!file) return null;
+  const parsed = matter(file.content);
+  return { data: parsed.data as Record<string, unknown> };
 }

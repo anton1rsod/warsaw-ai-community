@@ -26,6 +26,10 @@ export type FrontmatterRecord = Record<string, unknown>;
 export const SaveProfileSchema = z.object({
   body: z.string().max(65_536, "Profile body too large (max 64KB)"),
   expectedSha: z.string().min(1, "expectedSha required"),
+  // Accepts boolean or the string "true"/"false" (FormData serialization).
+  telegramEcho: z
+    .union([z.boolean(), z.enum(["true", "false"]).transform((v) => v === "true")])
+    .default(false),
 });
 
 export type SaveProfileInput = z.infer<typeof SaveProfileSchema>;
@@ -144,6 +148,17 @@ export function validateProfileInvariants(
       );
     }
   }
+}
+
+/**
+ * v0.10.0 — reads the opt-in flag from member profile frontmatter.
+ * Default false (privacy-safe): a missing key is treated as opted-out.
+ */
+export function readTelegramEcho(
+  profileData: Record<string, unknown> | null | undefined,
+): boolean {
+  if (!profileData) return false;
+  return profileData.telegramEcho === true;
 }
 
 /**

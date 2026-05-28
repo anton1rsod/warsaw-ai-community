@@ -49,6 +49,11 @@ vi.mock("@/lib/content-snapshot", () => ({
       ? { slug: "anton-safronov", name: "Anton Safronov" }
       : undefined,
   ),
+  // H121 — fresh-fetch accessor for opt-in check. Defaults to null
+  // (no echo) so the existing tests' assertions about postStatus /
+  // editStatus / deleteStatus return values are unchanged. Tests that
+  // exercise the echo path live in tests/integration/status-telegram-echo.test.ts.
+  loadMemberProfileFresh: vi.fn(async () => null),
 }));
 
 import { auth } from "@/lib/auth";
@@ -261,5 +266,43 @@ describe("status actions", () => {
       expect(del.ok).toBe(true);
       expect(mockClient.deleteFile).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('postStatus accepts mode="shipping-log" (v0.10.0 Phase C)', () => {
+  it("includes mode in the PostSchema", async () => {
+    const { promises: fs } = await import("node:fs");
+    const path = (await import("node:path")).default;
+    const src = await fs.readFile(
+      path.resolve(process.cwd(), "app/actions/status.ts"),
+      "utf8",
+    );
+    expect(src).toMatch(/mode:\s*z\.enum\(/);
+    expect(src).toMatch(/STATUS_BODY_MAX_SHIPPING_LOG/);
+  });
+});
+
+describe("H116 — shipping-log sanitize at write time (v0.10.0 Phase C step 5)", () => {
+  it("source-scans for sanitizeShippingLogBody call from fileBody", async () => {
+    const { promises: fs } = await import("node:fs");
+    const path = (await import("node:path")).default;
+    const src = await fs.readFile(
+      path.resolve(process.cwd(), "app/actions/status.ts"),
+      "utf8",
+    );
+    expect(src).toMatch(/sanitizeShippingLogBody\(/);
+  });
+});
+
+describe("postStatus calls notifyTelegram when opt-in is true (v0.10.0 Phase D step 4)", () => {
+  it("source-scans for notifyTelegram + readTelegramEcho calls", async () => {
+    const { promises: fs } = await import("node:fs");
+    const path = (await import("node:path")).default;
+    const src = await fs.readFile(
+      path.resolve(process.cwd(), "app/actions/status.ts"),
+      "utf8",
+    );
+    expect(src).toMatch(/notifyTelegram\(/);
+    expect(src).toMatch(/readTelegramEcho\(/);
   });
 });

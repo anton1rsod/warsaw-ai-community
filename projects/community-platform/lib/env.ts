@@ -16,6 +16,9 @@ const envSchema = z.object({
   COMMUNITY_SLUG: z.string().min(1),
   INVITE_SECRET: z.string().min(32),
   GBRAIN_BASE_URL: z.string().url().optional(),
+  TELEGRAM_BOT_TOKEN: z.string().min(1).optional(),
+  TELEGRAM_CHAT_ID: z.string().min(1).optional(),
+  TELEGRAM_TOPIC_ID: z.string().min(1).optional(),
 });
 
 const result = envSchema.safeParse(process.env);

@@ -144,3 +144,16 @@ describe("/this-week v0.9 — warm-aesthetic, no dark:/scaffolding (H99)", () =>
     expect(src).toMatch(/text-ink|text-dust/);
   });
 });
+
+describe("/this-week renders shipping-log mode as blockquote (v0.10.0 Phase C)", () => {
+  it("imports parseStatusMode + renders <blockquote> for mode='shipping-log'", async () => {
+    const { promises: fs } = await import("node:fs");
+    const path = (await import("node:path")).default;
+    const src = await fs.readFile(
+      path.resolve(process.cwd(), "app/this-week/page.tsx"),
+      "utf8",
+    );
+    expect(src).toMatch(/parseStatusMode/);
+    expect(src).toMatch(/<blockquote\b/);
+  });
+});
