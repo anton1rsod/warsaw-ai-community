@@ -48,7 +48,7 @@ v0.9.0 applied the locked warm-maximalist system to every **reader** surface and
 
 ### 1.3 The stale E2E specs (9, pre-existing — NOT v0.9 regressions)
 E2E is not in CI, so red-locally went unnoticed. Two root causes:
-- **Obsolete routing model** — `smoke.spec.ts`, `auth.spec.ts` (×3), `consent.spec.ts`, `members.spec.ts:22` assert the pre-ADR-0014 "everything → `/login`" gate. ADR-0012/0014 made `/home`, `/events`, `/meetings`, `/calendar`, `/members`, `/decisions`, `/projects` publicly readable; only truly-gated routes redirect.
+- **Obsolete routing model** — `smoke.spec.ts`, `auth.spec.ts` (×3), `consent.spec.ts`, `members.spec.ts:22` assert the pre-ADR-0014 "everything → `/login`" gate. ADR-0012/0014 made `/home`, `/events`, `/meetings`, `/calendar`, `/handbook` publicly readable; only truly-gated routes redirect. **chat-49 correction:** `/members`, `/decisions`, `/projects` are GATED per `proxy.ts:PUBLIC_PATHS` — the chat-48 E2E impl verified against `proxy.ts` reality, but this design line still listed them as public.
 - **Prod-only assertions** — `v0-4-shell.spec.ts` (×3) assert the H56 `Cache-Control: private, no-cache, no-store` that **only Vercel's edge injects** (the dev server emits `no-cache, must-revalidate`) + v0.6-era hero markup; they were authored for `PLAYWRIGHT_BASE_URL`=prod.
 
 ### 1.4 Why a brainstorm (not straight to plan)
