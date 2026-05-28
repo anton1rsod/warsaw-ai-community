@@ -70,6 +70,7 @@ export function ProfileEditor({
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState<boolean>(false);
   const [save, setSave] = useState<SaveState>({ kind: "idle" });
+  const [telegramEcho, setTelegramEcho] = useState<boolean>(false);
   const [, startTransition] = useTransition();
 
   // Restore draft on mount. Only show the banner when the draft differs from
@@ -125,6 +126,7 @@ export function ProfileEditor({
       const fd = new FormData();
       fd.append("body", body);
       fd.append("sha", initialSha);
+      fd.append("telegramEcho", telegramEcho ? "true" : "false");
       const result = await saveProfile(fd);
       if (result.ok) {
         clearDraft(slug);
@@ -202,6 +204,25 @@ export function ProfileEditor({
           )}
         </div>
       )}
+
+      <div className="mt-4">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={telegramEcho}
+            onChange={(e) => setTelegramEcho(e.target.checked)}
+            className="h-4 w-4"
+            disabled={save.kind === "saving"}
+            aria-label="Telegram echo — auto-post my new /this-week statuses to the Subploters Telegram supergroup"
+          />
+          <span className="font-voice text-[12px] text-ink">
+            Telegram echo — auto-post my new /this-week statuses to the Subploters Telegram supergroup
+          </span>
+        </label>
+        <p className="mt-1 font-voice text-[11px] text-dust">
+          Default off. Echoes preserve your handle + first 200 characters of the body + a link back. ADR-0016.
+        </p>
+      </div>
 
       <div className="mt-3 flex items-center gap-3">
         <Pill

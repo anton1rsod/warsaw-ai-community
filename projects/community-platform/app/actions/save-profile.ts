@@ -146,6 +146,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
   const parsed = SaveProfileSchema.safeParse({
     body: formData.get("body"),
     expectedSha: formData.get("sha"),
+    telegramEcho: formData.get("telegramEcho") ?? undefined,
   });
   if (!parsed.success) {
     log.warn("save-profile", "invalid_body", {

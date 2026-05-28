@@ -26,7 +26,10 @@ export type FrontmatterRecord = Record<string, unknown>;
 export const SaveProfileSchema = z.object({
   body: z.string().max(65_536, "Profile body too large (max 64KB)"),
   expectedSha: z.string().min(1, "expectedSha required"),
-  telegramEcho: z.boolean().default(false),
+  // Accepts boolean or the string "true"/"false" (FormData serialization).
+  telegramEcho: z
+    .union([z.boolean(), z.enum(["true", "false"]).transform((v) => v === "true")])
+    .default(false),
 });
 
 export type SaveProfileInput = z.infer<typeof SaveProfileSchema>;

@@ -225,4 +225,20 @@ describe("ProfileEditor", () => {
       });
     });
   });
+
+  describe("ProfileEditor telegramEcho toggle (v0.10.0 Phase D step 3)", () => {
+    it("renders an opt-in checkbox labeled with Telegram + privacy hint", () => {
+      render(<ProfileEditor {...baseProps} />);
+      const checkbox = screen.getByRole("checkbox", { name: /telegram echo/i });
+      expect(checkbox).toBeInTheDocument();
+      expect(checkbox).not.toBeChecked(); // default OFF
+    });
+
+    it("flips to checked when toggled", () => {
+      render(<ProfileEditor {...baseProps} />);
+      const checkbox = screen.getByRole("checkbox", { name: /telegram echo/i });
+      fireEvent.click(checkbox);
+      expect(checkbox).toBeChecked();
+    });
+  });
 });
