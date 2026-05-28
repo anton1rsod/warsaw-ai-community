@@ -28,6 +28,7 @@ import {
   isE2EMode as isE2EModeThank,
   mockThankActions,
 } from "@/app/actions/_test-thank-store";
+import { isProductionRuntime } from "@/lib/runtime-env";
 import { createGitHubApp } from "@/lib/github-app";
 import {
   parseProfileFrontmatter,
@@ -45,10 +46,13 @@ import { ThankButton } from "@/app/components/ThankButton";
 export const dynamic = "force-dynamic";
 
 async function fetchStatuses(week: string): Promise<StatusUpdate[]> {
-  if (isE2EMode()) {
-    // E2E read path: in-memory store seeded by the actions in this same
-    // process. lastModified is filled in lazily so the sort path stays
-    // identical to production.
+  // E2E read path: in-memory store seeded by the actions in this same
+  // process. Double-guarded (NODE_ENV + E2E flag) so the fork is dead in
+  // production even if NEXT_PUBLIC_E2E_MODE leaked into a prod build —
+  // matches loadViewerProfile and the v0.9.1 write-path mock forks.
+  // lastModified is filled in lazily so the sort path stays identical
+  // to production.
+  if (!isProductionRuntime() && isE2EMode()) {
     const now = new Date().toISOString();
     return mockStatusActions
       .list(week)
@@ -83,7 +87,7 @@ async function loadViewerProfile(
   // receives a non-empty profileSha and can call thankStatus. No GitHub App
   // call is made. Double-guarded (NODE_ENV + E2E flag) so the fork is dead in
   // production even if NEXT_PUBLIC_E2E_MODE leaked into a prod build.
-  if (process.env.NODE_ENV !== "production" && isE2EModeThank()) {
+  if (!isProductionRuntime() && isE2EModeThank()) {
     return { fm: undefined, sha: mockThankActions.getProfileSha(slug) };
   }
   try {

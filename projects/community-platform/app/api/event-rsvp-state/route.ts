@@ -12,10 +12,7 @@ import {
   isE2EMode,
   mockRsvpActions,
 } from "@/app/actions/_test-rsvp-store";
-
-function isProductionRuntime(): boolean {
-  return process.env.NODE_ENV === "production";
-}
+import { isProductionRuntime } from "@/lib/runtime-env";
 
 export const dynamic = "force-dynamic";
 
