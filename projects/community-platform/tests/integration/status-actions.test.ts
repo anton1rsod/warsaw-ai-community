@@ -276,3 +276,15 @@ describe('postStatus accepts mode="shipping-log" (v0.10.0 Phase C)', () => {
     expect(src).toMatch(/STATUS_BODY_MAX_SHIPPING_LOG/);
   });
 });
+
+describe("H116 — shipping-log sanitize at write time (v0.10.0 Phase C step 5)", () => {
+  it("source-scans for sanitizeShippingLogBody call from fileBody", async () => {
+    const { promises: fs } = await import("node:fs");
+    const path = (await import("node:path")).default;
+    const src = await fs.readFile(
+      path.resolve(process.cwd(), "app/actions/status.ts"),
+      "utf8",
+    );
+    expect(src).toMatch(/sanitizeShippingLogBody\(/);
+  });
+});
