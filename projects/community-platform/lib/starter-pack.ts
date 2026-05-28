@@ -60,3 +60,55 @@ export async function loadStarterPack(absolutePath: string): Promise<StarterPack
 
   return result.data;
 }
+
+export interface ResolvedStarterPackItem {
+  type: StarterPackArtifactType;
+  slug: string;
+  kicker: string;
+  title: string;
+  excerpt: string;
+  href: string;
+}
+
+interface SnapshotShape {
+  decisions: { slug: string; title: string; excerpt: string }[];
+  projects: { slug: string; title: string; excerpt: string }[];
+  events: { slug: string; title: string; excerpt: string }[];
+  statuses: { slug: string; title: string; excerpt: string }[];
+  members: { slug: string; title: string; excerpt: string }[];
+}
+
+const HREF_BY_TYPE: Record<StarterPackArtifactType, (slug: string) => string> = {
+  decision: (s) => `/decisions/${s}`,
+  project: (s) => `/projects/${s}`,
+  event: (s) => `/events/${s}`,
+  status: () => "/this-week",
+  member: (s) => `/members/${s}`,
+};
+
+const POOL_KEY_BY_TYPE: Record<StarterPackArtifactType, keyof SnapshotShape> = {
+  decision: "decisions",
+  project: "projects",
+  event: "events",
+  status: "statuses",
+  member: "members",
+};
+
+export function resolveStarterPackItems(
+  items: readonly StarterPackItem[],
+  snapshot: SnapshotShape,
+): (ResolvedStarterPackItem | null)[] {
+  return items.map((item) => {
+    const pool = snapshot[POOL_KEY_BY_TYPE[item.type]];
+    const match = pool.find((p) => p.slug === item.slug);
+    if (!match) return null;
+    return {
+      type: item.type,
+      slug: item.slug,
+      kicker: item.type,
+      title: match.title,
+      excerpt: match.excerpt,
+      href: HREF_BY_TYPE[item.type](item.slug),
+    };
+  });
+}
