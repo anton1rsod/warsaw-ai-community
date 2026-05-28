@@ -208,6 +208,69 @@ describe("StatusEditor v0.9.1 — consumes Pill (H104)", () => {
   });
 });
 
+describe("StatusEditor mode toggle (v0.10.0 Phase C)", () => {
+  it('exposes Quick (shipping-log) + Rich (markdown) toggle Pills', () => {
+    render(
+      <StatusEditor
+        week="2026-W22"
+        current={null}
+        actions={fakeActions()}
+      />,
+    );
+    expect(screen.getByRole("button", { name: /quick/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /rich/i })).toBeInTheDocument();
+  });
+
+  it("defaults to Quick mode for a fresh post (no current entry)", () => {
+    render(
+      <StatusEditor
+        week="2026-W22"
+        current={null}
+        actions={fakeActions()}
+      />,
+    );
+    // Quick mode = single-line input
+    expect(screen.getByLabelText(/shipping log/i)).toBeInTheDocument();
+    // Rich textarea is not visible by default
+    expect(screen.queryByRole("textbox", { name: /what are you working on/i })).not.toBeInTheDocument();
+  });
+
+  it("switches to Rich mode when Rich Pill is clicked", () => {
+    render(
+      <StatusEditor
+        week="2026-W22"
+        current={null}
+        actions={fakeActions()}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /rich/i }));
+    expect(screen.getByLabelText(/what are you working on/i)).toBeInTheDocument();
+  });
+
+  it("caps Quick input at 280 chars", () => {
+    render(
+      <StatusEditor
+        week="2026-W22"
+        current={null}
+        actions={fakeActions()}
+      />,
+    );
+    const input = screen.getByLabelText(/shipping log/i) as HTMLInputElement;
+    expect(input.maxLength).toBe(280);
+  });
+
+  it("renders Rich mode when current entry exists (legacy edit case)", () => {
+    render(
+      <StatusEditor
+        week="2026-W22"
+        current={{ body: "Existing rich-mode body", sha: "abc" }}
+        actions={fakeActions()}
+      />,
+    );
+    expect(screen.getByLabelText(/what are you working on/i)).toBeInTheDocument();
+  });
+});
+
 describe("StatusEditor v0.9 — warm-aesthetic, no dark:/scaffolding (H99)", () => {
   const src = readFileSync(
     resolve(__dirname, "../../app/components/StatusEditor.tsx"),

@@ -197,7 +197,11 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
                   ? { body: myStripped, sha: my.sha }
                   : null
               }
-              actions={{ postStatus, editStatus, deleteStatus }}
+              actions={{
+                postStatus: ({ week, body, mode }) => postStatus({ week, body, mode }),
+                editStatus: ({ week, body, mode, sha }) => editStatus({ week, body, mode, sha }),
+                deleteStatus,
+              }}
             />
           </div>
         </section>
