@@ -288,3 +288,16 @@ describe("H116 — shipping-log sanitize at write time (v0.10.0 Phase C step 5)"
     expect(src).toMatch(/sanitizeShippingLogBody\(/);
   });
 });
+
+describe("postStatus calls notifyTelegram when opt-in is true (v0.10.0 Phase D step 4)", () => {
+  it("source-scans for notifyTelegram + readTelegramEcho calls", async () => {
+    const { promises: fs } = await import("node:fs");
+    const path = (await import("node:path")).default;
+    const src = await fs.readFile(
+      path.resolve(process.cwd(), "app/actions/status.ts"),
+      "utf8",
+    );
+    expect(src).toMatch(/notifyTelegram\(/);
+    expect(src).toMatch(/readTelegramEcho\(/);
+  });
+});

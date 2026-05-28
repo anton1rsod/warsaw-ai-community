@@ -19,6 +19,9 @@ import {
   sanitizeShippingLogBody,
   type StatusMode,
 } from "@/lib/shipping-log";
+import { notifyTelegram } from "@/lib/telegram-notify";
+import { readTelegramEcho } from "@/lib/profile-editor";
+import { loadMemberProfileFresh } from "@/lib/content-snapshot";
 
 export type StatusActionError =
   | "not_authenticated"
@@ -162,12 +165,32 @@ export async function postStatus(input: {
   const author = await resolveAuthor();
   if ("error" in author) return { ok: false, error: author.error };
 
+  const c = client();
   try {
-    const result = await client().writeFile(
+    const result = await c.writeFile(
       pathFor(parsed.data.week, author.slug),
       fileBody(author.handle, parsed.data.week, parsed.data.body, parsed.data.mode),
       { message: `status: ${author.handle} for ${parsed.data.week}` },
     );
+    // H118 + H121: check opt-in flag via fresh GitHub fetch (not stale snapshot).
+    // H119: fire-and-forget — echo failure never blocks the status write.
+    try {
+      const fresh = await loadMemberProfileFresh(author.slug, c);
+      if (fresh && readTelegramEcho(fresh.data)) {
+        // H120 — rate-limit deferred to v0.10.1 (echo-per-edit acceptable).
+        void notifyTelegram({
+          handle: author.handle,
+          week: parsed.data.week,
+          body: parsed.data.body,
+          url: `${env.NEXTAUTH_URL}/this-week`,
+          botToken: env.TELEGRAM_BOT_TOKEN,
+          chatId: env.TELEGRAM_CHAT_ID,
+          topicId: env.TELEGRAM_TOPIC_ID,
+        });
+      }
+    } catch {
+      // H119 — never block the status write on echo wiring failure
+    }
     return { ok: true, sha: result.sha };
   } catch (err: unknown) {
     return { ok: false, error: mapWriteError(err) };
@@ -190,8 +213,9 @@ export async function editStatus(input: {
   const author = await resolveAuthor();
   if ("error" in author) return { ok: false, error: author.error };
 
+  const ec = client();
   try {
-    const result = await client().writeFile(
+    const result = await ec.writeFile(
       pathFor(parsed.data.week, author.slug),
       fileBody(author.handle, parsed.data.week, parsed.data.body, parsed.data.mode),
       {
@@ -199,6 +223,25 @@ export async function editStatus(input: {
         sha: parsed.data.sha,
       },
     );
+    // H118 + H121: check opt-in flag via fresh GitHub fetch (not stale snapshot).
+    // H119: fire-and-forget — echo failure never blocks the status write.
+    // H120 — rate-limit deferred to v0.10.1 (echo-per-edit acceptable).
+    try {
+      const fresh = await loadMemberProfileFresh(author.slug, ec);
+      if (fresh && readTelegramEcho(fresh.data)) {
+        void notifyTelegram({
+          handle: author.handle,
+          week: parsed.data.week,
+          body: parsed.data.body,
+          url: `${env.NEXTAUTH_URL}/this-week`,
+          botToken: env.TELEGRAM_BOT_TOKEN,
+          chatId: env.TELEGRAM_CHAT_ID,
+          topicId: env.TELEGRAM_TOPIC_ID,
+        });
+      }
+    } catch {
+      // H119 — never block the status write on echo wiring failure
+    }
     return { ok: true, sha: result.sha };
   } catch (err: unknown) {
     return { ok: false, error: mapWriteError(err) };
