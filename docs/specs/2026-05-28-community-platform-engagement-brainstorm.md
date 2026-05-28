@@ -8,6 +8,8 @@
 **Output of:** `superpowers:brainstorming` per chat-51 handoff (`docs/specs/2026-05-28-community-platform-engagement-brainstorm-handoff.md`).
 **Timeline note:** Original chat-51 handoff framed this as "4 weeks." With Claude-Code-paced dev (chat-52 plan + chat-53 ship = ~1-2 calendar days for v0.10.0), the calendar collapses to **~2 weeks total**, gated by Anton-paced ops (content seeding + alpha outreach), not by engineering throughput.
 
+**Validation note (v3 — 2026-05-28):** This brainstorm went through a second industry-best-practice cross-check after v2 was committed. 5 additional 2025-2026 sources reviewed; 3 material gaps + 2 edge-flags surfaced. Material amendments landed in §3.5b (member-introductions seed), §8 (4-cadence framework + member-to-member direction-flip plan + 24h response gate), §10 (Day-30 soft target alongside Day-14 checkpoint). Edge flags captured in §11 (public roadmap deferral) and §12-O9 (introductions feature scope).
+
 ---
 
 ## §1 — Context: this is cold-start, not low-engagement
@@ -146,6 +148,30 @@ The platform's `/projects` page reads from `projects/` and `persona-builder/`. P
 - **Pre-fill — strongest seed (also doubles as ADR-0016 cross-reference):**
   > "Open Q for the bootstrap: should `/this-week` echo to a Telegram topic automatically (opt-in)? Trade-off: visibility loop (members see their posts mirrored; Telegram members peek at platform activity without auth) vs. cross-channel noise (Telegram already gets enough threads). Reply on `/this-week` or in Telegram #subploters-meta. Drafting ADR-0016 either way; your input shapes the default."
 - **Alternative seed:** "Which 3 of the 19 of you should I invite as platform alphas first? Reply in DM if you'd rather not say publicly." (More personal; risks framing as kingmaking — Anton's call which posture fits.)
+
+### 3.5b — Member-introductions seed (added v3 per industry-best-practice cross-check)
+
+#### Pattern source
+
+Bettermode + Circle (2025-2026): *"Members who say it was 'very easy' to get involved report 95% engagement and 93% five-year renewal intent, while those who found it 'difficult' show 18% engagement and 64% five-year renewal intent."* The introductions surface is one of the 6-10 canonical core channels in any community platform; new members need a *structured, low-pressure way to start meeting others.*
+
+#### Subploters gap
+
+Anton signs in → `/home` shows Starter Pack + HomeFeed → no "Say Hello" surface. New alphas have no obvious first-write affordance other than the rich-Markdown status editor.
+
+#### Recommended seed (content-side, this brainstorm)
+
+- Anton seeds his own "Hi, I'm Anton" 1-line status on `/this-week` (via the one-line shipping-log primitive once it ships). Frontmatter: `mode: shipping-log`, body: e.g., *"Hi — founder of Subploters. I'm building this platform + gbrain. Open to talk about cold-start, community design, and Polish AI. Reply or DM."*
+- Doubles as the §3.1 weekly status seed (consolidates two seeds into one — first post is also the introductions seed).
+
+#### Platform-side affordance (scope decision — see §12-O9)
+
+Options for making "say hi" first-class:
+- **Option α (v0.10.0 micro-add)**: extend `/onboard` flow with an optional "Say hi in one line — appears on `/home`" prompt; submission writes a shipping-log status with `intro: true` frontmatter; rendered on `/home` Starter Pack under "Newly joined."
+- **Option β (v0.10.1 defer)**: ship v0.10.0 with the 3 features as planned; add introductions in v0.10.1 once one-line primitive + Starter Pack are live and friction is observable.
+- **Option γ (no platform change)**: do nothing platform-side; Anton's `/onboard` walkthrough during §7 manual recruiting verbally prompts each alpha to post a hi status.
+
+**Recommended default:** Option β (defer to v0.10.1). Rationale: v0.10.0 already has 3 features in scope; introductions can be added cleanly once the one-line primitive lands. Option γ is the conservative-but-real fallback if Anton wants to ship v0.10.0 even tighter.
 
 ### 3.6 — Tone discipline (applies to all 5 seeds)
 
@@ -314,22 +340,40 @@ Plus any of the other 15 Telegram members Anton has had at least one 1-on-1 with
 
 ---
 
-## §8 — Step 4: Founder cadence (Anton, starting now — ongoing)
+## §8 — Step 4: Founder cadence + 4-cadence framework + direction-flip (Anton, starting now — ongoing)
 
 ### Pattern source
 
-cmgr.live: *"If you aren't willing to be the most active person in your room for the first 90 days, you haven't built a community; you've just built an empty digital warehouse."* Paul Graham's HN model: dang has been doing the same moderating job every single day for over a decade.
+cmgr.live: *"If you aren't willing to be the most active person in your room for the first 90 days, you haven't built a community; you've just built an empty digital warehouse."* Paul Graham's HN model: dang has been doing the same moderating job every single day for over a decade. **Added v3:** 2026 research adds the critical refinement: *"flip the default direction of engagement from founder-to-member to member-to-member — flipping that direction increases engagement without adding more content."* Founder-broadcast is the cold-start posture; member-to-member is the steady-state posture; the transition happens between Day 14 and Day 30.
 
-### Commitment
+### 4-cadence framework (added v3)
 
-- **At least 1 `/this-week` status per week, starting now**, sustained indefinitely.
+Predictable rhythms beat aspirational frequency. Research: *"Communities that feel alive maintain predictable rhythms—when members know what to expect at specific times (every Monday for new discussion topics, Wednesdays for resource drops, Fridays for casual chats), they develop a habit of checking in."* Subploters-fitted 4-cadence calendar:
+
+| Cadence | Frequency | Surface | Anton-owned at cold-start; flips to member-owned post-Day-14 |
+|---|---|---|---|
+| **Weekly status / shipping log** | ≥1/wk | `/this-week` | Anton seeds; once 2+ alphas post in a week, Anton can skip (lets alpha posts be hero) |
+| **Event anchor** | ~1/mo (per ADR-0005 cadence) | `community/events/` + `/events` reader | Anton hosts office hours / demo / meetup; later alphas can host |
+| **Member spotlight** | ≥1/wk once Day-14+ | `/home` Starter Pack rotating "Recently posted" slot | Anton curates; once member-to-member flips, becomes alpha-driven via Thank counts |
+| **Decision drop** | ad-hoc, ≥1/2wks ideally | `docs/decisions/` + `/decisions` reader | Anton drafts; later alphas propose ADRs (ADR-0001 governance allows non-founder-authored decisions) |
+
+### Commitment (Anton-owned at cold-start)
+
+- **≥1 `/this-week` status per week starting now**, sustained indefinitely. Lowest-viable-cadence principle (*"Two posts a week, every week, will outperform five posts one week and silence the next"*) — don't over-commit; under-commit deliberately.
 - **Prefer the one-line shipping-log primitive (§5) once it ships** — models the low bar.
-- **Post even on slow weeks.** "Nothing new shipped this week — pulled into [other thing]" is itself a behavioral template (it's OK to have slow weeks).
-- **Respond within 24h** to any non-Anton status with a `<ThankButton>` press + optional comment in Telegram if discussion warrants.
+- **Post even on slow weeks.** "Nothing new shipped this week — pulled into [other thing]" is itself a behavioral template (it's OK to have slow weeks). Skipping a week is corrosive in a way that posting a low-key status is not.
+- **24h response gate (strengthened v3):** Anton responds within 24h to **every** new-member milestone — first consent commit (Telegram DM acknowledgment), first profile edit (Thank press + reply in Telegram), first status post (Thank press + Starter Pack feature). Research: *"Making the time to respond to new member introductions goes a long way, and it's up to you to set the norm by modeling the behavior."*
+
+### Direction-flip plan (added v3)
+
+By **Day 14+ checkpoint** (§10), if ≥2 non-Anton members have posted statuses:
+- **Anton intentionally skips posting some weeks** to let alpha posts be the hero on `/home` Starter Pack. Founder-omnipresence at cold-start is necessary; founder-overshadow post-Day-14 inhibits member-to-member habit.
+- **Anton's Thank presses become the signal**, not Anton's posts. Members watch what Anton *highlights*, not what Anton *writes*.
+- **Member spotlight cadence (table above) becomes alpha-driven**: rotate which alpha's post anchors the Starter Pack each week.
 
 ### Why this is the wedge
 
-Members watch what the founder does, not what the founder says. Empirical: Anton has posted **once** (the "Hey Folks" smoke). Until Anton posts authentically and consistently, no member-recruiting outreach (Step 3) carries weight. Step 4 isn't a milestone, it's the daily/weekly discipline that makes Steps 1-3 land.
+Members watch what the founder does, not what the founder says. Empirical: Anton has posted **once** (the "Hey Folks" smoke). Until Anton posts authentically and consistently, no member-recruiting outreach (Step 3) carries weight. Step 4 isn't a milestone, it's the daily/weekly discipline that makes Steps 1-3 land — and the direction-flip ensures Step 4 doesn't ossify into permanent founder-broadcast.
 
 ---
 
@@ -363,7 +407,8 @@ Phase B is **preserved-but-resequenced, not subtracted.** chat-22's design analy
 
 ### Hard metric (existing)
 
-- `/admin/health` active-poster ratio ≥ 25% of signed-in members at the **~Day-14 checkpoint**.
+- **~Day-14 checkpoint (hard, in-spec):** `/admin/health` active-poster ratio ≥ 25% of signed-in members.
+- **~Day-30 soft target (added v3):** sustained ratio ≥ 25% across the trailing 4-week window AND ≥3 distinct non-Anton posters. Justification: research convergence is *"first 30-90 days are the critical formation window"*; Day-14 may be too aggressive to draw strong conclusions; Day-30 is the cleaner re-evaluate trigger for Phase B (§9).
 - Computation source: `lib/health-metric.ts` — unchanged.
 
 ### Funnel metrics (new, Anton-tracked manually)
@@ -395,6 +440,7 @@ Phase B is **preserved-but-resequenced, not subtracted.** chat-22's design analy
 - Search via cmd-K (catalog still too small per `V0_5_BACKLOG.md:66`).
 - Dark-mode design pass (`V0_5_BACKLOG.md:68` — own scope).
 - Full brand-identity v2 (`V0_5_BACKLOG.md:70` — own scope; brand v1.2 stays locked).
+- **Public roadmap surface (added v3)** — *"Implementing a public roadmap is slowly becoming the norm for many SaaS companies in 2026"* (productlift.dev, featurebase). Subploters has `docs/decisions/` (ADRs) + per-project `plan.md` but no member-facing roadmap surface. Defer to v0.11+: candidate placement is `/handbook/roadmap` or a "What's next" card on `/home`. Out of v0.10.0 scope; flagged here for visibility.
 
 ---
 
@@ -410,6 +456,7 @@ Phase B is **preserved-but-resequenced, not subtracted.** chat-22's design analy
 | O6 | ADR-0016 (Telegram echo) — Proposed or Accepted at v0.10.0 ship? | Proposed; flip to Accepted only after ≥2 weeks of clean operation with no privacy complaints |
 | O7 | Next event date + topic (§3.4 placeholder) | `[TBD: Anton picks during Day 0-3]` from the 4 candidates in §3.4 |
 | O8 | Alpha picks (§7 placeholder) | `[TBD: Anton's pick of 3-5 from persona-builder roster + other 1-on-1-prior Telegram members]` |
+| O9 | Member-introductions surface (§3.5b): which option — α (v0.10.0 `/onboard` extension), β (v0.10.1 defer), or γ (no platform change, Anton-walkthrough only)? | Option β (defer to v0.10.1); v0.10.0 stays at 3 features; introductions added cleanly post-primitive ship |
 
 ---
 
@@ -436,6 +483,14 @@ The 4-step recipe converges across 5 independent sources:
 
 5. **Discord small-server growth playbook.** [Hashmeta — Discord Server Growth Complete Guide](https://hashmeta.com/blog/discord-server-growth-the-complete-guide-to-building-from-zero-to-10000-members/). *"The first 50 people are your foundation."* + *"Daily discussion prompts, weekly questions, or themed conversation days give members easy participation opportunities — someone might hesitate to start a conversation cold but readily responds to a thoughtful question."* → Step 2b (§5) + Step 2c (§6).
 
+### Added v3 (industry-best-practice cross-check, 2026-05-28)
+
+6. **Member-introductions onboarding pattern.** [Bettermode — Onboarding Community Members](https://bettermode.com/blog/onboarding-community-members) + [Circle — Community Onboarding](https://circle.so/blog/community-onboarding). *"Members who say it was 'very easy' to get involved report 95% engagement and 93% five-year renewal intent, while those who found it 'difficult' show 18% engagement and 64% five-year renewal intent."* Core canonical channels: onboarding, announcements, introductions, help, feedback, wins/show-and-tell. → §3.5b (introductions seed) + §12-O9.
+
+7. **4-cadence content framework + direction-flip.** [Buddyxtheme — Community Engagement Strategies 2026](https://buddyxtheme.com/community-engagement-strategies-that-work/) + [Circle — Community Engagement Ideas](https://circle.so/blog/community-engagement-ideas). Predictable rhythms (weekly prompts, event anchors, member spotlights, resource drops) + the critical flip *"from founder-to-member to member-to-member engagement increases engagement without adding more content."* + *"Two posts a week, every week, will outperform five posts one week and silence the next."* → §8 4-cadence framework + direction-flip plan.
+
+8. **Public roadmap as community trust signal.** [productlift.dev — Best Public Roadmap Tools 2026](https://www.productlift.dev/best-public-roadmap-tool/) + [featurebase — Public Roadmap Examples](https://www.featurebase.app/blog/public-roadmap-examples). *"Transparently sharing the roadmap fosters trust and attracts contributors by showcasing ongoing efforts and future opportunities for involvement."* → §11 deferral entry.
+
 ---
 
 ## §15 — Tradeoffs considered (Approaches B and C — why not picked)
@@ -458,15 +513,16 @@ The 4-step recipe converges across 5 independent sources:
 
 ---
 
-## §16 — Self-review (per `superpowers:brainstorming` checklist)
+## §16 — Self-review (per `superpowers:brainstorming` checklist; updated v3)
 
 ### Placeholder scan
 
 - §3.4 has `[TBD: Anton picks next event date + topic]` — Anton-decision placeholder, listed in §12-O7 as an open question. Acceptable.
 - §3.5 has alternative seed content — clearly marked as such; Anton picks. Acceptable.
+- §3.5b (v3) recommended Option β (defer to v0.10.1); §12-O9 captures the open question. Acceptable.
 - §4 starter-pack YAML example references `[NEXT_EVENT_TBD]` — links back to §3.4 / §12-O7. Acceptable (placeholder for a decision Anton makes during seed step, not a content gap in the doc).
 - §7 has `[TBD: Anton's pick of 3-5]` for alpha picks — Anton-decision placeholder, listed in §12-O8 as an open question. Acceptable.
-- §12 has 8 explicit Os with recommended defaults — those ARE the open questions; not placeholders elsewhere in the doc.
+- §12 has 9 explicit Os with recommended defaults — those ARE the open questions; not placeholders elsewhere in the doc.
 - No `TODO`, `XXX`, `FIXME`.
 
 ### Internal consistency
@@ -476,12 +532,15 @@ The 4-step recipe converges across 5 independent sources:
 - §9 Phase B disposition matches §11 Out-of-scope row. ✓
 - §13 v0.10.0 = §4+§5+§6 hardenings H113-H121 — matches sub-section hardenings. ✓
 - §1.5 stocktake feeds §3 seed pre-fills (projects, ADRs, brand, persona-builder personas → §3.3 + §7). ✓
-- Timeline anchors are consistent throughout: "Day 0-3 seed window," "Day 1-3 v0.10.0 dev," "Day 3-10 recruit," "Day-14 checkpoint."
+- Timeline anchors are consistent throughout: "Day 0-3 seed window," "Day 1-3 v0.10.0 dev," "Day 3-10 recruit," "Day-14 checkpoint," "Day-30 soft target" (v3).
+- v3 amendments are internally consistent: §3.5b introductions seed references §3.1 (consolidated weekly status) ✓; §8 4-cadence framework references §3.5 (open question), §4 (Starter Pack rotating slot), §3.2 (decision drops) ✓; §10 Day-30 references §9 Phase B re-trigger ✓; §11 public roadmap deferral references §12-O9 (no — it's an §11 standalone deferral, not an O); §14 added sources 6/7/8 anchor §3.5b/§8/§11 respectively. ✓
 
 ### Scope check
 
 - Single implementation plan: v0.10.0 with 3 features (Starter Pack + one-line primitive + Telegram echo). Step 1 (seed content) + Step 3 (recruit) + Step 4 (cadence) are Anton-paced ops work and do NOT go into a writing-plans pass — they go into Anton's personal calendar.
 - v0.10.0 is plan-able in 1 chat (chat-52) and shippable in 1 chat (chat-53). ✓
+- v3 §3.5b introductions surface — recommended default Option β defers to v0.10.1, preserving v0.10.0 scope at 3 features. If Anton picks Option α (v0.10.0 micro-add), scope grows to 4 features — still plan-able in 1 chat, ship-able in 1 chat. ✓
+- v3 §8 4-cadence framework + direction-flip is operational guidance for Anton, not new dev scope. ✓
 
 ### Ambiguity check
 
@@ -490,10 +549,12 @@ The 4-step recipe converges across 5 independent sources:
 - "25%" applies to denominator "signed-in members" — locked in §1, restated in §10.
 - "Founder cadence" = ≥1 weekly status per §8 — explicit numeric commitment.
 - "Day-14 checkpoint" used consistently throughout (§9, §10, §11, §12-O5).
+- "Day-30 soft target" (v3) explicitly cross-referenced from §9 and §10; not used elsewhere as a hard milestone.
+- "Direction-flip" (v3) defined as: by Day 14+ checkpoint AND ≥2 non-Anton posters in a week → Anton begins skipping some weeks and letting alpha posts be hero. Not ambiguous.
 
 ### Outcome
 
-No fixes needed; doc is internally consistent, ready for user review.
+v3 amendments internally consistent; no fixes needed; ready for user re-review.
 
 ---
 
