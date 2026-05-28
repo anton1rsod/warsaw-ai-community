@@ -71,6 +71,7 @@ async function attemptSave(
   newBody: string,
   handle: string,
   expectedSha: string,
+  telegramEcho: boolean,
 ): Promise<AttemptResult> {
   if (isE2EMockActive()) {
     // Extract slug from path: "community/members/<slug>.md"
@@ -96,7 +97,9 @@ async function attemptSave(
     return { kind: "error", error: "frontmatter_corrupt" };
   }
 
-  const newContent = composeProfile(data, newBody);
+  // v0.10.0: persist the telegramEcho opt-in flag in frontmatter.
+  const updatedData = { ...data, telegramEcho };
+  const newContent = composeProfile(updatedData, newBody);
 
   try {
     const result = await gh.writeFile(path, newContent, {
@@ -165,6 +168,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
     parsed.data.body,
     handle,
     parsed.data.expectedSha,
+    parsed.data.telegramEcho,
   );
   if (attempt.kind === "conflict") {
     log.warn("save-profile", "refresh_needed", {
