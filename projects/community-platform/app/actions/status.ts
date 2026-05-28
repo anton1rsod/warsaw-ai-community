@@ -11,6 +11,7 @@ import {
   mockStatusActions,
   type MockResult,
 } from "@/app/actions/_test-status-store";
+import { isProductionRuntime } from "@/lib/runtime-env";
 
 export type StatusActionError =
   | "not_authenticated"
@@ -87,10 +88,6 @@ function fileBody(handle: string, week: string, body: string): string {
     body,
     "",
   ].join("\n");
-}
-
-function isProductionRuntime(): boolean {
-  return process.env.NODE_ENV === "production";
 }
 
 function mapWriteError(err: unknown): StatusActionError {

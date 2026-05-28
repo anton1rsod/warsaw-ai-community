@@ -25,6 +25,7 @@ import {
   mockRsvpActions,
   type MockRsvpResult,
 } from "@/app/actions/_test-rsvp-store";
+import { isProductionRuntime } from "@/lib/runtime-env";
 
 const RsvpInputSchema = z.object({
   eventSlug: z.string(),
@@ -45,10 +46,6 @@ export type RsvpResult =
         | "refresh_needed"
         | "internal_error";
     };
-
-function isProductionRuntime(): boolean {
-  return process.env.NODE_ENV === "production";
-}
 
 /**
  * Translates the mock store's discriminated MockRsvpResult into the strict

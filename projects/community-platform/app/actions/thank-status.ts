@@ -27,6 +27,7 @@ import {
   mockThankActions,
   type MockThankResult,
 } from "@/app/actions/_test-thank-store";
+import { isProductionRuntime } from "@/lib/runtime-env";
 
 const ItemTypeSchema = z.enum(["status", "contribution", "meeting"]);
 type ItemType = z.infer<typeof ItemTypeSchema>;
@@ -75,10 +76,6 @@ function isValidItemId(item_type: ItemType, item_id: string): boolean {
   }
   // meeting
   return findMeetingBySlug(item_id) != null;
-}
-
-function isProductionRuntime(): boolean {
-  return process.env.NODE_ENV === "production";
 }
 
 /**
