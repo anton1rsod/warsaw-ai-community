@@ -16,6 +16,39 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.9.1.1] — 2026-05-28 (chat-49/50 — /onboard/not-found reskin + recovered tests + followups)
+
+Chat-49 closeout for v0.9.1. **No production behavior change** — pure className surface fix on a previously-missed form/admin page plus structural refactor (helper extraction + guard alignment) plus test/doc corrections. PR #46 squash-merged at `8b12e83`. Tag `community-platform-v0.9.1.1` pushed at the merge SHA.
+
+### Fixed
+
+- **`app/onboard/not-found.tsx` warm reskin** (H112) — chat-48's v0.9.1 reskin pass updated the sibling `app/onboard/error/page.tsx` but missed `not-found.tsx`, leaving v0.1 scaffolding (`text-2xl`, default sans-serif, plain `<Link>` action) visible whenever Next.js handled an `notFound()` under `/onboard/`. Mirrored the warm tokens (cream shell, Geist `text-3xl font-display`, MonoLabel, `text-dust` mono voice, `Pill variant="going"` action) so the two leaves render identically. **Caught by orchestrator-side authenticated visual smoke** against local-E2E-mode dev (Vercel preview can't render auth-gated surfaces — prod-only OAuth callback, GOTCHAS #3).
+
+### Added
+
+- **`lib/runtime-env.ts`** — single-source `isProductionRuntime()` predicate (`VERCEL_ENV === "production" || NODE_ENV === "production"`). Extracted from the 4 local copies the v0.9.1 plan deliberately sanctioned in `app/actions/rsvp-event.ts`, `app/actions/status.ts`, `app/actions/thank-status.ts`, and `app/api/event-rsvp-state/route.ts`. Same predicate, one definition. New `tests/unit/runtime-env.test.ts` includes a hermetic fs-walk guard that asserts the function name is defined in exactly one file across `app/` + `lib/` (forward-defends future drift).
+- **Recovered v0.9.1 source-scan tests** (PR #45 leftover) — six per-surface skin tests authored in chat-48 but never staged (`admin-events-new-page-skin.test.tsx`, `admin-health-page.test.tsx`, `admin-invite-page-skin.test.tsx`, `event-form-skin.test.tsx`, `invite-form-skin.test.tsx`, `invite-url-display-skin.test.tsx`). All pass against merged v0.9.1; restored as part of the v0.9.1 invariant matrix.
+
+### Changed
+
+- **`app/this-week/page.tsx` `fetchStatuses` guard alignment** — single-guard `isE2EMode()` → double-guard `!isProductionRuntime() && isE2EMode()` matching the v0.9.1 write-path mock forks (`rsvp-event`, `thank-status`, `event-rsvp-state`, `status`) and the v0.9.0 `loadViewerProfile`. Strictly more restrictive — the guard was already unreachable in production, and now it cannot fire even if production accidentally exports `E2E_MOCKS=1`.
+- **v0.9.1 design + plan §7 routing-model correction** — the design + plan docs claimed `/members`, `/decisions`, `/projects` were public; `proxy.ts:PUBLIC_PATHS` says they are GATED. The chat-48 E2E impl already verified reality (assertions land on `/login` after navigating these paths); only the docs read wrong. Corrected inline.
+
+### Tests
+
+- **1450 unit/integration green** (+11 vs 1439 v0.9.1 baseline: +6 `tests/unit/onboard-not-found-page.test.tsx` (warm-token parity scan vs the chat-48 `/onboard/error/page.tsx` baseline) + 5 `tests/unit/runtime-env.test.ts` (helper unit + hermetic guard)). `pnpm tsc --noEmit` clean. `pnpm lint` clean. CI green 1m41s (run 26571741969). Vercel previews green both projects.
+- Skipped (deliberate): the v0.9.1.1 changes are too small to warrant a fresh 3-lane reviewer dispatch on top of the chat-48 triage; security surface is structurally unchanged (`isProductionRuntime` extracted, not modified; this-week guard tightened, not loosened; reskin is className-only).
+
+### Visual smoke (pending — Anton, post-merge prod)
+
+The orchestrator-side authenticated smoke against local-E2E-mode dev on `:3010` (signed in as `anton1rsod` via `/api/test-auth`) covered every surface that local-E2E can render and passed (6 priority items from the v0.9.1 deferred list + macOS-dark emulation + soft-nav + hover); the single FAIL was `/onboard/not-found`, fixed in this point release. The remaining gap is prod runtime, which only Anton's signed-in browser can exercise. **Paste-ready script** at `docs/specs/2026-05-28-community-platform-v0-9-1-prod-smoke-script.md` (signed-in as `anton1rsod`, macOS-dark emulation, DevTools cookie + console commands inline). Any regression → v0.9.1.2 point release (className-only where possible).
+
+### Pre-existing flag (not in scope here)
+
+`app/components/ConsentModal.tsx` hardcodes `"Opt in to the Warsaw AI Community platform"` since `871b4f9` (v0.1). The chat-39 `COMMUNITY_NAME` env flip never threaded into this string. Same class as other un-swept hardcoded strings — separate brand-rename string sweep, no ETA.
+
+---
+
 ## [0.9.1] — 2026-05-27 (chat-48 — forms/admin warm reskin + write-path E2E + E2E hygiene)
 
 Completes the warm-system rollout on the form/admin surfaces v0.9.0 deferred, backfills the authenticated RSVP + Thanks write-path E2E, and makes `pnpm e2e` honest-green locally. **className-only on all auth/consent/RBAC/save/write logic** — the only behavioral changes are (a) `ConsentModal` upgraded to a native `<dialog>` (leaf component; consent logic untouched) and (b) test-mode-guarded in-memory mock forks in the two write actions, dead in production via `!isProductionRuntime() && isE2EMode()`. Design at `docs/specs/2026-05-27-community-platform-v0-9-1-forms-admin-design.md`. Plan at `projects/community-platform/v0.9.1-plan.md`. Spec §19.1.
