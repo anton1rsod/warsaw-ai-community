@@ -26,14 +26,13 @@ function fakeActions(): StatusEditorActions {
 }
 
 describe("StatusEditor", () => {
-  it("renders empty textarea when no current status", () => {
+  it("renders empty input when no current status (Quick mode default)", () => {
     render(
       <StatusEditor week="2026-W18" current={null} actions={fakeActions()} />,
     );
-    const textarea = screen.getByLabelText(
-      /what are you working on/i,
-    ) as HTMLTextAreaElement;
-    expect(textarea.value).toBe("");
+    // New posts default to Quick (shipping-log) mode — single-line input
+    const input = screen.getByLabelText(/shipping log/i) as HTMLInputElement;
+    expect(input.value).toBe("");
     expect(
       screen.getByRole("button", { name: /post/i }),
     ).toBeInTheDocument();
@@ -62,12 +61,13 @@ describe("StatusEditor", () => {
     ).toBeInTheDocument();
   });
 
-  it("calls postStatus when no current status and form submitted", async () => {
+  it("calls postStatus when no current status and form submitted (Quick mode)", async () => {
     const actions = fakeActions();
     render(
       <StatusEditor week="2026-W18" current={null} actions={actions} />,
     );
-    fireEvent.change(screen.getByLabelText(/what are you working on/i), {
+    // New posts default to Quick mode — use the shipping-log input
+    fireEvent.change(screen.getByLabelText(/shipping log/i), {
       target: { value: "New status" },
     });
     fireEvent.click(screen.getByRole("button", { name: /post/i }));
@@ -75,6 +75,7 @@ describe("StatusEditor", () => {
     expect(actions.postStatus).toHaveBeenCalledWith({
       week: "2026-W18",
       body: "New status",
+      mode: "shipping-log",
     });
   });
 
@@ -95,6 +96,7 @@ describe("StatusEditor", () => {
     expect(actions.editStatus).toHaveBeenCalledWith({
       week: "2026-W18",
       body: "Updated",
+      mode: "rich",
       sha: "s1",
     });
   });
@@ -128,7 +130,8 @@ describe("StatusEditor", () => {
     render(
       <StatusEditor week="2026-W18" current={null} actions={actions} />,
     );
-    fireEvent.change(screen.getByLabelText(/what are you working on/i), {
+    // New posts default to Quick mode — use the shipping-log input
+    fireEvent.change(screen.getByLabelText(/shipping log/i), {
       target: { value: "x" },
     });
     fireEvent.click(screen.getByRole("button", { name: /post/i }));
