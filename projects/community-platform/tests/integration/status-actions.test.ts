@@ -263,3 +263,16 @@ describe("status actions", () => {
     });
   });
 });
+
+describe('postStatus accepts mode="shipping-log" (v0.10.0 Phase C)', () => {
+  it("includes mode in the PostSchema", async () => {
+    const { promises: fs } = await import("node:fs");
+    const path = (await import("node:path")).default;
+    const src = await fs.readFile(
+      path.resolve(process.cwd(), "app/actions/status.ts"),
+      "utf8",
+    );
+    expect(src).toMatch(/mode:\s*z\.enum\(/);
+    expect(src).toMatch(/STATUS_BODY_MAX_SHIPPING_LOG/);
+  });
+});
