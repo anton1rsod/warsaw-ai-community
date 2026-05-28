@@ -67,4 +67,34 @@ describe("env", () => {
     process.env.GBRAIN_BASE_URL = "not-a-url";
     await expect(import("@/lib/env")).rejects.toThrow(/GBRAIN_BASE_URL/);
   });
+
+  describe("telegram echo (v0.10.0)", () => {
+    it("accepts undefined TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID / TELEGRAM_TOPIC_ID (all optional)", async () => {
+      setRequiredEnv();
+      delete process.env.TELEGRAM_BOT_TOKEN;
+      delete process.env.TELEGRAM_CHAT_ID;
+      delete process.env.TELEGRAM_TOPIC_ID;
+      const { env } = await import("@/lib/env");
+      expect(env.TELEGRAM_BOT_TOKEN).toBeUndefined();
+      expect(env.TELEGRAM_CHAT_ID).toBeUndefined();
+      expect(env.TELEGRAM_TOPIC_ID).toBeUndefined();
+    });
+
+    it("accepts a populated TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID + TELEGRAM_TOPIC_ID triplet", async () => {
+      setRequiredEnv();
+      process.env.TELEGRAM_BOT_TOKEN = "12345:fake-bot-token";
+      process.env.TELEGRAM_CHAT_ID = "-1001234567890";
+      process.env.TELEGRAM_TOPIC_ID = "42";
+      const { env } = await import("@/lib/env");
+      expect(env.TELEGRAM_BOT_TOKEN).toBe("12345:fake-bot-token");
+      expect(env.TELEGRAM_CHAT_ID).toBe("-1001234567890");
+      expect(env.TELEGRAM_TOPIC_ID).toBe("42");
+    });
+
+    it("throws when TELEGRAM_BOT_TOKEN is set to an empty string", async () => {
+      setRequiredEnv();
+      process.env.TELEGRAM_BOT_TOKEN = "";
+      await expect(import("@/lib/env")).rejects.toThrow(/TELEGRAM_BOT_TOKEN/);
+    });
+  });
 });
