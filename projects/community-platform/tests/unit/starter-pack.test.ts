@@ -149,3 +149,13 @@ describe("resolveStarterPackItems", () => {
     expect(resolved).toEqual([null]);
   });
 });
+
+describe("real starter-pack.md (smoke)", () => {
+  it("loads + validates the committed community/starter-pack.md", async () => {
+    const repoRoot = path.resolve(process.cwd(), "..", "..");
+    const realPath = path.join(repoRoot, "community", "starter-pack.md");
+    const pack = await loadStarterPack(realPath);
+    expect(pack.items.length).toBeGreaterThanOrEqual(1);
+    expect(pack.items.length).toBeLessThanOrEqual(8);
+  });
+});
