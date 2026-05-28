@@ -3873,3 +3873,23 @@ className-only on auth/consent/RBAC/save/write *logic*; the Phase-4 mock forks a
 No new ADR — applies ADR-0014's locked warm-amber system to the remaining surfaces (className-only) + adds test-mode-guarded E2E mocks (no production behavior change; an established `_test-*-store` repo convention, not a new architectural posture).
 
 *This §19.1 drafted 2026-05-27 in chat-47 from the brainstorm locks captured at `docs/specs/2026-05-27-community-platform-v0-9-1-forms-admin-design.md`. Scope (complete rollout) + E2E posture (build mocks) decided by Anton via AskUserQuestion; both = the recommended option. Validated against current (2026) industry standards per Anton's request: modal upgraded to native `<dialog>`+`.showModal()` (W3C APG / WCAG 2.2; retired the focus-mgmt deferral); Playwright (role locators / web-first / `trace:on-first-retry` / programmatic auth) + WCAG 2.2 (2.5.8 / 1.4.3 / 2.4.7) choices confirmed; MSW server-action interception backlogged. Sources in the design-doc appendix. Next: `superpowers:writing-plans` → `v0.9.1-plan.md`.*
+
+## §20 — v0.10.0 engagement bootstrap (Phase B + C + D)
+
+Spec source: `docs/specs/2026-05-28-community-platform-engagement-brainstorm.md` §4–§6.
+
+### Hardenings
+
+- **H113** — every `community/starter-pack.md` slug resolves against the live content snapshot at build time.
+- **H114** — `community/starter-pack.md` schema validated with Zod at boot; bad config fails fast.
+- **H115** — `<StarterPack>` is a Server Component (no client state); `/home` render-path tolerates loader failure (no 500).
+- **H116** — `mode: "shipping-log"` bodies are stripped of `<`, `>`, `*`, `` ` ``, `#`, `_`, `~` and trailing whitespace at write time.
+- **H117** — frontmatter `mode` field validated at write time; unknown values rejected; read time defaults to `"rich"` for forward-compat.
+- **H118** — Telegram echo requires profile-frontmatter `telegramEcho: true`; default OFF.
+- **H119** — `notifyTelegram()` is fire-and-forget; status write persists on Telegram API failure.
+- **H120** — Rate-limit echo to `(handle, week)` cardinality (v0.10.0: echo-per-edit accepted; revisit v0.10.1).
+- **H121** — Opt-in check reads from a fresh GitHub fetch, not the build-time content snapshot.
+
+### ADR
+
+- **ADR-0016** — Telegram echo for /this-week statuses (Proposed). Flips to Accepted after ≥2 weeks of clean operation.

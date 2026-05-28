@@ -16,6 +16,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.10.0] — TBD (will be filled in at SHIPPED commit)
+
+### Added
+- `<StarterPack>` server component on `/home` for signed-in viewers; curated 3–5 artifacts from `community/starter-pack.md` (Phase B; H113/H114/H115).
+- One-line "shipping log" primitive in `<StatusEditor>` (`mode: "shipping-log"`, 280-char cap, plain text); renders as `<blockquote>` on `/this-week` (Phase C; H116/H117).
+- Opt-in Telegram echo: new `/this-week` statuses auto-post to the Subploters Telegram supergroup when `telegramEcho: true` in the member profile (Phase D; H118/H119/H120/H121).
+- ADR-0016 Telegram echo for /this-week statuses (Proposed).
+
+### Changed
+- `lib/env.ts` accepts 3 optional Telegram env vars (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_TOPIC_ID`).
+- `SaveProfileSchema` adds `telegramEcho: boolean` (default false).
+- `app/actions/status.ts` PostSchema + EditSchema accept `mode` field (default `"rich"`).
+
+### Engagement bootstrap context
+
+v0.10.0 ships the 3 platform lifts from the chat-51 engagement brainstorm (`docs/specs/2026-05-28-community-platform-engagement-brainstorm.md`). Steps 1 / 3 / 4 (content seeding / manual recruiting / founder cadence) are Anton-paced ops work and ship independently of this version.
+
+---
+
 ## [0.9.1.1] — 2026-05-28 (chat-49/50 — /onboard/not-found reskin + recovered tests + followups)
 
 Chat-49 closeout for v0.9.1. **No production behavior change** — pure className surface fix on a previously-missed form/admin page plus structural refactor (helper extraction + guard alignment) plus test/doc corrections. PR #46 squash-merged at `8b12e83`. Tag `community-platform-v0.9.1.1` pushed at the merge SHA.
