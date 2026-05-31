@@ -197,9 +197,15 @@ export default async function ThisWeekPage(): Promise<React.JSX.Element> {
                   ? { body: myStripped, sha: my.sha }
                   : null
               }
+              // Server Actions must be passed as direct references across
+              // the Server→Client boundary. Inline arrow wrappers — even
+              // ones that just forward args — turn into plain functions
+              // and trigger a runtime serialization error in production.
+              // The action signatures already accept `mode?: string`, so
+              // the StatusEditor's `{mode: StatusMode}` calls are valid.
               actions={{
-                postStatus: ({ week, body, mode }) => postStatus({ week, body, mode }),
-                editStatus: ({ week, body, mode, sha }) => editStatus({ week, body, mode, sha }),
+                postStatus,
+                editStatus,
                 deleteStatus,
               }}
             />

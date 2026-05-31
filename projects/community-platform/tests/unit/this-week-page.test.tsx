@@ -157,3 +157,20 @@ describe("/this-week renders shipping-log mode as blockquote (v0.10.0 Phase C)",
     expect(src).toMatch(/<blockquote\b/);
   });
 });
+
+describe("H122: Server Actions passed as direct references (v0.10.0.1)", () => {
+  // The v0.10.0 ship wrapped postStatus/editStatus in inline arrow
+  // functions to thread `mode` — `postStatus: ({...}) => postStatus({...})`.
+  // That broke Next.js Server→Client serialization at runtime (only signed-in
+  // users saw the 500). The action signatures already accept `mode?: string`
+  // so the wrappers are unnecessary; remove them and pass module refs.
+  it("does not wrap postStatus/editStatus/deleteStatus in inline arrows", async () => {
+    const { promises: fs } = await import("node:fs");
+    const path = (await import("node:path")).default;
+    const src = await fs.readFile(
+      path.resolve(process.cwd(), "app/this-week/page.tsx"),
+      "utf8",
+    );
+    expect(src).not.toMatch(/(postStatus|editStatus|deleteStatus)\s*:\s*\([^)]*\)\s*=>/);
+  });
+});
