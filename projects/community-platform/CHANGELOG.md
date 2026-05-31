@@ -16,7 +16,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
-## [0.10.0] — TBD (will be filled in at SHIPPED commit)
+## [0.10.0.1] — 2026-05-31 (chat-52 followup — /this-week Server Action serialization hotfix; H122)
+
+### Fixed
+- `/this-week` returned a 500 to signed-in viewers because `<StatusEditor>`'s `actions` prop wrapped `postStatus` / `editStatus` in inline arrow functions to thread `mode` (`postStatus: ({...}) => postStatus({...})`). Next.js Server Components can only serialize **direct module references** of Server Actions across the Server→Client boundary; inline arrows turn into plain functions and trigger a runtime serialization error (digest 187262648 / 1543477304). The action signatures already accept `mode?: string`, so the wrappers were unnecessary — replaced with direct references (`actions={{ postStatus, editStatus, deleteStatus }}`). Caught by orchestrator-side prod smoke; CI + Vercel preview don't exercise this signed-in path. **Hardening H122** added as a source-scan regression guard in `tests/unit/this-week-page.test.tsx`.
+
+---
+
+## [0.10.0] — 2026-05-28 (chat-52 — engagement bootstrap; PR #47 squash-merged at b6bc8ae)
 
 ### Added
 - `<StarterPack>` server component on `/home` for signed-in viewers; curated 3–5 artifacts from `community/starter-pack.md` (Phase B; H113/H114/H115).
