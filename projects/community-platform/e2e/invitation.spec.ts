@@ -48,7 +48,7 @@ test.describe("Invitation feature E2E", () => {
     await loginAs(page, "anton1rsod");
     await page.goto("/admin/invite");
     await page.getByLabel(/telegram hint/i).fill("@invitee");
-    await page.getByRole("button", { name: /mint/i }).click();
+    await page.getByRole("button", { name: /mint invitation url/i }).click();
     const url = await readMintedInviteUrl(page);
     expect(url).toContain("/onboard?token=");
 
@@ -61,7 +61,7 @@ test.describe("Invitation feature E2E", () => {
     await page.getByLabel(/git email/i).fill("e2e@member.test");
     await page.getByLabel(/i agree/i).check();
     await page.getByRole("button", { name: /complete/i }).click();
-    await page.waitForURL(/\/this-week/);
+    await page.waitForURL(/\/welcome/);
   });
 
   test("Scenario 2 — invalid token → generic error page", async ({ page }) => {
@@ -89,7 +89,7 @@ test.describe("Invitation feature E2E", () => {
   }) => {
     await loginAs(page, "anton1rsod");
     await page.goto("/admin/invite");
-    await page.getByRole("button", { name: /mint/i }).click();
+    await page.getByRole("button", { name: /mint invitation url/i }).click();
     const url = await readMintedInviteUrl(page);
 
     await loginAs(page, "newmember");
@@ -99,7 +99,7 @@ test.describe("Invitation feature E2E", () => {
     await page.getByLabel(/git email/i).fill("first@redeem.test");
     await page.getByLabel(/i agree/i).check();
     await page.getByRole("button", { name: /complete/i }).click();
-    await page.waitForURL(/\/this-week/);
+    await page.waitForURL(/\/welcome/);
 
     // Replay attempt: a different non-roster user clicks the same URL
     // and submits. The page-level check passes (token signature/exp
@@ -127,7 +127,7 @@ test.describe("Invitation feature E2E", () => {
   }) => {
     await loginAs(page, "anton1rsod");
     await page.goto("/admin/invite");
-    await page.getByRole("button", { name: /mint/i }).click();
+    await page.getByRole("button", { name: /mint invitation url/i }).click();
     const url = await readMintedInviteUrl(page);
 
     // Stay signed in as anton1rsod (already on roster).
@@ -142,7 +142,7 @@ test.describe("Invitation feature E2E", () => {
   }) => {
     await loginAs(page, "anton1rsod");
     await page.goto("/admin/invite");
-    await page.getByRole("button", { name: /mint/i }).click();
+    await page.getByRole("button", { name: /mint invitation url/i }).click();
     const url = await readMintedInviteUrl(page);
 
     await loginAs(page, "newmember");
@@ -168,7 +168,7 @@ test.describe("Invitation feature E2E", () => {
     await loginAs(page, "anton1rsod");
     await page.goto("/admin/invite");
     await page.getByLabel(/telegram hint/i).fill("@knownuser");
-    await page.getByRole("button", { name: /mint/i }).click();
+    await page.getByRole("button", { name: /mint invitation url/i }).click();
     const url = await readMintedInviteUrl(page);
 
     await loginAs(page, "newmember");
@@ -190,5 +190,42 @@ test.describe("Invitation feature E2E", () => {
       page.getByText(/this invitation was issued to/i),
     ).toBeVisible();
     await expect(page.getByText("@knownuser")).toBeVisible();
+  });
+
+  test("Scenario 8 — meeting invite: admin mints meeting QR, two members redeem the same URL", async ({
+    page,
+  }) => {
+    await loginAs(page, "anton1rsod");
+    await page.goto("/admin/invite");
+    await page.getByRole("button", { name: /mint meeting qr/i }).click();
+    // The meeting URL is the LAST readonly input to appear (single-invite URL
+    // only shows after its own mint; here only the meeting form was submitted).
+    await page.waitForFunction(() =>
+      Array.from(document.querySelectorAll("input[readonly]")).some(
+        (i) => (i as HTMLInputElement).value.includes("/onboard?token="),
+      ),
+    );
+    const url = await page.locator("input[readonly]").last().inputValue();
+    expect(url).toContain("/onboard?token=");
+
+    // First member redeems → /welcome
+    await loginAs(page, "meetingone");
+    await page.goto(url);
+    await page.getByLabel(/display name/i).fill("Meeting One");
+    await page.getByLabel(/telegram handle/i).fill("@meetingone");
+    await page.getByLabel(/git email/i).fill("one@meet.test");
+    await page.getByLabel(/i agree/i).check();
+    await page.getByRole("button", { name: /complete/i }).click();
+    await page.waitForURL(/\/welcome/);
+
+    // Second member redeems the SAME url → also /welcome (multi-use)
+    await loginAs(page, "meetingtwo");
+    await page.goto(url);
+    await page.getByLabel(/display name/i).fill("Meeting Two");
+    await page.getByLabel(/telegram handle/i).fill("@meetingtwo");
+    await page.getByLabel(/git email/i).fill("two@meet.test");
+    await page.getByLabel(/i agree/i).check();
+    await page.getByRole("button", { name: /complete/i }).click();
+    await page.waitForURL(/\/welcome/);
   });
 });
