@@ -10,4 +10,12 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
     },
   },
+  {
+    // Tests reach into external API shapes (Notion property payloads) where `any`
+    // is pragmatic. `any` stays banned in lib/** and scripts/** (application code).
+    files: ["tests/**/*.test.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
 );
