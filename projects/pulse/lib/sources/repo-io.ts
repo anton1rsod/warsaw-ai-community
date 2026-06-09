@@ -36,7 +36,7 @@ export async function listStatusFiles(repoRoot = REPO_ROOT): Promise<string[]> {
     try {
       entries = await readdir(dir);
     } catch {
-      continue; // not a directory
+      continue; // skip entries that cannot be read as a directory
     }
     for (const name of entries) {
       if (name.endsWith(".md")) out.push(path.join(dir, name));

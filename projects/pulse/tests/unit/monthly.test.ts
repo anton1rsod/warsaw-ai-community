@@ -38,7 +38,7 @@ describe("buildMonthlyReview", () => {
   });
 
   it("renders empty-states and 'None' blockers", () => {
-    const md = buildMonthlyReview({ ...input, releases: [], blockers: [] } as MonthlyReviewInput);
+    const md = buildMonthlyReview({ ...input, releases: [], state: { ...input.state, blockers: [] } });
     expect(md).toContain("_No releases this month._");
     expect(md).toContain("_None._");
   });
