@@ -3893,3 +3893,43 @@ Spec source: `docs/specs/2026-05-28-community-platform-engagement-brainstorm.md`
 ### ADR
 
 - **ADR-0016** — Telegram echo for /this-week statuses (Proposed). Flips to Accepted after ≥2 weeks of clean operation.
+
+## §21 — v0.11.0 Meeting signup (multi-use invite QR)
+
+Spec source: `docs/specs/2026-06-09-community-platform-meeting-signup-design.md` (full design + 2026 best-practices validation + decisions log D1–D6). Brainstorm input: `docs/specs/2026-06-09-community-platform-meeting-signup-persona-handoff.md`. Hard deadline: Thu 2026-06-11 meetup.
+
+**Goal:** attendees join on the spot via GitHub from one projected QR. Stays **invite-gated** (admin-issued); open self-signup is explicitly out of scope (separate future ADR). Persona upload deferred to v0.11.1.
+
+### Requirements
+
+- **R1** — `InvitePayloadSchema` gains optional `kind: "single" | "meeting"` (absent ⇒ `single`, fully backward-compatible) + meeting-only `max_uses` + short `exp`. One mint/verify/handoff path; only the redemption guard branches.
+- **R2** — `meeting` redemption: multi-use (skip single-use `jtiHasFinalRow` rejection), append a `redeemed` audit row per attendee, enforce **revocation** + **soft cap** + **live duplicate-handle** guards.
+- **R3** — Admin surface on `/admin/invite`: mint meeting invite (choose expiry + cap) → projectable server-rendered SVG QR of the **full canonical URL (no shortener)** + list of active meeting invites with **Revoke**.
+- **R4** — Redemption CAS uses exponential backoff + full jitter + capped retries (replaces the single immediate retry).
+- **R5** — New-member first-use: set `waic-consented=1` at redemption + redirect to a **public `/welcome`** page (not gated `/this-week`) to avoid the `/no-access` snapshot-lag bounce. New public route added to `PUBLIC_PATHS`.
+- **R6** — Expired/invalid meeting token → clean `/onboard/error`. Expiry default ~3–4h, admin-adjustable, clamped.
+- **R7** — Backward-compat: all existing single-use invitation tests/behaviors unchanged.
+
+### Hardenings
+
+- **H123** — `kind` absent ⇒ `"single"`; existing tokens, mint path, and tests unaffected.
+- **H124** — A `revoked` ledger row beats multi-use (revocation wins over `meeting` semantics).
+- **H125** — Admin revoke appends a `revoked` ledger row; meeting guard rejects any redemption whose `jti` is revoked.
+- **H126** — Soft `max_uses` cap: meeting guard counts `redeemed` rows in the freshly-read ledger; rejects beyond cap (best-effort under OCC).
+- **H127** — Meeting expiry default ~3–4h, clamped to a sane min/max at mint; `verifyToken` enforces `exp`.
+- **H128** — Live duplicate-handle guard for meeting redemptions (reject if handle already in the live `roster.md`) — closes the snapshot-lag double-join.
+- **H129** — Redemption CAS: exponential backoff + full jitter + capped retries (deterministically testable via injected sleeper/RNG).
+- **H130** — Redemption sets the `waic-consented` cookie (member consented in-form).
+- **H131** — Post-redeem redirect to public `/welcome`, not gated `/this-week` (avoids `/no-access` during snapshot lag).
+- **H132** — QR encodes the full canonical URL with no shortener; SVG rendered server-side (no third-party QR service sees tokens).
+- **H133** — Expired/invalid meeting token → clean `/onboard/error`; no info leak, no live-resolving destination.
+- **H134** — New meeting-mint action re-checks `isAdmin` server-side (privilege-escalation guard, parity with existing mint).
+- **H135** — Admin surface lists active meeting invites + revoke control (QR-registry best practice).
+
+### ADR
+
+- **ADR-0018** — Meeting-scoped multi-use invites (Proposed → Accepted on v0.11.0 merge). Records the invite-cardinality change, expiry-not-count as the primary bound (OCC raciness), revocation + soft cap + GitHub-OAuth as defense layers, and the explicit boundary that this stays invite-gated (open membership = separate future ADR).
+
+### Deferred to v0.11.1+
+
+Persona upload/integrate (`save-persona` action mirroring `save-profile`, consent step, + fix the latent `.public.md`-inert and `truncateToFirstH2` persona-display bugs); signed "fresh-member" bridge cookie for instant gated-surface access during snapshot lag; Vercel BotID / WAF rate-limit on the redemption path.
