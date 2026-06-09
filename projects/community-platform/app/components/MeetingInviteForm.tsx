@@ -29,7 +29,7 @@ export function MeetingInviteForm({ mintAction, revokeAction }: MeetingInviteFor
 
   async function handleRevoke(): Promise<void> {
     if (!result?.jti) return;
-    setBusy(true);
+    setBusy(true); setError(null);
     try {
       const fd = new FormData();
       fd.set("jti", result.jti);

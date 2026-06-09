@@ -38,11 +38,23 @@ export async function revokeInvitation(formData: FormData): Promise<RevokeResult
   if (jtiIsRevoked(rows, parsed.data.jti)) return { ok: true }; // idempotent
 
   const newLedger = appendRevocationRow(file.content, {
-    jti: parsed.data.jti, issuedAt: "", issuedBy: `@${session.githubHandle}`,
+    // issuedAt/issuedBy describe the original mint, which the revoke path
+    // doesn't look up — leave blank rather than misattribute the revoker as
+    // the issuer. `revokedBy` carries the admin handle.
+    jti: parsed.data.jti, issuedAt: "", issuedBy: "",
     hintTelegram: "", revokedBy: session.githubHandle, reason: "admin revoke (meeting invite)",
   });
-  await app.writeFile(LEDGER_PATH, newLedger, {
-    message: `invitation: revoke ${parsed.data.jti}`, sha: file.sha,
-  });
+  try {
+    await app.writeFile(LEDGER_PATH, newLedger, {
+      message: `invitation: revoke ${parsed.data.jti}`, sha: file.sha,
+    });
+  } catch {
+    // The blob-SHA CAS already prevents a clobbering double-write; a conflict
+    // here means a concurrent ledger write (e.g. a redemption mid-meeting)
+    // landed first. Surface a recoverable error so the admin re-clicks rather
+    // than seeing an opaque 500. Auto-retry-under-contention is a documented
+    // v0.11.1 enhancement.
+    return { error: "Revoke failed — the ledger was busy. Please try again." };
+  }
   return { ok: true };
 }

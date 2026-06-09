@@ -456,12 +456,14 @@ const TOKEN_TTL_MS = 7 * 86400 * 1000;
 /**
  * Atomic 4-file commit redemption orchestrator.
  *
- * Steps (spec §11.2 redemption + §11.5 H2/H3/H12/H13):
- *   1. Read ledger; reject if JTI has a final row (H2/H3 defense-in-depth).
- *   2. Read roster + aliases; resolve slug + collision (H12).
+ * Steps (spec §11.2 redemption + §11.5 H2/H3/H12/H13 + §21 H124/H126/H128/H129):
+ *   1. Read ledger; guard by kind — single: reject if JTI has a final row
+ *      (H2/H3 replay defense); meeting: reject if revoked or over soft-cap (H124/H126).
+ *   2. Read roster + aliases; resolve slug + collision (H12); meeting: live dup-handle (H128).
  *   3. Build 4 file contents (roster row, alias row, ledger row, profile).
  *   4. Capture HEAD SHA (CAS anchor).
- *   5. Commit. On sha_conflict: retry ONCE with re-read ledger.
+ *   5. Commit. On sha_conflict: retry up to MAX_ATTEMPTS (6) with full-jitter
+ *      exponential backoff (H129); re-read ledger between attempts.
  *   6. Emit logRedemptionEvent at terminal points.
  */
 export async function redeemInvitation(
@@ -564,9 +566,14 @@ export async function redeemInvitation(
   }
 
   const redeemedAt = now().toISOString();
-  // Token has no `iat` field; reconstruct the issuance instant from `exp`
-  // using the documented 7-day TTL (spec §11.2).
-  const issuedAt = new Date(payload.exp * 1000 - TOKEN_TTL_MS).toISOString();
+  // Single tokens have a fixed 7-day TTL, so exp - TTL ≈ the issuance instant
+  // (spec §11.2). Meeting tokens use a variable expiry (30m–24h) and carry no
+  // `iat`, so issuance time isn't reconstructable from the token — record it
+  // empty rather than a wrong exp - 7d timestamp (reviewer triage v0.11.0).
+  const issuedAt =
+    kind === "single"
+      ? new Date(payload.exp * 1000 - TOKEN_TTL_MS).toISOString()
+      : "";
   const newLedgerMd = appendRedemptionRow(ledgerFile.content, {
     jti: payload.jti,
     issuedAt,

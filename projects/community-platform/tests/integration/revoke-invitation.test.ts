@@ -46,4 +46,17 @@ describe("revokeInvitation server action (H125)", () => {
     expect((await revokeInvitation(fd)).ok).toBe(true);
     expect(writeFile).not.toHaveBeenCalled();
   });
+  it("returns a recoverable error (not an opaque throw) when the ledger write conflicts", async () => {
+    vi.mocked(auth).mockResolvedValue({ githubHandle: "anton1rsod" } as never);
+    vi.mocked(isAdmin).mockReturnValue(true);
+    const writeFile = vi
+      .fn()
+      .mockRejectedValue(Object.assign(new Error("sha conflict"), { kind: "sha_conflict" }));
+    vi.mocked(createGitHubApp).mockReturnValue({ readFile: vi.fn().mockResolvedValue({ content: LH, sha: "s", path: "p" }), writeFile, getHeadSha: vi.fn(), commitMultipleFiles: vi.fn(), deleteFile: vi.fn() } as never);
+    const fd = new FormData();
+    fd.set("jti", JTI);
+    const r = await revokeInvitation(fd);
+    expect(r.ok).toBeUndefined();
+    expect(r.error).toMatch(/busy|try again|failed/i);
+  });
 });

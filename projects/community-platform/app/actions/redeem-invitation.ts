@@ -123,8 +123,8 @@ function clientFor(): RedemptionClient {
 
 /**
  * /onboard form submission target. Wires session + cookie + token verify
- * + orchestrator. On success: clear cookie + revalidate 3 routes + redirect
- * to /this-week. On terminal failures (auth, missing/invalid token,
+ * + orchestrator. On success: clear cookie + set consent cookie + revalidate
+ * routes + redirect to /welcome. On terminal failures (auth, missing/invalid token,
  * already-member): single error string returned (info-leak prevention §11.5).
  * Form-validation failures keep the cookie so the user can retry without
  * re-clicking the original invitation link.

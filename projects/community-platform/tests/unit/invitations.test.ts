@@ -861,6 +861,8 @@ describe("H13: redeemInvitation — retry-once on 409", () => {
       },
       client,
       now: () => new Date(),
+      sleep: vi.fn().mockResolvedValue(undefined),
+      rng: () => 0,
     });
     expect(result.ok).toBe(false);
     // First commit attempt (sha_conflict) happened, but the retry was
