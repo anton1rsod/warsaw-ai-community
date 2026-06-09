@@ -77,12 +77,13 @@ afterEach(() => {
 });
 
 describe("redeemInvitation server action", () => {
-  it("redirects to /this-week on a successful redemption", async () => {
+  it("redirects to /welcome on a successful redemption and sets consent cookie", async () => {
     vi.mocked(auth).mockResolvedValue({ githubHandle: "newmember" } as never);
     vi.mocked(findMemberByHandle).mockReturnValue(undefined);
     const cookieStore = {
       get: vi.fn(() => ({ value: validToken() })),
       delete: vi.fn(),
+      set: vi.fn(),
     };
     vi.mocked(cookies).mockResolvedValue(cookieStore as never);
 
@@ -93,12 +94,17 @@ describe("redeemInvitation server action", () => {
     formData.set("consent_accepted", "true");
 
     await expect(redeemAction(formData)).rejects.toThrow(
-      /__redirect__:\/this-week/,
+      /__redirect__:\/welcome/,
     );
     expect(cookieStore.delete).toHaveBeenCalledWith({
       name: "warsaw_invite",
       path: "/onboard",
     });
+    expect(cookieStore.set).toHaveBeenCalledWith(
+      "waic-consented",
+      "1",
+      expect.objectContaining({ path: "/", httpOnly: true }),
+    );
     expect(revalidatePath).toHaveBeenCalledWith("/members");
     expect(revalidatePath).toHaveBeenCalledWith("/this-week");
     expect(revalidatePath).toHaveBeenCalledWith("/admin/health");
@@ -262,6 +268,7 @@ describe("redeemInvitation server action", () => {
     const cookieStore = {
       get: vi.fn(() => ({ value: validToken() })),
       delete: vi.fn(),
+      set: vi.fn(),
     };
     vi.mocked(cookies).mockResolvedValue(cookieStore as never);
 
@@ -272,7 +279,7 @@ describe("redeemInvitation server action", () => {
     formData.set("consent_accepted", "true");
 
     await expect(redeemAction(formData)).rejects.toThrow(
-      /__redirect__:\/this-week/,
+      /__redirect__:\/welcome/,
     );
     expect(createGitHubApp).toHaveBeenCalled();
     expect(readFile).toHaveBeenCalled();
