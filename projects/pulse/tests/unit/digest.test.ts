@@ -14,7 +14,11 @@ describe("publishDigest", () => {
     const id = await publishDigest(client, throttle, store, "parent", "2026-06", "Monthly Review — June 2026", "# hi");
     expect(id).toBe("page-1");
     expect(client.pages.create).toHaveBeenCalledTimes(1);
-    expect(client.pages.updateMarkdown).toHaveBeenCalledWith({ page_id: "page-1", markdown: "# hi" });
+    expect(client.pages.updateMarkdown).toHaveBeenCalledWith({
+      page_id: "page-1",
+      type: "replace_content",
+      replace_content: { new_str: "# hi", allow_deleting_content: true },
+    });
     expect(store.get("digest:2026-06")).toEqual({ pageId: "page-1", dataSourceId: "parent" });
   });
 
@@ -23,6 +27,10 @@ describe("publishDigest", () => {
     const store = createIndexStore({ "digest:2026-06": { pageId: "p-existing", dataSourceId: "parent" } });
     await publishDigest(client, throttle, store, "parent", "2026-06", "x", "# again");
     expect(client.pages.create).not.toHaveBeenCalled();
-    expect(client.pages.updateMarkdown).toHaveBeenCalledWith({ page_id: "p-existing", markdown: "# again" });
+    expect(client.pages.updateMarkdown).toHaveBeenCalledWith({
+      page_id: "p-existing",
+      type: "replace_content",
+      replace_content: { new_str: "# again", allow_deleting_content: true },
+    });
   });
 });

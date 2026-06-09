@@ -29,7 +29,7 @@ export async function upsertRow(
 
   let pageId: string;
   if (found.results.length > 0) {
-    pageId = (found.results[0] as { id: string }).id;
+    pageId = found.results[0]!.id; // length checked > 0 above
     await throttle(() => client.pages.update({ page_id: pageId, properties: row.properties }));
   } else {
     const created = await throttle(() =>

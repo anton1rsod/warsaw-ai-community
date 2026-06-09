@@ -63,6 +63,8 @@ async function main(): Promise<void> {
   ]);
 
   await runSync({
+    // Bridge the SDK Client to our minimal structural interfaces (testable with fakes).
+    // resolveDataSourceId's "exactly one data source" guard catches any partial-DB response.
     mirrorClient: makeClient(token) as unknown as MirrorClient & RetrievableClient,
     dbIds: dbIds as { projects: string; decisions: string; shipping: string; engagement: string },
     data: { projects, decisions, releases, engagement },

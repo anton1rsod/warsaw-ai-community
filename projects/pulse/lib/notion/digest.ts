@@ -4,7 +4,13 @@ import type { IndexStore } from "./index-store.js";
 export interface DigestClient {
   pages: {
     create(args: Record<string, unknown>): Promise<{ id: string }>;
-    updateMarkdown(args: { page_id: string; markdown: string }): Promise<unknown>;
+    // Mirrors @notionhq/client v5 `pages.updateMarkdown`: the body is a discriminated
+    // union (no top-level `markdown` field). `replace_content` overwrites the page body.
+    updateMarkdown(args: {
+      page_id: string;
+      type: "replace_content";
+      replace_content: { new_str: string; allow_deleting_content?: boolean };
+    }): Promise<unknown>;
   };
 }
 
@@ -31,9 +37,15 @@ export async function publishDigest(
     pageId = created.id;
   }
 
-  // FIX 1: bind const after narrowing so the closure sees string, not string | undefined
+  // bind const after narrowing so the closure sees string, not string | undefined
   const resolvedPageId: string = pageId;
-  await throttle(() => client.pages.updateMarkdown({ page_id: resolvedPageId, markdown }));
+  await throttle(() =>
+    client.pages.updateMarkdown({
+      page_id: resolvedPageId,
+      type: "replace_content",
+      replace_content: { new_str: markdown, allow_deleting_content: true },
+    }),
+  );
   store.set(key, { pageId: resolvedPageId, dataSourceId: parentPageId });
   return resolvedPageId;
 }

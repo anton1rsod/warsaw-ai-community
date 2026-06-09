@@ -36,6 +36,8 @@ async function main(): Promise<void> {
   }
   const client = makeClient(token);
   const rows = await runTaskExport({
+    // Bridge the one SDK Client to two minimal interfaces: ExportClient has no `pages`
+    // surface (read-only by capability), RetrievableClient only resolves the data source.
     exportClient: client as unknown as ExportClient,
     retrievableClient: client as unknown as RetrievableClient,
     tasksDbId,

@@ -35,5 +35,5 @@ export async function resolveDataSourceId(client: RetrievableClient, databaseId:
   if (sources.length !== 1) {
     throw new Error(`Database ${databaseId} must have exactly one data source, found ${sources.length} (L4)`);
   }
-  return (sources[0] as { id: string }).id;
+  return sources[0]!.id; // length checked === 1 above
 }
