@@ -3935,3 +3935,53 @@ Spec source: `docs/specs/2026-06-09-community-platform-meeting-signup-design.md`
 ### Deferred to v0.11.1+
 
 Persona upload/integrate (`save-persona` action mirroring `save-profile`, consent step, + fix the latent `.public.md`-inert and `truncateToFirstH2` persona-display bugs); signed "fresh-member" bridge cookie for instant gated-surface access during snapshot lag; **Vercel WAF** rate-limit on the redemption path (edge-level, multi-instance-correct, error-response counting + sliding window — not an in-memory per-function limiter, which is broken on Vercel's multi-instance runtime) + Vercel BotID for automated-bot signups.
+
+## §22 — v0.11.1 Persona attach + rich card (Bundle B; 2026-06-09)
+
+Spec source: `docs/specs/2026-06-09-community-platform-persona-attach-design.md` (full design + 2026 standards validation + decisions D1–D9). Brainstorm input: `docs/specs/2026-06-09-community-platform-meeting-signup-persona-handoff.md`. Implements the §21 "Deferred to v0.11.1+" persona item. **Ship-lock pending the Thu 2026-06-11 post-meetup retro** (which gates only whether Bundle A meeting-path hardening preempts; design/spec/plan proceed now per "merge gate ≠ work gate").
+
+**Goal:** members **self-serve attach** their persona (paste or `.md` upload) with explicit consent + a hide toggle, and personas render as a **rich card** (controlled-vocab tag chips + the full peer-facing body). Scope = **(a) attach + (b) card** only; **(c)** discovery and **(d)** in-platform builder are out of scope.
+
+### Requirements
+
+- **R1** — `save-persona` Server Action (mirrors `save-profile`): `/me/edit` gains a persona section — paste textarea + optional `.md` upload reading into the **same field** — one Zod-validated commit pipeline; the bot writes (overwriting on re-attach) a single file `persona-builder/personas/<slug>/persona-<slug>.public.md`.
+- **R2** — Validation (`SavePersonaSchema`): 64KB cap (reuse H18), frontmatter `persona_id` **must equal the member's slug**, `display_name` + `schema_version` present; markdown body only.
+- **R3** — **Consent = the attach action.** Copy states plainly: publishes to the public profile **and** the public git repo; hide/delete clears the live site but commit history is retained; purpose = community evaluator matching. Visible by default on attach.
+- **R4** — **Visibility toggle** in `/me/edit`, stored as `persona_visible` in the **profile** frontmatter (`community/members/<slug>.md`), not the persona file (no `schema_version`/persona-schema ADR churn). Absent ⇒ visible (no migration for the 5 existing personas).
+- **R5** — Display: `/members/[slug]` renders the **`.public.md`** (peer-facing) via a rewritten `PersonaPanel` — a rich card: parse the `## Tags` block into chips (Industries / Functional roles / Company stages, qualifier `{familiar|practitioner|expert}` driving weight) + a languages line, then the **full `.public.md` body** (no truncation). Gated on `persona_visible`.
+- **R6** — `readMemberPersona` prefers `persona-<slug>.public.md`; a dir with only the full `.md` ⇒ treated as **no public persona** (fail-closed). The `truncateToFirstH2` clamp is removed from the card path.
+- **R7** — GDPR erasure: `/api/me/delete` also removes `persona-builder/personas/<slug>/*` from `main` (history retained, per the existing `GdprPanel` stance). The hide toggle withdraws display without deletion.
+- **R8** — All persona markdown rendered through `lib/markdown` + `SafeHtml` (allowlist sanitize, `allowDangerousHtml:false`, no `rehype-raw`); no parallel render path.
+- **R9** — Backward-compat: the 5 existing personas display via their `.public.md`; profile editor and all other flows unchanged except the additive persona section.
+
+### Hardenings
+
+- **H138** — Render `.public.md` only (peer-facing per the persona-builder consent model); never render the full `.md` (may carry `## Private notes`). Closes the latent consent bug `truncateToFirstH2` was accidentally masking.
+- **H139** — `readMemberPersona` prefers `.public.md`; only-full-`.md` ⇒ fail-closed (no exposure).
+- **H140** — `save-persona` derives the slug from the **session**, never the request body; the path is slug-derived; reuse the `..`/`/`/`\` slug guard (no path traversal).
+- **H141** — 64KB cap enforced **client + server**; paste and upload share one server-side validation path; the uploaded filename is never used (path is slug-derived). Magic-bytes check N/A (UTF-8 text).
+- **H142** — `persona_id` must equal the member's slug (reject mismatch — prevents writing/overwriting another member's persona).
+- **H143** — Persona markdown rendered only through `lib/markdown` + `SafeHtml`; no parallel path, no `rehype-raw`.
+- **H144** — Informed-consent copy at attach (public profile + public repo + history-retention + purpose) — makes "attach = consent" a valid GDPR consent (informed, specific, purpose-limited).
+- **H145** — Data-minimization guidance in the UI: public persona only (no `## Private notes`); discourage special-category data (GDPR Art. 9).
+- **H146** — GDPR erasure includes the persona dir; the hide toggle withdraws display without deletion.
+- **H147** — `persona_visible` lives in the profile frontmatter (no persona `schema_version` bump / ADR); absent ⇒ visible.
+- **H148** — Persona parser is tolerant: keys off whichever `### ` subsections exist under `## Tags`; no parseable Tags ⇒ plain (un-truncated, sanitized) markdown — never crashes.
+- **H149** — Persona write and visibility toggle are two **independent single-file** commits (reuse the existing bot helper); never a multi-file commit.
+- **H150** — `security-reviewer` at closeout (new write path + PII + consent surface), per the CONSTRAINTS security-surface policy.
+
+### Decisions
+
+D1–D9 in the design doc: scope (a)+(b); consent=attach+toggle; paste+upload; `.public.md` write target; render-`.public.md` correctness fix; profile-level visibility flag; `## Tags`-only parser; GDPR erasure + informed-consent copy + data-min guidance; sanitization unchanged.
+
+### Tests
+
+`lib/persona.ts` parser units (structured + tolerant-fallback + qualifier order); `save-persona` integration (size, `persona_id`≠slug rejection, bad frontmatter, slug-from-session, bot commit, E2E mock store mirroring `_test-profile-store`); `PersonaPanel` RTL (chips, qualifier weight, full body, hidden, `.public.md`-vs-only-`.md`); visibility-toggle + erasure-includes-persona integration; E2E attach→display. 80% overall + strict-list 100%.
+
+### ADR
+
+- **ADR-0019** — Persona attach consent & visibility model (Proposed → Accepted on v0.11.1 merge). Records: attach=consent (informed copy); `.public.md`-only display/attach (peer-facing per persona-builder); profile-level visibility flag (no persona-schema churn); GDPR erasure incl. persona dir with history-retention acknowledged; sanitization unchanged. Notes the pre-existing full-`.md`-in-public-repo exposure as a separate future-ADR candidate.
+
+### Deferred to v0.11.2+
+
+(c) persona discovery/matchmaking (tag index + filter surface, reuses `lib/persona.ts`); one-line-bio headline + collapse/expand; a **separate ADR + history audit** for full-`.md`-with-private-notes in the public repo; **CSP** sanitization defense-in-depth (v0.5 backlog).

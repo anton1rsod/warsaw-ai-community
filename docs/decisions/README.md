@@ -29,3 +29,4 @@ File naming: `NNNN-short-title.md`, zero-padded to 4 digits.
 | [0016](0016-telegram-echo-statuses.md) | community-platform v0.10 — Telegram echo for /this-week statuses (opt-in, supergroup topic) | Proposed | 2026-05-28 |
 | [0017](0017-yuriy-peer-co-founder.md) | Yuriy as peer co-founder (W.A.Y. excepted) + founder-class decision boundary | Accepted | 2026-06-09 |
 | [0018](0018-meeting-scoped-multi-use-invites.md) | community-platform v0.11 — meeting-scoped multi-use invites (stays invite-gated) | Accepted | 2026-06-09 |
+| [0019](0019-persona-attach-consent-and-visibility.md) | community-platform v0.11.1 — persona attach consent & visibility (`.public.md`-only, profile-level toggle) | Proposed | 2026-06-09 |
