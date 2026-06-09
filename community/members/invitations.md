@@ -11,3 +11,4 @@ Expired tokens are not recorded; expiry is `Issued At + 7 days`.
 
 | JTI | Status | Issued At | Issued By | Hint (Telegram) | Redeemed At | Redeemed By | Notes |
 |---|---|---|---|---|---|---|---|
+| 9a7d92df-cc1b-4509-9fb4-46635701cdec | revoked |  |  |  |  |  | revoked by anton1rsod (admin revoke (meeting invite)) |
