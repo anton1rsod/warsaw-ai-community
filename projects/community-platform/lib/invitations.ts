@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { generateConsentMarkdown } from "@/lib/consent-content";
 import { slugify, nextAvailableSlug } from "@/lib/slug";
 import { appendMember, parseRosterContent, lookupMemberByHandle } from "@/lib/roster";
+import { computeBackoffDelay } from "@/lib/backoff";
 import { appendAlias } from "@/lib/git-email-aliases";
 
 /**
@@ -595,60 +596,52 @@ export async function redeemInvitation(
       ? `Invitation-Hint-Telegram: ${payload.hint_telegram}\n`
       : "");
 
+  const sleep = input.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  const rng = input.rng ?? Math.random;
+  const MAX_ATTEMPTS = 6;
+
   let attempt = 0;
   for (;;) {
     attempt += 1;
     const expectedHeadSha = await client.getHeadSha();
     try {
-      const result = await client.commitMultipleFiles({
-        files,
-        message,
-        expectedHeadSha,
-      });
+      const result = await client.commitMultipleFiles({ files, message, expectedHeadSha });
       logRedemptionEvent({
-        jti: payload.jti,
-        event: "commit-success",
-        redeemerGh: redeemerHandle,
-        issuerGh: payload.iss,
-        isoTimestamp: redeemedAt,
-        httpStatus: 302,
+        jti: payload.jti, event: "commit-success", redeemerGh: redeemerHandle,
+        issuerGh: payload.iss, isoTimestamp: redeemedAt, httpStatus: 302,
       });
       return { ok: true, commitSha: result.commitSha };
     } catch (err: unknown) {
       const isConflict =
-        typeof err === "object" &&
-        err !== null &&
+        typeof err === "object" && err !== null &&
         (err as { kind?: string }).kind === "sha_conflict";
 
-      if (!isConflict || attempt >= 2) {
+      if (!isConflict || attempt >= MAX_ATTEMPTS) {
         logRedemptionEvent({
-          jti: payload.jti,
-          event: attempt >= 2 ? "commit-retry" : "invalid",
-          redeemerGh: redeemerHandle,
-          isoTimestamp: now().toISOString(),
-          httpStatus: attempt >= 2 ? 503 : 500,
+          jti: payload.jti, event: attempt >= MAX_ATTEMPTS ? "commit-retry" : "invalid",
+          redeemerGh: redeemerHandle, isoTimestamp: now().toISOString(),
+          httpStatus: attempt >= MAX_ATTEMPTS ? 503 : 500,
         });
         return { ok: false };
       }
 
-      logRedemptionEvent({
-        jti: payload.jti,
-        event: "commit-retry",
-        redeemerGh: redeemerHandle,
-        isoTimestamp: now().toISOString(),
-      });
+      logRedemptionEvent({ jti: payload.jti, event: "commit-retry", redeemerGh: redeemerHandle, isoTimestamp: now().toISOString() });
+      await sleep(computeBackoffDelay(attempt, { rng }));
+
+      // Re-read after backoff. For single tokens, abort if another redemption
+      // burned the jti. For meeting tokens, concurrent redeemed rows are
+      // EXPECTED (multi-use) — only a revoked row aborts the retry.
       const reReadLedger = await client.readFile(LEDGER_PATH);
-      if (
-        reReadLedger &&
-        jtiHasFinalRow(parseInvitationsLedger(reReadLedger.content), payload.jti)
-      ) {
-        logRedemptionEvent({
-          jti: payload.jti,
-          event: "replayed",
-          redeemerGh: redeemerHandle,
-          isoTimestamp: now().toISOString(),
-        });
-        return { ok: false };
+      if (reReadLedger) {
+        const rows = parseInvitationsLedger(reReadLedger.content);
+        const dead = kind === "single" ? jtiHasFinalRow(rows, payload.jti) : jtiIsRevoked(rows, payload.jti);
+        if (dead) {
+          logRedemptionEvent({
+            jti: payload.jti, event: kind === "single" ? "replayed" : "revoked",
+            redeemerGh: redeemerHandle, isoTimestamp: now().toISOString(),
+          });
+          return { ok: false };
+        }
       }
     }
   }
