@@ -10,7 +10,8 @@
 - **Yuriy (peer co-founder):** community ops — onboarding as peer co-founder (see ADR-0017).
 
 ## Hot now
-- Repo operating foundation pass shipping (navigation + continuity + collaboration). Spec: `docs/specs/2026-06-09-repo-operating-foundation-design.md`.
+- **Repo operating foundation SHIPPED** (2026-06-09) — AGENTS.md adoption, this STATE.md + resume read-order, ADR-0017 (Yuriy peer co-founder), collaboration playbook, `_template` parity. Spec/plan: `docs/specs/2026-06-09-repo-operating-foundation-{design,plan}.md`.
+- **Next (Anton):** fill Yuriy's handles in `community/members/roster.md`; confirm per-project DRI split. Reports + Notion mirror parked in `BACKLOG.md` (fast-follow).
 
 ## Blockers
 - None.
