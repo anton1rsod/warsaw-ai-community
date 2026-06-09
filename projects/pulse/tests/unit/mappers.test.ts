@@ -1,4 +1,5 @@
 // tests/unit/mappers.test.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from "vitest";
 import { projectProps, decisionProps, releaseProps, engagementProps } from "../../lib/notion/mappers.js";
 

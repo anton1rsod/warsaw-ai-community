@@ -1,4 +1,5 @@
 // tests/unit/export-tasks.test.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi } from "vitest";
 import { exportTasks } from "../../lib/notion/export-tasks.js";
 import { createThrottle } from "../../lib/notion/throttle.js";
