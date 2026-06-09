@@ -1,0 +1,187 @@
+name: pulse
+
+# Additive automation for the pulse sub-project. ci.yml / gbrain-ci.yml are untouched.
+#
+# Injection safety: no user-controlled inputs are interpolated into any run: command.
+# workflow_dispatch `task` is a constrained choice used only in if: expressions.
+# Write-back targets (notion-index.json, monthly-review.md, tasks-snapshot.json) are
+# outside the push paths filter, so GITHUB_TOKEN commits cannot re-trigger this workflow;
+# [skip ci] is added as defense-in-depth.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'PROJECTS.md'
+      - 'STATE.md'
+      - 'projects/*/STATE.md'
+      - 'projects/*/CHANGELOG.md'
+      - 'docs/decisions/**'
+      - 'community/status/**'
+      - 'community/events/**'
+      - 'community/members/roster.md'
+      - 'projects/community-platform/lib/__generated__/**'
+      - '.github/workflows/pulse.yml'
+  schedule:
+    - cron: '30 9 1 * *'   # monthly digest — 1st of the month, 09:30 UTC
+    - cron: '30 4 * * *'   # nightly Tasks snapshot — 04:30 UTC
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Which job to run'
+        type: choice
+        options: [all, mirror, digest, snapshot]
+        default: all
+
+# Queue, never cancel — a cancelled run could leave Notion half-written.
+concurrency:
+  group: pulse
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # commit generated files back
+  issues: write     # failure notification
+
+jobs:
+  mirror:
+    name: Mirror context DBs → Notion
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && (inputs.task == 'mirror' || inputs.task == 'all'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history + tags (shipping parser cross-check)
+      - uses: pnpm/action-setup@v4
+        with: { version: 10, run_install: false }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: projects/pulse/pnpm-lock.yaml
+      - name: Install
+        working-directory: projects/pulse
+        run: pnpm install --frozen-lockfile
+      - name: Sync Notion
+        working-directory: projects/pulse
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DB_PROJECTS: ${{ secrets.NOTION_DB_PROJECTS }}
+          NOTION_DB_DECISIONS: ${{ secrets.NOTION_DB_DECISIONS }}
+          NOTION_DB_SHIPPING: ${{ secrets.NOTION_DB_SHIPPING }}
+          NOTION_DB_ENGAGEMENT: ${{ secrets.NOTION_DB_ENGAGEMENT }}
+          GITHUB_REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: pnpm sync-notion
+      - name: Commit index
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add projects/pulse/notion-index.json
+          if git diff --cached --quiet; then
+            echo "no index changes"
+          else
+            git commit -m "chore(pulse): update notion-index.json [skip ci]"
+            git push
+          fi
+
+  digest:
+    name: Monthly review digest
+    if: >-
+      (github.event_name == 'schedule' && github.event.schedule == '30 9 1 * *') ||
+      (github.event_name == 'workflow_dispatch' && (inputs.task == 'digest' || inputs.task == 'all'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: pnpm/action-setup@v4
+        with: { version: 10, run_install: false }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: projects/pulse/pnpm-lock.yaml
+      - name: Install
+        working-directory: projects/pulse
+        run: pnpm install --frozen-lockfile
+      - name: Build monthly review
+        working-directory: projects/pulse
+        run: pnpm build-report --period=monthly
+      - name: Publish digest to Notion
+        working-directory: projects/pulse
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DIGEST_PAGE: ${{ secrets.NOTION_DIGEST_PAGE }}
+        run: pnpm publish-digest
+      - name: Commit review
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/playbooks/monthly-review.md projects/pulse/notion-index.json
+          if git diff --cached --quiet; then
+            echo "no review changes"
+          else
+            git commit -m "chore(pulse): monthly review [skip ci]"
+            git push
+          fi
+
+  snapshot:
+    name: Nightly Tasks snapshot
+    if: >-
+      (github.event_name == 'schedule' && github.event.schedule == '30 4 * * *') ||
+      (github.event_name == 'workflow_dispatch' && (inputs.task == 'snapshot' || inputs.task == 'all'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10, run_install: false }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: projects/pulse/pnpm-lock.yaml
+      - name: Install
+        working-directory: projects/pulse
+        run: pnpm install --frozen-lockfile
+      - name: Export Tasks
+        working-directory: projects/pulse
+        env:
+          NOTION_READ_TOKEN: ${{ secrets.NOTION_READ_TOKEN }}
+          NOTION_DB_TASKS: ${{ secrets.NOTION_DB_TASKS }}
+        run: pnpm export-tasks
+      - name: Commit snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add projects/pulse/snapshots/tasks-snapshot.json
+          if git diff --cached --quiet; then
+            echo "no snapshot changes"
+          else
+            git commit -m "chore(pulse): nightly Tasks snapshot [skip ci]"
+            git push
+          fi
+
+  notify-failure:
+    name: Notify on failure
+    needs: [mirror, digest, snapshot]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - name: Open or comment a failure issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="pulse: workflow run failed"
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --search "$title in:title state:open" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "Another failed pulse run: $RUN_URL"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "A pulse run failed. Logs: $RUN_URL"
+          fi
