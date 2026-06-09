@@ -19,8 +19,8 @@ describe("parsePortfolio", () => {
       currentFocus: "E3 finalization",
       nextGate: "v0.2.0 soft launch",
     });
-    expect(projects[1].slug).toBe("community-platform");
-    expect(projects[1].version).toBe("v0.10.0.1");
+    expect(projects[1]!.slug).toBe("community-platform");
+    expect(projects[1]!.version).toBe("v0.10.0.1");
   });
 
   it("throws when a row has no recognized status (fail-fast, L8)", () => {

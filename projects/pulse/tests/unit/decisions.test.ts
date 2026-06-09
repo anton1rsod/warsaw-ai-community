@@ -17,7 +17,7 @@ describe("parseDecisions", () => {
       date: "2026-04-24",
       path: "docs/decisions/0001-oss-first-licensing.md",
     });
-    expect(adrs[1].status).toBe("Proposed");
+    expect(adrs[1]!.status).toBe("Proposed");
   });
 
   it("throws on an unrecognized status (fail-fast)", () => {
