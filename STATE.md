@@ -10,7 +10,7 @@
 - **Yuriy (peer co-founder):** community ops — onboarding as peer co-founder (see ADR-0017).
 
 ## Hot now
-- **`pulse`: plan written + P1 COMPLETE (in review — PR #49).** Plan `docs/specs/2026-06-09-pulse-implementation-plan.md` (22 tasks / 3 phases). P1 (repo parsers + monthly review, zero Notion) = 65 tests, 100% lines / 90% branches, on branch `chore/pulse-p1`; real `docs/playbooks/monthly-review.md` generated. **Next: P2 (Notion mirror + Tasks export + digest, plan Tasks 12–21) in a fresh chat** (see handoff below). Merge PR #49 first, then branch `chore/pulse-p2` off `main`.
+- **`pulse`: plan written + P1 SHIPPED** (merged to `main` via PR #49, squash `763eede`). Plan `docs/specs/2026-06-09-pulse-implementation-plan.md` (22 tasks / 3 phases). P1 (repo parsers + monthly review, zero Notion) = 65 tests, 100% lines / 90% branches; real `docs/playbooks/monthly-review.md` on `main`. **Next: P2 (Notion mirror + Tasks export + digest, plan Tasks 12–21) in a fresh chat** — branch `chore/pulse-p2` off `main` (see handoff below).
 - Repo operating foundation SHIPPED 2026-06-09 (AGENTS.md, this STATE.md, ADR-0017, collaboration playbook, `_template` parity).
 - **Anton's open items (non-blocking):** fill Yuriy's handles in `roster.md`; confirm per-project DRI; one-time Notion setup (spec L10) before `pulse` P2 runs live.
 

@@ -10,8 +10,7 @@
 - **Design spec:** `docs/specs/2026-06-09-pulse-reports-notion-design.md` (rev `0c267fe`).
 
 ## Step 0 — branch
-- **Recommended:** merge PR #49 first (reviewed-clean), then branch `chore/pulse-p2` off `main` (the plan + P1 land on `main` at merge, so a fresh branch has them).
-- If #49 is not merged yet: continue P2 on `chore/pulse-p1` (the plan + P1 code are there).
+- P1 is **merged to `main`** (PR #49, squash `763eede`); branch `chore/pulse-p1` is deleted. The plan + P1 code + this handoff are all on `main`. Branch `chore/pulse-p2` off `main` and build P2 there.
 
 ## What P2 builds (all code + tests are mock-based — NO live Notion needed to build/test)
 - **T12** `projects/pulse/SETUP.md` — the one-time Notion runbook (does not exist yet; T12 creates it). Two least-privilege integrations (mirror read+write → 4 context DBs; export read-only → Tasks), 5 DBs + a Digests page, GitHub secrets.
