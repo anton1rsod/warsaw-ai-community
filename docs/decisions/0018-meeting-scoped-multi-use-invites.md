@@ -1,6 +1,6 @@
 # ADR-0018: Meeting-scoped multi-use invites
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-06-09
 **Deciders:** Anton Safronov (founder)
 **Related:**

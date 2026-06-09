@@ -16,6 +16,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.11.0] — 2026-06-09 (meeting signup — multi-use invite QR)
+
+Lets a room of attendees join on the spot from one projected QR. Backward-compatible extension of the single-use HMAC invite with an optional `kind:"meeting"` discriminator — absent ⇒ `single`, so every previously-minted invite still verifies (identical canonical signing string). ADR-0018 (Accepted on this merge). Spec §21 (R1–R7, H123–H137). Executed via `superpowers:subagent-driven-development` (one implementer per phase); 1543 unit/integration tests + the 8-scenario invitation E2E green; reviewer triage (code-review + security-reviewer — 0 CRITICAL / 0 exploitable) batched into one commit.
+
+### Added
+- **Meeting-scoped multi-use invite token** — `InvitePayloadSchema` gains optional `kind: "single" | "meeting"` + `max_uses` (H123). Meeting tokens are bounded by revocation (hard), a best-effort redemption soft-cap (O4), and a short ~4h clamped expiry (`clampMeetingExpirySeconds`, 30m–24h, H127).
+- **Admin meeting-QR panel** on `/admin/invite` (`MeetingInviteForm`) — set expiry + max-uses, mint, and get a projectable PNG QR (`lib/qr.ts`, ECC-Q, 1024px, server-rendered data-URI `<img>` — no `innerHTML`, no third-party QR service ever sees the token; H132/H137), plus **inline-revoke** of the just-minted invite (H135 per O1).
+- **`mint-meeting-invitation` + `revoke-invitation` Server Actions** — admin-only, re-verified server-side (the proxy is not the boundary; H134/H136). Revoke appends a `revoked` ledger row via the `warsaw-ai-bot` GitHub App, is idempotent, and surfaces a recoverable error on a concurrent-write conflict (H125).
+- **Public `/welcome` landing** (added to both `PUBLIC_PATHS` arrays; H131/H136) — first-use post-redemption page that sidesteps the build-snapshot `/no-access` lag.
+- **Full-jitter exponential backoff** (`lib/backoff.ts`, H129) on the redemption commit CAS (`MAX_ATTEMPTS=6`, injectable `sleep`/`rng`) — de-correlates concurrent redeemers contending on the shared ledger file.
+
+### Changed
+- **Redemption guard branches on `kind`** (`redeemInvitation`): `single` keeps the existing single-use replay defense (`jtiHasFinalRow`, H123 backward-compat); `meeting` rejects on revocation (`jtiIsRevoked`, H124), soft-cap (`jtiRedemptionCount ≥ max_uses`, H126), or a **live-roster** dup-handle re-check (`parseRosterContent`, H128 — the build snapshot lags a room). The CAS retry's re-read also branches on `kind` (single aborts on a final row; meeting only on a revoked row, since concurrent `redeemed` rows are expected for multi-use).
+- **Redemption now sets the `waic-consented` cookie + redirects to `/welcome`** for both single and meeting kinds (H130, O2) — also fixes the pre-existing single-invite `/no-access` wart. Existing `/this-week` redirect assertions updated.
+- `lib/roster.ts` extracts a pure `parseRosterContent(content)` from `readRoster` (powers the live dup-handle guard).
+- `package.json`: add `qrcode` (MIT) + `@types/qrcode`.
+
+### Notes
+- The soft-cap is best-effort under optimistic concurrency (can overshoot by the number of in-flight commits); **revocation + short expiry are the hard bounds** (ADR-0018 O4). Meeting-token rows carry an empty `Issued At` (the token has no `iat`; issuance time isn't reconstructable — recording it empty beats a wrong `exp − 7d` timestamp).
+- **v0.11.1 fast-follows (out of scope here):** persona upload/integration; per-IP rate-limiting (Vercel BotID/WAF) on the redemption path; the signed "fresh-member" bridge cookie for instant gated-surface access; a persistent active-invite registry; recording meeting-token issuance time (`iat`); auto-retry-under-contention on revoke; a `vitest` devDependency bump (dev-only CVE, no prod-runtime impact).
+
+---
+
 ## [0.10.0.1] — 2026-05-31 (chat-52 followup — /this-week Server Action serialization hotfix; H122)
 
 ### Fixed
