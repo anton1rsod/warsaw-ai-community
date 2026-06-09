@@ -20,5 +20,5 @@
 - None.
 
 ## Latest handoff
-- `docs/specs/2026-06-09-community-platform-v0-11-0-implementation-handoff.md` — **DONE** (v0.11.0 SHIPPED at `2c79e90`, tag pushed, prod smoke green). No open community-platform handoff; the next scope is the v0.11.1 fast-follows (persona upload · rate-limit · fresh-member bridge cookie · active-invite registry) — start a fresh brainstorm→spec→plan when picked up.
+- `docs/specs/2026-06-09-community-platform-v0-11-1-handoff.md` — **next chat** (community-platform): scope **v0.11.1** via `superpowers:brainstorming` after a post-meetup retro of meeting-signup. Candidates: **Bundle A** (meeting-path hardening — rate-limit + fresh-member bridge cookie + active-invite registry + `iat` + revoke auto-retry) vs **Bundle B** (persona upload/integration — the original 2nd goal). The v0.11.0 implementation handoff is DONE (SHIPPED `2c79e90`, tag pushed, orchestrator prod smoke 5-for-5).
 - `docs/specs/2026-06-09-pulse-p3-handoff.md` — **P3 done** (PR #51, squash `14b7bb1`). No open AI-collaborator handoff; the only remaining step is Anton's one-time **live activation** (`projects/pulse/SETUP.md`) on the paid Notion account.
