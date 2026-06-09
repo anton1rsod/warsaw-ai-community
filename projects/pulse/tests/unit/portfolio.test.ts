@@ -23,6 +23,11 @@ describe("parsePortfolio", () => {
     expect(projects[1]!.version).toBe("v0.10.0.1");
   });
 
+  it("tolerates a parenthetical status like **Live (v1)**", () => {
+    const withParen = fixture.replace("**Live** — v0.10.0.1", "**Live (v1)** — v0.10.0.1");
+    expect(parsePortfolio(withParen)[1]!.status).toBe("Live");
+  });
+
   it("throws when a row has no recognized status (fail-fast, L8)", () => {
     const bad = fixture.replace("**Building** — v0.1.2 in flight", "in progress");
     expect(() => parsePortfolio(bad)).toThrow(/status/i);

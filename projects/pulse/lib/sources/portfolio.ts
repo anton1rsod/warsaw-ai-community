@@ -18,7 +18,8 @@ function cells(row: string): string[] {
 }
 
 function statusOf(cell: string): Project["status"] {
-  const found = PROJECT_STATUSES.find((s) => new RegExp(`\\*\\*${s}\\*\\*`).test(cell));
+  // Match the status word right after `**`, tolerating a parenthetical like "**Live (v1)**".
+  const found = PROJECT_STATUSES.find((s) => new RegExp(`\\*\\*\\s*${s}\\b`).test(cell));
   if (!found) throw new Error(`No recognized status in cell: ${cell}`);
   return found;
 }
