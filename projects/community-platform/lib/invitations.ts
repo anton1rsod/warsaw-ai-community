@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { generateConsentMarkdown } from "@/lib/consent-content";
 import { slugify, nextAvailableSlug } from "@/lib/slug";
-import { appendMember } from "@/lib/roster";
+import { appendMember, parseRosterContent, lookupMemberByHandle } from "@/lib/roster";
 import { appendAlias } from "@/lib/git-email-aliases";
 
 /**
@@ -436,6 +436,10 @@ export interface RedemptionInput {
   readonly client: RedemptionClient;
   /** Injectable now() for deterministic tests. */
   readonly now: () => Date;
+  /** Injectable sleep for deterministic backoff tests (default: setTimeout). */
+  readonly sleep?: (ms: number) => Promise<void>;
+  /** Injectable RNG for deterministic jitter tests (default: Math.random). */
+  readonly rng?: () => number;
 }
 
 export type RedemptionResult =
@@ -475,14 +479,25 @@ export async function redeemInvitation(
     return { ok: false };
   }
   const ledgerRows = parseInvitationsLedger(ledgerFile.content);
-  if (jtiHasFinalRow(ledgerRows, payload.jti)) {
-    logRedemptionEvent({
-      jti: payload.jti,
-      event: "replayed",
-      redeemerGh: redeemerHandle,
-      isoTimestamp: now().toISOString(),
-    });
-    return { ok: false };
+  const kind = payload.kind ?? "single";
+
+  if (kind === "single") {
+    if (jtiHasFinalRow(ledgerRows, payload.jti)) {
+      logRedemptionEvent({ jti: payload.jti, event: "replayed", redeemerGh: redeemerHandle, isoTimestamp: now().toISOString() });
+      return { ok: false };
+    }
+  } else {
+    // Meeting (multi-use): exp already enforced in verifyToken. Bound by
+    // revocation (hard) + soft redemption cap (best-effort under OCC, O4).
+    if (jtiIsRevoked(ledgerRows, payload.jti)) {
+      logRedemptionEvent({ jti: payload.jti, event: "revoked", redeemerGh: redeemerHandle, isoTimestamp: now().toISOString() });
+      return { ok: false };
+    }
+    const cap = payload.max_uses ?? MEETING_MAX_USES_DEFAULT;
+    if (jtiRedemptionCount(ledgerRows, payload.jti) >= cap) {
+      logRedemptionEvent({ jti: payload.jti, event: "replayed", redeemerGh: redeemerHandle, isoTimestamp: now().toISOString() });
+      return { ok: false };
+    }
   }
 
   const baseSlug = slugify(form.display_name);
@@ -512,6 +527,14 @@ export async function redeemInvitation(
       redeemerGh: redeemerHandle,
       isoTimestamp: now().toISOString(),
     });
+    return { ok: false };
+  }
+
+  // H128: the snapshot-based already-member guard in the action lags a room
+  // (build-time snapshot). For meeting tokens, re-check the LIVE roster content
+  // so a fast double-scan inside the snapshot window can't create a dup row.
+  if (kind === "meeting" && lookupMemberByHandle(parseRosterContent(rosterFile.content), redeemerHandle)) {
+    logRedemptionEvent({ jti: payload.jti, event: "already-member", redeemerGh: redeemerHandle, isoTimestamp: now().toISOString() });
     return { ok: false };
   }
 
