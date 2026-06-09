@@ -81,6 +81,11 @@ export const InvitePayloadSchema = z.object({
     .regex(/^@[a-zA-Z0-9_]{5,32}$/)
     .optional(),
   hint_display_name: z.string().min(1).max(80).optional(),
+  // v0.11.0 (H123): absent ⇒ treated as "single" by the redemption guard.
+  // canonicalJson sorts keys + omits undefined, so legacy tokens (no kind)
+  // produce the identical signing string and stay valid.
+  kind: z.enum(["single", "meeting"]).optional(),
+  max_uses: z.number().int().positive().max(500).optional(),
 });
 
 export type InvitePayload = z.infer<typeof InvitePayloadSchema>;
