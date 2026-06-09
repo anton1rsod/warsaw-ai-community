@@ -5,10 +5,13 @@
 **Founding organizer with a small core team.**
 
 - **Founder / BDFL:** Anton Safronov. Sets direction, owns vision, breaks ties.
+- **Co-founder (peer):** Yuriy — peer co-founder across the monorepo (W.A.Y. excepted, a separate repo). Co-owns direction and projects with the founder. See ADR-0017.
 - **Core organizers (2–4):** Trusted members who share operational responsibility. To be nominated by the founder within the first 2 weeks of formal program launch.
 - **Members:** Everyone else in the Telegram channel. Contribute through pitches, projects, guides, Q&A, and attendance.
 
 Roles are roles, not titles. A core organizer who stops showing up rotates out. A member who consistently carries load gets invited to the core.
+
+**Founder-class decisions** (legal form, equity/IP, mission scope, or this decision-rights framework itself) rest with the founder; all other decisions are resolved by the project DRI (accountable owner/driver). See ADR-0017 and the decision-classes table below.
 
 ## Decision classes
 

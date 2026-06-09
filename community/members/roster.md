@@ -10,6 +10,7 @@ Opt-in public roster. Members listed here have consented to public visibility in
 | Name | GitHub | Role | Telegram | Focus |
 |---|---|---|---|---|
 | Anton Safronov | @anton1rsod | Founder / BDFL | @antonsafronov (TBD) | Direction, gbrain lead |
+| Yuriy *(surname TBD)* | *(TBD)* | Co-founder (peer) | *(TBD)* | Community ops |
 | *(TBD)* | | Core organizer | | |
 | *(TBD)* | | Core organizer | | |
 

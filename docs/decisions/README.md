@@ -27,3 +27,4 @@ File naming: `NNNN-short-title.md`, zero-padded to 4 digits.
 | [0014](0014-community-platform-v0-4-root-anonymous-landing.md) | community-platform v0.4 — `/` flips to anonymous-public hero landing (amends ADR-0012) | Accepted | 2026-05-18 |
 | [0015](0015-admin-write-permissions-for-events.md) | community-platform v0.5 — admin-only direct-commit event creation via warsaw-ai-bot | Accepted | 2026-05-20 |
 | [0016](0016-telegram-echo-statuses.md) | community-platform v0.10 — Telegram echo for /this-week statuses (opt-in, supergroup topic) | Proposed | 2026-05-28 |
+| [0017](0017-yuriy-peer-co-founder.md) | Yuriy as peer co-founder (W.A.Y. excepted) + founder-class decision boundary | Accepted | 2026-06-09 |
