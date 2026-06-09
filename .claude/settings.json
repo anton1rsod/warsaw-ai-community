@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(vercel *)",
+      "Bash(printf * | vercel *)"
+    ]
+  },
+  "deniedMcpServers": [
+    { "serverName": "claude_ai_Figma" },
+    { "serverName": "claude_ai_HubSpot" },
+    { "serverName": "claude_ai_Microsoft_365" }
+  ],
+  "enabledPlugins": {
+    "telegram@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true
+  }
+}
