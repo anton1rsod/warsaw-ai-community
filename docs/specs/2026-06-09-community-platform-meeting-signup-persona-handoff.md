@@ -37,3 +37,12 @@ The platform is **invitation-only today**:
 
 ## Separate track (this chat)
 The originating chat is **parked for pulse live verification** (`projects/pulse/SETUP.md` §10.2/§10.3), pending Anton's one-time Notion activation. Independent of this work.
+
+## Pickup command (paste into the new chat)
+> Open this repo and follow the read order: root `STATE.md` → `projects/community-platform/STATE.md` → this handoff (`docs/specs/2026-06-09-community-platform-meeting-signup-persona-handoff.md`). Read directly; don't invoke a resume skill.
+>
+> Goal — for **Thursday 2026-06-11's meetup**: members can **sign up via GitHub at the meeting** and **upload/integrate their persona** into their profile.
+>
+> **Start with `superpowers:brainstorming` — do not jump to a spec or code.** Two pieces are already partly built, so scope before building: (1) GitHub signup already works **invite-gated** (`/onboard`, `lib/invitations.ts`) — the Thursday must-have is probably *operational* (getting invites to a room of attendees), not greenfield; *true open self-signup* changes the membership model → ADR-level, not a 2-day rush, so flag it rather than assume it. (2) Persona **display** already exists (`/members/[slug]`); the net-new work is the **upload/integrate** path in `/me/edit` + **consent gating**.
+>
+> Resolve the 5 open questions in the handoff (esp. signup Path A vs B, and whether persona is Thursday-scope or fast-follow), scope tightly for Thursday, then spec → plan → implement in-framework. Next CP version after v0.10.0.1. (Separate track: the pulse chat is parked for live Notion verification — not part of this work.)
