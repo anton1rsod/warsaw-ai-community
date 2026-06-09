@@ -3,6 +3,9 @@ import { auth } from "@/lib/auth";
 import { isAdmin } from "@/lib/content-snapshot";
 import { InviteForm } from "@/app/components/InviteForm";
 import { mintInvitation } from "@/app/actions/mint-invitation";
+import { MeetingInviteForm } from "@/app/components/MeetingInviteForm";
+import { mintMeetingInvitation } from "@/app/actions/mint-meeting-invitation";
+import { revokeInvitation } from "@/app/actions/revoke-invitation";
 import { MonoLabel } from "@/app/components/MonoLabel";
 
 // `auth()` makes this dynamic — match /admin/health gate pattern.
@@ -24,6 +27,7 @@ export default async function AdminInvitePage(): Promise<React.JSX.Element> {
         DM. Tokens expire 7 days after mint.
       </p>
       <InviteForm action={mintInvitation} />
+      <MeetingInviteForm mintAction={mintMeetingInvitation} revokeAction={revokeInvitation} />
     </main>
   );
 }

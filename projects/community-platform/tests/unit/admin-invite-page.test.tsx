@@ -51,6 +51,20 @@ describe("/admin/invite page", () => {
     expect(screen.getByLabelText(/telegram hint/i)).toBeInTheDocument();
   });
 
+  it("renders the meeting-invite panel", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      githubHandle: "anton1rsod",
+    } as never);
+    vi.mocked(isAdmin).mockReturnValue(true);
+    const { default: AdminInvitePage } = await import(
+      "@/app/admin/invite/page"
+    );
+    const ui = await AdminInvitePage();
+    render(ui);
+    expect(screen.getByText(/meeting invite/i)).toBeInTheDocument();
+    expect(screen.getByText(/mint meeting qr/i)).toBeInTheDocument();
+  });
+
   it("redirects non-admin to /home (matches /admin/health pattern)", async () => {
     vi.mocked(auth).mockResolvedValue({
       githubHandle: "regularmember",

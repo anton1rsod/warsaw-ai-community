@@ -2,7 +2,8 @@ import { z } from "zod";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { generateConsentMarkdown } from "@/lib/consent-content";
 import { slugify, nextAvailableSlug } from "@/lib/slug";
-import { appendMember } from "@/lib/roster";
+import { appendMember, parseRosterContent, lookupMemberByHandle } from "@/lib/roster";
+import { computeBackoffDelay } from "@/lib/backoff";
 import { appendAlias } from "@/lib/git-email-aliases";
 
 /**
@@ -81,6 +82,11 @@ export const InvitePayloadSchema = z.object({
     .regex(/^@[a-zA-Z0-9_]{5,32}$/)
     .optional(),
   hint_display_name: z.string().min(1).max(80).optional(),
+  // v0.11.0 (H123): absent ⇒ treated as "single" by the redemption guard.
+  // canonicalJson sorts keys + omits undefined, so legacy tokens (no kind)
+  // produce the identical signing string and stay valid.
+  kind: z.enum(["single", "meeting"]).optional(),
+  max_uses: z.number().int().positive().max(500).optional(),
 });
 
 export type InvitePayload = z.infer<typeof InvitePayloadSchema>;
@@ -281,6 +287,38 @@ export function jtiHasFinalRow(
   return rows.some((r) => r.jti === jti);
 }
 
+/**
+ * H124: a meeting token is dead iff a `revoked` row exists for its jti.
+ * (Distinct from jtiHasFinalRow, which also treats `redeemed` as final —
+ * correct for single-use, wrong for multi-use meeting tokens.)
+ */
+export function jtiIsRevoked(rows: readonly LedgerRow[], jti: string): boolean {
+  return rows.some((r) => r.jti === jti && r.status === "revoked");
+}
+
+/** H126: count of redeemed rows for a jti (best-effort soft-cap input under OCC). */
+export function jtiRedemptionCount(rows: readonly LedgerRow[], jti: string): number {
+  return rows.filter((r) => r.jti === jti && r.status === "redeemed").length;
+}
+
+// H127: meeting-invite expiry bounds (seconds). Default ~4h covers a meetup;
+// clamped so an admin typo can't mint a multi-day open window.
+export const MEETING_EXPIRY_MIN_SECONDS = 30 * 60;
+export const MEETING_EXPIRY_MAX_SECONDS = 24 * 3600;
+export const MEETING_EXPIRY_DEFAULT_SECONDS = 4 * 3600;
+export const MEETING_MAX_USES_DEFAULT = 50;
+export const MEETING_MAX_USES_CAP = 500;
+
+export function clampMeetingExpirySeconds(requested: number | undefined): number {
+  if (requested === undefined || !Number.isFinite(requested)) {
+    return MEETING_EXPIRY_DEFAULT_SECONDS;
+  }
+  return Math.min(
+    MEETING_EXPIRY_MAX_SECONDS,
+    Math.max(MEETING_EXPIRY_MIN_SECONDS, Math.floor(requested)),
+  );
+}
+
 function escapeCell(s: string): string {
   return s.replaceAll("|", "&#124;");
 }
@@ -399,6 +437,10 @@ export interface RedemptionInput {
   readonly client: RedemptionClient;
   /** Injectable now() for deterministic tests. */
   readonly now: () => Date;
+  /** Injectable sleep for deterministic backoff tests (default: setTimeout). */
+  readonly sleep?: (ms: number) => Promise<void>;
+  /** Injectable RNG for deterministic jitter tests (default: Math.random). */
+  readonly rng?: () => number;
 }
 
 export type RedemptionResult =
@@ -414,12 +456,14 @@ const TOKEN_TTL_MS = 7 * 86400 * 1000;
 /**
  * Atomic 4-file commit redemption orchestrator.
  *
- * Steps (spec §11.2 redemption + §11.5 H2/H3/H12/H13):
- *   1. Read ledger; reject if JTI has a final row (H2/H3 defense-in-depth).
- *   2. Read roster + aliases; resolve slug + collision (H12).
+ * Steps (spec §11.2 redemption + §11.5 H2/H3/H12/H13 + §21 H124/H126/H128/H129):
+ *   1. Read ledger; guard by kind — single: reject if JTI has a final row
+ *      (H2/H3 replay defense); meeting: reject if revoked or over soft-cap (H124/H126).
+ *   2. Read roster + aliases; resolve slug + collision (H12); meeting: live dup-handle (H128).
  *   3. Build 4 file contents (roster row, alias row, ledger row, profile).
  *   4. Capture HEAD SHA (CAS anchor).
- *   5. Commit. On sha_conflict: retry ONCE with re-read ledger.
+ *   5. Commit. On sha_conflict: retry up to MAX_ATTEMPTS (6) with full-jitter
+ *      exponential backoff (H129); re-read ledger between attempts.
  *   6. Emit logRedemptionEvent at terminal points.
  */
 export async function redeemInvitation(
@@ -438,14 +482,25 @@ export async function redeemInvitation(
     return { ok: false };
   }
   const ledgerRows = parseInvitationsLedger(ledgerFile.content);
-  if (jtiHasFinalRow(ledgerRows, payload.jti)) {
-    logRedemptionEvent({
-      jti: payload.jti,
-      event: "replayed",
-      redeemerGh: redeemerHandle,
-      isoTimestamp: now().toISOString(),
-    });
-    return { ok: false };
+  const kind = payload.kind ?? "single";
+
+  if (kind === "single") {
+    if (jtiHasFinalRow(ledgerRows, payload.jti)) {
+      logRedemptionEvent({ jti: payload.jti, event: "replayed", redeemerGh: redeemerHandle, isoTimestamp: now().toISOString() });
+      return { ok: false };
+    }
+  } else {
+    // Meeting (multi-use): exp already enforced in verifyToken. Bound by
+    // revocation (hard) + soft redemption cap (best-effort under OCC, O4).
+    if (jtiIsRevoked(ledgerRows, payload.jti)) {
+      logRedemptionEvent({ jti: payload.jti, event: "revoked", redeemerGh: redeemerHandle, isoTimestamp: now().toISOString() });
+      return { ok: false };
+    }
+    const cap = payload.max_uses ?? MEETING_MAX_USES_DEFAULT;
+    if (jtiRedemptionCount(ledgerRows, payload.jti) >= cap) {
+      logRedemptionEvent({ jti: payload.jti, event: "replayed", redeemerGh: redeemerHandle, isoTimestamp: now().toISOString() });
+      return { ok: false };
+    }
   }
 
   const baseSlug = slugify(form.display_name);
@@ -478,6 +533,14 @@ export async function redeemInvitation(
     return { ok: false };
   }
 
+  // H128: the snapshot-based already-member guard in the action lags a room
+  // (build-time snapshot). For meeting tokens, re-check the LIVE roster content
+  // so a fast double-scan inside the snapshot window can't create a dup row.
+  if (kind === "meeting" && lookupMemberByHandle(parseRosterContent(rosterFile.content), redeemerHandle)) {
+    logRedemptionEvent({ jti: payload.jti, event: "already-member", redeemerGh: redeemerHandle, isoTimestamp: now().toISOString() });
+    return { ok: false };
+  }
+
   const newRosterMd = appendMember(rosterFile.content, {
     name: form.display_name,
     githubHandle: redeemerHandle,
@@ -503,9 +566,14 @@ export async function redeemInvitation(
   }
 
   const redeemedAt = now().toISOString();
-  // Token has no `iat` field; reconstruct the issuance instant from `exp`
-  // using the documented 7-day TTL (spec §11.2).
-  const issuedAt = new Date(payload.exp * 1000 - TOKEN_TTL_MS).toISOString();
+  // Single tokens have a fixed 7-day TTL, so exp - TTL ≈ the issuance instant
+  // (spec §11.2). Meeting tokens use a variable expiry (30m–24h) and carry no
+  // `iat`, so issuance time isn't reconstructable from the token — record it
+  // empty rather than a wrong exp - 7d timestamp (reviewer triage v0.11.0).
+  const issuedAt =
+    kind === "single"
+      ? new Date(payload.exp * 1000 - TOKEN_TTL_MS).toISOString()
+      : "";
   const newLedgerMd = appendRedemptionRow(ledgerFile.content, {
     jti: payload.jti,
     issuedAt,
@@ -535,60 +603,52 @@ export async function redeemInvitation(
       ? `Invitation-Hint-Telegram: ${payload.hint_telegram}\n`
       : "");
 
+  const sleep = input.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  const rng = input.rng ?? Math.random;
+  const MAX_ATTEMPTS = 6;
+
   let attempt = 0;
   for (;;) {
     attempt += 1;
     const expectedHeadSha = await client.getHeadSha();
     try {
-      const result = await client.commitMultipleFiles({
-        files,
-        message,
-        expectedHeadSha,
-      });
+      const result = await client.commitMultipleFiles({ files, message, expectedHeadSha });
       logRedemptionEvent({
-        jti: payload.jti,
-        event: "commit-success",
-        redeemerGh: redeemerHandle,
-        issuerGh: payload.iss,
-        isoTimestamp: redeemedAt,
-        httpStatus: 302,
+        jti: payload.jti, event: "commit-success", redeemerGh: redeemerHandle,
+        issuerGh: payload.iss, isoTimestamp: redeemedAt, httpStatus: 302,
       });
       return { ok: true, commitSha: result.commitSha };
     } catch (err: unknown) {
       const isConflict =
-        typeof err === "object" &&
-        err !== null &&
+        typeof err === "object" && err !== null &&
         (err as { kind?: string }).kind === "sha_conflict";
 
-      if (!isConflict || attempt >= 2) {
+      if (!isConflict || attempt >= MAX_ATTEMPTS) {
         logRedemptionEvent({
-          jti: payload.jti,
-          event: attempt >= 2 ? "commit-retry" : "invalid",
-          redeemerGh: redeemerHandle,
-          isoTimestamp: now().toISOString(),
-          httpStatus: attempt >= 2 ? 503 : 500,
+          jti: payload.jti, event: attempt >= MAX_ATTEMPTS ? "commit-retry" : "invalid",
+          redeemerGh: redeemerHandle, isoTimestamp: now().toISOString(),
+          httpStatus: attempt >= MAX_ATTEMPTS ? 503 : 500,
         });
         return { ok: false };
       }
 
-      logRedemptionEvent({
-        jti: payload.jti,
-        event: "commit-retry",
-        redeemerGh: redeemerHandle,
-        isoTimestamp: now().toISOString(),
-      });
+      logRedemptionEvent({ jti: payload.jti, event: "commit-retry", redeemerGh: redeemerHandle, isoTimestamp: now().toISOString() });
+      await sleep(computeBackoffDelay(attempt, { rng }));
+
+      // Re-read after backoff. For single tokens, abort if another redemption
+      // burned the jti. For meeting tokens, concurrent redeemed rows are
+      // EXPECTED (multi-use) — only a revoked row aborts the retry.
       const reReadLedger = await client.readFile(LEDGER_PATH);
-      if (
-        reReadLedger &&
-        jtiHasFinalRow(parseInvitationsLedger(reReadLedger.content), payload.jti)
-      ) {
-        logRedemptionEvent({
-          jti: payload.jti,
-          event: "replayed",
-          redeemerGh: redeemerHandle,
-          isoTimestamp: now().toISOString(),
-        });
-        return { ok: false };
+      if (reReadLedger) {
+        const rows = parseInvitationsLedger(reReadLedger.content);
+        const dead = kind === "single" ? jtiHasFinalRow(rows, payload.jti) : jtiIsRevoked(rows, payload.jti);
+        if (dead) {
+          logRedemptionEvent({
+            jti: payload.jti, event: kind === "single" ? "replayed" : "revoked",
+            redeemerGh: redeemerHandle, isoTimestamp: now().toISOString(),
+          });
+          return { ok: false };
+        }
       }
     }
   }

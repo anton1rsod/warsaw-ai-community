@@ -15,6 +15,7 @@ import {
   logRedemptionEvent,
   type RedemptionClient,
 } from "@/lib/invitations";
+import { CONSENT_COOKIE } from "@/lib/consent-cookie";
 import { mockInvitationStore } from "./_test-invitation-store";
 
 // `"use server"` modules can only export async functions — keep types
@@ -122,8 +123,8 @@ function clientFor(): RedemptionClient {
 
 /**
  * /onboard form submission target. Wires session + cookie + token verify
- * + orchestrator. On success: clear cookie + revalidate 3 routes + redirect
- * to /this-week. On terminal failures (auth, missing/invalid token,
+ * + orchestrator. On success: clear cookie + set consent cookie + revalidate
+ * routes + redirect to /welcome. On terminal failures (auth, missing/invalid token,
  * already-member): single error string returned (info-leak prevention §11.5).
  * Form-validation failures keep the cookie so the user can retry without
  * re-clicking the original invitation link.
@@ -187,8 +188,20 @@ export async function redeemInvitation(
   }
 
   cookieStore.delete({ name: INVITE_COOKIE_NAME, path: "/onboard" });
+  // H130: the member just consented in the form — reflect it so the proxy
+  // doesn't bounce them to /consent once the snapshot catches up.
+  cookieStore.set(CONSENT_COOKIE, "1", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
   revalidatePath("/members");
   revalidatePath("/this-week");
   revalidatePath("/admin/health");
-  redirect("/this-week");
+  // H131/O2: land on the PUBLIC /welcome (not gated /this-week) so a not-yet-
+  // in-snapshot member never hits /no-access during the build-snapshot lag.
+  // Applies to single + meeting redemptions.
+  redirect("/welcome");
 }

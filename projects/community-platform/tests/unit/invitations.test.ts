@@ -787,7 +787,7 @@ describe("H13: redeemInvitation — retry-once on 409", () => {
     expect(client.commitMultipleFiles).toHaveBeenCalledTimes(2);
   });
 
-  it("aborts after second 409 (cap at 1 retry)", async () => {
+  it("aborts after MAX_ATTEMPTS (6) sha_conflicts (full-jitter loop)", async () => {
     const client = makeMockClient();
     client.readFile.mockImplementation(async (path: string) => {
       if (path.endsWith("invitations.md"))
@@ -804,6 +804,7 @@ describe("H13: redeemInvitation — retry-once on 409", () => {
       throw e;
     });
 
+    const sleep = vi.fn().mockResolvedValue(undefined);
     const result = await redeemInvitation({
       payload: happyTokenPayload,
       redeemerHandle: "newmember",
@@ -815,9 +816,12 @@ describe("H13: redeemInvitation — retry-once on 409", () => {
       },
       client,
       now: () => new Date(),
+      sleep,
+      rng: () => 0,
     });
     expect(result.ok).toBe(false);
-    expect(client.commitMultipleFiles).toHaveBeenCalledTimes(2);
+    expect(client.commitMultipleFiles).toHaveBeenCalledTimes(6);
+    expect(sleep).toHaveBeenCalledTimes(5); // 5 sleeps between 6 attempts
   });
 
   it("aborts on retry when re-read ledger now contains the JTI (replayed-after-409)", async () => {
@@ -857,6 +861,8 @@ describe("H13: redeemInvitation — retry-once on 409", () => {
       },
       client,
       now: () => new Date(),
+      sleep: vi.fn().mockResolvedValue(undefined),
+      rng: () => 0,
     });
     expect(result.ok).toBe(false);
     // First commit attempt (sha_conflict) happened, but the retry was

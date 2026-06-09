@@ -36,6 +36,7 @@ const PUBLIC_PATHS = new Set<string>(
         "/handbook",          // ADR-0014 — charter pointer + roadmap (D26 + Q6.1(i))
         "/api/calendar.ics",
         "/manifest.json",
+        "/welcome",
       ]
     : [
         // ADR-0014 (v0.4) + extends ADR-0012 (v0.3):
@@ -61,6 +62,7 @@ const PUBLIC_PATHS = new Set<string>(
         "/handbook",
         "/api/calendar.ics",
         "/manifest.json",
+        "/welcome",
       ],
 );
 // Any new public-route entry point (e.g. /.well-known/security.txt,

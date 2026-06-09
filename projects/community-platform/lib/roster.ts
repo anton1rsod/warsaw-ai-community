@@ -39,6 +39,62 @@ function isSeparatorRow(line: string): boolean {
 }
 
 /**
+ * Parse roster Markdown CONTENT (string) into members. Extracted from
+ * readRoster so callers holding file content (e.g. the redemption
+ * orchestrator's live dup-handle guard, H128) can reuse the exact parsing.
+ */
+export function parseRosterContent(content: string): RosterMember[] {
+  const lines = content.split("\n");
+  const members: RosterMember[] = [];
+
+  let pendingHeader: string[] | null = null;
+  let githubColIndex = -1;
+  let inTableBody = false;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+
+    if (!line.startsWith("|")) {
+      pendingHeader = null;
+      githubColIndex = -1;
+      inTableBody = false;
+      continue;
+    }
+
+    if (isSeparatorRow(line)) {
+      if (pendingHeader !== null) {
+        githubColIndex = pendingHeader.findIndex((h) => /^github$/i.test(h));
+      }
+      inTableBody = true;
+      pendingHeader = null;
+      continue;
+    }
+
+    const cells = parseCells(line);
+
+    if (!inTableBody) {
+      pendingHeader = cells;
+      continue;
+    }
+
+    if (githubColIndex === -1) continue;
+
+    const nameCell = cells[0] ?? "";
+    const githubCell = cells[githubColIndex] ?? "";
+
+    if (nameCell.includes("*(TBD)*")) continue;
+    if (nameCell === "") continue;
+
+    const handle = normalizeHandle(githubCell);
+    if (handle === "") continue;
+
+    members.push({ name: nameCell, githubHandle: handle, slug: slugify(nameCell) });
+  }
+
+  return members;
+}
+
+/**
  * Read and parse a Markdown roster file with one or more pipe-delimited tables.
  *
  * Per execution-plan §9.1 amendment:
@@ -50,70 +106,7 @@ function isSeparatorRow(line: string): boolean {
  */
 export async function readRoster(filePath: string): Promise<RosterMember[]> {
   const content = await readFile(filePath, "utf-8");
-  const lines = content.split("\n");
-
-  const members: RosterMember[] = [];
-
-  let pendingHeader: string[] | null = null; // cells from the last `|`-line before a separator
-  let githubColIndex = -1; // resolved after separator is found
-  let inTableBody = false; // true once separator is consumed for this table
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-
-    if (!line.startsWith("|")) {
-      // Non-table line — reset per-table state so next table re-detects its header
-      pendingHeader = null;
-      githubColIndex = -1;
-      inTableBody = false;
-      continue;
-    }
-
-    if (isSeparatorRow(line)) {
-      // The line immediately before this separator is the header row
-      if (pendingHeader !== null) {
-        githubColIndex = pendingHeader.findIndex((h) =>
-          /^github$/i.test(h),
-        );
-      }
-      inTableBody = true;
-      pendingHeader = null;
-      continue;
-    }
-
-    const cells = parseCells(line);
-
-    if (!inTableBody) {
-      // Still looking for the separator — stash this as a candidate header
-      pendingHeader = cells;
-      continue;
-    }
-
-    // We are in the table body — apply inclusion rules
-    if (githubColIndex === -1) continue;
-
-    const nameCell = cells[0] ?? "";
-    const githubCell = cells[githubColIndex] ?? "";
-
-    // §9.1: skip *(TBD)* name rows
-    if (nameCell.includes("*(TBD)*")) continue;
-
-    // Skip all-empty name rows
-    if (nameCell === "") continue;
-
-    const handle = normalizeHandle(githubCell);
-
-    // Skip empty or @TBD handles
-    if (handle === "") continue;
-
-    members.push({
-      name: nameCell,
-      githubHandle: handle,
-      slug: slugify(nameCell),
-    });
-  }
-
-  return members;
+  return parseRosterContent(content);
 }
 
 /**
