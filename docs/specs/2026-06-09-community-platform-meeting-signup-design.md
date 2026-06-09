@@ -66,7 +66,7 @@ Extend `InvitePayloadSchema` with an **optional** `kind: "single" | "meeting"`. 
 - **Soft cap** (H126): meeting guard counts `redeemed` rows for the `jti` in the freshly-read ledger; rejects beyond `max_uses` (default generous, e.g. 50). Best-effort under concurrency.
 
 ### 5.3 Admin QR surface
-Extend `/admin/invite` (already admin-gated; re-check `isAdmin` server-side on the new action — H134) with a **"Mint meeting invite"** panel: pick expiry + cap → renders the `/onboard?token=…` URL **and a large projectable QR** (server-rendered SVG; full canonical URL, no shortener — H132). Below it, a **list of active meeting invites with a Revoke control** (the "QR registry" best practice — H135).
+Extend `/admin/invite` (already admin-gated; re-check `isAdmin` server-side on the new action — H134) with a **"Mint meeting invite"** panel: pick expiry + cap → renders the `/onboard?token=…` URL **and a large projectable QR** (server-rendered PNG data-URI shown as a plain `<img>`; full canonical URL, no shortener — H132). Below it, an **inline Revoke** for the just-minted invite — a persistent cross-session registry is deferred to v0.11.1 (minted tokens are stateless); the "QR registry" best practice (H135).
 
 ### 5.4 Redemption guard branch + dup-handle guard
 In `redeemInvitation` orchestrator, branch on `payload.kind`:
@@ -85,7 +85,7 @@ Two parts, both small, that make signup actually *work* in a live room:
 > The heavier alternative — a signed "fresh member" bridge cookie the proxy trusts for *instant* gated access — is deferred to v0.11.1 (it adds an auth-bypass surface needing its own security review). Welcome-redirect is the right Thursday call.
 
 ### 5.7 QR hygiene / anti-quishing (H132, H133)
-Full canonical URL in the QR (no shortener); SVG server-rendered (no third-party QR service that could see tokens); expired/invalid meeting token → clean `/onboard/error` ("this invitation has expired"), no info leak, no live-resolving destination. Operational note for the run-of-show: **project the QR on screen** (or keep any printed copy attended). **QR robustness (H137):** render at ECC level **Q** (use **H** only if a center logo is added) with a **≥4-module quiet zone**, sized to ~1/10 of the scan distance for projection; do a multi-distance / angle / lighting scan test before the meeting (ISO 18004).
+Full canonical URL in the QR (no shortener); rendered server-side as a PNG data-URI `<img>` (no inline markup; no third-party QR service that could see tokens); expired/invalid meeting token → clean `/onboard/error` ("this invitation has expired"), no info leak, no live-resolving destination. Operational note for the run-of-show: **project the QR on screen** (or keep any printed copy attended). **QR robustness (H137):** render at ECC level **Q** (use **H** only if a center logo is added) with a **≥4-module quiet zone**, sized to ~1/10 of the scan distance for projection; do a multi-distance / angle / lighting scan test before the meeting (ISO 18004).
 
 ### 5.8 Security model (defense-in-depth)
 
@@ -109,10 +109,10 @@ The proxy/middleware gate is a **convenience layer, not the security boundary**.
 | H129 | CAS: exponential backoff + full jitter + capped retries | AWS backoff-and-jitter |
 | H130 | Redemption sets `waic-consented` cookie | first-use correctness |
 | H131 | Post-redeem → public `/welcome`, not gated `/this-week` | avoids `/no-access` bounce |
-| H132 | QR encodes full canonical URL, no shortener; SVG server-side | anti-quishing |
+| H132 | QR encodes full canonical URL, no shortener; PNG data-URI `<img>`, server-side | anti-quishing |
 | H133 | Expired/invalid meeting token → clean `/onboard/error` | no info leak / no live destination |
 | H134 | New mint **and revoke** actions re-check `isAdmin` server-side | privilege-escalation guard |
-| H135 | Admin surface lists active meeting invites + revoke | QR registry best practice |
+| H135 | Mint screen surfaces the minted invite + inline Revoke (persistent registry → v0.11.1) | QR registry best practice |
 | H136 | Proxy ≠ sole auth boundary; all privileged actions re-verify; Next.js patched (CVE-2025-29927); `/welcome` carries no member-only data | defense-in-depth |
 | H137 | QR at ECC Q (H if logo) + ≥4-module quiet zone, sized for projection; pre-meeting scan test | QR robustness (ISO 18004) |
 

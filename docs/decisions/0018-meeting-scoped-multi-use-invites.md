@@ -62,7 +62,7 @@ Implementing via **v0.11.0** (spec §21; design doc §5):
 
 - `lib/invitations.ts` — `kind` discriminator (default `single`); meeting redemption guard (revoked + soft cap + live duplicate-handle); exponential-backoff-full-jitter CAS retry.
 - New admin mint action (re-checks `isAdmin` server-side, H134) + revoke action (appends `revoked` row).
-- `/admin/invite` — "Mint meeting invite" panel (expiry + cap) → server-rendered SVG QR of the full canonical URL (no shortener) + active-invite list with Revoke.
+- `/admin/invite` — "Mint meeting invite" panel (expiry + cap) → server-rendered PNG-data-URI QR (`<img>`) of the full canonical URL (no shortener) + inline Revoke for the minted invite (a persistent cross-session registry is deferred to v0.11.1).
 - `app/actions/redeem-invitation.ts` — set `waic-consented` cookie; redirect to `/welcome`.
 - New public `app/welcome/page.tsx` + `PUBLIC_PATHS` entry in `proxy.ts`.
 - Hardenings H123–H137 (spec §21) → 1:1 test blocks (`describe("H<n>:")`).

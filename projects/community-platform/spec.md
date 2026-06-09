@@ -3904,7 +3904,7 @@ Spec source: `docs/specs/2026-06-09-community-platform-meeting-signup-design.md`
 
 - **R1** — `InvitePayloadSchema` gains optional `kind: "single" | "meeting"` (absent ⇒ `single`, fully backward-compatible) + meeting-only `max_uses` + short `exp`. One mint/verify/handoff path; only the redemption guard branches.
 - **R2** — `meeting` redemption: multi-use (skip single-use `jtiHasFinalRow` rejection), append a `redeemed` audit row per attendee, enforce **revocation** + **soft cap** + **live duplicate-handle** guards.
-- **R3** — Admin surface on `/admin/invite`: mint meeting invite (choose expiry + cap) → projectable server-rendered SVG QR of the **full canonical URL (no shortener)** + list of active meeting invites with **Revoke**.
+- **R3** — Admin surface on `/admin/invite`: mint meeting invite (choose expiry + cap) → projectable server-rendered **PNG-data-URI QR** (plain `<img>`) of the **full canonical URL (no shortener)** + **inline Revoke** for the minted invite (a persistent cross-session registry is deferred to v0.11.1).
 - **R4** — Redemption CAS uses exponential backoff + full jitter + capped retries (replaces the single immediate retry).
 - **R5** — New-member first-use: set `waic-consented=1` at redemption + redirect to a **public `/welcome`** page (not gated `/this-week`) to avoid the `/no-access` snapshot-lag bounce. New public route added to `PUBLIC_PATHS`.
 - **R6** — Expired/invalid meeting token → clean `/onboard/error`. Expiry default ~3–4h, admin-adjustable, clamped.
@@ -3921,10 +3921,10 @@ Spec source: `docs/specs/2026-06-09-community-platform-meeting-signup-design.md`
 - **H129** — Redemption CAS: exponential backoff + full jitter + capped retries (deterministically testable via injected sleeper/RNG).
 - **H130** — Redemption sets the `waic-consented` cookie (member consented in-form).
 - **H131** — Post-redeem redirect to public `/welcome`, not gated `/this-week` (avoids `/no-access` during snapshot lag).
-- **H132** — QR encodes the full canonical URL with no shortener; SVG rendered server-side (no third-party QR service sees tokens).
+- **H132** — QR encodes the full canonical URL with no shortener; rendered server-side as a PNG data-URI `<img>` (no inline markup; no third-party QR service sees tokens).
 - **H133** — Expired/invalid meeting token → clean `/onboard/error`; no info leak, no live-resolving destination.
 - **H134** — New meeting-mint **and revoke** actions re-check `isAdmin` server-side (privilege-escalation guard, parity with existing mint).
-- **H135** — Admin surface lists active meeting invites + revoke control (QR-registry best practice).
+- **H135** — Mint screen surfaces the minted invite with an inline Revoke control; a persistent cross-session registry of active invites is deferred to v0.11.1 (minted tokens are stateless). QR-registry best practice.
 - **H136** — Defense-in-depth: the proxy is not the sole auth boundary (Next.js middleware-bypass class CVE-2025-29927, patched in 16.2.6). Every privileged Server Action (`mint-meeting`, `revoke`, `redeem-invitation`) re-verifies session + authorization independently; the new public `/welcome` route carries no member-only data.
 - **H137** — QR rendered at ECC level Q (H only if a center logo is added) with a ≥4-module quiet zone, sized for projection; pre-meeting multi-distance/angle/lighting scan test (ISO 18004).
 
