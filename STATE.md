@@ -19,4 +19,4 @@
 - None.
 
 ## Latest handoff
-- _none active_ — `pulse` P2 shipped (PR #50). Next unit = **P3** (plan Task 22, `pulse.yml`); the plan is the contract, no separate handoff needed. Live `pulse` runs await Anton's one-time `projects/pulse/SETUP.md`.
+- `docs/specs/2026-06-09-pulse-p3-handoff.md` — resume `pulse` at **P3** (plan Task 22, the `.github/workflows/pulse.yml` automation workflow). Unblocked by the paused live setup: scripts no-op without secrets, the test is structural, so build + merge it dormant.

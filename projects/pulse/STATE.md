@@ -17,4 +17,4 @@
 - Plan: `docs/specs/2026-06-09-pulse-implementation-plan.md` (Phase P3).
 
 ## Latest handoff
-- _none active_ — P2 shipped (PR #50); P3 (plan Task 22) is the next unit. Link a new handoff here only if pausing mid-P3.
+- `docs/specs/2026-06-09-pulse-p3-handoff.md` — P3 (plan Task 22): `.github/workflows/pulse.yml` + structural test. Build dormant; activates on Anton's GitHub secrets (paid account).
