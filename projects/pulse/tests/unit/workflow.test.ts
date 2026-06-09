@@ -23,6 +23,14 @@ describe("pulse.yml structural invariants (spec L6/§10.3)", () => {
   it("write-back commits carry [skip ci] (no self-trigger loop)", () => {
     expect(yml).toContain("[skip ci]");
   });
+  it("guards write-back git add against not-yet-created generated files", () => {
+    // Generated artifacts don't exist until a live run; `git add` of a missing
+    // pathspec is a fatal exit-128 under bash -e, which aborts the commit-back
+    // step before the "no changes" diff guard. Each must be gated on existence
+    // so dormant runs (and first runs) stay green.
+    expect(yml).toContain("[ -f projects/pulse/notion-index.json ]");
+    expect(yml).toContain("[ -f projects/pulse/snapshots/tasks-snapshot.json ]");
+  });
   it("uses two separate tokens (least-privilege)", () => {
     expect(yml).toContain("NOTION_TOKEN");
     expect(yml).toContain("NOTION_READ_TOKEN");
