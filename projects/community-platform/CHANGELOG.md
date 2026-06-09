@@ -16,7 +16,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
-## [0.11.0] — 2026-06-09 (meeting signup — multi-use invite QR)
+## [0.11.0] — 2026-06-09 (meeting signup — multi-use invite QR; PR #54 squash-merged at `2c79e90`, tag `community-platform-v0.11.0`)
 
 Lets a room of attendees join on the spot from one projected QR. Backward-compatible extension of the single-use HMAC invite with an optional `kind:"meeting"` discriminator — absent ⇒ `single`, so every previously-minted invite still verifies (identical canonical signing string). ADR-0018 (Accepted on this merge). Spec §21 (R1–R7, H123–H137). Executed via `superpowers:subagent-driven-development` (one implementer per phase); 1543 unit/integration tests + the 8-scenario invitation E2E green; reviewer triage (code-review + security-reviewer — 0 CRITICAL / 0 exploitable) batched into one commit.
 
