@@ -39,3 +39,21 @@ The first `sync-notion` run resolves each `database_id → data_source_id` and w
 
 ## 7. Rotation
 Rotate both integration tokens ~every 90 days (ADR-0006). Update the two GitHub secrets after rotating.
+
+## 8. Appendix — exact DB schema as DDL (scripted recreation)
+The 5 databases were first built via the claude.ai Notion connector. The schema is **account-independent** — to recreate on a new workspace: authorize the connector (`/mcp` → "claude.ai Notion") against that workspace, create a parent page ("Pulse — Warsaw AI"), then create each DB **under that page** with the DDL below, then create a plain "Digests" page under it. Finally regenerate `.env.local` with the new database/page ids (the ids are workspace-specific; the schema is not). Property names/types must stay matched to `lib/notion/mappers.ts`.
+
+```sql
+-- Projects
+CREATE TABLE ("Name" TITLE, "Status" SELECT('Proposed':gray, 'In design':blue, 'Building':yellow, 'Live':green, 'Archived':default), "DRI" SELECT('Anton':blue, 'Yuriy':orange), "Version" RICH_TEXT, "Current focus" RICH_TEXT, "Next gate" RICH_TEXT, "Repo path" RICH_TEXT, "External ID" RICH_TEXT, "last_synced_at" DATE)
+-- Decisions
+CREATE TABLE ("ADR" TITLE, "Title" RICH_TEXT, "Status" SELECT('Proposed':gray, 'Accepted':green, 'Superseded':orange, 'Deprecated':red, 'Rejected':default), "Date" DATE, "Link" URL, "External ID" RICH_TEXT, "last_synced_at" DATE)
+-- Shipping Log
+CREATE TABLE ("Version" TITLE, "Project" SELECT('community-platform':blue, 'gbrain':green, 'pulse':purple, 'persona-builder':pink), "Date" DATE, "Summary" RICH_TEXT, "External ID" RICH_TEXT, "last_synced_at" DATE)
+-- Engagement
+CREATE TABLE ("Member" TITLE, "Contributions" NUMBER, "Kudos" NUMBER, "Status streak" NUMBER, "Events attended" NUMBER, "External ID" RICH_TEXT, "last_synced_at" DATE)
+-- Tasks (human-owned; pulse only snapshots it — schema is illustrative, adjust freely)
+CREATE TABLE ("Name" TITLE, "Status" STATUS, "Assignee" PEOPLE, "Priority" SELECT('High':red, 'Medium':yellow, 'Low':green), "Due" DATE)
+```
+
+> `External ID` (rich_text) is the idempotency key; `last_synced_at` (date) is overwritten each sync. Selects auto-extend on write, so option lists need not be exhaustive. Connect `pulse-mirror` to the 4 context DBs + Digests page, `pulse-export` to Tasks only (§4).
