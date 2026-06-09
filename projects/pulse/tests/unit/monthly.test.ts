@@ -42,4 +42,21 @@ describe("buildMonthlyReview", () => {
     expect(md).toContain("_No releases this month._");
     expect(md).toContain("_None._");
   });
+
+  it("renders '_No decisions this month.' when no decisions match the period", () => {
+    const md = buildMonthlyReview({ ...input, decisions: [] });
+    expect(md).toContain("_No decisions this month._");
+  });
+
+  it("renders '_None recorded.' when drivers list is empty", () => {
+    const md = buildMonthlyReview({ ...input, state: { ...input.state, drivers: [], hotNow: [] } });
+    expect(md).toContain("_None recorded._");
+    expect(md).toContain("_Nothing flagged._");
+  });
+
+  it("monthLabel falls back to raw month segment when MONTHS index is out of range", () => {
+    // A period with month "13" has no entry in MONTHS array → fallback to "13"
+    const md = buildMonthlyReview({ ...input, period: "2026-13" });
+    expect(md).toContain("13 2026");
+  });
 });

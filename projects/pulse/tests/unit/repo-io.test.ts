@@ -28,4 +28,38 @@ describe("repo-io", () => {
     expect(files).toHaveLength(1);
     expect(files[0]).toContain("2026-W18");
   });
+
+  it("readFileOrNull rethrows non-ENOENT errors (e.g. EISDIR — reading a directory path)", async () => {
+    // Passing a directory path to readFile results in EISDIR, not ENOENT
+    const dirPath = path.join(root, "community/status/2026-W18");
+    await expect(readFileOrNull(dirPath)).rejects.toThrow();
+  });
+
+  it("listStatusFiles returns [] when community/status dir is absent", async () => {
+    const emptyRoot = await mkdtemp(path.join(tmpdir(), "pulse-io-empty-"));
+    try {
+      const files = await listStatusFiles(emptyRoot);
+      expect(files).toEqual([]);
+    } finally {
+      await rm(emptyRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("listStatusFiles skips a file entry that is not a directory under community/status", async () => {
+    const r = await mkdtemp(path.join(tmpdir(), "pulse-io-mixed-"));
+    try {
+      await mkdir(path.join(r, "community/status"), { recursive: true });
+      // Write a plain file inside community/status (not a directory) — readdir on it should fail/skip
+      await writeFile(path.join(r, "community/status/not-a-dir.md"), "# noise");
+      // Also add a real week dir with a status file
+      await mkdir(path.join(r, "community/status/2026-W20"), { recursive: true });
+      await writeFile(path.join(r, "community/status/2026-W20/user.md"), "# status");
+      const files = await listStatusFiles(r);
+      // The plain file "not-a-dir.md" is skipped; only "2026-W20/user.md" is returned
+      expect(files).toHaveLength(1);
+      expect(files[0]).toContain("2026-W20");
+    } finally {
+      await rm(r, { recursive: true, force: true });
+    }
+  });
 });
