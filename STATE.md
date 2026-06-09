@@ -6,11 +6,11 @@
 **Last updated:** 2026-06-09
 
 ## Active drivers
-- **Anton (DRI):** gbrain · community-platform · `pulse` (reports + Notion — P2 shipped; P3 automation next).
+- **Anton (DRI):** gbrain · community-platform · `pulse` (reports + Notion — **P3 shipped; plan 22/22 complete; live activation pending Anton's secrets**).
 - **Yuriy (peer co-founder):** community ops — onboarding as peer co-founder (see ADR-0017).
 
 ## Hot now
-- **`pulse`: P2 SHIPPED** (merged to `main` via PR #50, squash `87e2623`). Notion mirror (4 context DBs) + read-only Tasks export + monthly digest page, plan Tasks 12–21. 90 tests, 99.66% lines / 90.84% branches; all mock-based (no live Notion to build/test). Plan `docs/specs/2026-06-09-pulse-implementation-plan.md` (22 tasks / 3 phases). **Next: P3 (automation — `.github/workflows/pulse.yml`, plan Task 22).**
+- **`pulse`: P3 SHIPPED** (workflow merged dormant via PR #51, squash `14b7bb1`) — `.github/workflows/pulse.yml`: `mirror` (push → sync-notion) + monthly `digest` + nightly `snapshot` + `notify-failure`; +6 structural tests (96 total). **Plan complete: 22/22.** Merged dormant — the three scripts no-op without `NOTION_*` secrets, so every job runs green until activated. **Next: live activation** — Anton sets the GitHub secrets (`SETUP.md` §5) on the paid Notion account, then §10.2/§10.3 verification.
 - Repo operating foundation SHIPPED 2026-06-09 (AGENTS.md, this STATE.md, ADR-0017, collaboration playbook, `_template` parity).
 - **Anton's open items (non-blocking):** fill Yuriy's handles in `roster.md`; confirm per-project DRI.
 - **`pulse` live setup PAUSED** — internal Notion integrations need a paid plan; Anton will use a separate paid account. When ready: re-auth the connector (`/mcp`) against it, recreate the parent page + 5 DBs (DDL in `SETUP.md` §8) + Digests page, regenerate `.env.local` ids, then run the §10.2 live verification. A first structure was built on the current (free) account as a dry run.
@@ -19,4 +19,4 @@
 - None.
 
 ## Latest handoff
-- `docs/specs/2026-06-09-pulse-p3-handoff.md` — resume `pulse` at **P3** (plan Task 22, the `.github/workflows/pulse.yml` automation workflow). Unblocked by the paused live setup: scripts no-op without secrets, the test is structural, so build + merge it dormant.
+- `docs/specs/2026-06-09-pulse-p3-handoff.md` — **P3 done** (PR #51, squash `14b7bb1`). No open AI-collaborator handoff; the only remaining step is Anton's one-time **live activation** (`projects/pulse/SETUP.md`) on the paid Notion account.

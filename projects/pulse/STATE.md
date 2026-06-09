@@ -4,17 +4,17 @@
 
 **Last updated:** 2026-06-09
 **Owner / DRI:** Anton
-**Status:** Building
-**Branch:** main (P2 merged via PR #50)
+**Status:** Built (dormant) — plan 22/22 complete
+**Branch:** main (P3 merged via PR #51, squash `14b7bb1`)
 
 ## What just happened
-- **P2 SHIPPED** (Tasks 12–21, PR #50 squash `87e2623`): `lib/notion/*` (client, throttle, index-store, mappers, upsert, export-tasks, digest) + `scripts/{sync-notion,export-tasks,publish-digest}.ts` + `SETUP.md`. git→Notion mirror (4 context DBs) + read-only Tasks export + monthly digest. 90 tests; coverage 99.66% lines / 90.84% branches (gate ≥80%). All mock-based. Two-stage review: spec ✅; code-quality 2 HIGH fixed (digest `updateMarkdown` → real v5 `replace_content` shape; structural-cast docs) + MED/LOW triaged.
+- **P3 SHIPPED** (Task 22, PR #51 squash `14b7bb1`): `.github/workflows/pulse.yml` — `mirror` (push → `sync-notion`) + `digest` (monthly cron `30 9 1 * *`) + `snapshot` (nightly cron `30 4 * * *`) + `notify-failure` (opens/comments a GH issue); `tests/unit/workflow.test.ts` (6 structural invariants). 96 tests; coverage 99.66% lines / 90.84% branches. **Merged dormant** — the three scripts no-op without `NOTION_*` secrets, so every job runs green until activated. **Plan complete: 22/22.**
+- **P2** (Tasks 12–21, PR #50 squash `87e2623`): `lib/notion/*` + `scripts/{sync-notion,export-tasks,publish-digest}.ts` + `SETUP.md`. git→Notion mirror (4 context DBs) + read-only Tasks export + monthly digest. 90 tests; all mock-based.
 - _P1 (Tasks 1–11):_ parsers + monthly review; `pnpm build-report --period=monthly` → `docs/playbooks/monthly-review.md`.
 
 ## What's next
-- **P3** (automation): `.github/workflows/pulse.yml` — push-mirror + cron digest + nightly snapshot (plan Task 22).
-- **Live `pulse` runs gated on Anton's one-time Notion setup** — `projects/pulse/SETUP.md` (two integrations + 5 DBs + Digests page + 8 GitHub secrets). Then §10.2 live verification (idempotent re-run = no dupes; read-only export; digest page) + confirm the digest `replace_content` body shape.
-- Plan: `docs/specs/2026-06-09-pulse-implementation-plan.md` (Phase P3).
+- **Live activation (Anton, one-time):** set the 8 GitHub secrets (`SETUP.md` §5) on the paid Notion account; recreate the parent page + 5 DBs + Digests page (`SETUP.md` §8 DDL); regenerate `.env.local` ids. Then §10.2 (idempotent re-run = no dupes; read-only export) + §10.3 (workflow live smoke) verification + confirm the digest `replace_content` body shape. Activates with **zero further code**.
+- Plan: `docs/specs/2026-06-09-pulse-implementation-plan.md` (complete — 22/22).
 
 ## Latest handoff
 - `docs/specs/2026-06-09-pulse-p3-handoff.md` — P3 (plan Task 22): `.github/workflows/pulse.yml` + structural test. Build dormant; activates on Anton's GitHub secrets (paid account).
