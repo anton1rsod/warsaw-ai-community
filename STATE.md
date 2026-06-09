@@ -6,15 +6,16 @@
 **Last updated:** 2026-06-09
 
 ## Active drivers
-- **Anton (DRI):** gbrain · community-platform · repo operating foundation (this change).
+- **Anton (DRI):** gbrain · community-platform · `pulse` (reports + Notion — spec approved, build next).
 - **Yuriy (peer co-founder):** community ops — onboarding as peer co-founder (see ADR-0017).
 
 ## Hot now
-- **Repo operating foundation SHIPPED** (2026-06-09) — AGENTS.md adoption, this STATE.md + resume read-order, ADR-0017 (Yuriy peer co-founder), collaboration playbook, `_template` parity. Spec/plan: `docs/specs/2026-06-09-repo-operating-foundation-{design,plan}.md`.
-- **Next (Anton):** fill Yuriy's handles in `community/members/roster.md`; confirm per-project DRI split. Reports + Notion mirror parked in `BACKLOG.md` (fast-follow).
+- **`pulse` (reports + Notion PM) spec APPROVED** — `docs/specs/2026-06-09-pulse-reports-notion-design.md` (rev `0c267fe`). **Next: `superpowers:writing-plans` → implement P1→P2→P3**, in a fresh chat (see handoff below).
+- Repo operating foundation SHIPPED 2026-06-09 (AGENTS.md, this STATE.md, ADR-0017, collaboration playbook, `_template` parity).
+- **Anton's open items (non-blocking):** fill Yuriy's handles in `roster.md`; confirm per-project DRI; one-time Notion setup (spec L10) before `pulse` P2 runs live.
 
 ## Blockers
 - None.
 
 ## Latest handoff
-- _none in flight_ — when pausing mid-task, add `docs/specs/<date>-<topic>-handoff.md` here.
+- `docs/specs/2026-06-09-pulse-implementation-handoff.md` — resume `pulse` at writing-plans.
