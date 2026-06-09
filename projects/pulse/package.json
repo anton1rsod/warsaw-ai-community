@@ -1,0 +1,33 @@
+{
+  "name": "@warsaw-ai/pulse",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build-report": "tsx scripts/build-report.ts",
+    "publish-digest": "tsx scripts/publish-digest.ts",
+    "sync-notion": "tsx scripts/sync-notion.ts",
+    "export-tasks": "tsx scripts/export-tasks.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@notionhq/client": "^5.1.0",
+    "gray-matter": "^4.0.3",
+    "p-limit": "^6.2.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/node": "22.10.2",
+    "@vitest/coverage-v8": "^2.1.9",
+    "eslint": "^9.39.4",
+    "tsx": "^4.21.0",
+    "typescript": "5.7.2",
+    "typescript-eslint": "^8.59.1",
+    "vitest": "^2.1.9"
+  }
+}

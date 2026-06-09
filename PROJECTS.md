@@ -14,6 +14,7 @@
 | [GBrain](projects/gbrain/README.md) | `projects/gbrain/` | **Building** — v0.1.2 in flight (branch `gbrain-0.1.2-ask-bundle`) | Anton | E1+E2 done, E3 mostly done. Pending: tuned `ASK_SIMILARITY_THRESHOLD`, six day-30 gates, CHANGELOG + tag + ff-merge to `main` | v0.2.0 (real-channel soft launch, day 30) |
 | [Persona Builder](persona-builder/README.md) | `persona-builder/` | **Live (v1)** — interview skill + community guides published EN/UK | Anton + members | Personas being created (4 untracked: `dmitry-b`, `heorhii-k`, `maksym-p`, `mark-s`) | Persona DB → feed Community Platform |
 | [Community Platform](projects/community-platform/README.md) | `projects/community-platform/` | **Live** — v0.10.0.1 | Anton | Engagement bootstrap shipped (Starter Pack + shipping log + opt-in Telegram echo) | v0.11 (Phase B re-scope) |
+| [Pulse](projects/pulse/README.md) | `projects/pulse/` | **Building** — P1 shipped (parsers + monthly review) | Anton | P2: Notion mirror + Tasks export + digest (code mock-tested) | P2 live run needs one-time Notion setup (`SETUP.md`) |
 
 ## Layout note — `persona-builder/` placement
 
