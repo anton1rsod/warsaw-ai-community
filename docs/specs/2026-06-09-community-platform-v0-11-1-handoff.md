@@ -4,6 +4,12 @@ PROTOCOL: `projects/community-platform/HANDOFF_PROTOCOL.md` (loaded once at star
 
 **Date:** 2026-06-09 · **Predecessor:** v0.11.0 meeting signup **SHIPPED** (`2c79e90`, tag `community-platform-v0.11.0`, ADR-0018 Accepted, prod-verified).
 
+## Timeline pinned (2026-06-09) — retro deferred to post-meetup; this chat only scheduled it
+We are **pre-meetup** (today 2026-06-09 Tue; meetup Thu **2026-06-11**). Anton's calls:
+- **QR minting → Thu 2026-06-11 19:30 Europe/Warsaw**, at `/admin/invite` → "Mint meeting QR" (works on phone). Deferred to meeting-time on purpose: the H127 ~4h expiry clamp would kill an early mint before Thursday. Default ~4h covers to ~23:30; bump `expiry_hours` (max 24h) at mint time if the evening runs late.
+- **Retro → Fri 2026-06-12** (after the meetup). The retro re-ranks Bundle A vs B, so **scope / `superpowers:brainstorming` does NOT start until then.** The 2026-06-09 chat did not brainstorm — it only set up this deferral.
+- **Two notify-only cloud reminders scheduled** (one-time, MCP-connectors stripped): `trig_01767t2XLP1RQQ4Q5mTnqGjb` (Thu 19:30 Warsaw — mint QR) + `trig_01VcZ2jgMZvQFNSKapg3FuhB` (Fri 10:00 Warsaw — retro + brainstorm). Manage/delete at https://claude.ai/code/routines.
+
 ## Context — what just shipped
 v0.11.0 multi-use "meeting" invite QR is live + prod-smoke-verified (signed-in `/admin/invite` renders the meeting panel with no RSC-serialization 500; mint + revoke round-trip on prod). 1543 unit/int + 8/8 invitation E2E. Full detail: `projects/community-platform/STATE.md` + CHANGELOG `[0.11.0]` + `docs/decisions/0018-meeting-scoped-multi-use-invites.md`. **The Thu 2026-06-11 meetup is the feature's first real-world use.**
 
