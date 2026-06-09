@@ -5,10 +5,11 @@
 **Last updated:** 2026-06-09
 **Owner / DRI:** Anton
 **Status:** Built (dormant) — plan 22/22 complete
-**Branch:** main (P3 merged via PR #51, squash `14b7bb1`)
+**Branch:** main (P3 #51 `14b7bb1` + dormant-commit fix #53 `e89a689`)
 
 ## What just happened
-- **P3 SHIPPED** (Task 22, PR #51 squash `14b7bb1`): `.github/workflows/pulse.yml` — `mirror` (push → `sync-notion`) + `digest` (monthly cron `30 9 1 * *`) + `snapshot` (nightly cron `30 4 * * *`) + `notify-failure` (opens/comments a GH issue); `tests/unit/workflow.test.ts` (6 structural invariants). 96 tests; coverage 99.66% lines / 90.84% branches. **Merged dormant** — the three scripts no-op without `NOTION_*` secrets, so every job runs green until activated. **Plan complete: 22/22.**
+- **P3 SHIPPED** (Task 22, PR #51 squash `14b7bb1`): `.github/workflows/pulse.yml` — `mirror` (push → `sync-notion`) + `digest` (monthly cron `30 9 1 * *`) + `snapshot` (nightly cron `30 4 * * *`) + `notify-failure` (opens/comments a GH issue); `tests/unit/workflow.test.ts` (7 structural invariants). 97 tests; coverage 99.66% lines / 90.84% branches. **Merged dormant** — the three scripts no-op without `NOTION_*` secrets, so every job runs green until activated. **Plan complete: 22/22.**
+- **Dormant-commit fix** (PR #53 squash `e89a689`): first post-merge runs caught a `git add` exit-128 on the not-yet-created index (the dormant case, under `bash -e`); gated each commit-back `git add` on `[ -f ]`. Dormant `mirror` run now **verified green in CI** (`sync-notion` no-ops → "no index changes" → exit 0). Issue #52 (auto-opened by the failing runs) closed.
 - **P2** (Tasks 12–21, PR #50 squash `87e2623`): `lib/notion/*` + `scripts/{sync-notion,export-tasks,publish-digest}.ts` + `SETUP.md`. git→Notion mirror (4 context DBs) + read-only Tasks export + monthly digest. 90 tests; all mock-based.
 - _P1 (Tasks 1–11):_ parsers + monthly review; `pnpm build-report --period=monthly` → `docs/playbooks/monthly-review.md`.
 
