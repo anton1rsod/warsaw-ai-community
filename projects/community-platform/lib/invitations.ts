@@ -286,6 +286,38 @@ export function jtiHasFinalRow(
   return rows.some((r) => r.jti === jti);
 }
 
+/**
+ * H124: a meeting token is dead iff a `revoked` row exists for its jti.
+ * (Distinct from jtiHasFinalRow, which also treats `redeemed` as final —
+ * correct for single-use, wrong for multi-use meeting tokens.)
+ */
+export function jtiIsRevoked(rows: readonly LedgerRow[], jti: string): boolean {
+  return rows.some((r) => r.jti === jti && r.status === "revoked");
+}
+
+/** H126: count of redeemed rows for a jti (best-effort soft-cap input under OCC). */
+export function jtiRedemptionCount(rows: readonly LedgerRow[], jti: string): number {
+  return rows.filter((r) => r.jti === jti && r.status === "redeemed").length;
+}
+
+// H127: meeting-invite expiry bounds (seconds). Default ~4h covers a meetup;
+// clamped so an admin typo can't mint a multi-day open window.
+export const MEETING_EXPIRY_MIN_SECONDS = 30 * 60;
+export const MEETING_EXPIRY_MAX_SECONDS = 24 * 3600;
+export const MEETING_EXPIRY_DEFAULT_SECONDS = 4 * 3600;
+export const MEETING_MAX_USES_DEFAULT = 50;
+export const MEETING_MAX_USES_CAP = 500;
+
+export function clampMeetingExpirySeconds(requested: number | undefined): number {
+  if (requested === undefined || !Number.isFinite(requested)) {
+    return MEETING_EXPIRY_DEFAULT_SECONDS;
+  }
+  return Math.min(
+    MEETING_EXPIRY_MAX_SECONDS,
+    Math.max(MEETING_EXPIRY_MIN_SECONDS, Math.floor(requested)),
+  );
+}
+
 function escapeCell(s: string): string {
   return s.replaceAll("|", "&#124;");
 }
