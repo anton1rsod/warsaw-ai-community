@@ -6,16 +6,16 @@
 **Last updated:** 2026-06-09
 
 ## Active drivers
-- **Anton (DRI):** gbrain · community-platform · `pulse` (reports + Notion — spec approved, build next).
+- **Anton (DRI):** gbrain · community-platform · `pulse` (reports + Notion — P2 shipped; P3 automation next).
 - **Yuriy (peer co-founder):** community ops — onboarding as peer co-founder (see ADR-0017).
 
 ## Hot now
-- **`pulse`: plan written + P1 SHIPPED** (merged to `main` via PR #49, squash `763eede`). Plan `docs/specs/2026-06-09-pulse-implementation-plan.md` (22 tasks / 3 phases). P1 (repo parsers + monthly review, zero Notion) = 65 tests, 100% lines / 90% branches; real `docs/playbooks/monthly-review.md` on `main`. **Next: P2 (Notion mirror + Tasks export + digest, plan Tasks 12–21) in a fresh chat** — branch `chore/pulse-p2` off `main` (see handoff below).
+- **`pulse`: P2 SHIPPED** (merged to `main` via PR #50, squash `87e2623`). Notion mirror (4 context DBs) + read-only Tasks export + monthly digest page, plan Tasks 12–21. 90 tests, 99.66% lines / 90.84% branches; all mock-based (no live Notion to build/test). Plan `docs/specs/2026-06-09-pulse-implementation-plan.md` (22 tasks / 3 phases). **Next: P3 (automation — `.github/workflows/pulse.yml`, plan Task 22).**
 - Repo operating foundation SHIPPED 2026-06-09 (AGENTS.md, this STATE.md, ADR-0017, collaboration playbook, `_template` parity).
-- **Anton's open items (non-blocking):** fill Yuriy's handles in `roster.md`; confirm per-project DRI; one-time Notion setup (spec L10) before `pulse` P2 runs live.
+- **Anton's open items (non-blocking):** fill Yuriy's handles in `roster.md`; confirm per-project DRI; one-time Notion setup (`projects/pulse/SETUP.md`) before any live `pulse` mirror/export/digest run.
 
 ## Blockers
 - None.
 
 ## Latest handoff
-- `docs/specs/2026-06-09-pulse-p2-handoff.md` — resume `pulse` at **P2** (plan Tasks 12–21). Supersedes the writing-plans handoff (P1 now done).
+- _none active_ — `pulse` P2 shipped (PR #50). Next unit = **P3** (plan Task 22, `pulse.yml`); the plan is the contract, no separate handoff needed. Live `pulse` runs await Anton's one-time `projects/pulse/SETUP.md`.
