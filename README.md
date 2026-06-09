@@ -29,7 +29,7 @@
 | [`PROJECTS.md`](PROJECTS.md) | Portfolio status board — every sub-project at a glance |
 | [`projects/_template/`](projects/_template/) | Copy this to start a new project |
 | [`projects/gbrain/`](projects/gbrain/) | Sub-project: Telegram knowledge base (Building, v0.1.2) |
-| [`projects/community-platform/`](projects/community-platform/) | Sub-project: member platform with gamification + RBAC (Proposed, pending brainstorm) |
+| [`projects/community-platform/`](projects/community-platform/) | Sub-project: member platform — events, RSVP, profiles, gamification, RBAC (Live, v0.10.0.1) |
 | [`persona-builder/`](persona-builder/) | Persona-creation skill + community guide (EN/UK) — peer-evaluation infrastructure (Live) |
 | [`docs/specs/`](docs/specs/) | Design specs (program + projects) |
 | [`docs/decisions/`](docs/decisions/) | ADRs — numbered decision records |
@@ -37,13 +37,14 @@
 
 ## Start here
 
-1. Read the [charter](community/charter/charter.md).
-2. Read [governance](community/governance/governance.md).
-3. Read the [program design spec](docs/specs/2026-04-24-warsaw-ai-community-program-design.md).
-4. Skim the [project portfolio](PROJECTS.md) — what's in flight, what's next.
-5. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to join or contribute.
+1. **Read the repo-wide [`STATE.md`](STATE.md)** — what's hot right now + who's driving.
+2. Read the [charter](community/charter/charter.md).
+3. Read [governance](community/governance/governance.md).
+4. Read the [program design spec](docs/specs/2026-04-24-warsaw-ai-community-program-design.md).
+5. Skim the [project portfolio](PROJECTS.md) — what's in flight, what's next.
+6. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to join or contribute.
 
-**For AI collaborators:** read [`CLAUDE.md`](CLAUDE.md), then [`docs/playbooks/ai-collaborator-stack.md`](docs/playbooks/ai-collaborator-stack.md) for the canonical workflow.
+**For AI collaborators:** start at the repo-wide [`STATE.md`](STATE.md), then read [`AGENTS.md`](AGENTS.md) (Claude Code reads [`CLAUDE.md`](CLAUDE.md), which imports it) and [`docs/playbooks/ai-collaborator-stack.md`](docs/playbooks/ai-collaborator-stack.md) for the canonical workflow.
 
 ## Starting a new project
 

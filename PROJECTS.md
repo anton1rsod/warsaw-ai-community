@@ -1,8 +1,9 @@
 # Projects — Portfolio Status Board
 
 > One-line view of every sub-project the Warsaw AI Community is building. Source of truth: each project's `README.md` + `CHANGELOG.md`.
+> **Lead = accountable DRI** (decision owner per project). "Active drivers" (who's hands-on now) live in the repo-wide [`STATE.md`](STATE.md).
 
-**Last updated:** 2026-05-01
+**Last updated:** 2026-06-09
 
 ---
 
@@ -12,7 +13,7 @@
 |---|---|---|---|---|---|
 | [GBrain](projects/gbrain/README.md) | `projects/gbrain/` | **Building** — v0.1.2 in flight (branch `gbrain-0.1.2-ask-bundle`) | Anton | E1+E2 done, E3 mostly done. Pending: tuned `ASK_SIMILARITY_THRESHOLD`, six day-30 gates, CHANGELOG + tag + ff-merge to `main` | v0.2.0 (real-channel soft launch, day 30) |
 | [Persona Builder](persona-builder/README.md) | `persona-builder/` | **Live (v1)** — interview skill + community guides published EN/UK | Anton + members | Personas being created (4 untracked: `dmitry-b`, `heorhii-k`, `maksym-p`, `mark-s`) | Persona DB → feed Community Platform |
-| [Community Platform](projects/community-platform/README.md) | `projects/community-platform/` | **Proposed** — stub scaffolded, **pending brainstorm** | Anton | Locked inputs in `spec.md §0` (four-role access, gamification in scope) | `superpowers:brainstorming` session in next chat |
+| [Community Platform](projects/community-platform/README.md) | `projects/community-platform/` | **Live** — v0.10.0.1 | Anton | Engagement bootstrap shipped (Starter Pack + shipping log + opt-in Telegram echo) | v0.11 (Phase B re-scope) |
 
 ## Layout note — `persona-builder/` placement
 
