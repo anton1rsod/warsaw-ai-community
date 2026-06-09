@@ -52,7 +52,7 @@ Option B was rejected on UX for equal concurrency cost. Option C was **deferred,
 **Harder:**
 
 - A leaked meeting link admits unwanted GitHub accounts until expiry. **Mitigations:** short default expiry; admin **revoke**; soft cap; OAuth (no trivial account farming); roster entries are removable via git. Rate-limiting (Vercel BotID / WAF) is a documented fast-follow if abuse is observed.
-- The redemption path gains a `kind` branch + multi-row ledger semantics — a slightly larger security surface, covered by hardenings H123–H135 and a security review.
+- The redemption path gains a `kind` branch + multi-row ledger semantics — a slightly larger security surface, covered by hardenings H123–H137 and a security review.
 - Concurrency: a room redeeming in one window contends on the shared roster/aliases/ledger files (optimistic CAS). Mitigated by exponential backoff + full jitter + capped retries; the honest ceiling is O(N²) work under a synchronized spike, so a "everyone scan *now*" burst of 20+ should be staggered.
 - First-use is eventually-consistent: gated surfaces (`/members`, `/this-week`) unlock for a new member only after the rebuild (~1–2 min); writes (post status, RSVP) lag likewise. Accepted for v0.11.0; the instant-access "fresh-member bridge" cookie is a v0.11.1 fast-follow.
 
@@ -65,7 +65,8 @@ Implementing via **v0.11.0** (spec §21; design doc §5):
 - `/admin/invite` — "Mint meeting invite" panel (expiry + cap) → server-rendered SVG QR of the full canonical URL (no shortener) + active-invite list with Revoke.
 - `app/actions/redeem-invitation.ts` — set `waic-consented` cookie; redirect to `/welcome`.
 - New public `app/welcome/page.tsx` + `PUBLIC_PATHS` entry in `proxy.ts`.
-- Hardenings H123–H135 (spec §21) → 1:1 test blocks (`describe("H<n>:")`).
+- Hardenings H123–H137 (spec §21) → 1:1 test blocks (`describe("H<n>:")`).
+- Defense-in-depth: the proxy is treated as an optimization, not the security boundary (Next.js middleware-bypass class CVE-2025-29927, patched in 16.2.6); `mint` / `revoke` / `redeem` actions re-verify auth independently; the new public `/welcome` route carries no member-only data.
 
 No changes to authentication, the GitHub App scopes, or the membership model. No new env vars (a QR-rendering dependency, MIT, is added).
 

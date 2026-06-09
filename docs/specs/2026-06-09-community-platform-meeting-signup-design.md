@@ -51,8 +51,9 @@ Validated the security-sensitive choices against current standards before lockin
 4. **Tighter default expiry** — meeting window (~3–4h, admin-adjustable, clamped), not "end of day." Shorter = safer. (H127)
 5. **Backoff precision + honesty** — exponential backoff with **full jitter** + capped retries (today = one immediate retry). Honest ceiling: OCC under high contention is O(N²) work (AWS Builders' Library); a synchronized 20-at-once spike would strain it — for a normal trickle it's fine; mitigation if a spike is expected is to stagger the ask. (H129)
 6. **QR hygiene (anti-quishing)** — encode the **full real URL, no shortener** (camera preview shows the legit domain); project on screen / keep printed codes attended (sticker-overlay is the top physical quishing vector); expired token → clean `/onboard/error`. (H132, H133)
+7. **Defense-in-depth on the proxy (deeper validation round).** The Next.js middleware-bypass class (CVE-2025-29927, CVSS 9.1; patched in 15.2.3+, repo is on **16.2.6**) means the proxy is *not* a security boundary — every privileged Server Action must re-verify auth independently, and the new `/welcome` route must carry no member-only data. Both hold. (H136) See §5.8.
 
-Sources: OWASP Authentication Cheat Sheet; AWS "Exponential Backoff and Jitter" + Builders' Library "Timeouts, retries, backoff with jitter"; Slack invite controls; Check Point Research "hijacked Discord invites" (2025); Security.org quishing guide (2026).
+Sources: OWASP Authentication Cheat Sheet; AWS "Exponential Backoff and Jitter" + Builders' Library "Timeouts, retries, backoff with jitter"; Slack invite controls; Check Point Research "hijacked Discord invites" (2025); Security.org quishing guide (2026); Datadog Security Labs + JFrog on CVE-2025-29927; Next.js "How to Think About Security in Server Components & Actions" + Data Security guide; QR-insights / QRLynx QR design (ISO 18004); Cloudflare WAF rate-limiting best practices.
 
 ## 5. The design
 
@@ -84,9 +85,18 @@ Two parts, both small, that make signup actually *work* in a live room:
 > The heavier alternative — a signed "fresh member" bridge cookie the proxy trusts for *instant* gated access — is deferred to v0.11.1 (it adds an auth-bypass surface needing its own security review). Welcome-redirect is the right Thursday call.
 
 ### 5.7 QR hygiene / anti-quishing (H132, H133)
-Full canonical URL in the QR (no shortener); SVG server-rendered (no third-party QR service that could see tokens); expired/invalid meeting token → clean `/onboard/error` ("this invitation has expired"), no info leak, no live-resolving destination. Operational note for the run-of-show: **project the QR on screen** (or keep any printed copy attended).
+Full canonical URL in the QR (no shortener); SVG server-rendered (no third-party QR service that could see tokens); expired/invalid meeting token → clean `/onboard/error` ("this invitation has expired"), no info leak, no live-resolving destination. Operational note for the run-of-show: **project the QR on screen** (or keep any printed copy attended). **QR robustness (H137):** render at ECC level **Q** (use **H** only if a center logo is added) with a **≥4-module quiet zone**, sized to ~1/10 of the scan distance for projection; do a multi-distance / angle / lighting scan test before the meeting (ISO 18004).
 
-## 6. Hardenings (H123–H135)
+### 5.8 Security model (defense-in-depth)
+
+The proxy/middleware gate is a **convenience layer, not the security boundary**. The Next.js middleware-bypass class (CVE-2025-29927, CVSS 9.1; patched in 15.2.3+, repo is on **16.2.6**) means a crafted request could in principle skip the proxy — so:
+
+- **Every privileged Server Action re-verifies independently** (H136): `mint-meeting` + `revoke` re-check `isAdmin` (H134); `redeem-invitation` re-checks session + already-member + live dup-handle (H128). None trust the proxy.
+- The new public **`/welcome`** route is designed to carry **no member-only data** (celebratory copy + links to already-public surfaces) — safe in `PUBLIC_PATHS` even under a proxy bypass.
+- **Keep Next.js patched** — the bypass is mitigated at the data/action layer regardless, but the patched runtime is the first line.
+- **Server Action CSRF:** Next.js's default protection (POST-only + `Origin`===`Host`/`X-Forwarded-Host`) is active and working in prod for the single Vercel host (no `allowedOrigins` config needed); setting `serverActions.allowedOrigins` to the prod host is an optional DiD hardening. All action inputs stay Zod-validated and treated as hostile.
+
+## 6. Hardenings (H123–H137)
 
 | ID | Hardening | Source/rationale |
 |---|---|---|
@@ -101,8 +111,10 @@ Full canonical URL in the QR (no shortener); SVG server-rendered (no third-party
 | H131 | Post-redeem → public `/welcome`, not gated `/this-week` | avoids `/no-access` bounce |
 | H132 | QR encodes full canonical URL, no shortener; SVG server-side | anti-quishing |
 | H133 | Expired/invalid meeting token → clean `/onboard/error` | no info leak / no live destination |
-| H134 | New mint action re-checks `isAdmin` server-side | privilege-escalation guard |
+| H134 | New mint **and revoke** actions re-check `isAdmin` server-side | privilege-escalation guard |
 | H135 | Admin surface lists active meeting invites + revoke | QR registry best practice |
+| H136 | Proxy ≠ sole auth boundary; all privileged actions re-verify; Next.js patched (CVE-2025-29927); `/welcome` carries no member-only data | defense-in-depth |
+| H137 | QR at ECC Q (H if logo) + ≥4-module quiet zone, sized for projection; pre-meeting scan test | QR robustness (ISO 18004) |
 
 ## 7. ADR-0018
 
@@ -127,7 +139,7 @@ Full canonical URL in the QR (no shortener); SVG server-rendered (no third-party
 
 - **Persona upload/integrate** (the handoff's 2nd goal): cleanest integration is a `save-persona` Server Action writing `persona-builder/personas/<slug>/persona-<slug>.md` via the bot (mirrors `save-profile`), a "show to members" consent step, **and fixing two latent display bugs**: (a) `.public.md` is currently *inert* (`.md` sorts before `.public.md` so the private file always wins the `readMemberPersona` alphabetical pick) and (b) `truncateToFirstH2` truncates persona display to the pre-`##` intro (today shows almost nothing). Paste-into-textarea, not file upload (file upload is a brand-new primitive; YAGNI for Markdown).
 - **Live-bridge cookie** for instant gated-surface access during snapshot lag (signed, short-TTL, handle-bound; needs its own security review).
-- **Vercel BotID / WAF rate-limit** on the redemption path (platform-native defense-in-depth).
+- **Vercel WAF rate-limit** on the redemption path — edge-level + multi-instance-correct + error-response counting + sliding window (a Vercel-native limiter, **not** an in-memory per-function counter, which is silently broken on Vercel's multi-instance runtime); **Vercel BotID** complements it against automated-bot signups.
 
 ## 11. Decisions log
 

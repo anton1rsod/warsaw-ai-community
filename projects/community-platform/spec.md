@@ -3923,8 +3923,10 @@ Spec source: `docs/specs/2026-06-09-community-platform-meeting-signup-design.md`
 - **H131** — Post-redeem redirect to public `/welcome`, not gated `/this-week` (avoids `/no-access` during snapshot lag).
 - **H132** — QR encodes the full canonical URL with no shortener; SVG rendered server-side (no third-party QR service sees tokens).
 - **H133** — Expired/invalid meeting token → clean `/onboard/error`; no info leak, no live-resolving destination.
-- **H134** — New meeting-mint action re-checks `isAdmin` server-side (privilege-escalation guard, parity with existing mint).
+- **H134** — New meeting-mint **and revoke** actions re-check `isAdmin` server-side (privilege-escalation guard, parity with existing mint).
 - **H135** — Admin surface lists active meeting invites + revoke control (QR-registry best practice).
+- **H136** — Defense-in-depth: the proxy is not the sole auth boundary (Next.js middleware-bypass class CVE-2025-29927, patched in 16.2.6). Every privileged Server Action (`mint-meeting`, `revoke`, `redeem-invitation`) re-verifies session + authorization independently; the new public `/welcome` route carries no member-only data.
+- **H137** — QR rendered at ECC level Q (H only if a center logo is added) with a ≥4-module quiet zone, sized for projection; pre-meeting multi-distance/angle/lighting scan test (ISO 18004).
 
 ### ADR
 
@@ -3932,4 +3934,4 @@ Spec source: `docs/specs/2026-06-09-community-platform-meeting-signup-design.md`
 
 ### Deferred to v0.11.1+
 
-Persona upload/integrate (`save-persona` action mirroring `save-profile`, consent step, + fix the latent `.public.md`-inert and `truncateToFirstH2` persona-display bugs); signed "fresh-member" bridge cookie for instant gated-surface access during snapshot lag; Vercel BotID / WAF rate-limit on the redemption path.
+Persona upload/integrate (`save-persona` action mirroring `save-profile`, consent step, + fix the latent `.public.md`-inert and `truncateToFirstH2` persona-display bugs); signed "fresh-member" bridge cookie for instant gated-surface access during snapshot lag; **Vercel WAF** rate-limit on the redemption path (edge-level, multi-instance-correct, error-response counting + sliding window — not an in-memory per-function limiter, which is broken on Vercel's multi-instance runtime) + Vercel BotID for automated-bot signups.
