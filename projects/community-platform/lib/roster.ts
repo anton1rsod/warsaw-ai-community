@@ -169,10 +169,11 @@ export async function readMemberPersona(
     // .public.md exists, fail closed (treat as no public persona).
     const pub = files.find((f) => f.endsWith(".public.md"));
     if (!pub) return null;
-    const content = await readFile(path.join(dir, pub), "utf8");
-    const { body } = parseMarkdown(content);
-    // Return the FULL body (no truncateToFirstH2) — the card parses + renders it.
-    return body;
+    // H138/H139: return the RAW .public.md content (frontmatter + body) so the
+    // caller's parsePersona can read frontmatter (languages) AND strip the
+    // `## Tags` block. (Returning body-only here drops the frontmatter that
+    // `languages` lives in.) parseMarkdown is still used by readMemberProfile.
+    return readFile(path.join(dir, pub), "utf8");
   } catch (err: unknown) {
     if (isENOENT(err)) return null;
     throw err;
