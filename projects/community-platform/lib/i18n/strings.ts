@@ -102,6 +102,16 @@ export const strings = {
   "members.detail.skepticalRow": "Skeptical when",
   "members.detail.firstQuestionCaption": "the first question I ask",
   "members.detail.askYours": "ask yours →",
+  "members.detail.storySection": "Story",
+  "members.detail.continueReading": "continue reading",
+  "members.detail.storyHardWon": "Hard-won knowledge",
+  "members.detail.storyPatterns": "Patterns I keep seeing",
+  "members.detail.storyDispositions": "Role dispositions",
+  "members.detail.storyEvidence": "Verifiable evidence",
+  "members.detail.storyMore": "More",
+  "members.detail.dispositionBuyer": "Buyer",
+  "members.detail.dispositionBuilder": "Builder",
+  "members.detail.dispositionCompetitor": "Substitute",
 
   // ─── projects.index.* (/projects route) ──────────────────────────────────
   "projects.index.title": "Projects.",
