@@ -18,7 +18,8 @@ export function PersonaEditor({
   const [content, setContent] = useState(initialContent);
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [, startTransition] = useTransition();
-  const tooLarge = content.length > MAX;
+  // H152 parity: byte-accurate client check (matches SavePersonaSchema's TextEncoder refinement).
+  const tooLarge = new TextEncoder().encode(content).length > MAX;
   const empty = content.trim().length === 0;
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>): void {

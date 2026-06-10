@@ -8,6 +8,17 @@ describe("SavePersonaSchema", () => {
   it("rejects content over 64KB (H141)", () => {
     expect(SavePersonaSchema.safeParse({ content: "a".repeat(65_537) }).success).toBe(false);
   });
+
+  // H152 parity: the cap is UTF-8 BYTES, not UTF-16 code units.
+  it("rejects 21,846 three-byte CJK chars = 65,538 bytes (old .max() admitted ~3× bytes)", () => {
+    const cjk = "字".repeat(21_846); // U+5B57 → 3 UTF-8 bytes each
+    expect(cjk.length).toBe(21_846); // would PASS the old UTF-16 code-unit cap
+    expect(new TextEncoder().encode(cjk).length).toBe(65_538);
+    expect(SavePersonaSchema.safeParse({ content: cjk }).success).toBe(false);
+  });
+  it("accepts 21,845 three-byte CJK chars = 65,535 bytes", () => {
+    expect(SavePersonaSchema.safeParse({ content: "字".repeat(21_845) }).success).toBe(true);
+  });
 });
 
 describe("validatePersonaFrontmatter (H142)", () => {
