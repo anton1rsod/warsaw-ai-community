@@ -1,5 +1,5 @@
 ---
-persona_id: anton-s
+persona_id: anton-safronov
 display_name: Anton S.
 languages: [en]
 schema_version: 1.0
