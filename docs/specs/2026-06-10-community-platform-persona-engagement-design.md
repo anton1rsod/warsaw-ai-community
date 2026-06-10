@@ -1,7 +1,7 @@
 # Community Platform — Persona engagement + member-page redesign (v0.12 design)
 
 **Date:** 2026-06-10 · **Status:** Approved by Anton (chat brainstorm, this doc is the output) · **Scope owner:** community-platform
-**Standards-verified:** 2026-06-10, adversarial 3-lane verification (WCAG 2.2 · Next.js 16/Vercel OG · OWASP SSRF) — 27 findings; 4 incorrect claims corrected + 13 amendments applied in place (look for "verified:" notes); approved mockup patched for the 4 contrast findings in the same commit.
+**Standards-verified:** 2026-06-10, adversarial 3-lane verification (WCAG 2.2 · Next.js 16/Vercel OG · OWASP SSRF) — 27 findings (10 confirmed); 3 incorrect claims corrected + 14 amendments applied in place (look for "verified:" notes); approved mockup patched for the 4 contrast findings in the same commit.
 **Approved mockup:** [`community/brand/explorations/2026-06-10-member-page-typeset-dossier-mockup.html`](../../community/brand/explorations/2026-06-10-member-page-typeset-dossier-mockup.html) (open directly in a browser)
 **Feeds:** spec.md §23 (to be locked at plan time) · v0.12.0-plan.md (next: `superpowers:writing-plans`)
 
