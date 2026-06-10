@@ -2,11 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import {
+  findMemberByHandle,
   findMemberBySlug,
   getContributions,
   listMembers,
   listEventsFromSnapshot,
 } from "@/lib/content-snapshot";
+import { computeOverlap, overlapHasContent } from "@/lib/persona-overlap";
+import { OverlapLens } from "@/app/components/OverlapLens";
 import { renderMarkdownToHtml } from "@/lib/markdown";
 import { parsePersona } from "@/lib/persona";
 import { parsePersonaSections } from "@/lib/persona-sections";
@@ -69,6 +72,23 @@ export default async function MemberPage({
   const session = await auth();
   const isSelf = session?.githubHandle === member.githubHandle;
 
+  // ── Phase 3 (spec §4.2): overlap lens viewer load ───────────────────────
+  // H160: computed per-request for THIS viewer only — never persisted,
+  // never logged. Gates (all required): session exists · viewer has a
+  // persona · viewer is not the subject · overlap has content (checked at
+  // the render slot). Subject side reuses the H147-gated parse above.
+  const viewerMember = session?.githubHandle
+    ? findMemberByHandle(session.githubHandle)
+    : undefined;
+  // E2E mock-fork parity with the subject persona read above (double-guarded,
+  // inert in production).
+  const viewerPersonaRaw = viewerMember
+    ? ((!isProductionRuntime() && isE2EMode()
+        ? mockPersonaStore.get(viewerMember.slug)
+        : null) ?? viewerMember.persona)
+    : null;
+  const viewerPersona = viewerPersonaRaw ? parsePersona(viewerPersonaRaw) : null;
+
   // H34, H39: safeParse so a malformed profile doesn't crash the page.
   const parsedProfile = ProfileFrontmatterSchema.safeParse(
     member.profile?.data ?? {},
@@ -82,6 +102,12 @@ export default async function MemberPage({
   // H147: gate on persona_visible (absent ⇒ visible).
   const personaVisible = fm?.persona_visible !== false;
   const persona = personaVisible ? parsedPersona : null;
+
+  const overlap =
+    session && viewerMember && viewerPersona && personaVisible && parsedPersona &&
+    viewerMember.slug !== member.slug
+      ? computeOverlap(viewerPersona, parsedPersona)
+      : null;
 
   // v0.12 §4.1: sections from the known .public.md heading skeleton; H148 —
   // parsePersonaSections never throws; unknown headings land in `unrecognized`.
@@ -223,9 +249,9 @@ export default async function MemberPage({
         ) : null}
       </div>
 
-      {/* Phase 3 slot: <OverlapLens overlap={…} subjectName={member.name} />
-          renders here for signed-in viewers with their own persona (H160:
-          viewer-private, computed per-request, never persisted/logged). */}
+      {overlap && overlapHasContent(overlap) ? (
+        <OverlapLens overlap={overlap} subjectName={member.name} />
+      ) : null}
 
       {persona ? (
         <>

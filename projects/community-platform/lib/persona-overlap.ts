@@ -115,3 +115,16 @@ export function computeOverlap(
 
   return { shared: sortedShared, complementary: sortedComplementary, starters };
 }
+
+/**
+ * Phase 3 render gate: the lens band renders only when the overlap carries
+ * at least one visible row. Lives next to computeOverlap so the "has
+ * content" definition cannot drift from the OverlapResult shape.
+ */
+export function overlapHasContent(overlap: OverlapResult): boolean {
+  return (
+    overlap.shared.length > 0 ||
+    overlap.complementary.length > 0 ||
+    overlap.starters.length > 0
+  );
+}
