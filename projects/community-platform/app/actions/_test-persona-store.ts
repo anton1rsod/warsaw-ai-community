@@ -25,3 +25,7 @@ export const mockPersonaStore = {
     shared().personas.clear();
   },
 };
+
+export function isE2EMode(): boolean {
+  return process.env.NEXT_PUBLIC_E2E_MODE === "1";
+}

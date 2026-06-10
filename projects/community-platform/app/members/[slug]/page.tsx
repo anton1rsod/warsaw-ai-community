@@ -9,6 +9,8 @@ import {
 } from "@/lib/content-snapshot";
 import { renderMarkdownToHtml } from "@/lib/markdown";
 import { parsePersona } from "@/lib/persona";
+import { isProductionRuntime } from "@/lib/runtime-env";
+import { isE2EMode, mockPersonaStore } from "@/app/actions/_test-persona-store";
 import { ContributionCard } from "@/app/components/ContributionCard";
 import { GdprPanel } from "@/app/components/GdprPanel";
 import { KudosCount } from "@/app/components/KudosCount";
@@ -51,7 +53,10 @@ export default async function MemberPage({
   );
   const fm = parsedProfile.success ? parsedProfile.data : undefined;
 
-  const parsedPersona = member.persona ? parsePersona(member.persona) : null;
+  const e2ePersonaRaw =
+    !isProductionRuntime() && isE2EMode() ? mockPersonaStore.get(member.slug) : null;
+  const personaRaw = e2ePersonaRaw ?? member.persona;
+  const parsedPersona = personaRaw ? parsePersona(personaRaw) : null;
   const personaBodyHtml = parsedPersona
     ? await renderMarkdownToHtml(parsedPersona.body)
     : null;
