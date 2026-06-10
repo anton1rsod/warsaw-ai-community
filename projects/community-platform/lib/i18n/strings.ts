@@ -327,6 +327,8 @@ export const strings = {
   "persona.editor.dataMin": "Attach the public version only — do not include a “Private notes” section or sensitive personal data (health, beliefs, etc.).",
   "persona.editor.attach": "Attach persona",
   "persona.editor.tooLarge": "Persona is too large (max 64KB).",
+  "persona.editor.embedHint": "Embed your card in a README:",
+  "persona.editor.copyEmbed": "copy snippet",
 } as const;
 
 export type StringKey = keyof typeof strings;

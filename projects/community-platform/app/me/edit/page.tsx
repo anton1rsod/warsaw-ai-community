@@ -9,7 +9,9 @@ import {
 import { parseFrontmatter } from "@/lib/profile-editor";
 import { ProfileEditor } from "@/app/components/ProfileEditor";
 import { PersonaEditor } from "@/app/components/PersonaEditor";
+import { CardEmbedSnippet } from "@/app/components/CardEmbedSnippet";
 import { MonoLabel } from "@/app/components/MonoLabel";
+import { s } from "@/lib/i18n/strings";
 import { mockProfileStore } from "@/app/actions/_test-profile-store";
 
 export const dynamic = "force-dynamic";
@@ -97,6 +99,11 @@ export default async function MeEditPage(): Promise<React.JSX.Element> {
         initialPersonaVisible={initialPersonaVisible}
       />
       <PersonaEditor initialContent={member.persona ?? ""} slug={member.slug} />
+      {/* v0.12 Phase 4.3 — README embed snippet for the shareable OG card (spec §4.4). */}
+      <section className="mt-4">
+        <p className="font-voice text-[11px] text-dust">{s("persona.editor.embedHint")}</p>
+        <CardEmbedSnippet name={member.name} slug={member.slug} />
+      </section>
     </main>
   );
 }
