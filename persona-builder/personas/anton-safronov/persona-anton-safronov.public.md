@@ -1,14 +1,14 @@
 ---
 persona_id: anton-safronov
-display_name: Anton S.
+display_name: Anton Safronov
 languages: [en]
 schema_version: 1.0
 created_at: 2026-05-21
 last_updated: 2026-05-21
-maintained_by: Anton S.
+maintained_by: Anton Safronov
 ---
 
-# Anton S.
+# Anton Safronov
 
 ## Tags
 
