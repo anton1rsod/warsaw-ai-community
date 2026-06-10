@@ -329,6 +329,17 @@ export const strings = {
   "persona.editor.tooLarge": "Persona is too large (max 64KB).",
   "persona.editor.embedHint": "Embed your card in a README:",
   "persona.editor.copyEmbed": "copy snippet",
+  // ─── v0.12 Phase 5 — GitHub-link attach + re-sync + status-string i18n flip ──
+  "persona.editor.urlLabel": "…or attach from a GitHub raw / gist URL",
+  "persona.editor.urlPlaceholder": "https://raw.githubusercontent.com/…",
+  "persona.editor.fetchAttach": "Fetch & attach",
+  "persona.editor.resync": "Re-sync from source",
+  "persona.editor.attaching": "Attaching…",
+  "persona.editor.attached": "Attached — your card rebuilds in ~60-90s after the next deploy.",
+  "persona.editor.errInvalidUrl": "Only raw.githubusercontent.com or gist.githubusercontent.com HTTPS links work.",
+  "persona.editor.errFetch": "Couldn't fetch that URL — check it's public and try again.",
+  "persona.editor.errTooLarge": "Fetched file is too large (max 64KB).",
+  "persona.editor.errGeneric": "Couldn't attach — check valid frontmatter (persona_id = your slug) and size under 64KB.",
 } as const;
 
 export type StringKey = keyof typeof strings;
