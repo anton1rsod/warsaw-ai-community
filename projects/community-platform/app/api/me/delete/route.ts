@@ -4,10 +4,12 @@ import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { findMemberByHandle } from "@/lib/content-snapshot";
 import { createGitHubApp, GitHubAppError } from "@/lib/github-app";
+import { safeHandle as toSafeHandle } from "@/lib/handles";
 import { readWeekStatuses } from "@/lib/status-reader";
 import { weekFromDate } from "@/lib/week";
 import { mockConsentStore } from "@/app/actions/_test-consent-store";
 import { mockProfileStore } from "@/app/actions/_test-profile-store";
+import { mockPersonaStore } from "@/app/actions/_test-persona-store";
 
 async function getInstallationToken(): Promise<string> {
   const ghAppAuth = createAppAuth({
@@ -41,12 +43,15 @@ export async function POST(_req: Request): Promise<Response> {
   // (per execution-plan §6.6 risk register).
   const slug = member.slug;
   const handle = session.githubHandle;
+  const safe = toSafeHandle(handle);
 
   if (isE2EMockActive()) {
     // Clear both consent and profile mocks so the H21 E2E scenario exercises
     // the full "deleted → /me/edit redirects to /consent" contract.
     mockConsentStore.reset();
     mockProfileStore.remove(slug);
+    // H146: also clear the persona mock so the E2E contract covers persona erasure.
+    mockPersonaStore.remove(slug);
     return NextResponse.json({ ok: true });
   }
 
@@ -65,8 +70,21 @@ export async function POST(_req: Request): Promise<Response> {
   if (profile) {
     await client.deleteFile(profilePath, {
       sha: profile.sha,
-      message: `chore(gdpr): delete profile for ${handle}`,
+      message: `chore(gdpr): delete profile for ${safe}`,
     });
+  }
+
+  // 1b. Persona files (H146 — GDPR erasure includes the member's persona PII).
+  // Remove BOTH the peer-facing .public.md and the full .md if present.
+  for (const name of [`persona-${slug}.public.md`, `persona-${slug}.md`]) {
+    const personaPath = `persona-builder/personas/${slug}/${name}`;
+    const file = await client.readFile(personaPath);
+    if (file) {
+      await client.deleteFile(personaPath, {
+        sha: file.sha,
+        message: `chore(gdpr): delete ${name} for ${safe}`,
+      });
+    }
   }
 
   // 2. Status files: 52-week back-scan, filter by caller's slug only.
@@ -97,7 +115,7 @@ export async function POST(_req: Request): Promise<Response> {
     try {
       await client.deleteFile(`community/status/${week}/${slug}.md`, {
         sha: mine.sha,
-        message: `chore(gdpr): delete status ${week} for ${handle}`,
+        message: `chore(gdpr): delete status ${week} for ${safe}`,
       });
     } catch (err: unknown) {
       // Idempotent re-deletion: if the file vanished between read and delete,

@@ -72,6 +72,7 @@ async function attemptSave(
   handle: string,
   expectedSha: string,
   telegramEcho: boolean,
+  persona_visible: boolean,
 ): Promise<AttemptResult> {
   if (isE2EMockActive()) {
     // Extract slug from path: "community/members/<slug>.md"
@@ -98,7 +99,8 @@ async function attemptSave(
   }
 
   // v0.10.0: persist the telegramEcho opt-in flag in frontmatter.
-  const updatedData = { ...data, telegramEcho };
+  // H147: persist the persona_visible flag in frontmatter.
+  const updatedData = { ...data, telegramEcho, persona_visible };
   const newContent = composeProfile(updatedData, newBody);
 
   try {
@@ -147,6 +149,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
     body: formData.get("body"),
     expectedSha: formData.get("sha"),
     telegramEcho: formData.get("telegramEcho") ?? undefined,
+    persona_visible: formData.get("persona_visible") ?? undefined,
   });
   if (!parsed.success) {
     log.warn("save-profile", "invalid_body", {
@@ -170,6 +173,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
     handle,
     parsed.data.expectedSha,
     parsed.data.telegramEcho,
+    parsed.data.persona_visible,
   );
   if (attempt.kind === "conflict") {
     log.warn("save-profile", "refresh_needed", {

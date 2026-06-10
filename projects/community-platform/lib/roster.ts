@@ -1,6 +1,6 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
-import { parseMarkdown, truncateToFirstH2 } from "@/lib/markdown";
+import { parseMarkdown } from "@/lib/markdown";
 import { slugify } from "@/lib/slug";
 
 export interface RosterMember {
@@ -164,13 +164,16 @@ export async function readMemberPersona(
   const dir = path.join(repoRoot, "persona-builder/personas", slug);
   try {
     const files = await readdir(dir);
-    // Sort for deterministic pick when a persona dir contains multiple .md files
-    // (readdir order is not guaranteed alphabetical across filesystems).
-    const md = files.filter((f) => f.endsWith(".md")).sort()[0];
-    if (!md) return null;
-    const content = await readFile(path.join(dir, md), "utf8");
-    const { body } = parseMarkdown(content);
-    return truncateToFirstH2(body);
+    // H138/H139: render the peer-facing .public.md ONLY (persona-builder
+    // consent model — the full .md may carry `## Private notes`). If no
+    // .public.md exists, fail closed (treat as no public persona).
+    const pub = files.find((f) => f.endsWith(".public.md"));
+    if (!pub) return null;
+    // H138/H139: return the RAW .public.md content (frontmatter + body) so the
+    // caller's parsePersona can read frontmatter (languages) AND strip the
+    // `## Tags` block. (Returning body-only here drops the frontmatter that
+    // `languages` lives in.) parseMarkdown is still used by readMemberProfile.
+    return readFile(path.join(dir, pub), "utf8");
   } catch (err: unknown) {
     if (isENOENT(err)) return null;
     throw err;

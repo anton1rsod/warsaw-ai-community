@@ -16,6 +16,30 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.11.1] — 2026-06-10 (persona attach + rich card) — IMPLEMENTED · PR open · **merge gated on the 2026-06-12 post-meetup retro**
+
+Members self-attach their persona (paste or `.md` upload) with explicit consent + a hide toggle; personas render as a rich card (controlled-vocab tag chips + the full peer-facing body). Spec §22 (R1–R9, H138–H150); ADR-0019 (Proposed → Accepted on merge). Executed via `superpowers:subagent-driven-development` (one Sonnet implementer per phase across 5 phases; full `tsc`+`lint`+`test` gate verified at every boundary). **1582 unit/integration tests** + a new `e2e/persona-attach.spec.ts` (attach→display, 2/2 green). Parallel **security-reviewer** (mandatory, H150) + typescript + code reviewers — **0 CRITICAL**; the HIGH/MEDIUM findings were batched into one fix commit.
+
+### Added
+- **`lib/persona.ts`** — pure, tolerant parser: a persona's `## Tags` block → typed chips (`industries` / `functionalRoles` / `companyStages` with depth + `niche`), `languages` from frontmatter, and the narrative body with the Tags block stripped. Tolerant fallback when there is no `## Tags` (H148). 100% coverage (strict-list).
+- **`lib/persona-editor.ts`** — `SavePersonaSchema` (64KB cap, H141; single-sourced `PERSONA_MAX_BYTES`) + `validatePersonaFrontmatter` (H142: `persona_id` MUST equal the member's slug; `display_name` + `schema_version` required). 100% coverage (strict-list).
+- **`app/actions/save-persona.ts`** — `"use server"` action: validates + commits a single `persona-builder/personas/<slug>/persona-<slug>.public.md` via the `warsaw-ai-bot` GitHub App. Path/slug derived ONLY from the session (H140); re-attach overwrites the one file (H149).
+- **`PersonaEditor`** on `/me/edit` — paste textarea + optional `.md` upload + informed-consent copy (H144) + data-minimization guidance (H145); 64KB client cap + file-size guard (H141).
+- **`persona_visible`** profile-frontmatter flag (H147; absent ⇒ visible) with a `/me/edit` toggle.
+- **E2E** `e2e/persona-attach.spec.ts` + a double-guarded `mockPersonaStore` read-fork on `/members/[slug]` + the `/api/test-reset-persona` reset route.
+
+### Changed
+- **`PersonaPanel`** rewritten — chips (sorted by depth) + languages + the full body, rendered through `lib/markdown` + `SafeHtml` only (H143). Falls back to the plain body when parsing yields no tags (H148).
+- **`lib/roster.ts::readMemberPersona`** — renders the peer-facing **`.public.md` only** and **fails closed** when only the full `.md` exists (H138/H139 — the core consent fix). Returns the **raw `.public.md` content** (frontmatter + body) so `parsePersona` can read `languages` (R5) and the `/me/edit` re-attach seed stays valid.
+- **GDPR delete** (`/api/me/delete`) now erases both `persona-<slug>.public.md` and the full `.md` (H146); all three GDPR commit messages sanitized via `safeHandle`.
+
+### Notes
+- **Merge gate:** implementation + PR + CI proceed now; the squash-merge is held until the **2026-06-12** post-meetup retro (which only decides whether Bundle A meeting-path hardening preempts Bundle B — low odds). ADR-0019 flips Proposed → Accepted on merge; tag `community-platform-v0.11.1` + STATE phase-flip + orchestrator prod smoke happen at merge.
+- **H150** (mandatory security review) satisfied: 0 CRITICAL. Two HIGH findings — a missing `NODE_ENV` production hard-stop on `test-reset-persona` and raw-`handle` interpolation in the GDPR commit messages — were fixed in the batched reviewer-fix commit (`2d0b5d3`).
+- **Data follow-up (out of scope):** 4 of the 5 existing persona-builder dirs use a slug convention (`anton-s`, `heorhii-k`, …) that differs from roster slugs, so those personas won't auto-display until their `persona_id` + dir are aligned to the member's roster slug — H142 ties the persona file to the authenticated identity by design.
+
+---
+
 ## [0.11.0] — 2026-06-09 (meeting signup — multi-use invite QR; PR #54 squash-merged at `2c79e90`, tag `community-platform-v0.11.0`)
 
 Lets a room of attendees join on the spot from one projected QR. Backward-compatible extension of the single-use HMAC invite with an optional `kind:"meeting"` discriminator — absent ⇒ `single`, so every previously-minted invite still verifies (identical canonical signing string). ADR-0018 (Accepted on this merge). Spec §21 (R1–R7, H123–H137). Executed via `superpowers:subagent-driven-development` (one implementer per phase); 1543 unit/integration tests + the 8-scenario invitation E2E green; reviewer triage (code-review + security-reviewer — 0 CRITICAL / 0 exploitable) batched into one commit.
