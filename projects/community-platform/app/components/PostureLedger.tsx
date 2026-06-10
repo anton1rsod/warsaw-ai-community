@@ -41,7 +41,7 @@ function PostureRow({
 
 /**
  * v0.12 §3 / task 2.3 lock — failure/success pattern sections do NOT render
- * here: they live in StorySection's "Patterns I keep seeing" <details> row
+ * here: they live in StorySection's "Patterns I keep seeing" details row
  * (the page concatenates them into patternsHtml). The props stay in the
  * signature per the v0.12 shared component contract so placement can move
  * later without a page-level signature change (precedent: Avatar's

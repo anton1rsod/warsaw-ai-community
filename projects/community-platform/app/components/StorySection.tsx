@@ -6,8 +6,8 @@ import { s } from "@/lib/i18n/strings";
  * v0.12 D8 — the deep persona narrative with progressive disclosure.
  *
  * H158 constraints (spec §3, adversarially verified):
- *   • never display:contents on details/summary/wrappers (WebKit bug),
- *   • no heading elements inside <summary> (role=button drops child heading
+ *   • never the "contents" display mode on details/summary/wrappers (WebKit bug),
+ *   • no heading elements inside summary (role=button drops child heading
  *     semantics),
  *   • custom carets + decorative counts are aria-hidden,
  *   • native marker hidden via list-none + [&::-webkit-details-marker]:hidden
