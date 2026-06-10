@@ -121,6 +121,10 @@ export const ProfileFrontmatterSchema = z
     event_rsvp_visibility: z.enum(["public", "members_only"]).default("members_only"),
     thanks_given: z.array(ThanksRecordSchema).default([]),
     persona_visible: z.boolean().default(true), // H147: absent ⇒ visible
+    // v0.12 O4: re-sync source pointer. NOT .url() — H151's validatePersonaUrl
+    // is the authoritative guard at every use (H153: stored value is untrusted
+    // on every read); the schema stays passthrough-tolerant.
+    persona_source_url: z.string().optional(),
   })
   .passthrough(); // preserve v0.2 fields (name, github_handle, etc.) verbatim
 
