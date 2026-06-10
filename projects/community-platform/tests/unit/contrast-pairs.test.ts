@@ -55,7 +55,7 @@ describe("H156: pair-contrast regression — WCAG ratios from globals.css litera
     ["accent-700", "cream", 3, "focus ring on cream (SC 1.4.11 non-text)"],
     ["accent-700", "surface-soft", 3, "focus ring on lens band (SC 1.4.11 non-text)"],
     ["accent-700", "cream-deep", 3, "focus ring over avatar/deep panel (SC 1.4.11 non-text)"],
-  ] as const)("%s on %s ≥ %s:1 (%s)", (fg, bg, min) => {
+  ] as const)("%s on %s ≥ %s:1 (%s)", (fg, bg, min, _reason) => {
     expect(contrastRatio(tokenHex(fg), tokenHex(bg))).toBeGreaterThanOrEqual(min);
   });
 });

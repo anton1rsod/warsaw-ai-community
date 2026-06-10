@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { computeHealthMetric } from "@/lib/health-metric";
 
 const roster = [
-  { name: "A", githubHandle: "a", slug: "a" },
-  { name: "B", githubHandle: "b", slug: "b" },
-  { name: "C", githubHandle: "c", slug: "c" },
-  { name: "D", githubHandle: "d", slug: "d" },
+  { name: "A", githubHandle: "a", slug: "a", telegram: null, link: null, focus: null },
+  { name: "B", githubHandle: "b", slug: "b", telegram: null, link: null, focus: null },
+  { name: "C", githubHandle: "c", slug: "c", telegram: null, link: null, focus: null },
+  { name: "D", githubHandle: "d", slug: "d", telegram: null, link: null, focus: null },
 ];
 
 describe("computeHealthMetric", () => {

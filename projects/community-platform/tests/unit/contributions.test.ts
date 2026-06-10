@@ -43,8 +43,11 @@ const roster = [
     name: "Anton Safronov",
     githubHandle: "antonsafronov",
     slug: "anton-safronov",
+    telegram: null,
+    link: null,
+    focus: null,
   },
-  { name: "Alice Example", githubHandle: "alice-ex", slug: "alice-example" },
+  { name: "Alice Example", githubHandle: "alice-ex", slug: "alice-example", telegram: null, link: null, focus: null },
 ];
 
 describe("contributions", () => {
@@ -145,7 +148,7 @@ describe("contributions", () => {
   it("returns zeros for members with no signals", () => {
     const r = [
       ...roster,
-      { name: "Bob", githubHandle: "bob", slug: "bob" },
+      { name: "Bob", githubHandle: "bob", slug: "bob", telegram: null, link: null, focus: null },
     ];
     const c = computeContributions({ commits, meetings, roster: r });
     expect(c["bob"]).toEqual({
@@ -158,8 +161,8 @@ describe("contributions", () => {
 });
 
 const baseRoster = [
-  { name: "Anton Safronov", githubHandle: "anton1rsod", slug: "anton-safronov" },
-  { name: "Bob Builder", githubHandle: "bobthebuilder", slug: "bob-builder" },
+  { name: "Anton Safronov", githubHandle: "anton1rsod", slug: "anton-safronov", telegram: null, link: null, focus: null },
+  { name: "Bob Builder", githubHandle: "bobthebuilder", slug: "bob-builder", telegram: null, link: null, focus: null },
 ];
 
 describe("computeProjectContributions", () => {
@@ -202,6 +205,9 @@ describe("computeProjectContributions", () => {
       name: `User ${i}`,
       githubHandle: `user${i}`,
       slug: `user-${i}`,
+      telegram: null as null,
+      link: null as null,
+      focus: null as null,
     }));
     const commits: GitCommit[] = roster.flatMap((m, i) =>
       Array.from({ length: i + 1 }, (_, j) => ({

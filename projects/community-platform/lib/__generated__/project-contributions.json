@@ -2,7 +2,19 @@
   "community-platform": [
     {
       "handle": "anton1rsod",
-      "commits": 335
+      "commits": 334
+    }
+  ],
+  "pulse": [
+    {
+      "handle": "anton1rsod",
+      "commits": 10
+    }
+  ],
+  "_template": [
+    {
+      "handle": "anton1rsod",
+      "commits": 2
     }
   ],
   "way-who-are-you": [
@@ -15,12 +27,6 @@
     {
       "handle": "anton1rsod",
       "commits": 48
-    }
-  ],
-  "_template": [
-    {
-      "handle": "anton1rsod",
-      "commits": 1
     }
   ]
 }
