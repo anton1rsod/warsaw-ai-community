@@ -8,6 +8,7 @@ import {
   listEventsFromSnapshot,
 } from "@/lib/content-snapshot";
 import { renderMarkdownToHtml } from "@/lib/markdown";
+import { parsePersona } from "@/lib/persona";
 import { ContributionCard } from "@/app/components/ContributionCard";
 import { GdprPanel } from "@/app/components/GdprPanel";
 import { KudosCount } from "@/app/components/KudosCount";
@@ -39,7 +40,6 @@ export default async function MemberPage({
   const profileHtml = member.profile?.body
     ? await renderMarkdownToHtml(member.profile.body)
     : null;
-  const personaHtml = member.persona ? await renderMarkdownToHtml(member.persona) : null;
   const contributions = getContributions(member.githubHandle);
   const session = await auth();
   const isSelf = session?.githubHandle === member.githubHandle;
@@ -50,6 +50,15 @@ export default async function MemberPage({
     member.profile?.data ?? {},
   );
   const fm = parsedProfile.success ? parsedProfile.data : undefined;
+
+  const parsedPersona = member.persona ? parsePersona(member.persona) : null;
+  const personaBodyHtml = parsedPersona
+    ? await renderMarkdownToHtml(parsedPersona.body)
+    : null;
+  // H147: gate on persona_visible (absent ⇒ visible). Phase 4 adds the schema field;
+  // the cast bridges until then (passthrough preserves the runtime value).
+  const personaVisible =
+    (fm as { persona_visible?: boolean } | undefined)?.persona_visible !== false;
 
   const knownEventSlugs = new Set<EventSlug>(
     listEventsFromSnapshot().map((e) => e.slug),
@@ -117,7 +126,11 @@ export default async function MemberPage({
       )}
 
       <div className="mt-6">
-        <PersonaPanel html={personaHtml} slug={member.slug} />
+        <PersonaPanel
+          persona={personaVisible ? parsedPersona : null}
+          bodyHtml={personaVisible ? personaBodyHtml : null}
+          slug={member.slug}
+        />
       </div>
 
       {isSelf ? (
