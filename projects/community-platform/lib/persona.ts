@@ -42,7 +42,13 @@ function splitH2Sections(body: string): Map<string, string> {
   return out;
 }
 
-/** Parse `- label — depth` list items under a `### ` subsection of the Tags block. */
+/**
+ * Parse `- label — depth` list items under a `### ` subsection of the Tags block.
+ *
+ * SECURITY: `subTitle` MUST be a trusted compile-time constant (all 4 call sites
+ * pass string literals). Never pass user-supplied input — it is interpolated
+ * directly into a dynamic RegExp via `new RegExp(...)`.
+ */
 function parseTagSubsection(tagsBody: string, subTitle: string): PersonaTag[] {
   const re = new RegExp(`^###\\s+${escapeRe(subTitle)}\\s*$`, "m");
   const start = tagsBody.search(re);
@@ -89,7 +95,7 @@ function escapeRe(s: string): string {
 
 export function parsePersona(src: string): ParsedPersona {
   const { data, body } = parseMarkdown(src);
-  const langRaw = (data as Record<string, unknown>).languages;
+  const langRaw = data.languages;
   const languages = Array.isArray(langRaw) ? langRaw.map(String) : [];
 
   const sections = splitH2Sections(body);

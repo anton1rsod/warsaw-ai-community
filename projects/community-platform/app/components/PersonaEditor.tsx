@@ -5,8 +5,7 @@ import { savePersona } from "@/app/actions/save-persona";
 import { Pill } from "@/app/components/Pill";
 import { MonoLabel } from "@/app/components/MonoLabel";
 import { s } from "@/lib/i18n/strings";
-
-const MAX = 65_536;
+import { PERSONA_MAX_BYTES as MAX } from "@/lib/persona-editor";
 
 export function PersonaEditor({
   initialContent,
@@ -26,7 +25,7 @@ export function PersonaEditor({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > MAX) { setState("error"); return; } // H141: client cap; filename unused
-    void file.text().then((t) => setContent(t));
+    void file.text().then((t) => setContent(t)).catch(() => setState("error"));
   }
 
   function onAttach(): void {

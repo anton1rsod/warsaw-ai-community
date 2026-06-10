@@ -1,9 +1,11 @@
 import matter from "gray-matter";
 import { z } from "zod";
 
-/** H141: 64KB cap (parity with SaveProfileSchema). */
+/** H141: 64KB cap (parity with SaveProfileSchema). Single source for schema + client. */
+export const PERSONA_MAX_BYTES = 65_536;
+
 export const SavePersonaSchema = z.object({
-  content: z.string().min(1, "empty").max(65_536, "Persona too large (max 64KB)"),
+  content: z.string().min(1, "empty").max(PERSONA_MAX_BYTES, "Persona too large (max 64KB)"),
 });
 
 export type SavePersonaInput = z.infer<typeof SavePersonaSchema>;

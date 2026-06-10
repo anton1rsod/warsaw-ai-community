@@ -73,7 +73,8 @@ export default async function MeEditPage(): Promise<React.JSX.Element> {
   const rawEcho = data.telegramEcho;
   const initialTelegramEcho = rawEcho === true || rawEcho === "true";
   // H147: absent / non-false ⇒ visible (default true).
-  const initialPersonaVisible = data.persona_visible !== false;
+  // Handle both native-boolean false and quoted-string "false" (YAML load variation).
+  const initialPersonaVisible = data.persona_visible !== false && data.persona_visible !== "false";
 
   return (
     <main id="main" className="mx-auto max-w-3xl px-6 py-10">

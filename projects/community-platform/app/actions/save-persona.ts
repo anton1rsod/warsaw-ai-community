@@ -79,6 +79,8 @@ export async function savePersona(formData: FormData): Promise<PersonaSaveResult
   }
 
   log.warn("save-persona", "saved", { slug, success: true });
+  // Unlike save-profile (which also revalidates /members), persona save only
+  // revalidates the detail page — the /members list doesn't render persona data.
   revalidatePath(`/members/${slug}`);
   return { ok: true, savedAt: new Date().toISOString() };
 }

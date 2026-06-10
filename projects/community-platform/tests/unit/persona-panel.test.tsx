@@ -1,6 +1,8 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { render, screen, cleanup } from "@testing-library/react";
+import { describe, expect, it, afterEach } from "vitest";
 import { PersonaPanel } from "@/app/components/PersonaPanel";
+
+afterEach(cleanup);
 
 describe("PersonaPanel", () => {
   it("renders sanitized HTML when persona present", () => {
