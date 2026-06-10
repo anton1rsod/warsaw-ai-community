@@ -8,6 +8,7 @@ import { readWeekStatuses } from "@/lib/status-reader";
 import { weekFromDate } from "@/lib/week";
 import { mockConsentStore } from "@/app/actions/_test-consent-store";
 import { mockProfileStore } from "@/app/actions/_test-profile-store";
+import { mockPersonaStore } from "@/app/actions/_test-persona-store";
 
 async function getInstallationToken(): Promise<string> {
   const ghAppAuth = createAppAuth({
@@ -47,6 +48,8 @@ export async function POST(_req: Request): Promise<Response> {
     // the full "deleted → /me/edit redirects to /consent" contract.
     mockConsentStore.reset();
     mockProfileStore.remove(slug);
+    // H146: also clear the persona mock so the E2E contract covers persona erasure.
+    mockPersonaStore.remove(slug);
     return NextResponse.json({ ok: true });
   }
 
@@ -67,6 +70,19 @@ export async function POST(_req: Request): Promise<Response> {
       sha: profile.sha,
       message: `chore(gdpr): delete profile for ${handle}`,
     });
+  }
+
+  // 1b. Persona files (H146 — GDPR erasure includes the member's persona PII).
+  // Remove BOTH the peer-facing .public.md and the full .md if present.
+  for (const name of [`persona-${slug}.public.md`, `persona-${slug}.md`]) {
+    const personaPath = `persona-builder/personas/${slug}/${name}`;
+    const file = await client.readFile(personaPath);
+    if (file) {
+      await client.deleteFile(personaPath, {
+        sha: file.sha,
+        message: `chore(gdpr): delete ${name} for ${handle}`,
+      });
+    }
   }
 
   // 2. Status files: 52-week back-scan, filter by caller's slug only.
