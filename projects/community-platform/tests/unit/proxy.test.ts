@@ -180,6 +180,21 @@ describe("proxy", () => {
     }
   });
 
+  describe("v0.12 member directory + OG image (D12 amendment, H155)", () => {
+    for (const prefix of [
+      "/members/anton-safronov",
+      "/members/anton-safronov/opengraph-image",
+    ]) {
+      it(`allows ${prefix} via PUBLIC_PREFIXES (unauthenticated, H155)`, async () => {
+        const { default: proxy } = await import("@/proxy");
+        const req = makeReq(prefix);
+        const res = await proxy(req as never);
+        expect(res.headers.get("location")).toBeNull();
+        expect(mocks.decodeFn).not.toHaveBeenCalled();
+      });
+    }
+  });
+
   it("redirects to /login when no session cookie present", async () => {
     const { default: proxy } = await import("@/proxy");
     const req = makeReq("/this-week");

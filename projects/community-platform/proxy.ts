@@ -76,6 +76,9 @@ const PUBLIC_PREFIXES = [
   "/events/",
   "/meetings/",
   "/icons/",
+  // v0.12 (D12 amendment — /members/[slug] stays public per v0.1.x precedent;
+  // OG image route /members/[slug]/opengraph-image is H155 public + unauthenticated):
+  "/members/",
 ] as const;
 
 /**
