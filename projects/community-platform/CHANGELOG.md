@@ -16,7 +16,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
-## [0.11.1] — 2026-06-10 (persona attach + rich card) — IMPLEMENTED · PR open · **merge gated on the 2026-06-12 post-meetup retro**
+## [0.11.1] — 2026-06-10 (persona attach + rich card; PR #55 squash-merged at `616ba6f`, tag `community-platform-v0.11.1`; ADR-0019 Accepted)
 
 Members self-attach their persona (paste or `.md` upload) with explicit consent + a hide toggle; personas render as a rich card (controlled-vocab tag chips + the full peer-facing body). Spec §22 (R1–R9, H138–H150); ADR-0019 (Proposed → Accepted on merge). Executed via `superpowers:subagent-driven-development` (one Sonnet implementer per phase across 5 phases; full `tsc`+`lint`+`test` gate verified at every boundary). **1582 unit/integration tests** + a new `e2e/persona-attach.spec.ts` (attach→display, 2/2 green). Parallel **security-reviewer** (mandatory, H150) + typescript + code reviewers — **0 CRITICAL**; the HIGH/MEDIUM findings were batched into one fix commit.
 
@@ -34,9 +34,9 @@ Members self-attach their persona (paste or `.md` upload) with explicit consent 
 - **GDPR delete** (`/api/me/delete`) now erases both `persona-<slug>.public.md` and the full `.md` (H146); all three GDPR commit messages sanitized via `safeHandle`.
 
 ### Notes
-- **Merge gate:** implementation + PR + CI proceed now; the squash-merge is held until the **2026-06-12** post-meetup retro (which only decides whether Bundle A meeting-path hardening preempts Bundle B — low odds). ADR-0019 flips Proposed → Accepted on merge; tag `community-platform-v0.11.1` + STATE phase-flip + orchestrator prod smoke happen at merge.
+- **Shipped 2026-06-10:** Anton (DRI) authorized merging now, overriding the documented 2026-06-12 retro gate (that gate governed only Bundle A-vs-B priority, not readiness — and the work was already CI-green + reviewed 0 CRITICAL). PR #55 squash-merged at `616ba6f`; tag `community-platform-v0.11.1` pushed; ADR-0019 Accepted; STATE flipped.
 - **H150** (mandatory security review) satisfied: 0 CRITICAL. Two HIGH findings — a missing `NODE_ENV` production hard-stop on `test-reset-persona` and raw-`handle` interpolation in the GDPR commit messages — were fixed in the batched reviewer-fix commit (`2d0b5d3`).
-- **Data follow-up (out of scope):** 4 of the 5 existing persona-builder dirs use a slug convention (`anton-s`, `heorhii-k`, …) that differs from roster slugs, so those personas won't auto-display until their `persona_id` + dir are aligned to the member's roster slug — H142 ties the persona file to the authenticated identity by design.
+- **Slug alignment:** the convention is persona dir + `persona_id` == the member's roster slug (enforced by H142 on attach). `anton-s`→`anton-safronov` was migrated on this ship so Anton's card renders. The 3 non-roster persona dirs (`dmitry-b`/`heorhii-k`/`maksym-pavlenko`) correctly don't display (no member page); they'd align on roster admission. Only `.public.md` is git-tracked (the consent model — the full `.md` stays local/untracked). Long-term, persona-builder should generate `persona_id` = the member's roster slug.
 
 ---
 

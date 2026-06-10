@@ -1,6 +1,6 @@
 # ADR-0019 — Persona attach consent & visibility model
 
-- **Status:** Proposed (→ Accepted on v0.11.1 merge)
+- **Status:** Accepted (v0.11.1 squash-merged 2026-06-10 at `616ba6f`; tag `community-platform-v0.11.1`)
 - **Date:** 2026-06-09
 - **Deciders:** Anton (founder / DRI)
 - **Spec:** `projects/community-platform/spec.md §22` · **Design:** `docs/specs/2026-06-09-community-platform-persona-attach-design.md`
