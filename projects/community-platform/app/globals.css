@@ -51,6 +51,15 @@
   --color-paper:      #ffffff;
   --color-alert:      #dc1f1f;
 
+  /* v0.12 typeset-dossier warm ladder (spec §3). Contrast is pinned per
+     (foreground × background) PAIR — see tests/unit/contrast-pairs.test.ts
+     (H156). dust is AA on cream ONLY; tinted surfaces use ink-muted. */
+  --color-ink-body:        #3c3a47;
+  --color-ink-muted:       #6e6757;
+  --color-hairline:        #f1e4c8;
+  --color-hairline-strong: #e3d2ac;
+  --color-surface-soft:    #fdf1d9;
+
   color-scheme: light;
 }
 
@@ -64,10 +73,13 @@ body {
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* Global keyboard focus affordance (H91 a11y gate) */
+/* Global keyboard focus affordance (H91 a11y gate; v0.12 H156: accent-500
+   measures 2.0:1 on cream and fails SC 1.4.11 non-text 3:1 — flipped
+   platform-wide to accent-700, which clears 3:1 on cream, surface-soft,
+   and cream-deep). */
 @layer base {
   :focus-visible {
-    outline: 2px solid var(--color-accent-500);
+    outline: 2px solid var(--color-accent-700);
     outline-offset: 2px;
   }
 }
