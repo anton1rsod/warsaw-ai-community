@@ -180,17 +180,33 @@ describe("proxy", () => {
     }
   });
 
-  describe("v0.12 member directory + OG image (D12 amendment, H155)", () => {
-    for (const prefix of [
-      "/members/anton-safronov",
+  describe("v0.12 OG member card route (H155) — image public, dossier gated", () => {
+    for (const path of [
       "/members/anton-safronov/opengraph-image",
+      "/members/mark-spasonov/opengraph-image",
     ]) {
-      it(`allows ${prefix} via PUBLIC_PREFIXES (unauthenticated, H155)`, async () => {
+      it(`allows ${path} without auth (scrapers fetch it; consent re-applied in-route)`, async () => {
         const { default: proxy } = await import("@/proxy");
-        const req = makeReq(prefix);
+        const req = makeReq(path);
         const res = await proxy(req as never);
         expect(res.headers.get("location")).toBeNull();
         expect(mocks.decodeFn).not.toHaveBeenCalled();
+      });
+    }
+
+    for (const path of [
+      "/members",
+      "/members/anton-safronov",
+      "/members/anton-safronov/opengraph-image/deeper",
+      "/members/opengraph-image",
+    ]) {
+      it(`keeps ${path} auth-gated (ADR-0012/0014: /members is NOT a discovery surface)`, async () => {
+        const { default: proxy } = await import("@/proxy");
+        const req = makeReq(path);
+        const res = await proxy(req as never);
+        expect(res.status).toBeGreaterThanOrEqual(300);
+        expect(res.status).toBeLessThan(400);
+        expect(res.headers.get("location")).toMatch(/\/login$/);
       });
     }
   });

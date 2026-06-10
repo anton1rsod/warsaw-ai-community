@@ -76,10 +76,18 @@ const PUBLIC_PREFIXES = [
   "/events/",
   "/meetings/",
   "/icons/",
-  // v0.12 (D12 amendment — /members/[slug] stays public per v0.1.x precedent;
-  // OG image route /members/[slug]/opengraph-image is H155 public + unauthenticated):
-  "/members/",
 ] as const;
+
+/**
+ * v0.12 H155: the shareable member card is fetched by third-party scrapers
+ * (GitHub camo, Telegram preview bots) with no session, so ONLY the OG
+ * image route under /members/[slug]/ is public. The dossier page itself
+ * stays auth-gated — /members is NOT a discovery surface under
+ * ADR-0012/ADR-0014. The OG handler re-applies the H147 persona_visible
+ * + H146 erasure gates in-route (name-only fallback), so going public
+ * here leaks no persona state.
+ */
+const OG_IMAGE_PATH = /^\/members\/[^/]+\/opengraph-image$/;
 
 /**
  * H4 (spec §11.5): /onboard* responses carry Referrer-Policy, X-Frame-Options,
@@ -212,7 +220,10 @@ export default async function proxy(
     }
     return res;
   }
-  if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
+  if (
+    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p)) ||
+    OG_IMAGE_PATH.test(pathname)
+  ) {
     const res = NextResponse.next();
     res.headers.set("x-pathname", pathname);
     return res;
