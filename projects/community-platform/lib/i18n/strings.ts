@@ -97,6 +97,11 @@ export const strings = {
   "members.detail.practitionerRow": "Practitioner",
   "members.detail.nicheRow": "Niche",
   "members.detail.languagesRow": "Languages",
+  "members.detail.postureSection": "Evaluation posture",
+  "members.detail.bullishRow": "Bullish when",
+  "members.detail.skepticalRow": "Skeptical when",
+  "members.detail.firstQuestionCaption": "the first question I ask",
+  "members.detail.askYours": "ask yours →",
 
   // ─── projects.index.* (/projects route) ──────────────────────────────────
   "projects.index.title": "Projects.",
