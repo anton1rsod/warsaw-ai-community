@@ -46,7 +46,8 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 24px;
   }
-  :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 2px; }
+  /* amber-deep, not amber: raw amber is 2.0:1 on cream — fails SC 1.4.11 (3:1 non-text) */
+  :focus-visible { outline: 2px solid var(--amber-deep); outline-offset: 2px; border-radius: 2px; }
   .wordmark { font-family: var(--font-display); font-weight: 600; font-size: 15px; letter-spacing: -0.01em; color: var(--ink); }
   .wordmark sup { color: var(--amber); font-size: 13px; }
   nav .links { display: flex; gap: 24px; }
@@ -70,7 +71,7 @@
     width: 68px; height: 68px; border-radius: 50%; flex: none;
     background: var(--cream-deep); box-shadow: inset 0 0 0 1px var(--hairline-strong);
     display: flex; align-items: center; justify-content: center;
-    font-family: var(--font-display); font-weight: 500; font-size: 23px; color: var(--dust);
+    font-family: var(--font-display); font-weight: 500; font-size: 23px; color: var(--ink-muted); /* 4.96:1 on cream-deep; dust was 4.22 */
   }
   h1 {
     font-family: var(--font-display); font-weight: 600; font-size: 38px;
@@ -98,9 +99,12 @@
     background: var(--surface-soft);
     display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap;
   }
-  .lens .kicker { color: var(--dust); flex: none; }
+  /* on --surface-soft, dust drops to 4.42:1 and amber-deep to 4.49:1 (both sub-AA) →
+     ink-muted (5.02:1) for the kicker; lens links go ink with amber underline */
+  .lens .kicker { color: var(--ink-muted); flex: none; }
   .lens p { font-size: 14px; color: var(--ink-body); }
   .lens p b { font-weight: 500; color: var(--ink); }
+  .lens a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--amber); text-underline-offset: 3px; }
 
   /* ── ledger sections ────────────────────── */
   section { margin-top: 56px; position: relative; }
@@ -160,8 +164,9 @@
   }
   summary:hover { background: var(--surface-soft); }
   summary::-webkit-details-marker { display: none; }
-  summary .count { font-family: var(--font-mono); font-size: 12px; font-weight: 400; color: var(--ink-subtle); margin-left: 8px; }
-  summary .caret { font-size: 12px; color: var(--ink-subtle); transition: transform 160ms ease; }
+  /* ink-muted: stays ≥4.5:1 on the --surface-soft hover background (dust fails there at 4.42) */
+  summary .count { font-family: var(--font-mono); font-size: 12px; font-weight: 400; color: var(--ink-muted); margin-left: 8px; }
+  summary .caret { font-size: 12px; color: var(--ink-muted); transition: transform 160ms ease; }
   details[open] .caret { transform: rotate(180deg); }
   details .body { padding: 4px 4px 20px; font-size: 15px; color: var(--ink-body); }
   details .body p { margin-top: 10px; }
