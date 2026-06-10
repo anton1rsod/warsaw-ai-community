@@ -72,6 +72,8 @@ export default async function MeEditPage(): Promise<React.JSX.Element> {
   // are both accepted.
   const rawEcho = data.telegramEcho;
   const initialTelegramEcho = rawEcho === true || rawEcho === "true";
+  // H147: absent / non-false ⇒ visible (default true).
+  const initialPersonaVisible = data.persona_visible !== false;
 
   return (
     <main id="main" className="mx-auto max-w-3xl px-6 py-10">
@@ -91,6 +93,7 @@ export default async function MeEditPage(): Promise<React.JSX.Element> {
         slug={member.slug}
         previewEndpoint="/api/preview-markdown"
         initialTelegramEcho={initialTelegramEcho}
+        initialPersonaVisible={initialPersonaVisible}
       />
       <PersonaEditor initialContent={member.persona ?? ""} slug={member.slug} />
     </main>

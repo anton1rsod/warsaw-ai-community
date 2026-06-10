@@ -30,6 +30,9 @@ export const SaveProfileSchema = z.object({
   telegramEcho: z
     .union([z.boolean(), z.enum(["true", "false"]).transform((v) => v === "true")])
     .default(false),
+  persona_visible: z
+    .union([z.boolean(), z.enum(["true", "false"]).transform((v) => v === "true")])
+    .default(true),
 });
 
 export type SaveProfileInput = z.infer<typeof SaveProfileSchema>;
@@ -117,6 +120,7 @@ export const ProfileFrontmatterSchema = z
     events_interested: z.array(z.string()).default([]),
     event_rsvp_visibility: z.enum(["public", "members_only"]).default("members_only"),
     thanks_given: z.array(ThanksRecordSchema).default([]),
+    persona_visible: z.boolean().default(true), // H147: absent ⇒ visible
   })
   .passthrough(); // preserve v0.2 fields (name, github_handle, etc.) verbatim
 

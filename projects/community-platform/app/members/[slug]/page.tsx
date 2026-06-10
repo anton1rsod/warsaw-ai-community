@@ -55,10 +55,9 @@ export default async function MemberPage({
   const personaBodyHtml = parsedPersona
     ? await renderMarkdownToHtml(parsedPersona.body)
     : null;
-  // H147: gate on persona_visible (absent ⇒ visible). Phase 4 adds the schema field;
-  // the cast bridges until then (passthrough preserves the runtime value).
-  const personaVisible =
-    (fm as { persona_visible?: boolean } | undefined)?.persona_visible !== false;
+  // H147: gate on persona_visible (absent ⇒ visible).
+  // persona_visible is now an explicit field on ProfileFrontmatterSchema (default true).
+  const personaVisible = fm?.persona_visible !== false;
 
   const knownEventSlugs = new Set<EventSlug>(
     listEventsFromSnapshot().map((e) => e.slug),

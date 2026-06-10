@@ -16,6 +16,8 @@ interface ProfileEditorProps {
   // v0.10.0: seeded from profile frontmatter so an existing opt-in
   // survives a profile save when the user didn't re-toggle the checkbox.
   initialTelegramEcho?: boolean;
+  // H147: seeded from profile frontmatter; absent ⇒ visible (default true).
+  initialPersonaVisible?: boolean;
 }
 
 type Tab = "edit" | "preview";
@@ -67,6 +69,7 @@ export function ProfileEditor({
   slug,
   previewEndpoint,
   initialTelegramEcho = false,
+  initialPersonaVisible = true,
 }: ProfileEditorProps): React.JSX.Element {
   const [body, setBody] = useState<string>(initialBody);
   const [draftRestored, setDraftRestored] = useState<Date | null>(null);
@@ -75,6 +78,7 @@ export function ProfileEditor({
   const [previewLoading, setPreviewLoading] = useState<boolean>(false);
   const [save, setSave] = useState<SaveState>({ kind: "idle" });
   const [telegramEcho, setTelegramEcho] = useState<boolean>(initialTelegramEcho);
+  const [personaVisible, setPersonaVisible] = useState<boolean>(initialPersonaVisible);
   const [, startTransition] = useTransition();
 
   // Restore draft on mount. Only show the banner when the draft differs from
@@ -131,6 +135,7 @@ export function ProfileEditor({
       fd.append("body", body);
       fd.append("sha", initialSha);
       fd.append("telegramEcho", telegramEcho ? "true" : "false");
+      fd.append("persona_visible", personaVisible ? "true" : "false");
       const result = await saveProfile(fd);
       if (result.ok) {
         clearDraft(slug);
@@ -225,6 +230,25 @@ export function ProfileEditor({
         </label>
         <p className="mt-1 font-voice text-[11px] text-dust">
           Default off. Echoes preserve your handle + first 200 characters of the body + a link back. ADR-0016.
+        </p>
+      </div>
+
+      <div className="mt-4">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={personaVisible}
+            onChange={(e) => setPersonaVisible(e.target.checked)}
+            className="h-4 w-4"
+            disabled={save.kind === "saving"}
+            aria-label="Show my persona on my public profile"
+          />
+          <span className="font-voice text-[12px] text-ink">
+            Show my persona on my public profile
+          </span>
+        </label>
+        <p className="mt-1 font-voice text-[11px] text-dust">
+          When off, your persona card is hidden from your public profile. Default on.
         </p>
       </div>
 

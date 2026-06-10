@@ -458,6 +458,53 @@ Body.
     });
   });
 
+  describe("H147: persona_visible flag persists in written frontmatter", () => {
+    it("writes persona_visible: false into the composed profile content", async () => {
+      vi.mocked(auth).mockResolvedValue({ githubHandle: "anton1rsod" } as never);
+      vi.mocked(findMemberByHandle).mockReturnValue({
+        slug: "anton-safronov",
+        githubHandle: "anton1rsod",
+        name: "Anton Safronov",
+      } as never);
+      mockClient.readFile.mockResolvedValue({
+        content: ANTON_FILE,
+        sha: "s1",
+        path: "community/members/anton-safronov.md",
+      });
+      mockClient.writeFile.mockResolvedValue({ sha: "s2" });
+
+      const fd = formData("Updated.", "s1");
+      fd.append("persona_visible", "false");
+      await saveProfile(fd);
+
+      const writtenContent = mockClient.writeFile.mock.calls[0]?.[1] as string;
+      expect(writtenContent).toContain("persona_visible");
+      expect(writtenContent).toContain("false");
+    });
+
+    it("writes persona_visible: true when explicitly set", async () => {
+      vi.mocked(auth).mockResolvedValue({ githubHandle: "anton1rsod" } as never);
+      vi.mocked(findMemberByHandle).mockReturnValue({
+        slug: "anton-safronov",
+        githubHandle: "anton1rsod",
+        name: "Anton Safronov",
+      } as never);
+      mockClient.readFile.mockResolvedValue({
+        content: ANTON_FILE,
+        sha: "s1",
+        path: "community/members/anton-safronov.md",
+      });
+      mockClient.writeFile.mockResolvedValue({ sha: "s2" });
+
+      const fd = formData("Updated.", "s1");
+      fd.append("persona_visible", "true");
+      await saveProfile(fd);
+
+      const writtenContent = mockClient.writeFile.mock.calls[0]?.[1] as string;
+      expect(writtenContent).toContain("persona_visible");
+    });
+  });
+
   describe("H83: safeHandle on commit message (chat-33 reviewer-triage HIGH)", () => {
     it("strips CR/LF from session handle before interpolating into commit message", async () => {
       // Inject a session handle containing CRLF — the safeHandle helper must

@@ -309,6 +309,7 @@ describe("H53 / D19: deriveThankInitialState", () => {
       thanks_given: [
         { recipient: "bob", item_type: "status" as const, item_id: "x", given_at: "2026-05-12T10:00:00Z" },
       ],
+      persona_visible: true,
     };
     expect(deriveThankInitialState("alice", "bob", "status", "x", profile)).toBe("thanked");
   });
@@ -319,6 +320,7 @@ describe("H53 / D19: deriveThankInitialState", () => {
       events_interested: [],
       event_rsvp_visibility: "members_only" as const,
       thanks_given: [],
+      persona_visible: true,
     };
     expect(deriveThankInitialState("alice", "bob", "status", "x", profile)).toBe("not-thanked");
   });
@@ -335,10 +337,25 @@ describe("H53 / D19: deriveThankInitialState", () => {
       thanks_given: [
         { recipient: "bob", item_type: "status" as const, item_id: "x", given_at: "2026-05-12T10:00:00Z" },
       ],
+      persona_visible: true,
     };
     // Different item_type → not thanked.
     expect(deriveThankInitialState("alice", "bob", "contribution", "x", profile)).toBe("not-thanked");
     // Different item_id → not thanked.
     expect(deriveThankInitialState("alice", "bob", "status", "y", profile)).toBe("not-thanked");
+  });
+});
+
+describe("H147: persona_visible flag in ProfileFrontmatterSchema and SaveProfileSchema", () => {
+  it("persona_visible defaults true when absent (H147)", () => {
+    expect(ProfileFrontmatterSchema.parse({}).persona_visible).toBe(true);
+  });
+
+  it("persona_visible round-trips false", () => {
+    expect(ProfileFrontmatterSchema.parse({ persona_visible: false }).persona_visible).toBe(false);
+  });
+
+  it("SaveProfileSchema accepts persona_visible from a FormData string", () => {
+    expect(SaveProfileSchema.safeParse({ body: "x", expectedSha: "s", persona_visible: "false" }).success).toBe(true);
   });
 });
