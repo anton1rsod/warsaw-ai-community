@@ -116,6 +116,11 @@ export const strings = {
   "members.detail.activityAdrsFmt": "{n} ADRs",
   "members.detail.activityStatusFmt": "{n} status posts",
   "members.detail.activityThankedFmt": "♥ thanked {n}×",
+  "members.detail.viewCard": "view card ↗",
+  "members.detail.askAboutFmt": "ask {name} about… →",
+  "members.detail.copyHandle": "copy @{handle}",
+  "members.detail.copiedHandle": "copied",
+  "members.detail.metaLink": "link ↗",
 
   // ─── projects.index.* (/projects route) ──────────────────────────────────
   "projects.index.title": "Projects.",

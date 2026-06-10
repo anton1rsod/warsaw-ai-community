@@ -27,7 +27,7 @@ test.describe("members", () => {
     await firstLink.click();
     await expect(page).toHaveURL(/\/members\/[\w-]+$/);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    // PersonaPanel renders "Persona" as a MonoLabel (<p>), not an <h3>.
+    // v0.12: dashed empty state (no persona) renders "Persona" via MonoLabel (<p>), not an <h3>.
     await expect(page.getByText("Persona", { exact: true })).toBeVisible();
   });
 });

@@ -111,7 +111,8 @@ test.describe("5.1: Persona attach → display", () => {
     await expect(page.getByText(/b2b-saas/i)).toBeVisible({ timeout: 8000 });
     // Verify functional role chip visible
     await expect(page.getByText(/product-manager/i)).toBeVisible({ timeout: 8000 });
-    // Verify language line visible (rendered as "Languages: en" in the PersonaPanel)
-    await expect(page.getByText(/languages:\s*en/i)).toBeVisible({ timeout: 8000 });
+    // Verify the Languages ledger row (v0.12: dt "Languages" + dd "en" in the ExpertiseLedger)
+    await expect(page.getByText("Languages", { exact: true })).toBeVisible({ timeout: 8000 });
+    await expect(page.locator("dd").filter({ hasText: /^en$/ })).toBeVisible();
   });
 });

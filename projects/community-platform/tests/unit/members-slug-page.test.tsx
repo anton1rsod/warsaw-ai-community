@@ -20,13 +20,7 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-// Mock child components to keep this test focused on the new edit-link logic.
-vi.mock("@/app/components/ContributionCard", () => ({
-  ContributionCard: () => <div data-testid="contribution-card" />,
-}));
-vi.mock("@/app/components/PersonaPanel", () => ({
-  PersonaPanel: () => <div data-testid="persona-panel" />,
-}));
+// Mock child components to keep this test focused on page-level logic.
 vi.mock("@/app/components/GdprPanel", () => ({
   GdprPanel: () => <div data-testid="gdpr-panel" />,
 }));
@@ -46,6 +40,9 @@ const ANTON_MEMBER = {
   name: "Anton Safronov",
   githubHandle: "anton1rsod",
   slug: "anton-safronov",
+  telegram: null,
+  link: null,
+  focus: null,
   profile: {
     data: { name: "Anton Safronov", github_handle: "anton1rsod" },
     body: "Hello world prose.",
@@ -63,7 +60,7 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-describe("/members/[slug] — Edit profile link", () => {
+describe("/members/[slug] — Edit profile link (v0.12 actions row)", () => {
   it("renders 'Edit profile →' link when isSelf and profile present", async () => {
     vi.mocked(auth).mockResolvedValue({ githubHandle: "anton1rsod" } as never);
     vi.mocked(findMemberBySlug).mockReturnValue(ANTON_MEMBER as never);
@@ -78,7 +75,7 @@ describe("/members/[slug] — Edit profile link", () => {
     expect(link.getAttribute("href")).toBe("/me/edit");
   });
 
-  it("renders 'Edit your profile →' link when isSelf and profile absent", async () => {
+  it("renders 'Edit profile →' link when isSelf and profile absent (actions row, v0.12)", async () => {
     vi.mocked(auth).mockResolvedValue({ githubHandle: "anton1rsod" } as never);
     vi.mocked(findMemberBySlug).mockReturnValue(ANTON_NO_PROFILE as never);
 
@@ -87,7 +84,8 @@ describe("/members/[slug] — Edit profile link", () => {
     });
     render(tree);
 
-    const link = screen.getByRole("link", { name: /edit your profile/i });
+    // v0.12: edit link is in the actions row regardless of profile presence.
+    const link = screen.getByRole("link", { name: /edit profile/i });
     expect(link).toBeInTheDocument();
     expect(link.getAttribute("href")).toBe("/me/edit");
   });
@@ -102,11 +100,9 @@ describe("/members/[slug] — Edit profile link", () => {
     render(tree);
 
     expect(screen.queryByRole("link", { name: /edit profile/i })).toBeNull();
-    // The non-self view still shows the profile (rendered via SafeHtml stub).
-    expect(screen.getByTestId("safehtml")).toBeInTheDocument();
   });
 
-  it("does NOT render edit link when not isSelf (profile absent — shows fallback text)", async () => {
+  it("does NOT render edit link when not isSelf (profile absent)", async () => {
     vi.mocked(auth).mockResolvedValue({ githubHandle: "someone-else" } as never);
     vi.mocked(findMemberBySlug).mockReturnValue(ANTON_NO_PROFILE as never);
 
@@ -116,22 +112,6 @@ describe("/members/[slug] — Edit profile link", () => {
     render(tree);
 
     expect(screen.queryByRole("link", { name: /edit/i })).toBeNull();
-    expect(screen.getByText(/hasn't filled out a profile yet/i)).toBeInTheDocument();
-  });
-
-  it("H110: renders file path inside <code> on no-profile empty-state for non-self viewer", async () => {
-    vi.mocked(auth).mockResolvedValue({ githubHandle: "someone-else" } as never);
-    vi.mocked(findMemberBySlug).mockReturnValue(ANTON_NO_PROFILE as never);
-
-    const tree = await MemberPage({
-      params: Promise.resolve({ slug: "anton-safronov" }),
-    });
-    render(tree);
-
-    // The file path must be inside a <code> element.
-    const codeEl = document.querySelector("code");
-    expect(codeEl).not.toBeNull();
-    expect(codeEl?.textContent).toContain("community/members/anton-safronov.md");
   });
 });
 
@@ -178,7 +158,7 @@ const ANTON_ORPHAN_ONLY = {
   },
 };
 
-describe("H34, H39 + D19: /members/[slug] v0.3 additions", () => {
+describe("H34, H39 + D9: /members/[slug] v0.12 event + activity line", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(auth).mockResolvedValue({ githubHandle: "someone-else" } as never);
@@ -220,7 +200,7 @@ describe("H34, H39 + D19: /members/[slug] v0.3 additions", () => {
     ).toBeInTheDocument();
   });
 
-  it("does NOT render Events section when all slugs are orphans (H39)", async () => {
+  it("does NOT render orphan event slug (H39)", async () => {
     vi.mocked(findMemberBySlug).mockReturnValue(ANTON_ORPHAN_ONLY as never);
 
     const tree = await MemberPage({
@@ -228,11 +208,10 @@ describe("H34, H39 + D19: /members/[slug] v0.3 additions", () => {
     });
     render(tree);
 
-    expect(screen.queryByText(/^events$/i)).toBeNull();
     expect(screen.queryByText(new RegExp(ORPHAN_EVENT_SLUG))).toBeNull();
   });
 
-  it("does NOT render Events section when profile has no v0.3 fields", async () => {
+  it("does NOT render events when profile has no v0.3 fields", async () => {
     vi.mocked(findMemberBySlug).mockReturnValue(ANTON_MEMBER as never);
 
     const tree = await MemberPage({
@@ -240,12 +219,14 @@ describe("H34, H39 + D19: /members/[slug] v0.3 additions", () => {
     });
     render(tree);
 
-    // ANTON_MEMBER.profile.data has no events_going — defaults to []; section hidden.
+    // ANTON_MEMBER.profile.data has no events_going — defaults to []; no event links.
     expect(screen.queryByRole("link", { name: /Going/i })).toBeNull();
     expect(screen.queryByRole("link", { name: /Interested/i })).toBeNull();
   });
 
-  it("renders KudosCount empty state when member has no kudos entry (D19)", async () => {
+  it("D9: ActivityLine renders kudos total (0×) for every member", async () => {
+    // kudos.json is mocked as {} (empty), so kudosTotal = 0.
+    // v0.12: KudosCount removed; ActivityLine carries the ♥ thanked stat quietly.
     vi.mocked(findMemberBySlug).mockReturnValue(ANTON_MEMBER as never);
 
     const tree = await MemberPage({
@@ -253,13 +234,10 @@ describe("H34, H39 + D19: /members/[slug] v0.3 additions", () => {
     });
     render(tree);
 
-    expect(screen.getByText(/no thanks yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/♥ thanked 0×/)).toBeInTheDocument();
   });
 
-  it("renders the KudosCount section for every member (D19)", async () => {
-    // kudos.json is mocked as {} (empty), so the empty-state message appears.
-    // This asserts the section is always rendered — the KudosCount component
-    // handles the "no entry" → "No thanks yet." display internally.
+  it("D9: ActivityLine always rendered (carries commits + ADRs + status stats)", async () => {
     vi.mocked(findMemberBySlug).mockReturnValue(ANTON_MEMBER as never);
 
     const tree = await MemberPage({
@@ -267,6 +245,6 @@ describe("H34, H39 + D19: /members/[slug] v0.3 additions", () => {
     });
     render(tree);
 
-    expect(screen.getByText(/no thanks yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/0 commits/)).toBeInTheDocument();
   });
 });
