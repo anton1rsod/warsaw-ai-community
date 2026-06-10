@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anton Safronov — Subploters</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* platform tokens */
+    --cream: #fef6e6;
+    --cream-deep: #fdebc9;
+    --ink: #1a1a2e;
+    --dust: #886c37;
+    --amber: #f59e0b;
+    --amber-deep: #b45309;
+    /* derived warm ladder */
+    --ink-body: #3c3a47;
+    --ink-muted: #6e6757;
+    --ink-subtle: #886c37; /* = dust; 4.60:1 on cream (AA) — #99906f failed at 2.97:1 */
+    --hairline: #f1e4c8;
+    --hairline-strong: #e3d2ac;
+    --surface-soft: #fdf1d9;
+    --font-display: "Geist", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { background: var(--cream); }
+  body {
+    font-family: var(--font-body);
+    font-size: 16px; line-height: 1.55;
+    color: var(--ink-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--amber-deep); text-decoration: none; transition: color 130ms ease; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  ::selection { background: var(--cream-deep); }
+
+  /* ── chrome ─────────────────────────────── */
+  nav { border-bottom: 1px solid var(--hairline); }
+  .nav-inner {
+    max-width: 688px; margin: 0 auto; height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+  }
+  :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 2px; }
+  .wordmark { font-family: var(--font-display); font-weight: 600; font-size: 15px; letter-spacing: -0.01em; color: var(--ink); }
+  .wordmark sup { color: var(--amber); font-size: 13px; }
+  nav .links { display: flex; gap: 24px; }
+  nav .links a { font-family: var(--font-display); font-weight: 500; font-size: 13.5px; color: var(--ink-muted); }
+  nav .links a.active { color: var(--ink); }
+  nav .links a:hover { text-decoration: none; color: var(--ink); }
+
+  main { max-width: 640px; margin: 0 auto; padding: 64px 24px 96px; }
+
+  .kicker {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.09em; color: var(--dust);
+  }
+  .crumb { margin-bottom: 40px; }
+  .crumb a { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-subtle); }
+  .crumb a:hover { color: var(--dust); text-decoration: none; }
+
+  /* ── identity ───────────────────────────── */
+  .identity { display: flex; gap: 20px; align-items: center; }
+  .avatar {
+    width: 68px; height: 68px; border-radius: 50%; flex: none;
+    background: var(--cream-deep); box-shadow: inset 0 0 0 1px var(--hairline-strong);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-weight: 500; font-size: 23px; color: var(--dust);
+  }
+  h1 {
+    font-family: var(--font-display); font-weight: 600; font-size: 38px;
+    letter-spacing: -0.025em; line-height: 1.1; color: var(--ink);
+  }
+  .meta {
+    margin-top: 4px;
+    font-family: var(--font-mono); font-size: 12px; color: var(--ink-subtle);
+  }
+  .meta a { color: var(--ink-subtle); }
+  .meta a:hover { color: var(--dust); }
+
+  /* the one-liner, one notch up from v2 — quiet statement, all ink */
+  .statement {
+    margin-top: 28px;
+    font-family: var(--font-display); font-weight: 500; font-size: 22px;
+    letter-spacing: -0.018em; line-height: 1.35; color: var(--ink); max-width: 26em;
+  }
+  .actions { margin-top: 16px; display: flex; gap: 20px; align-items: center; }
+  .actions a { font-family: var(--font-mono); font-size: 12px; color: var(--amber-deep); }
+
+  /* ── overlap lens ───────────────────────── */
+  .lens {
+    margin-top: 40px; padding: 14px 18px; border-radius: 10px;
+    background: var(--surface-soft);
+    display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap;
+  }
+  .lens .kicker { color: var(--dust); flex: none; }
+  .lens p { font-size: 14px; color: var(--ink-body); }
+  .lens p b { font-weight: 500; color: var(--ink); }
+
+  /* ── ledger sections ────────────────────── */
+  section { margin-top: 56px; position: relative; }
+  section > .kicker { display: block; margin-bottom: 6px; }
+  /* archival-index marginalia: kickers move into the left margin at desktop */
+  @media (min-width: 1080px) {
+    section > .kicker {
+      position: absolute; left: -164px; top: 19px;
+      width: 140px; text-align: right; margin: 0;
+    }
+    section.story > .kicker { top: 14px; }
+  }
+  .ledger { border-top: 1px solid var(--hairline); }
+  .row {
+    display: grid; grid-template-columns: 132px 1fr; gap: 24px;
+    padding: 14px 0; border-bottom: 1px solid var(--hairline);
+  }
+  .row dt {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-subtle);
+    padding-top: 3px;
+  }
+  .row dd { font-size: 15px; line-height: 1.6; }
+  .row dd.lead { font-weight: 500; color: var(--ink); }
+  .row dd.quiet { color: var(--ink-muted); }
+  .row dd .sep { color: var(--hairline-strong); padding: 0 2px; }
+
+  /* ── pull-quote (v2's light treatment) ──── */
+  .quote { margin-top: 64px; position: relative; padding-left: 36px; }
+  .quote .mark {
+    position: absolute; left: 0; top: -2px;
+    font-family: var(--font-display); font-size: 34px; font-weight: 600; color: var(--amber); line-height: 1;
+  }
+  .quote blockquote {
+    font-family: var(--font-mono); font-size: 19px; font-weight: 400;
+    line-height: 1.5; letter-spacing: -0.01em; color: var(--ink); max-width: 30em;
+  }
+  .quote figcaption { margin-top: 12px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-subtle); }
+  .quote figcaption a { color: var(--amber-deep); }
+
+  /* ── story / disclosure ─────────────────── */
+  .story p { margin-top: 16px; font-size: 16px; color: var(--ink-body); }
+  .story p b { font-weight: 500; color: var(--ink); }
+  .fade { position: relative; max-height: 150px; overflow: hidden; }
+  .fade::after {
+    content: ""; position: absolute; inset: auto 0 0 0; height: 72px;
+    background: linear-gradient(to bottom, transparent, var(--cream));
+  }
+  .more { display: inline-block; margin-top: 10px; font-family: var(--font-mono); font-size: 12px; color: var(--amber-deep); }
+  details { border-bottom: 1px solid var(--hairline); }
+  details:first-of-type { border-top: 1px solid var(--hairline); margin-top: 28px; }
+  summary {
+    list-style: none; cursor: pointer; padding: 16px 4px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--font-display); font-size: 15px; font-weight: 500; color: var(--ink);
+    transition: background 130ms ease;
+  }
+  summary:hover { background: var(--surface-soft); }
+  summary::-webkit-details-marker { display: none; }
+  summary .count { font-family: var(--font-mono); font-size: 12px; font-weight: 400; color: var(--ink-subtle); margin-left: 8px; }
+  summary .caret { font-size: 12px; color: var(--ink-subtle); transition: transform 160ms ease; }
+  details[open] .caret { transform: rotate(180deg); }
+  details .body { padding: 4px 4px 20px; font-size: 15px; color: var(--ink-body); }
+  details .body p { margin-top: 10px; }
+  details .body p:first-child { margin-top: 0; }
+  details .body em { font-style: normal; font-weight: 500; color: var(--ink); }
+
+  /* ── activity footer ────────────────────── */
+  .activity {
+    margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--hairline);
+    font-family: var(--font-mono); font-size: 12px; color: var(--ink-subtle);
+    display: flex; flex-wrap: wrap; gap: 8px 18px;
+  }
+  .activity b { font-weight: 500; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+  .menu-glyph { display: none; font-size: 20px; color: var(--ink); }
+  @media (max-width: 560px) {
+    h1 { font-size: 30px; }
+    .statement { font-size: 19px; }
+    .row { grid-template-columns: 1fr; gap: 4px; }
+    main { padding-top: 40px; }
+    .nav-inner { padding: 0 16px; }
+    nav .links { display: none; }
+    .menu-glyph { display: block; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <span class="wordmark">subploters<sup>*</sup></span>
+    <span class="links">
+      <a href="#">home</a><a href="#">events</a><a href="#" class="active">members</a><a href="#">projects</a><a href="#">this week</a>
+    </span>
+    <span class="menu-glyph" aria-hidden="true">≡</span>
+  </div>
+</nav>
+
+<main>
+  <div class="crumb"><a href="#">← members</a></div>
+
+  <header class="identity">
+    <div class="avatar">AS</div>
+    <div>
+      <h1>Anton Safronov</h1>
+      <p class="meta"><a href="#">@anton1rsod</a> · warsaw · en · persona updated 2026-05-21</p>
+    </div>
+  </header>
+
+  <p class="statement">B2B SaaS revenue architect turned AI product builder — RevOps, partnerships, and shipping as a PM who builds.</p>
+
+  <div class="actions">
+    <a href="#">view card ↗</a>
+    <a href="#">ask anton about… →</a>
+  </div>
+
+  <div class="lens">
+    <span class="kicker">you × anton</span>
+    <p>Shared ground in <b>b2b-saas</b> and <b>product-manager</b> — and he's expert in <b>ai-ml-applications</b> where you're familiar. <a href="#">3 conversation starters →</a></p>
+  </div>
+
+  <section>
+    <span class="kicker">// expertise</span>
+    <dl class="ledger">
+      <div class="row">
+        <dt>Expert</dt>
+        <dd class="lead">AI/ML applications<span class="sep"> · </span>B2B SaaS<span class="sep"> · </span>BD &amp; partnerships<span class="sep"> · </span>product management<span class="sep"> · </span>seed stage</dd>
+      </div>
+      <div class="row">
+        <dt>Practitioner</dt>
+        <dd class="quiet">cybersecurity · edtech · marketing &amp; growth · pre-seed · series-a</dd>
+      </div>
+      <div class="row">
+        <dt>Niche</dt>
+        <dd class="quiet">HubSpot RevOps architecture · multi-regional outbound (DACH/UK/CEE) · AI Voice PaaS · channel program transitions · building AI products with Claude Code</dd>
+      </div>
+      <div class="row">
+        <dt>Languages</dt>
+        <dd class="quiet">English</dd>
+      </div>
+    </dl>
+  </section>
+
+  <figure class="quote">
+    <span class="mark">*</span>
+    <blockquote>“Show me your three top accounts and walk me through their procurement process.”</blockquote>
+    <figcaption>the first question I ask · <a href="#">ask yours →</a></figcaption>
+  </figure>
+
+  <section>
+    <span class="kicker">// evaluation posture</span>
+    <dl class="ledger">
+      <div class="row">
+        <dt>Bullish when</dt>
+        <dd>The founder knows the buyer's procurement path cold and can name the budget line their product comes out of.</dd>
+      </div>
+      <div class="row">
+        <dt>Skeptical when</dt>
+        <dd>An AI-native product ships with a 2018 GTM playbook — a fundable narrative with no evaluable substance underneath.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="story">
+    <span class="kicker">// story</span>
+    <div class="fade">
+      <p><b>Knowledgator (2023)</b> — joined an NLP-tooling startup pre-revenue as the first commercial hire; built the outbound engine from zero and learned how technical founders under-price asymmetric domain knowledge.</p>
+      <p><b>R.S.O.D. (2024)</b> — co-founded a revenue-operations consultancy; architected HubSpot for multi-regional outbound across DACH, UK and CEE, and watched a dozen GTM playbooks succeed or stall up close.</p>
+    </div>
+    <a class="more" href="#">continue reading ▾</a>
+
+    <details>
+      <summary>Hard-won knowledge <span class="count">2 domains</span> <span class="caret" style="margin-left:auto">▾</span></summary>
+      <div class="body"><p><em>RevOps as product architecture</em> — a CRM implementation is a product decision disguised as tooling; the data model you pick constrains the GTM motions you can ever run…</p></div>
+    </details>
+    <details>
+      <summary>Patterns I keep seeing <span class="count">3</span> <span class="caret" style="margin-left:auto">▾</span></summary>
+      <div class="body"><p><em>“AI-native product, 2018 GTM”</em> — teams rebuild the product for the AI era but copy their go-to-market from a 2018 SaaS playbook…</p></div>
+    </details>
+    <details>
+      <summary>Role dispositions <span class="count">buyer · builder · substitute</span> <span class="caret" style="margin-left:auto">▾</span></summary>
+      <div class="body"><p><em>Buyer</em> — owns the marketing-tech budget line at QuoIntelligence; bought (and rejected) outbound tooling in the last 12 months…</p></div>
+    </details>
+  </section>
+
+  <p class="activity">
+    <span><b>5</b> commits</span>
+    <span><b>19</b> ADRs</span>
+    <span><b>1</b> status post</span>
+    <span>✓ meetup-4</span>
+    <span>♥ thanked <b>0</b>×</span>
+  </p>
+</main>
+
+</body>
+</html>
