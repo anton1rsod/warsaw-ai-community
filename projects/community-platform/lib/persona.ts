@@ -27,12 +27,14 @@ const DEPTHS: ReadonlySet<string> = new Set(["expert", "practitioner", "familiar
 function splitH2Sections(body: string): Map<string, string> {
   const out = new Map<string, string>();
   const heads = [...body.matchAll(/^##\s+(.+?)\s*$/gm)].map((m) => ({
+    /* v8 ignore next 3 -- noUncheckedIndexedAccess: capture group + index always defined in matchAll */
     title: (m[1] ?? "").trim(),
     start: m.index ?? 0,
     end: (m.index ?? 0) + m[0].length,
   }));
   for (let i = 0; i < heads.length; i += 1) {
     const h = heads[i];
+    /* v8 ignore next -- noUncheckedIndexedAccess: array iterated by own bounds */
     if (!h) continue;
     const next = heads[i + 1];
     out.set(h.title, body.slice(h.end, next ? next.start : body.length));
