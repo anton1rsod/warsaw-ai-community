@@ -58,3 +58,14 @@ describe("opengraph-image route (H155)", () => {
     expect(src).not.toMatch(/runtime/);
   });
 });
+
+describe("outputFileTracingIncludes (Phase 4.4, H155 backstop)", () => {
+  const cfg = readFileSync(resolve(__dirname, "../../next.config.ts"), "utf8");
+
+  it("pins assets/og/** into the OG route's function bundle", () => {
+    expect(cfg).toMatch(/outputFileTracingIncludes/);
+    expect(cfg).toMatch(
+      /"\/members\/\[slug\]\/opengraph-image":\s*\["\.\/assets\/og\/\*\*"\]/,
+    );
+  });
+});
