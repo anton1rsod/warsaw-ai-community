@@ -270,6 +270,14 @@ export const strings = {
   "masthead.formalEntityTail": "Association",
   "masthead.subtitleLead": "The Warsaw chapter of the Professional",
   "masthead.subtitleTail": "Association — for founders writing their next plot.",
+
+  // ─── persona.editor.* (/me/edit — v0.11.1 persona attach) ──────────────────
+  "persona.editor.heading": "Your persona",
+  "persona.editor.help": "Paste the markdown your persona-builder run produced, or upload the .md file.",
+  "persona.editor.consent": "Attaching publishes your persona to your public profile and to this public git repository. Hiding or deleting it clears the live site, but commit history is retained. Purpose: helping the community match the right peers to evaluate ideas.",
+  "persona.editor.dataMin": "Attach the public version only — do not include a “Private notes” section or sensitive personal data (health, beliefs, etc.).",
+  "persona.editor.attach": "Attach persona",
+  "persona.editor.tooLarge": "Persona is too large (max 64KB).",
 } as const;
 
 export type StringKey = keyof typeof strings;
