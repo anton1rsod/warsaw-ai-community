@@ -271,6 +271,15 @@ export const strings = {
   "masthead.subtitleLead": "The Warsaw chapter of the Professional",
   "masthead.subtitleTail": "Association — for founders writing their next plot.",
 
+  // ─── lens.* (v0.12 overlap lens — starter templates consumed by
+  //     lib/persona-overlap.ts; remaining lens.* keys land with the
+  //     OverlapLens component in Phase 3) ────────────────────────────────────
+  "lens.starterShared":
+    "You both work in {label} — compare notes from opposite vantage points.",
+  "lens.starterComplementary":
+    "Ask about {label} — expert where you're still mapping it.",
+  "lens.starterNiche": "Their niche: {item} — ask how they got there.",
+
   // ─── persona.editor.* (/me/edit — v0.11.1 persona attach) ──────────────────
   "persona.editor.heading": "Your persona",
   "persona.editor.help": "Paste the markdown your persona-builder run produced, or upload the .md file.",
