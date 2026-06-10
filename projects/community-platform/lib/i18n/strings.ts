@@ -112,6 +112,10 @@ export const strings = {
   "members.detail.dispositionBuyer": "Buyer",
   "members.detail.dispositionBuilder": "Builder",
   "members.detail.dispositionCompetitor": "Substitute",
+  "members.detail.activityCommitsFmt": "{n} commits",
+  "members.detail.activityAdrsFmt": "{n} ADRs",
+  "members.detail.activityStatusFmt": "{n} status posts",
+  "members.detail.activityThankedFmt": "♥ thanked {n}×",
 
   // ─── projects.index.* (/projects route) ──────────────────────────────────
   "projects.index.title": "Projects.",
