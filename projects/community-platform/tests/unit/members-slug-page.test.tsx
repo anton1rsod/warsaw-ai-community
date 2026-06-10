@@ -4,6 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 vi.mock("@/lib/auth", () => ({ auth: vi.fn() }));
 vi.mock("@/lib/content-snapshot", () => ({
   findMemberBySlug: vi.fn(),
+  findMemberByHandle: vi.fn(),
   getContributions: vi.fn(() => ({
     projectCommits: 0,
     adrsFiled: 0,

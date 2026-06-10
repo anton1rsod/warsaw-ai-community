@@ -16,12 +16,12 @@ import type { OverlapResult } from "@/lib/persona-overlap";
  * "you × {name}" is aria-hidden with an sr-only alternative so AT never
  * announces "multiplication sign"; the section is aria-labelledby it.
  *
- * H158: starters use native <details> (works without JS). No headings inside
- * <summary>; caret aria-hidden; native marker suppressed both ways
- * (list-none + the Tailwind arbitrary variant for ::-webkit-details-marker).
+ * H158: starters use native details/summary (works without JS). No headings
+ * inside the summary element; caret aria-hidden; native marker suppressed both
+ * ways (list-none + the Tailwind arbitrary variant for ::-webkit-details-marker).
  *
- * H159 (SC 2.5.8): <summary> carries a ≥24px hit box via min-height +
- * padding-block; visual size unchanged.
+ * H159 (SC 2.5.8): the summary element carries a ≥24px hit box via
+ * min-height + padding-block; visual size unchanged.
  *
  * mt-14 = the page's 56px section rhythm; it lives here (not on a page
  * wrapper) so a null render leaves no orphan margin.
