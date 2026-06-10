@@ -40,6 +40,18 @@ vi.mock("@/app/actions/save-profile", () => ({
   saveProfile: vi.fn(),
 }));
 
+// Mock savePersona (used by the rendered PersonaEditor).
+vi.mock("@/app/actions/save-persona", () => ({
+  savePersona: vi.fn(),
+}));
+
+// Mock PersonaEditor to avoid "use client" boundary in unit test context.
+vi.mock("@/app/components/PersonaEditor", () => ({
+  PersonaEditor: ({ slug }: { initialContent: string; slug: string }) => (
+    <div data-testid="persona-editor-mock" data-slug={slug} />
+  ),
+}));
+
 interface CapturedEditorProps {
   initialBody: string;
   initialSha: string;
@@ -114,6 +126,8 @@ describe("/me/edit page", () => {
     expect(screen.getByTestId("profile-editor-mock")).toBeInTheDocument();
     expect(capturedProps.current?.initialBody).toBe("Hello world.");
     expect(capturedProps.current?.slug).toBe("anton-safronov");
+    // PersonaEditor wired below ProfileEditor (Task 3.5)
+    expect(screen.getByTestId("persona-editor-mock")).toBeInTheDocument();
   });
 
   it("H16: passes file.sha to ProfileEditor as initialSha (optimistic-lock plumbing)", async () => {

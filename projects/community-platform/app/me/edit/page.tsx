@@ -8,6 +8,7 @@ import {
 } from "@/lib/github-app";
 import { parseFrontmatter } from "@/lib/profile-editor";
 import { ProfileEditor } from "@/app/components/ProfileEditor";
+import { PersonaEditor } from "@/app/components/PersonaEditor";
 import { MonoLabel } from "@/app/components/MonoLabel";
 import { mockProfileStore } from "@/app/actions/_test-profile-store";
 
@@ -91,6 +92,7 @@ export default async function MeEditPage(): Promise<React.JSX.Element> {
         previewEndpoint="/api/preview-markdown"
         initialTelegramEcho={initialTelegramEcho}
       />
+      <PersonaEditor initialContent={member.persona ?? ""} slug={member.slug} />
     </main>
   );
 }
