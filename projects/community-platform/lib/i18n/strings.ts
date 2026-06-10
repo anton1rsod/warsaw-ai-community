@@ -92,6 +92,11 @@ export const strings = {
   "members.detail.noPersonaFmt": "No persona yet for {slug}. See the persona-builder process.",
   "members.detail.noProfileFmt": "{name} hasn't filled out a profile yet. Members can edit {path} directly via git.",
   "members.detail.noProfilePathFmt": "community/members/{slug}.md",
+  "members.detail.expertiseSection": "Expertise",
+  "members.detail.expertRow": "Expert",
+  "members.detail.practitionerRow": "Practitioner",
+  "members.detail.nicheRow": "Niche",
+  "members.detail.languagesRow": "Languages",
 
   // ─── projects.index.* (/projects route) ──────────────────────────────────
   "projects.index.title": "Projects.",
