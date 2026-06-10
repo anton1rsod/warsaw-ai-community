@@ -25,4 +25,13 @@ describe("validatePersonaFrontmatter (H142)", () => {
   it("rejects when frontmatter absent entirely", () => {
     expect(validatePersonaFrontmatter("# Jane\n", "jane-d")).toEqual({ ok: false, error: "frontmatter_missing" });
   });
+  it("rejects when schema_version missing", () => {
+    const bad = "---\npersona_id: jane-d\ndisplay_name: Jane D.\n---\n# Jane\n";
+    expect(validatePersonaFrontmatter(bad, "jane-d")).toEqual({ ok: false, error: "frontmatter_missing" });
+  });
+  it("rejects malformed YAML frontmatter (gray-matter throws) as frontmatter_missing", () => {
+    // Unclosed flow sequence → js-yaml YAMLException → the matter() try/catch.
+    const malformed = "---\nfoo: [unclosed\n---\n# X\n";
+    expect(validatePersonaFrontmatter(malformed, "jane-d")).toEqual({ ok: false, error: "frontmatter_missing" });
+  });
 });

@@ -73,6 +73,9 @@ export function PersonaPanel({
           ) : null}
         </>
       ) : null}
+      {/* H143: persona body is rendered ONLY through lib/markdown (sanitized:
+          allowDangerousHtml:false + rehype-sanitize, no rehype-raw) + SafeHtml.
+          No parallel HTML-insertion path. */}
       {bodyHtml ? <SafeHtml html={bodyHtml} className="prose-warm mt-4" /> : null}
     </section>
   );
