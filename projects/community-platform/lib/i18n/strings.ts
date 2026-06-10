@@ -309,6 +309,17 @@ export const strings = {
     "Ask about {label} — expert where you're still mapping it.",
   "lens.starterNiche": "Their niche: {item} — ask how they got there.",
 
+  // ─── lens.* (member-page overlap lens — v0.12 §4.2) ──────────────────────
+  // Phase 1 added lens.starterShared / lens.starterComplementary /
+  // lens.starterNiche (computeOverlap templates). These five are the band's
+  // display strings; the component does the {placeholder} substitution
+  // (same Fmt convention as members.index.kickerFmt).
+  "lens.kicker": "you × {name}",
+  "lens.kickerSr": "overlap: you and {name}",
+  "lens.startersLinkFmt": "{count} conversation starters →",
+  "lens.sharedFmt": "Shared ground in {labels}",
+  "lens.complementaryFmt": "expert in {label} where you're {depth}",
+
   // ─── persona.editor.* (/me/edit — v0.11.1 persona attach) ──────────────────
   "persona.editor.heading": "Your persona",
   "persona.editor.help": "Paste the markdown your persona-builder run produced, or upload the .md file.",
