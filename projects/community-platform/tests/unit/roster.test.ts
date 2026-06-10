@@ -110,11 +110,12 @@ describe("readMemberProfile", () => {
 });
 
 describe("readMemberPersona", () => {
-  it("returns persona truncated to first H2", async () => {
+  it("returns full .public.md body (H138: no truncation)", async () => {
     const persona = await readMemberPersona(REPO_ROOT, "anton-safronov");
     expect(persona).toContain("# Anton Safronov");
     expect(persona).toContain("PM-minded");
-    expect(persona).not.toContain("## Skills");
+    // H138: full body — ## Skills is NOT truncated
+    expect(persona).toContain("## Skills");
   });
 
   it("returns null when persona dir absent", async () => {
