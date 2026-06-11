@@ -1,6 +1,4 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { isAdmin } from "@/lib/content-snapshot";
+import { requireAdmin } from "@/lib/require-admin";
 import { InviteForm } from "@/app/components/InviteForm";
 import { mintInvitation } from "@/app/actions/mint-invitation";
 import { MeetingInviteForm } from "@/app/components/MeetingInviteForm";
@@ -8,13 +6,11 @@ import { mintMeetingInvitation } from "@/app/actions/mint-meeting-invitation";
 import { revokeInvitation } from "@/app/actions/revoke-invitation";
 import { MonoLabel } from "@/app/components/MonoLabel";
 
-// `auth()` makes this dynamic — match /admin/health gate pattern.
+// `auth()` (via requireAdmin) makes this dynamic — match /admin/health gate pattern.
 export const dynamic = "force-dynamic";
 
 export default async function AdminInvitePage(): Promise<React.JSX.Element> {
-  const session = await auth();
-  if (!session?.githubHandle) redirect("/login");
-  if (!isAdmin(session.githubHandle)) redirect("/home");
+  await requireAdmin("/admin/invite");
 
   return (
     <main id="main" className="mx-auto max-w-3xl px-6 py-10">

@@ -275,6 +275,16 @@ export const strings = {
   "chrome.header.dropdown.editProfile": "edit profile",
   "chrome.header.dropdown.signOut": "sign out",
 
+  // ─── chrome.admin.* (v0.12.1 admin console) ────────────────────────────
+  "chrome.header.dropdown.adminConsole": "admin console",
+  "chrome.admin.console.kicker": "Admin",
+  "chrome.admin.console.heading": "Admin console",
+  "chrome.admin.console.description":
+    "Internal tools. These are the only admin surfaces.",
+  "chrome.admin.console.inviteLabel": "Invite",
+  "chrome.admin.console.newEventLabel": "New event",
+  "chrome.admin.console.healthLabel": "Health",
+
   // ─── chrome.footer.* (v0.6 footer chrome) ───────────────────────────────
   "chrome.footer.copyrightFmt": "© {year} Subploters",
   "chrome.footer.about": "about",

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { auth, signOut } from "@/lib/auth";
-import { findMemberByHandle } from "@/lib/content-snapshot";
+import { findMemberByHandle, isAdmin } from "@/lib/content-snapshot";
 import { s, type StringKey } from "@/lib/i18n/strings";
 import { HeaderNav } from "@/app/components/HeaderNav";
 import { HeaderMobileMenu } from "@/app/components/HeaderMobileMenu";
@@ -46,6 +46,8 @@ export async function Header({
   const handle = session?.githubHandle ?? null;
   const member = handle ? findMemberByHandle(handle) : undefined;
   const signedIn = Boolean(member);
+  // Compute admin flag server-side — never pass to Client Components (H161).
+  const viewerIsAdmin = handle != null && isAdmin(handle);
 
   // v0.8.1 (chat-44): active-page indicator (H90) is now resolved client-side
   // inside HeaderNav + HeaderMobileMenu via `usePathname()`. Header itself no
@@ -133,6 +135,19 @@ export async function Header({
                   {s("chrome.header.dropdown.editProfile")}
                 </Link>
               </li>
+              {viewerIsAdmin && (
+                <>
+                  <li role="separator" className="border-t border-ink/10 my-1" aria-hidden="true" />
+                  <li role="menuitem">
+                    <Link
+                      href="/admin"
+                      className="block px-4 py-2 text-[11px] font-voice text-ink hover:bg-cream-deep no-underline"
+                    >
+                      {s("chrome.header.dropdown.adminConsole")}
+                    </Link>
+                  </li>
+                </>
+              )}
               <li role="menuitem">
                 <form
                   action={async () => {

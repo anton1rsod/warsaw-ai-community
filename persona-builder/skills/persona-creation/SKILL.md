@@ -152,8 +152,8 @@ If the member says "pause, I'll come back" at any point, save a partial draft th
 
 **Fields (all required):**
 
-- `persona_id` — slug of the form `firstname-lastinitial` (e.g., `jane-d`). Used as the filename.
-- `display_name` — how the member wants to be referenced.
+- `persona_id` — slug derived from the member's full display name (see slug rules below). Used as the filename and must match the roster slug exactly.
+- `display_name` — the member's full name **exactly as it appears in the roster Name cell** (e.g., `Jane Doe`, not `Jane D.`).
 - `schema_version` — emit `1.0`.
 - `created_at` — today's ISO date.
 - `last_updated` — today's ISO date (same as `created_at` on first run).
@@ -161,20 +161,31 @@ If the member says "pause, I'll come back" at any point, save a partial draft th
 
 **Ask:**
 
-- "What name should appear on your persona? This goes in `display_name`."
-- "What's your first name and last initial? I'll use them to build your `persona_id` slug (e.g., Jane D. → `jane-d`)."
+- "What's your full name as it appears in the roster? This goes in `display_name`. (Check the Name column in `community/members/roster.md` if unsure.)"
+- Derive `persona_id` automatically from `display_name` using the slug rules below — no need to ask separately.
 - Confirm `maintained_by` matches `display_name`.
 
 **Slug rules (for `persona_id`):**
 
-- Lowercase ASCII only. Replace spaces with hyphens. Strip accents, apostrophes, and punctuation (e.g., `Zoë O'Brien` → `zoe-o`).
-- If the member says the admin already uses that slug (or suspects a collision), fall back in order: `firstname-lastname` full (e.g., `jane-doe`), then a numeric suffix (`jane-d-2`). Ask the member which to use.
+The platform derives every member's URL slug from their full roster Name using this algorithm:
+
+1. NFKD-normalize (Unicode decomposition).
+2. Strip combining diacritics (e.g., accent marks).
+3. Lowercase.
+4. Replace any sequence of non-`[a-z0-9]` characters with a single `-`.
+5. Trim leading and trailing `-`.
+
+Examples: `Anton Safronov` → `anton-safronov`, `Jane Doe` → `jane-doe`, `Zoë O'Brien` → `zoe-o-brien`.
+
+`persona_id` **must equal** this slug. The folder name, `persona_id`, and the roster-derived slug are all the same value — `folder == persona_id == roster_slug`. The platform's member page uses this slug to locate the persona files; a mismatch means the persona is silently invisible on the member's profile.
+
+If a collision occurs (very rare: two members with identical slugified full names), fall back to a numeric suffix (`jane-doe-2`). Ask the member and the admin to confirm which to use.
 
 **`created_at` vs `last_updated`:** on a first-run interview, both are today's ISO date (`YYYY-MM-DD`). On a resume-across-sessions interview, keep `created_at` as the original start date and set `last_updated` to the date the interview finishes.
 
-**Good:** `display_name: Jane D.`, `persona_id: jane-d`, `maintained_by: Jane D.`
+**Good:** `display_name: Anton Safronov`, `persona_id: anton-safronov`, `maintained_by: Anton Safronov`
 
-**Weak:** `display_name: The AI Guy`. Why it fails: no real identity signal the community can attribute. Ask for a first name + last initial format.
+**Weak:** `display_name: Anton S.`, `persona_id: anton-s`. Why it fails: `anton-s` does not match `slugify("Anton S.")` → `anton-s` (this would accidentally work only when the roster Name cell is also `Anton S.`). Use the **full name** from the roster so the slug is unambiguous.
 
 ## Section 2 — Tags (controlled vocabularies)
 
@@ -355,16 +366,16 @@ Produce both files as valid Markdown with a YAML frontmatter block at the top. U
 
 ```markdown
 ---
-persona_id: jane-d
-display_name: Jane D.
+persona_id: jane-doe
+display_name: Jane Doe
 languages: [en]
 schema_version: 1.0
 created_at: 2026-04-24
 last_updated: 2026-04-24
-maintained_by: Jane D.
+maintained_by: Jane Doe
 ---
 
-# Jane D.
+# Jane Doe
 
 ## Tags
 
