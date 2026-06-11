@@ -24,7 +24,7 @@
 ## 1. Setup — before signup opens
 
 - [ ] On the laptop driving the projector, sign in to prod as the **admin** (`anton1rsod`).
-- [ ] Go to **`/admin/invite`** → scroll to the **"Meeting invite"** section (the *second* form; the top "Mint invitation" form is the personal single-use one — not this).
+- [ ] Reach **`/admin/invite`** — ⚠️ **there is no nav link to it yet**, so **bookmark the full URL before the event**: `https://warsaw-ai-community-platform.vercel.app/admin/invite` (works once you're signed in as admin). Scroll to the **"Meeting invite"** section (the *second* form; the top "Mint invitation" form is the personal single-use one — not this).
 - [ ] Set **Expires in (hours) = 5**, **Max uses = 50**.
 - [ ] Click **"Mint meeting QR."** You'll get: the QR image + the **Meeting URL** + a **"Revoke this invite"** button.
 - [ ] ⚠️ **Do not refresh or close that browser tab.** The QR is session-bound (no persistent registry yet, v0.11.0) — refresh = QR gone, you'll have to re-mint.
