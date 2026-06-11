@@ -54,3 +54,42 @@ The Locals.md claim in the concept's competitive table is flagged as NOT VERIFIE
 ## The one experiment I'd run next
 
 Pick two organizers currently running paid events via Eventbrite or Konfeo. Migrate one event each onto Kolo with a live Stripe integration, charge the 5–10% commission, and clear the money within 30 days. Pass/fail bar: two invoices paid, zero support escalations about the payment flow. If the organizer doesn't ask "when can I do the next one?" — the monetization thesis needs rethinking before any subscription layer is built on top of it.
+
+## Part 2 — Standalone deep dive
+*(Written in plain language for a general audience.)*
+
+### How I'd think about this
+
+I run a community platform in Warsaw — auth-gated member sign-ups, events, RSVP, the full stack. I built it from zero. So when I read about Kolo, I'm not reading it as a distant analyst. I'm reading it as someone who just lived through the same bootstrap problem six months ago.
+
+Here is what I learned the hard way: the hardest part of a community platform is not the software. It's the first ten events. Nobody shows up to an empty calendar. Nobody posts to an empty feed. The platform looks dead, so newcomers leave, so it stays dead. Breaking that loop is not a product problem — it is a hustle problem. It requires a specific, time-boxed intervention in the first 90 days, or the platform never reaches escape velocity.
+
+My frame for Kolo is: do the founders know what those 90 days look like in concrete steps? The product is real. The audience is real [28][18]. The timing is real [3][4]. But I haven't seen the 90-day bootstrap plan, and that is the only thing I want to talk about.
+
+The organizer onboarding funnel, from my experience, has four steps. Step one: founder DMs five to ten organizers personally and offers to set up their club for free, including migrating their existing attendee list. No self-serve. Step two: founder attends the first event of each organizer as a regular attendee and brings two friends. Step three: founder takes the photos, writes the post-event recap, and publishes it on the platform. Step four: repeat for six weeks until the feed has history and new arrivals see something alive when they land. None of that is in the roadmap [§10]. I'm looking for evidence that the founders have done or plan to do this work.
+
+On the partnership angle: Ukrainian House Warsaw [42] is not just a distribution channel — it is a legitimacy anchor. If Kolo can run one branded event with Ukrainian House in the first month, the platform inherits eight years of community trust in a single handshake. That is worth more than any paid promotion. Similarly, @thewwarsaw at 30,775 Telegram subscribers [34] and ukrainianinpolandpl at 33,662 Facebook followers [38] are not just places to post a link — they are relationships to build before launch, not after. The cost of those partnerships is founder time, not money.
+
+### My own numbers
+
+The evidence pack gives us roughly 50 inferred organizers serving the RU/UA/EN Warsaw audience [evidence pack §5]. That is the starting pool — not a census, the pack is clear about this, but the best number we have.
+
+At Creator Pro pricing of €10–20 per month [concept §7.2], and assuming a realistic first-year conversion of 20% of that pool (10 organizers), that is €100–200 per month in recurring revenue. At 40% conversion (20 organizers) — which would be exceptional — you reach €200–400 per month. That is not a business yet. It is proof that organizers will pay.
+
+The ticket commission model [concept §7.2] is different math. If an organizer runs a paid event for 40 people at €15 per ticket, Kolo earns €30–60 per event at 5–10% commission. Two events per week across five active organizers gives roughly €300–600 per week, or €1,200–2,400 per month. That is still small, but it is real transaction revenue, not a subscription hope. And critically: it is testable in week one with a single Stripe integration and one willing organizer.
+
+The user-side subscription (€3–7/month) [concept §7.2] requires a much larger active base to matter. At €5/month and 1% conversion from a reachable audience of 50,000 [evidence pack §5], that is €2,500/month. Achievable in year two, not year one.
+
+### My three recommendations
+
+**One: run the 90-day bootstrap as a planned project, not an organic hope.** Name the ten organizers you will onboard personally in the first 30 days. Write their names in a spreadsheet. Assign a founder to each. Attend their first event. Do not wait for them to discover the platform — go to them. Ukrainian House [42] should be the first call, not the tenth.
+
+**Two: get one commission transaction on the board before building anything else.** Find one organizer who is already running paid events — through Eventbrite, Konfeo, or by hand — and offer to run their next event through Kolo for free (zero commission, just to prove the flow works). Then charge commission on the one after that. The founders will learn more from one real payment than from six months of free signups. This is the fastest way to invalidate or confirm the monetization thesis.
+
+**Three: treat @thewwarsaw and ukrainianinpolandpl as co-founders, not ad placements.** Go to the channel admins before launch. Offer a co-branded "Kolo × Warsaw Community" event. Give them early access, a say in the feature roadmap, and named credit. If they post organically because they feel ownership, that is worth more than any paid promotion and costs nothing but relationship capital.
+
+### What would change my mind
+
+**What would move me to GO:** One organizer hands over a card — a real commission payment clears through Stripe — and then asks "when can we do the next event?" That single data point would tell me the monetization thesis is testable at scale. Pair that with three organizers actively maintaining their club pages without a prompt from the founders, and I would say the chicken-and-egg problem is cracked.
+
+**What would move me to KILL:** The founders run the 90-day bootstrap as I described — personal outreach, attending events, seeding content — and at the end of it fewer than five organizers are active on the platform without direct founder involvement. That would tell me the behavior-change barrier (migrating away from free Telegram [13][14][15]) is too high to clear without indefinite manual effort, and the unit economics of that effort never close.

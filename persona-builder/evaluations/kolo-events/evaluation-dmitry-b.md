@@ -63,3 +63,46 @@ I've seen this film. Client builds everything first, then starts testing, then r
 **Organizer WTP interview sprint, 2 weeks, pass/fail bar = 5/10 say €10+/mo unprompted.**
 
 Identify 10–15 active Warsaw organizers currently running events via Telegram + Google Forms (the named channels in §9 make this a DM list, not a research project). Show them the live kolo.events PWA in a 20-minute video call. Don't pitch — ask: "What's your current signup/comms workflow costing you in time per week?" Then ask: "If this solved that, what would you pay per month?" No prompting with price anchors. Pass: ≥5 of 10 independently name €10+/mo. Fail: anything less. This costs near-zero and either kills or confirms the entire monetization thesis before a single line of payment infrastructure is written.
+
+## Part 2 — Standalone deep dive
+*(Written in plain language for a general audience.)*
+
+### How I'd think about this
+
+I come at this as a hands-on tech lead who has run small founding teams and shipped real products with two or three people. My filter is simple: keep the engineering bill small until the idea earns it.
+
+What I see here is a product that already has a lot built. A web app (PWA — think an app that runs in your browser but can be pinned to your phone screen like a real app), three languages, in-app chat, friend systems, club management, moderation tools, Google Calendar sync. That is several months of serious work by a two-person team. The execution is real, and I respect it.
+
+My concern is the sequence. All of that was built before the single hardest question was answered: will anyone pay? The concept says plainly that monetization is "planned" and the platform is free by stated principle (§7.1, §11). That is not a business model. It is a decision to defer the business model — and in my experience, that decision is often never reversed.
+
+The problem the product solves — too many scattered Telegram channels, no single place to find events for Russian- and Ukrainian-speaking Warsaw [22][28] — is genuine. The timing trigger is real: Meetup more than doubled its prices in 2024 with less than a month's notice, and organizers are leaving in documented anger [3][4]. The audience aggregation signal is there: a single Instagram account covering Warsaw events in Russian has 37,000 followers [28]. People will follow a single source when one exists.
+
+But none of that tells me whether the 50 or so organizers who run recurring events for this community [evidence §5] will pay €10–20 per month to make their lives easier. That is the question the entire business rests on. And it has not been asked.
+
+### My own numbers
+
+Two founders, both wearing multiple hats. Let me be direct about what they are already carrying.
+
+**Moderation.** An in-app chat across dozens of events and clubs is not a set-and-forget feature. Someone reads it. Someone acts on complaints. In my experience, a modestly active community chat requires two to four hours of attention per week — minimum. That is ongoing, forever, with no revenue attached to it yet.
+
+**Three languages.** Every change to the product — every button label, every error message, every email — now has to be done three times. Not triple the work, but maybe 40–50% more than a single-language product. That is a permanent tax on every future hour of development.
+
+**Chat and notification sync.** This is where the hidden technical debt lives. Building real-time chat that stays consistent across devices — where messages arrive in order, where you do not get the same notification three times, where nothing is lost when a user goes offline and comes back — is genuinely hard. I have first-hand experience with these problems (the field calls the underlying challenge "offline-first sync," and the bugs are subtle and nasty). The team appears to have shipped it, which is a real signal. But maintaining and extending it as user volume grows is a non-trivial cost.
+
+**Now they are planning native iOS and Android apps** (§5.9 roadmap, §10). This is where I would stop them. A native app for each platform roughly means: double the codebase to maintain, a separate release cycle, App Store and Play Store review delays, and — for two people already carrying chat moderation, three languages, and an unvalidated monetization thesis — probably six months of work before the first paying customer exists. The PWA they have already works on phones. There is no evidence yet that users are bouncing because it is "not a real app." Build native when users demand it loudly. Not before.
+
+Running a conservative estimate: at their current scope, each new feature costs roughly twice what it would in a focused single-language, no-chat product. The team is already at capacity.
+
+### My three recommendations
+
+**One: Run the organizer interview sprint before touching the roadmap.** Ten to fifteen Warsaw organizers who currently manage events through Telegram and Google Forms. Show them the live product. Do not pitch. Ask: "What does your current setup cost you in time each week?" Then ask: "If this fixed that, what would you pay per month?" No price hints. This is a DM list, not a research project — the channels are named and sized [§9]. Pass bar: at least five out of ten name €10 or more without being prompted. This takes two weeks and costs nothing. It either confirms the business or tells you to change direction before writing the payment infrastructure.
+
+**Two: Do not build native apps yet.** The PWA works. Native apps are a large engineering commitment — new build pipelines, app store submissions, separate codebases — that two people cannot absorb while also landing a first paying customer. Keep the PWA, add a "Install this app" prompt for mobile users, and revisit native only after you have ten paying organizers and evidence that "app store presence" is why you lost someone.
+
+**Three: Pick one monetization path and test it in four weeks, not four months.** Creator Pro (the organizer subscription at €10–20/month) is the right first target. There are comparably priced tools with documented paying users [1][9] and a clear value proposition: replace the Google Forms and Telegram admin load. Set up Stripe, put a "Pro" badge on one real organizer's club page, charge them, and see what happens. If they pay, you have a business. If they hesitate, you learn what would make them pay. Either answer is worth more than six more months of free.
+
+### What would change my mind
+
+**What moves me to GO:** Five of ten organizer interviews end with the person naming €10 per month or more, unprompted. That one data point would change my verdict from Pivot to Build. It confirms that the value proposition lands with the paying segment, that the admin-load hypothesis is real, and that the audience is not just happy to use a free tool forever.
+
+**What moves me to KILL:** Three months pass, the interviews happen, and fewer than three people name any number above zero — or multiple organizers say the real problem is attendance, not admin. That tells me the pain being solved is a convenience, not a cost. A free convenience does not become a paid one just because you add Stripe.

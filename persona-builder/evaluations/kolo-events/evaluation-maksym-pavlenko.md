@@ -50,3 +50,40 @@ PIVOT on one variable: monetization sequencing. The product is real, the distrib
 
 ## The one experiment I'd run next
 **Paid-ticket pilot with 3 organizers, Stripe Connect, 30 days.** Find three organizers running recurring paid or capacity-limited events (language clubs, sports groups, board game nights with a venue cost). Wire up Stripe Connect — the evidence pack confirms this avoids PSD2 licensing under the agent model [60] and the VAT story is clean at low volume [61][62]. Charge 5–10% commission, issue payouts. Define pass/fail: ≥1 organizer completes ≥3 paid-ticket transactions and reports the flow as less effort than their current Google Forms + bank-transfer workflow. Failure bar: zero completions, or all organizers revert to the old flow. This is squarely the payment-status lifecycle problem I know well — the interesting failure modes are not the happy path but the async payout states, the failed-payment recovery screen the attendee sees, and whether the organizer can diagnose a disputed transaction without calling support. Ship the simplest version of that lifecycle correctly and you have a real monetization datapoint. Overbuild it before getting one paying organizer and you've repeated pattern 2.
+
+## Part 2 — Standalone deep dive
+*(Written in plain language for a general audience.)*
+
+### How I'd think about this
+
+My day job is connecting products to payment providers and making sure money moves cleanly: charges, callbacks, refunds, payouts. So when I read that Kolo plans to add paid tickets, I stop caring about the features and start asking: how does the money actually flow, and what breaks?
+
+Here is how the simple, safe version works. Stripe Connect is a service where Stripe does the hard job — holding the money, processing the card, paying out the organizer. Kolo acts as the middleman, not the bank. This matters because it means Kolo does not need a banking license under the EU's payment rules [60]. The platform collects a fee on each ticket sale; VAT applies only to that fee, not to the full ticket price [61]. Poland's registration threshold is PLN 200,000 — roughly €45,000 — before VAT registration is even required [61]. At 5–10% commission on small community events, you'd need tens of thousands of euros in ticket volume to get there, so the tax story is clean for a very long time.
+
+The situations that actually hurt are not the ones founders usually think about. The happy path — someone buys a ticket, attends, done — almost never causes problems. The four situations I'd prepare for are: (1) the organizer cancels the event after people have paid — who refunds whom, and how fast? (2) the organizer wants their money before the event takes place — do you hold it until after, or pay out immediately? (3) a buyer calls their bank and claims the charge was unauthorized — a chargeback, meaning the bank pulls the money back automatically while it investigates; (4) the event sells out but the platform shows one seat left for thirty seconds because two people bought simultaneously. Each of these is a defined, well-understood problem with known solutions. But all four need an explicit answer in the system design before launch, not after the first complaint.
+
+The minimum viable payment feature is: organizer sets a ticket price and seat count; buyer pays by card; Stripe holds the money; organizer gets paid out after the event; Kolo keeps its percentage. That is it. You do not need a payout dashboard, detailed transaction history, QR-code scanning, or analytics on revenue by club type — not for the first paying organizer. The over-built version is everything on the roadmap at once. The simple version proves willingness-to-pay in four weeks.
+
+### My own numbers
+
+In my experience, back-of-envelope checks on community products almost always reveal the same problem: the paying organizer pool is tiny.
+
+The evidence puts the reachable organizer count at roughly 50 [Dim 5]. Let's say 10 of them run paid events — a generous assumption before anyone has tried. If a typical paid event sells 20 tickets at €10 each, that is €200 per event. Ten organizers running one paid event per month is €2,000 in total ticket volume. At 7.5% commission, Kolo earns €150 that month. Even if those organizers each run two events per month, you reach €300/month in commission revenue. That is not a business yet — it is a proof of concept.
+
+Where it gets interesting: if 20 organizers adopt ticketing and average two events per month at €15 per ticket with 30 attendees, monthly ticket volume reaches €18,000 and commission reaches roughly €1,350/month — about €16,000/year. Still small, but now you have a real monetization signal. The point is not to plan for that number; it is to understand how many paying events you need before the math works. The answer is: far more than the initial organizer pool contains [Dim 5].
+
+One more check: DAC7 reporting — the EU rule requiring platforms to report seller income to tax authorities — has a de minimis exemption below 30 transactions and €2,000 per organizer per year [63]. Most organizers in this pool will stay well under that threshold. No compliance burden for the first year.
+
+### My three recommendations
+
+**One: launch paid tickets before Creator Pro subscriptions.** Ticket commission proves willingness-to-pay with a single transaction. A subscription requires an organizer to believe the product is worth €10–20 every month before they have seen any return. Commission aligns incentives — Kolo earns only if the organizer succeeds. That is a much easier first conversation.
+
+**Two: decide the payout timing policy before you write a line of payment code.** Hold funds until after the event is the safest rule — it avoids the case where you pay out an organizer who then cancels and has already spent the money. Stripe Connect supports this natively. Write it into the organizer terms on day one. Changing it after you have paying organizers is painful.
+
+**Three: instrument every payment event from day one.** Every charge, every refund, every payout, every failed card — log it with the event ID, organizer ID, amount, and timestamp. Not for analytics. For support. When an organizer emails to say "someone paid but isn't showing up in my attendee list," you need to look up the payment state in under two minutes or you will spend hours on it. In my experience, the teams that skip observability at launch spend the next three months rebuilding it under pressure.
+
+### What would change my mind
+
+**What moves me to GO:** three organizers complete a paid-ticket flow without contacting support, at least one runs a second paid event on their own, and post-event payout lands without manual intervention. That sequence proves the payment lifecycle is stable enough to scale and that organizers find the tool easier than their current Google Forms plus bank-transfer workflow. If I see that in 30 days, I increase my confidence on the viability pillar from a 2 to a 4.
+
+**What moves me to KILL:** zero organizers attempt a paid event after a direct offer, or every organizer who tries reverts to the old flow citing friction. That tells me the problem is not the tool — it is that this audience has a strong enough free alternative (Telegram, cash at the door) that no fee model survives. If the free incumbent is that sticky, the entire monetization hypothesis needs to be replaced, not refined.

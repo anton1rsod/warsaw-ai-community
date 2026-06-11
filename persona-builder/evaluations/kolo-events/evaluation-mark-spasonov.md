@@ -49,3 +49,46 @@ PIVOT — one variable: charge one organizer this month. Everything else can wai
 
 ## The one experiment I'd run next
 **Organizer WTP cohort test.** Take the top 10 most active organizers on the platform today — ranked by events created and attendee count. Send each a personal DM (from the founder, not a notification) offering early access to Creator Pro at €10/mo in exchange for a 20-minute call. Pass bar: ≥4/10 agree to the call, ≥2/10 convert to a paid account within 14 days. Fail bar: <2 calls booked = the organizer pain narrative is not strong enough to generate even conversation-level pull, and the free-first hypothesis needs to be revisited before any further feature investment. Cost: zero. Timeline: two weeks. Output: a number, not a feeling.
+
+## Part 2 — Standalone deep dive
+*(Written in plain language for a general audience.)*
+
+### How I'd think about this
+
+I come at every business idea the same way: define what success looks like in a number, and tell me how you will prove it by a specific date. Part 1 of this evaluation already scored Kolo at 12/25 and said "pivot." I am not re-litigating that. What I want to do here is give the founders the practical tools to run the pivot — specifically, the numbers sheet they do not have, a real 90-day bar, and a time-allocation framework for a two-person team.
+
+My lens is sales operations and commercial systems. I have run capacity planning and cohort analysis for teams across eight markets. The discipline is the same whether you are managing 200 sales agents or 50 community organizers: you identify the five numbers that tell you weekly whether the machine is working, you set a pass/fail bar at 90 days, and you do not celebrate activity — only movement in those five numbers.
+
+One framing note before the numbers. In my experience, the biggest risk for a product like Kolo is not the technology — it is what I call the "free-to-paid conversion cliff." Platforms that promise "free first, monetize later" often find that their users built their habits around free, and any paywall breaks trust [56]. The organizer side is especially sensitive: if the first organizer who ever gets a payment request feels surprised or manipulated, word travels fast in a community this small.
+
+### My own numbers
+
+Here is the one-page number sheet I would build for these founders. Five weekly metrics, in plain language.
+
+**1. Active organizers** — how many organizers posted at least one event in the last 30 days. Target for week 12: 20. This is your supply side. Without supply, users have nothing to attend and never come back.
+
+**2. Event fill rate** — what percentage of events with a stated capacity actually reached 70%+ of that cap. Target for week 12: 40% of events filled. A low fill rate means supply is there but demand is thin, or the match between organizers and users is broken.
+
+**3. User return rate** — of users who attended one event, how many attended a second event within 30 days. Target for week 12: 30%. In my experience, the second event is the retention signal that matters most. First event is curiosity; second event is habit.
+
+**4. Organizer retention** — how many organizers who posted in month 1 are still posting in month 3. Target: 60%. If organizers churn fast, the supply side is a treadmill you can never get off.
+
+**5. WTP signal rate** — of organizers personally offered a paid Creator Pro trial at €10/month, what percentage say yes or ask to hear more. Target by week 8: 40% positive response rate. This is not paying customers yet — it is intent. Below 40% means the pain narrative is weaker than the concept assumes.
+
+Now the math on the ceiling. The inferred organizer pool is approximately 50 accounts [pack §5]. At Creator Pro €15/month that is €750/month maximum revenue if every organizer converts and none churns. That is not a business — it is a proof-of-concept budget. To reach €5,000/month in organizer subscription revenue, you need roughly 330 active paying organizers. The evidence pack does not show that pool exists in Warsaw today. So the user subscription (User Pro, €3–7/month) matters more than it looks in the concept. If 2% of a 50,000-person reachable audience [pack §5] converts to €5/month, that is €5,000/month — but 2% conversion on a consumer social app requires genuine habit, not just registration. In my experience that rate takes 12–18 months of retention work to reach, not 90 days.
+
+Ticket commission (5–10% on paid events) is the most realistic near-term revenue line, because it charges only on value delivered and does not require a separate payment decision from the organizer. But it requires the payment infrastructure to be live — which today it is not [concept §7.1].
+
+### My three recommendations
+
+**One. Build the number sheet this week, track it weekly.** Not monthly, not "we'll look at it before the next investor conversation." Weekly. Print it on one sheet. Every Monday, five numbers. If you cannot fill in all five because you do not have the data yet, that is the first thing to fix — not a new feature.
+
+**Two. Set a binary 90-day bar, not a wish.** In my work I distinguish between a target ("we hope to reach X") and an acceptance criterion ("if we do not hit X by date Y, we change direction"). For Kolo, the 90-day bar I would set is: 20 active organizers + 3 paying Creator Pro accounts + user return rate above 25%. All three, not two out of three. If you miss any one of them, the free-first hypothesis is not holding and you need to revisit the model. Write this down, sign it, and do not move the goalposts.
+
+**Three. Split the two founders' time explicitly.** A two-person team building and selling simultaneously will default to building, because building feels like progress and selling feels like rejection. In my experience the right split at this stage is 60% selling / 40% building. "Selling" here means: DM organizers personally, run the WTP cohort test from Part 1, attend the events that are already on the platform, sit next to real organizers and watch where they lose time. Ivan (product/strategy) should own 100% of the selling time. Marat (technical) should build only what the selling conversations say is blocking payment. Every sprint that ships a feature no organizer asked for in the last two weeks is budget burned on a hypothesis, not a fact.
+
+### What would change my mind
+
+**What moves me to GO.** Three of five organizers personally DM'd by the founder agree to a 20-minute call within one week, and two of those three pay €10 or more within 30 days — even symbolically, even as a pre-order. That single data point collapses the free-to-paid uncertainty. It does not have to be a polished payment flow; a manual bank transfer counts. Two paying organizers in 30 days means the pain is real and the WTP is real, and I would revise viability from 1 to 3 in my scorecard immediately.
+
+**What moves me to KILL.** The organizer WTP test runs for six weeks — the founders DM every active organizer on the platform — and fewer than two express any interest in paying anything. Zero payment intent after direct personal outreach in a pool of real, active users is not a distribution problem or a product problem. It means the value proposition does not create enough pain relief to justify a charge, and no amount of feature-building changes that. At that point I would tell the founders: the user side might still have legs as an acquisition tool for a different commercial model (sponsorships, venue partnerships, B2B), but the organizer SaaS thesis is dead and should be buried cleanly rather than kept on life support while the team burns time.

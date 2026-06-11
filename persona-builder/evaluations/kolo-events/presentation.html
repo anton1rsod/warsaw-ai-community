@@ -113,6 +113,28 @@
     padding:18px 16px;text-align:center}
   .stat .num{font-size:26px;font-weight:700;color:var(--amber);letter-spacing:-.01em}
   .stat .lab{font-size:12.5px;color:var(--dust);margin-top:4px;line-height:1.35}
+  /* short version */
+  .short{background:var(--surface);border:1px solid var(--amber);border-left-width:6px;
+    border-radius:14px;padding:24px 30px}
+  .short ol{margin-left:18px}
+  .short li{padding:7px 0;font-size:16px;color:var(--ink-soft)}
+  .short li b{color:var(--ink)}
+  /* deep dives */
+  .deep{display:grid;grid-template-columns:250px 1fr;gap:22px;background:var(--surface);
+    border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:18px}
+  @media(max-width:820px){.deep{grid-template-columns:1fr}}
+  .deep .who h3{font-size:18px}
+  .deep .who .lens{font-size:12.5px;color:var(--dust);text-transform:uppercase;
+    letter-spacing:.08em;margin:6px 0 10px}
+  .deep .flip{font-size:13px;background:var(--cream-deep);border-radius:8px;
+    padding:10px 12px;margin-top:12px;line-height:1.5}
+  .deep .flip b.go{color:var(--go)} .deep .flip b.kill{color:var(--kill)}
+  .deep ul{list-style:none}
+  .deep li{padding:7px 0 7px 24px;position:relative;font-size:14.5px;color:var(--ink-soft);
+    border-bottom:1px dashed var(--line)}
+  .deep li:last-child{border-bottom:none}
+  .deep li::before{content:"—";position:absolute;left:0;color:var(--amber);font-weight:700}
+  .deep li b{color:var(--ink)}
   /* footer */
   footer{margin-top:60px;border-top:1px solid var(--line);padding:30px 0 48px;
     color:var(--dust);font-size:13.5px}
@@ -134,51 +156,77 @@
   <div class="hero">
     <div class="kicker mono">Idea under evaluation — kolo.events (Ivan + Marat)</div>
     <h1>Kolo Events: six personas, one evidence base, <em>seven PIVOT verdicts</em>.</h1>
-    <p class="sub">A free events-and-clubs platform for Warsaw's RU/UA/EN communities, run through
-    Maksym's <span class="mono">validate-idea</span> methodology (45+ linked sources), then judged
-    blind by six community personas — each in their own voice, each with their own scorecard.</p>
+    <p class="sub">A free events-and-clubs platform for Warsaw's Russian-, Ukrainian- and
+    English-speaking communities — researched with Maksym's <span class="mono">validate-idea</span>
+    method (45+ linked sources), then evaluated independently by six community member personas, each
+    in their own voice and with their own scores. None of them saw the overall result, or each other.</p>
     <div class="disclose">
-      <strong>Label: AI simulation.</strong> All six evaluations are AI-ghostwritten drafts generated
-      from members' self-authored persona files. <strong>No member has reviewed or endorsed their
-      draft</strong> (<span class="mono">signed_by_member: false</span>). Verdicts were formed blind —
-      no draft saw the baseline verdict or the other drafts. Desk research only: evidence level 3 of 7.
+      <strong>Please read this first: these are AI simulations.</strong> The six evaluations were
+      written by AI from each member's self-authored persona file. <strong>No member has reviewed or
+      endorsed their draft yet.</strong> Each was written independently — without seeing the overall
+      result or the other drafts. And all of it is desk research: the next level of certainty only
+      comes from talking to real organizers.
     </div>
   </div>
 
   <section>
-    <h2>Method</h2>
-    <div class="pipe">
-      <div class="step">Falsifiable brief + triage <b>8/15</b></div><div class="arrow">→</div>
-      <div class="step">9-dimension web research · <b>5 agents</b> · 45+ sources</div><div class="arrow">→</div>
-      <div class="step">Red-team ×5</div><div class="arrow">→</div>
-      <div class="step"><b class="mono">scorecard.py</b> baseline</div><div class="arrow">→</div>
-      <div class="step"><b>6 blind persona drafts</b> + per-persona scorecards</div><div class="arrow">→</div>
-      <div class="step">Synthesis</div>
+    <h2>The short version</h2>
+    <div class="short">
+      <ol>
+        <li><b>Everyone reached the same verdict: don't stop — change one thing.</b> The research
+        scored the idea 13 out of 25; the six member evaluations, made independently, scored 12–14.
+        That band means: good idea, wrong money plan.</li>
+        <li><b>The one thing to change: start asking organizers for money now.</b> A small paid-tickets
+        test this month, instead of "free first, earn someday".</li>
+        <li><b>The need is real.</b> Around 250,000 foreigners live in Warsaw (about 160,000 of them
+        Ukrainians), and finding events genuinely is scattered across 30+ Telegram channels. No
+        product serves this audience today.</li>
+        <li><b>But the money plan, as written, is too small.</b> Only about 50 organizers could
+        realistically pay — even if every one of them did, that's roughly €750 a month.</li>
+        <li><b>Kolo's superpower is reach.</b> The first 100 users are one cross-post away; the first
+        20 organizers are a short list of direct messages.</li>
+        <li><b>Two homework items for the founders:</b> sit down with 10 organizers — nobody has yet
+        heard one say the admin work actually hurts; and remove the "Locals.md closed down" line from
+        the pitch — our check shows it isn't true.</li>
+      </ol>
     </div>
   </section>
 
   <section>
-    <h2>Baseline verdict — deterministic gate</h2>
+    <h2>How this was made</h2>
+    <div class="pipe">
+      <div class="step">Sharpen the idea into a <b>testable claim</b></div><div class="arrow">→</div>
+      <div class="step">Web research · <b>45+ sources</b>, 9 angles</div><div class="arrow">→</div>
+      <div class="step">Five tough questions</div><div class="arrow">→</div>
+      <div class="step">Independent scoring (<b class="mono">scorecard.py</b>)</div><div class="arrow">→</div>
+      <div class="step"><b>6 member evaluations</b>, made without seeing the result</div><div class="arrow">→</div>
+      <div class="step">Summary</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What the research says</h2>
     <div class="verdict-grid">
       <div class="verdict-card">
         <div class="v">PIVOT</div>
         <div class="score">13 / 25 · red-team: pivot</div>
-        <div class="note">Change exactly one variable: <b>the price model</b> — flip
-        free-first-everything to a ticketing fee on paid events. Gates: GO ≥ 20 · PIVOT 15–19
-        (or red-team pivot) · KILL &lt; 15.</div>
+        <div class="note">"Pivot" means: don't stop — change one thing and test again. The one
+        thing here is <b>the money plan</b>: start with a small fee on paid event tickets instead of
+        "everything free, earn later". (Scale: 20+ = go build · 15–19 = change one thing · under
+        15 = stop.)</div>
       </div>
       <div class="pillars">
-        <div class="pillar"><div class="name">Problem</div><div class="bar"><i style="width:60%"></i></div><div class="val mono">3 / 5 · pain real, unquoted</div></div>
-        <div class="pillar"><div class="name">Market</div><div class="bar"><i style="width:40%"></i></div><div class="val mono">2 / 5 · SOM &lt; $50k</div></div>
-        <div class="pillar"><div class="name">Demand</div><div class="bar"><i style="width:60%"></i></div><div class="val mono">3 / 5 · proxy signals</div></div>
-        <div class="pillar"><div class="name">Solution</div><div class="bar"><i style="width:60%"></i></div><div class="val mono">3 / 5 · wedge unproven</div></div>
-        <div class="pillar"><div class="name">Viability</div><div class="bar"><i style="width:40%"></i></div><div class="val mono">2 / 5 · no invoice path</div></div>
+        <div class="pillar"><div class="name">Real pain?</div><div class="bar"><i style="width:60%"></i></div><div class="val mono">3 / 5 · real, but unquoted</div></div>
+        <div class="pillar"><div class="name">Big enough?</div><div class="bar"><i style="width:40%"></i></div><div class="val mono">2 / 5 · very small as planned</div></div>
+        <div class="pillar"><div class="name">People looking?</div><div class="bar"><i style="width:60%"></i></div><div class="val mono">3 / 5 · indirect signs only</div></div>
+        <div class="pillar"><div class="name">Stands out?</div><div class="bar"><i style="width:60%"></i></div><div class="val mono">3 / 5 · unique niche, unproven</div></div>
+        <div class="pillar"><div class="name">Makes money?</div><div class="bar"><i style="width:40%"></i></div><div class="val mono">2 / 5 · no way to earn yet</div></div>
       </div>
     </div>
   </section>
 
   <section>
-    <h2>The panel — six voices, formed blind</h2>
+    <h2>The panel — six voices, judged independently</h2>
     <div class="cards">
       <div class="card">
         <div class="top"><h3>Anton Safronov</h3><span class="chip">PIVOT · 12/25</span></div>
@@ -226,7 +274,141 @@
   </section>
 
   <section>
-    <h2>Score matrix — judgment varies, facts don't</h2>
+    <h2>Standing alone — what each member would tell the founders</h2>
+
+    <div class="deep">
+      <div class="who">
+        <h3>Anton Safronov</h3>
+        <div class="lens">Built a Warsaw community platform himself</div>
+        <span class="chip">PIVOT · 12/25</span>
+        <div class="flip"><b class="go">Would say GO</b> when a first ticket fee clears and the
+        organizer asks for the next event. <b class="kill">Would say STOP</b> if, after 90 days of
+        personal outreach, fewer than five organizers stay active on their own.</div>
+      </div>
+      <ul>
+        <li><b>The hardest part is not the software — it's the first ten events.</b> An empty calendar
+        looks dead, so newcomers leave, so it stays dead. Breaking that loop is hustle, not code: DM
+        ten organizers personally, set up their clubs for them, attend their events, write the recaps.</li>
+        <li><b>His math:</b> subscriptions from ~50 organizers top out at €100–400 a month. Ticket
+        fees are the real path: five active organizers running two paid events a week ≈ €1,200–2,400
+        a month — real money, testable in week one.</li>
+        <li><b>His move:</b> treat the two biggest community channels as partners, not ad space — and
+        make Ukrainian House the first call, not the tenth. One co-branded event buys years of trust.</li>
+      </ul>
+    </div>
+
+    <div class="deep">
+      <div class="who">
+        <h3>Дмитрий Блюс</h3>
+        <div class="lens">Tech lead · small founding teams</div>
+        <span class="chip">PIVOT · 13/25</span>
+        <div class="flip"><b class="go">Would say GO</b> if 5 of 10 organizers name €10+/month
+        unprompted. <b class="kill">Would say STOP</b> if interviews show the real problem is
+        attendance, not admin work.</div>
+      </div>
+      <ul>
+        <li><b>Keep the engineering bill small until the idea earns it.</b> Months of features were
+        built before the hardest question — will anyone pay? — was asked even once.</li>
+        <li><b>His math:</b> three languages add a permanent ~40–50% tax on every future change; chat
+        moderation costs 2–4 hours a week forever; the planned iPhone/Android apps would eat ~6 months
+        of two people's time before the first paying customer exists.</li>
+        <li><b>His move:</b> stop the native apps. The web app already works on phones. Spend two weeks
+        interviewing organizers instead — it costs nothing and answers the only question that matters.</li>
+      </ul>
+    </div>
+
+    <div class="deep">
+      <div class="who">
+        <h3>Heorhii K.</h3>
+        <div class="lens">Builds fast, multi-language platforms</div>
+        <span class="chip">PIVOT · 13/25</span>
+        <div class="flip"><b class="go">Would say GO</b> if 3 of 5 organizers pay AND public pages
+        load in under two seconds on a phone. <b class="kill">Would say STOP</b> at zero of five — that
+        means free Telegram has already won.</div>
+      </div>
+      <ul>
+        <li><b>The open feed is Kolo's best free marketing — most teams never realize this.</b>
+        Because events can be browsed without an account, Google can find and rank every event page.
+        Someone searches "Ukrainian language exchange Warsaw" and lands on Kolo for free.</li>
+        <li><b>His math:</b> one good announcement post ≈ 2,500 visitors; if pages load fast,
+        15–20% come back — that's 375–500 returning visitors from a single post, with zero ad budget.
+        But slow pages cut that number by a third to a half.</li>
+        <li><b>His move:</b> make the public pages fast first; lead with one language and let the other
+        two follow a week behind; and charge five organizers €10/month now — failure costs nothing
+        and teaches everything.</li>
+      </ul>
+    </div>
+
+    <div class="deep">
+      <div class="who">
+        <h3>Maksym Pavlenko</h3>
+        <div class="lens">Payments engineer · wrote the research method</div>
+        <span class="chip">PIVOT · 14/25</span>
+        <div class="flip"><b class="go">Would say GO</b> when three organizers complete paid events
+        without a single support call and one comes back on his own. <b class="kill">Would say STOP</b>
+        if everyone who tries goes back to cash-at-the-door.</div>
+      </div>
+      <ul>
+        <li><b>The safe way to take money is simpler than it sounds.</b> Let Stripe hold the money —
+        then Kolo is a middleman, not a bank: no banking license needed, and tax applies only to
+        Kolo's small fee, not the whole ticket.</li>
+        <li><b>His math:</b> a realistic first month is ~€150–300 in fees — a proof, not a business.
+        The good case (20 organizers, two paid events a month each) reaches ~€1,350 a month. Know that
+        number before planning around it.</li>
+        <li><b>His move:</b> launch paid tickets before subscriptions (Kolo earns only when the
+        organizer earns); decide the refund and payout rules before launch, not after the first
+        complaint; and log every payment from day one.</li>
+      </ul>
+    </div>
+
+    <div class="deep">
+      <div class="who">
+        <h3>Mark Spasonov</h3>
+        <div class="lens">Commercial operator · everything in numbers</div>
+        <span class="chip">PIVOT · 12/25</span>
+        <div class="flip"><b class="go">Would say GO</b> when two organizers pay anything within 30
+        days — even by bank transfer. <b class="kill">Would say STOP</b> if six weeks of personal
+        outreach produce fewer than two people interested in paying.</div>
+      </div>
+      <ul>
+        <li><b>The founders are missing a one-page number sheet.</b> Five numbers, checked every
+        Monday: active organizers · events that filled up · people who came back for a second event ·
+        organizers still posting after three months · organizers who said yes to paying.</li>
+        <li><b>His math:</b> the 90-day bar should be binary — 20 active organizers + 3 paying + a
+        quarter of attendees coming back. All three, or change course. Written down, signed, goalposts
+        never moved.</li>
+        <li><b>His move:</b> split the founders' time 60% selling / 40% building. Selling means
+        messaging organizers and sitting next to them as they work — building only what those
+        conversations say is blocking a payment.</li>
+      </ul>
+    </div>
+
+    <div class="deep">
+      <div class="who">
+        <h3>Nazar K.</h3>
+        <div class="lens">Growth operator · $1.5M of ad spend behind him</div>
+        <span class="chip">PIVOT · 12/25</span>
+        <div class="flip"><b class="go">Would say GO</b> at three cards on file within 14 days plus
+        15%+ of new users returning a week later. <b class="kill">Would say STOP</b> at zero payments
+        and fewer than 8% returning.</div>
+      </div>
+      <ul>
+        <li><b>A literal 30-day test script:</b> first, tag every link so each signup's source is
+        known; then post to the three biggest channels one by one; then DM 20 organizers with a
+        one-sentence offer; then count exactly three numbers — signups by source, who returned after
+        7 days, who paid.</li>
+        <li><b>His math:</b> one cross-post realistically brings ~300 signups; typically 10–25% return
+        a week later — 30 to 75 weekly regulars from a single post. That's not failure, that's data.
+        Five paying organizers ≈ €75/month — a signal, not a business.</li>
+        <li><b>His move:</b> don't touch the 37,000-follower channel until the smaller tests show
+        people come back. A big audience's attention burns exactly once — spend it when the product
+        is ready to hold it.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>All scores side by side</h2>
     <table>
       <tr><th>Evaluator</th><th>Problem</th><th>Market</th><th>Demand</th><th>Solution</th><th>Viability</th><th>Total</th><th>Verdict</th></tr>
       <tr><td><span class="mono">scorecard.py</span> baseline</td><td>3</td><td>2</td><td>3</td><td>3</td><td>2</td><td class="total">13/25</td><td>PIVOT</td></tr>
@@ -243,7 +425,7 @@
     <h2>Findings</h2>
     <div class="cols">
       <div class="panelbox">
-        <h3>Unanimous (6/6)</h3>
+        <h3>Where all six agree</h3>
         <ul>
           <li><b>The real incumbent is free Telegram, not Meetup.</b> The wedge vs. paid tools is real; the wedge vs. a free habit is UX only.</li>
           <li><b>Pain is documented, but never quoted.</b> 33 fragmented channels, 37k followers on a diaspora events feed — yet zero verbatim organizer-pain quotes survived honest search.</li>
@@ -269,28 +451,30 @@
   </section>
 
   <section>
-    <h2>The experiment — the panel converged on one move: charge organizers now</h2>
+    <h2>The plan — all six point to the same move: ask organizers to pay, now</h2>
     <div class="steps">
       <div class="stepcard">
         <div class="n mono">STEP 1 · 7 DAYS · €0</div>
-        <h3>WTP DM test</h3>
-        <p>DM 10–20 named Warsaw organizers. One sentence: "Kolo replaces Telegram signup chaos —
-        €15/mo, cancel anytime." Invoice today, not a waitlist.</p>
-        <div class="pass mono"><b>PASS:</b> ≥3 paid commitments (card on file)</div>
+        <h3>Ask 20 organizers to pay</h3>
+        <p>A direct message to 10–20 named Warsaw organizers. One sentence: "Kolo replaces your
+        Telegram signup chaos — €15 a month, cancel anytime." A real payment ask, not a waitlist.</p>
+        <div class="pass mono"><b>PASS:</b> at least 3 say yes with a card on file</div>
       </div>
       <div class="stepcard">
         <div class="n mono">STEP 2 · 30 DAYS</div>
-        <h3>Paid-ticket pilot</h3>
-        <p>2–3 organizers already selling tickets route one event each through Kolo on Stripe Connect
-        at 5–10% commission. Agent model — no PSD2 license needed; VAT on commission only.</p>
-        <div class="pass mono"><b>PASS:</b> ≥3 transactions cleared + organizer asks to repeat</div>
+        <h3>Run real paid events</h3>
+        <p>2–3 organizers who already sell tickets run one event each through Kolo, with a 5–10% fee.
+        Stripe holds the money, so no banking license is needed and tax applies only to Kolo's small
+        fee.</p>
+        <div class="pass mono"><b>PASS:</b> 3+ tickets sold and paid out + organizer asks to repeat</div>
       </div>
       <div class="stepcard">
         <div class="n mono">IN PARALLEL</div>
-        <h3>Mom-Test interviews</h3>
-        <p>10–15 organizer interviews to capture the missing verbatim pain. Past behavior and current
-        spend only — no "would you use it".</p>
-        <div class="pass mono"><b>PASS:</b> ≥7/10 name signup admin in top-3 pains unprompted</div>
+        <h3>Honest interviews</h3>
+        <p>Sit down with 10–15 organizers. Ask only about what they actually do and spend today —
+        never "would you use this?". This fills the biggest gap in the research: nobody has yet heard
+        the pain first-hand.</p>
+        <div class="pass mono"><b>PASS:</b> 7 of 10 name signup admin among their top 3 pains, unprompted</div>
       </div>
     </div>
   </section>
@@ -313,6 +497,10 @@
     interviews, schema 1.0 · drafts generated 2026-06-11 by claude-sonnet-4-6 / claude-fable-5 ·
     one base model wrote all six drafts — tonal convergence caveat applies · this panel generates
     hypotheses; only field work (interviews → invoices) validates.</div>
+    <div style="margin-top:10px">The full set — the complete research report, six full evaluations
+    (each with a standalone deep dive), and the panel summary — lives in the community repository:
+    <span class="mono">persona-builder/ideas/kolo-events/</span> and
+    <span class="mono">persona-builder/evaluations/kolo-events/</span>.</div>
     <div class="tag">Subploters<span>*</span> — Every venture is a subplot.</div>
   </footer>
 
