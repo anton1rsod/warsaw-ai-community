@@ -1,0 +1,46 @@
+{
+  "idea": "Kolo Events — events/clubs discovery + one-click signup + social layer for RU/UA/EN-speaking residents of Warsaw",
+  "red_team": "pivot",
+  "pillars": {
+    "problem": {
+      "score": 3,
+      "evidence": [
+        "https://telegid.me/catalog/polsha",
+        "https://polandinsight.com/ukrainians-in-poland-a-growing-divide-between-economic-role-and-social-integration-94698/",
+        "https://www.rescue.org/eu/press-release/new-research-reveals-ukrainian-adolescents-poland-battle-language-barriers-social"
+      ]
+    },
+    "market": {
+      "score": 2,
+      "evidence": [
+        "https://wbj.pl/warsaws-population-exceeds-estimates/post/143922",
+        "https://notesfrompoland.com/2026/04/26/two-million-foreigners-now-legally-resident-in-poland-making-up-5-of-the-population/",
+        "https://mostmedia.pl/nowosci/warszawa-przyciaga-bialorusinow-juz-druga-co-do-wielkosci-grupa-cudzoziemcow/"
+      ]
+    },
+    "demand": {
+      "score": 3,
+      "evidence": [
+        "https://techfundingnews.com/startup-in-spotlight-joiner-snaps-e500k-to-expand-its-friendship-first-social-platform-beyond-the-baltics/",
+        "https://www.instagram.com/warszawa_diaspora/",
+        "https://www.futureparty.com/p/irl-social-apps-partiful-timeleft"
+      ]
+    },
+    "solution": {
+      "score": 3,
+      "evidence": [
+        "https://www.meetup.com/warsaw-russian-language-meetup-group/",
+        "https://news.ycombinator.com/item?id=40854275",
+        "https://andypiper.co.uk/2024/10/18/meetup-com-is-so-over/"
+      ]
+    },
+    "viability": {
+      "score": 2,
+      "evidence": [
+        "https://luma.com/pricing",
+        "https://www.heylo.com/pricing",
+        "https://internations.pissedconsumer.com/review.html"
+      ]
+    }
+  }
+}

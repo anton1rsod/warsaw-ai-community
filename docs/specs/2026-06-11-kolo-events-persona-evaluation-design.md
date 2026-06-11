@@ -21,6 +21,7 @@
 | D5 | Execution | Two-stage pipeline with subagent fan-out |
 | D6 | Draft disclosure | Share full package as clearly-labeled AI simulation (members have NOT signed) |
 | D7 | Standards pass | Design validated against LLM-judge / synthetic-persona / AI-labeling standards; deltas in §5 |
+| D8 | Per-persona score (Anton, mid-run) | Each persona re-scores the 5 validate-idea pillars (1–5, evidence-cited, verdict-blind) + own red-team designation; orchestrator runs **each persona's scorecard through `scorecard.py`** — same deterministic gate, six judgments. Plus a domain-fit disclosure line (expert/practitioner/familiar/outside) per draft. |
 
 ## 3. Pipeline
 
@@ -54,8 +55,13 @@ signed_by_member: false
 ## What makes me bullish here
 ## What makes me skeptical here
 ## Failure patterns I recognize    ← only patterns from their file that genuinely map
-## My verdict                      ← own GO / PIVOT / KILL from evidence — formed BLIND to the script verdict
+## My scorecard                    ← D8: 5 pillars 1–5, each row cites [n] or persona experience;
+                                      own red-team designation (survived/pivot/kill); formed BLIND.
+                                      Orchestrator computes the verdict via scorecard.py and appends it.
+## My verdict                      ← own GO / PIVOT / KILL stance in-voice (script-computed line appended by orchestrator)
 ## The one experiment I'd run next
+
+Domain-fit line under the header: "Domain fit: <expert|practitioner|familiar|outside> — <one clause why>".
 ```
 
 Sections ~50–150 words. Citations `[n]` map to the validation report's numbered sources.
