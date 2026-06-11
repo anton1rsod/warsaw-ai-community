@@ -1,6 +1,4 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { isAdmin } from "@/lib/content-snapshot";
+import { requireAdmin } from "@/lib/require-admin";
 import { getDefaults } from "@/lib/community-defaults";
 import { s } from "@/lib/i18n/strings";
 import { EventForm } from "@/app/components/EventForm";
@@ -10,9 +8,7 @@ import { MonoLabel } from "@/app/components/MonoLabel";
 export const dynamic = "force-dynamic";
 
 export default async function AdminEventsNewPage(): Promise<React.JSX.Element> {
-  const session = await auth();
-  if (!session?.githubHandle) redirect("/login");
-  if (!isAdmin(session.githubHandle)) redirect("/home");
+  const session = await requireAdmin("/admin/events/new");
 
   const { events: eventDefaults } = getDefaults();
 
@@ -31,7 +27,7 @@ export default async function AdminEventsNewPage(): Promise<React.JSX.Element> {
           startTime: eventDefaults.defaultStartTime,
           durationMinutes: eventDefaults.defaultDurationMinutes,
           location: eventDefaults.defaultLocation,
-          host: session.githubHandle,
+          host: session.githubHandle ?? "",
           today: new Date().toISOString().slice(0, 10),
         }}
       />

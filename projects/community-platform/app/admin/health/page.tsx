@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createAppAuth } from "@octokit/auth-app";
-import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
-import { isAdmin, listMembers } from "@/lib/content-snapshot";
+import { listMembers } from "@/lib/content-snapshot";
+import { requireAdmin } from "@/lib/require-admin";
 import { weekFromDate } from "@/lib/week";
 import { readWeekStatuses } from "@/lib/status-reader";
 import { computeHealthMetric, type HealthMetric } from "@/lib/health-metric";
@@ -31,9 +30,7 @@ interface TrendRow {
 }
 
 export default async function AdminHealthPage(): Promise<React.JSX.Element> {
-  const session = await auth();
-  if (!session?.githubHandle) redirect("/login");
-  if (!isAdmin(session.githubHandle)) redirect("/home");
+  await requireAdmin("/admin/health");
 
   const token = await getInstallationToken();
   const roster = listMembers();

@@ -41,10 +41,22 @@ function normalize(handle: string): string {
 }
 
 // Set-backed for O(1) lookups (auth path; called per protected request).
-const adminSet = new Set<string>(snapshot.governance.admins.map(normalize));
-const cmSet = new Set<string>(
-  snapshot.governance.communityManagers.map(normalize),
-);
+//
+// H163 fail-safe: malformed/empty/missing governance file ⇒ deny-all.
+// Array.isArray guard ensures a missing or non-array admins field
+// never defaults to a truthy lookup result. isAdmin returns false when
+// the allowlist is empty — no other code path can grant access.
+const adminsRaw: readonly string[] = Array.isArray(snapshot.governance.admins)
+  ? snapshot.governance.admins
+  : [];
+const cmsRaw: readonly string[] = Array.isArray(
+  snapshot.governance.communityManagers,
+)
+  ? snapshot.governance.communityManagers
+  : [];
+
+const adminSet = new Set<string>(adminsRaw.map(normalize));
+const cmSet = new Set<string>(cmsRaw.map(normalize));
 
 export function isAdmin(handle: string): boolean {
   if (!handle) return false;

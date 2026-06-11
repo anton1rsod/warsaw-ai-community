@@ -23,6 +23,7 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/content-snapshot", () => ({
   findMemberByHandle: vi.fn(),
+  isAdmin: vi.fn().mockReturnValue(false),
 }));
 
 const { auth } = await import("@/lib/auth");
