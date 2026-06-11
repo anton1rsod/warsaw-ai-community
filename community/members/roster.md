@@ -21,6 +21,7 @@ Opt-in public roster. Members listed here have consented to public visibility in
 | Name | GitHub | Telegram | Link | Focus |
 |---|---|---|---|---|
 | Mark Spasonov | @markspas |  | https://www.linkedin.com/in/markspas/ | RevOps / AI-augmented sales ops |
+| Heorhii Kuzmenko | @archimed3s | @Archimadness |  |  |
 
 ## Notes
 

@@ -19,6 +19,7 @@ Open a PR with a new row. Cells are case-insensitive. The notes column is option
 | Git email | GitHub handle | Notes |
 |---|---|---|
 | anton@rsod.solutions | anton1rsod | Founder; primary git author email |
+| h30rhii@gmail.com | archimed3s |  |
 
 ## Format rules
 
