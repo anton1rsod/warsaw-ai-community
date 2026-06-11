@@ -79,19 +79,13 @@ export const strings = {
   "members.detail.contributions": "Contributions",
   "members.detail.contributionsNote": "Derived from git history. Bot commits excluded.",
   "members.detail.editProfile": "Edit profile →",
-  "members.detail.editYourProfile": "Edit your profile →",
-  "members.detail.profileSection": "Profile",
-  "members.detail.eventsSection": "// events",
+  // (v0.12 reviewer triage: the PersonaPanel-era keys — editYourProfile,
+  // profileSection, eventsSection, personaLanguages/Industries/Roles/
+  // Stages/Niche, noProfileFmt, noProfilePathFmt — were deleted with the
+  // component; the dossier renders sections via the ledger components.)
   "members.detail.personaSection": "Persona",
-  "members.detail.personaLanguages": "Languages",
-  "members.detail.personaIndustries": "Industries",
-  "members.detail.personaRoles": "Functional roles",
-  "members.detail.personaStages": "Company stages",
-  "members.detail.personaNiche": "Niche expertise",
   "members.detail.dataControls": "Data controls",
   "members.detail.noPersonaFmt": "No persona yet for {slug}. See the persona-builder process.",
-  "members.detail.noProfileFmt": "{name} hasn't filled out a profile yet. Members can edit {path} directly via git.",
-  "members.detail.noProfilePathFmt": "community/members/{slug}.md",
   "members.detail.expertiseSection": "Expertise",
   "members.detail.expertRow": "Expert",
   "members.detail.practitionerRow": "Practitioner",

@@ -199,6 +199,9 @@ describe("proxy", () => {
       "/members/anton-safronov",
       "/members/anton-safronov/opengraph-image/deeper",
       "/members/opengraph-image",
+      // %-encoded slug segments stay gated: nextUrl.pathname preserves
+      // percent-encoding, so without the [^/%] exclusion this matched.
+      "/members/x%2Fopengraph-image/opengraph-image",
     ]) {
       it(`keeps ${path} auth-gated (ADR-0012/0014: /members is NOT a discovery surface)`, async () => {
         const { default: proxy } = await import("@/proxy");

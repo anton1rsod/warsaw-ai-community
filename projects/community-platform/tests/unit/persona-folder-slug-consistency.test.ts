@@ -4,7 +4,8 @@
 // (persona slug↔folder mismatch). The bug: persona folders were named
 // `<firstname>-<lastinitial>` (e.g. `mark-s`), but roster-driven slugs
 // produce `<firstname>-<lastname>` (e.g. `mark-spasonov`) via slugify().
-// Result: PersonaPanel never rendered for affected members because
+// Result: the member page's persona section (v0.12: the dossier; pre-v0.12:
+// PersonaPanel) never rendered for affected members because
 // readMemberPersona(slug) couldn't locate the folder.
 //
 // This test asserts that for every persona folder, its name equals

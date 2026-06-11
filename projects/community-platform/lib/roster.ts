@@ -37,6 +37,26 @@ function normalizeOptionalCell(raw: string): string | null {
 }
 
 /**
+ * v0.12 reviewer triage: the Link cell renders as a raw `href` on the
+ * member page, and React does not strip `javascript:`/`data:` schemes
+ * from href. Roster edits bypass the onboarding RedeemFormSchema URL
+ * check, so the parse-time guard is the defense-in-depth: only http(s)
+ * URLs survive; anything else degrades to null (link simply not shown).
+ */
+function normalizeLinkCell(raw: string): string | null {
+  const value = normalizeOptionalCell(raw);
+  if (value === null) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:"
+      ? value
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Split a Markdown table row into individual cell values.
  * Strips the outer pipes, splits on `|`, and trims each cell.
  * Empty cells are preserved (NOT filtered) so column indices remain stable.
@@ -120,7 +140,7 @@ export function parseRosterContent(content: string): RosterMember[] {
         ? null
         : normalizeOptionalCell(cells[telegramColIndex] ?? "");
     const link =
-      linkColIndex === -1 ? null : normalizeOptionalCell(cells[linkColIndex] ?? "");
+      linkColIndex === -1 ? null : normalizeLinkCell(cells[linkColIndex] ?? "");
     const focus =
       focusColIndex === -1 ? null : normalizeOptionalCell(cells[focusColIndex] ?? "");
 

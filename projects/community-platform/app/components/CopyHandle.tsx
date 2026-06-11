@@ -16,7 +16,12 @@ export function CopyHandle({ handle }: { handle: string }): React.JSX.Element {
   function onCopy(): void {
     navigator.clipboard
       .writeText(`@${handle}`)
-      .then(() => setCopied(true))
+      .then(() => {
+        // 2s reset per the InviteUrlDisplay precedent (reviewer triage):
+        // a permanent "copied" label blocks re-copy feedback.
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
       .catch(() => setCopied(false));
   }
 

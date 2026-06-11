@@ -72,4 +72,23 @@ describe("v0.12 roster columns — Telegram / Link / Focus", () => {
     expect(m?.link).toBeNull();
     expect(m?.focus).toBeNull();
   });
+
+  // Reviewer triage: member.link renders as a raw href on the member page
+  // (React does not strip javascript:/data: schemes from href) — only
+  // http(s) URLs survive parse; everything else degrades to null.
+  it("link cell accepts only http(s) URLs — scheme guard", () => {
+    const table = (link: string): string =>
+      `| Name | GitHub | Telegram | Link | Focus |\n|---|---|---|---|---|\n| Eve Mallory | @eve | | ${link} | |\n`;
+    expect(parseRosterContent(table("https://eve.dev"))[0]?.link).toBe(
+      "https://eve.dev",
+    );
+    expect(parseRosterContent(table("http://eve.dev"))[0]?.link).toBe(
+      "http://eve.dev",
+    );
+    expect(parseRosterContent(table("javascript:alert(1)"))[0]?.link).toBeNull();
+    expect(
+      parseRosterContent(table("data:text/html,<script>1</script>"))[0]?.link,
+    ).toBeNull();
+    expect(parseRosterContent(table("not a url"))[0]?.link).toBeNull();
+  });
 });

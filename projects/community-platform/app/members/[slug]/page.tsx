@@ -145,8 +145,12 @@ export default async function MemberPage({
   const kudosTotal = kudos[member.slug]?.total ?? 0;
 
   // O2: t.me deep-link when the roster carries a Telegram handle; CopyHandle
-  // fallback otherwise. Phase 1 parses "TBD"-ish cells to null.
-  const telegramHandle = member.telegram ? member.telegram.replace(/^@/, "") : null;
+  // fallback otherwise. Phase 1 parses "TBD"-ish cells to null. Reviewer
+  // triage: the handle is pinned to Telegram's username alphabet (5-32 of
+  // [A-Za-z0-9_]) so a malformed roster cell can't inject path segments
+  // into the t.me URL — it degrades to the CopyHandle fallback instead.
+  const telegramHandle =
+    member.telegram?.trim().match(/^@?([A-Za-z0-9_]{5,32})$/)?.[1] ?? null;
   const askHref = telegramHandle ? `https://t.me/${telegramHandle}` : null;
   // O5: statement omitted when one_line_bio is missing.
   const statement = sections?.oneLineBio?.trim() ?? "";

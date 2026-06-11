@@ -27,7 +27,11 @@ export function CardEmbedSnippet({
   function onCopy(): void {
     void navigator.clipboard
       .writeText(snippet)
-      .then(() => setCopied(true))
+      .then(() => {
+        // 2s reset per the InviteUrlDisplay precedent (reviewer triage).
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
       .catch(() => setCopied(false));
   }
 

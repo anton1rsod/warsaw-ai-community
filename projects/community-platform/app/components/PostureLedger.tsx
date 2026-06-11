@@ -4,7 +4,11 @@ import { s } from "@/lib/i18n/strings";
 interface PostureLedgerProps {
   bullish: string | null;
   skeptical: string | null;
+  /** @internal NOT rendered here — the page routes this content through
+   * StorySection (plan Task 2.3 lock). Kept in the signature so a future
+   * posture-row addition is a component-local change. */
   failurePatterns: string | null;
+  /** @internal NOT rendered here — see failurePatterns. */
   successPatterns: string | null;
 }
 

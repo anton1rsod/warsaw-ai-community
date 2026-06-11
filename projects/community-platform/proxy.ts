@@ -85,9 +85,11 @@ const PUBLIC_PREFIXES = [
  * stays auth-gated — /members is NOT a discovery surface under
  * ADR-0012/ADR-0014. The OG handler re-applies the H147 persona_visible
  * + H146 erasure gates in-route (name-only fallback), so going public
- * here leaks no persona state.
+ * here leaks no persona state. `%` is excluded from the slug segment:
+ * nextUrl.pathname preserves percent-encoding, so `[^/]` would match
+ * `%2F` (encoded slash) sequences — slugify output never contains `%`.
  */
-const OG_IMAGE_PATH = /^\/members\/[^/]+\/opengraph-image$/;
+const OG_IMAGE_PATH = /^\/members\/[^/%]+\/opengraph-image$/;
 
 /**
  * H4 (spec §11.5): /onboard* responses carry Referrer-Policy, X-Frame-Options,
