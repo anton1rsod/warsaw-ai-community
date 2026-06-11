@@ -4031,3 +4031,50 @@ Design §3's "anon viewers: same page minus lens" describes the page's render st
 ### Tests
 
 1806 unit/integration at the Phase 5 gate (baseline 1582 at v0.11.1; +224) + persona-attach E2E 4/4 (URL-attach happy path + real-H151-guard lookalike-host negative). Coverage 89.77% lines overall (gate 80); `lib/persona-fetch.ts` 97.26%.
+
+## §24 — v0.12.1 Admin console + hygiene (DX) (2026-06-11)
+
+**Source:** chat scoping during 6/12-retro prep + a 2026 standards audit of the admin-access design (OWASP A01:2025 / A09:2025, ASVS 5.0, CVE-2025-29927; NN-g / Baymard). **Renamed from the handoff's "v0.11.2"** — v0.12.0 already shipped, so this is the next patch. **Lightweight execution**: short spec + TDD build, no separate plan doc (token discipline). **Meeting-signup fast-follows stay retro-gated** (see `docs/playbooks/meeting-signup-runbook.md` §Known-limits + Out-of-scope below).
+
+### Scope — 3 items
+
+**A. Admin console (front door).** `/admin/invite` + `/admin/health` are URL-only orphans; only `/admin/events/new` has an entry point (the v0.5.1 "+ new event" Pill). No `/admin` index. Founder reported "no button in UI."
+
+- **R1** — New `app/admin/page.tsx` "Admin console" index: same gate as the other admin routes (`auth()` → `isAdmin()`; signed-out → `/login`, non-admin → `/home`), `force-dynamic`, warm-styled (MonoLabel + h1 + Pills). Lists the tools: **Invite** (`/admin/invite`), **New event** (`/admin/events/new`), **Health** (`/admin/health`).
+- **R2** — One conditional **"admin console"** link in the `Header.tsx` account dropdown, rendered only when `isAdmin(handle)` (Server Component, synchronous snapshot check). Text label, visually separated from profile/sign-out; → `/admin`.
+- **R3** — Keep the existing contextual "+ new event" Pill on `/events` (hub + contextual hybrid; no duplicate-entry confusion).
+- **R4** — i18n: new `chrome.*` keys for the dropdown label + console strings (H67 convention).
+
+**B. persona-builder → roster-slug (self-serve).** `persona-builder` is an LLM skill (`persona-builder/skills/persona-creation/SKILL.md`) that derives `persona_id` from first-name+last-initial ("Anton S."→`anton-s`); the platform derives the roster slug from the full Name cell (`slugify("Anton Safronov")`→`anton-safronov`, the single `lib/slug.ts`). Same algorithm, different source → the v0.11.1 misalignment.
+
+- **R5** — Edit SKILL.md so `persona_id = slugify(full display name)` and `display_name` = the member's full name (matching the roster Name cell) → `folder == persona_id == roster_slug`. Existing **H68** (`folder == slugify(display_name)`) keeps enforcing it. (Not adding a roster-binding CI check — intentional non-roster personas like `dmitry-b` would false-positive without an allowlist; A + H68 suffices.)
+
+**C. E2E worker-isolation.** The 7 in-memory mock stores live on the single dev-server `globalThis`; Playwright `fullyParallel` + `workers: undefined` locally (~4–8 browser processes) collide; CI is green only because it pins `workers: 1`.
+
+- **R6** — Pin `workers: 1` locally too (`playwright.config.ts`). Matches CI, removes the race, zero new-bug risk (~30–60s slower local). Per-worker store keying (~20 files) → backlog, gated on "local E2E unacceptably slow."
+
+### Hardenings (H161–H163; admin console)
+
+- **H161** — Authorization is server-side at every admin route (page-level `auth()+isAdmin()` redirect) AND re-checked in every privileged Server Action (mint/revoke/createEvent already do — H134). The dropdown link is UX-only, never the control (OWASP A01:2025; CVE-2025-29927 — middleware is not a boundary). A comment at the console page states the gate is the security boundary.
+- **H162** — Log **denied** admin-access (a non-admin / probe reaching an admin route) via `lib/log` `info` — the OWASP A09 signal that matters. Successful admin views not logged (low value at single-admin scale).
+- **H163** — `isAdmin` allowlist fail-safe: malformed/empty governance file ⇒ deny-all (never a truthy default); confirm + add a non-empty-array guard if absent.
+
+### Audit-rejected / deferred (with reason)
+
+- **IP-allowlist `/admin/*`** — REJECTED: would lock the founder out from varying networks (home/mobile/venue — incl. the tonight QR mint).
+- **Step-up / re-auth on admin actions** (ASVS 5.0) — DEFERRED: friction unjustified at single-admin scale (mint/revoke/create-event are revocable + ledgered; no PII/payments). Revisit when admin count grows.
+- **Separate admin subdomain** — not needed; in-app routes are fine when the server gate is sound.
+- **"pending invites: N" console badge** — deferred unless cheap to count from the ledger.
+
+### Tests (TDD)
+
+- Admin console gate: admin sees the console + 3 tool links; non-admin → `/home`; signed-out → `/login`.
+- Dropdown link: present when `isAdmin`, absent otherwise.
+- **H162**: denied access emits the expected `lib/log` info line.
+- **H163**: empty/malformed allowlist ⇒ `isAdmin` returns false for all handles.
+- persona: a guard test catches an `anton-s`-style `display_name`↔folder mismatch (extends H68 coverage).
+- E2E: `playwright.config` asserts `workers === 1` locally.
+
+### Out of v0.12.1 (retro-gated meeting-signup fast-follows + audit candidates)
+
+Per-IP redemption rate-limit (edge WAF) · onboard form-field deferral (UX-1) · "git email alias" rename/derive (UX-2) · token `iat` + `__Host-` cookie + shorter Max-Age (SEC-2) · the AUTH-1 magic-link / auth-decoupling ADR. **Locked after the 6/12 retro.** Full audit (3 streams) lives in this chat; runbook `§Known-limits` carries the meeting-signup subset.
