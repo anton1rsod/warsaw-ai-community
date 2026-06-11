@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kolo Events — Persona Panel Evaluation · Subploters*</title>
+<style>
+  :root{
+    --cream:#F7F1E5; --cream-deep:#EFE6D4; --surface:#FFFDF7;
+    --ink:#211C13; --ink-soft:#4A4234; --dust:#886C37;
+    --amber:#B45309; --amber-soft:#F2DFC2; --line:#DECFB2;
+    --kill:#9C3D2E; --go:#3E6B45;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--cream);color:var(--ink);
+    font-family:"Geist",-apple-system,"Segoe UI",Roboto,sans-serif;
+    line-height:1.55;font-size:17px}
+  .mono{font-family:"Geist Mono",ui-monospace,"SF Mono",Menlo,monospace}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 28px}
+  /* masthead */
+  header{border-bottom:1px solid var(--line);padding:26px 0 22px;background:var(--cream)}
+  .mast{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+  .wordmark{font-weight:650;letter-spacing:.01em;font-size:20px}
+  .wordmark span{color:var(--amber)}
+  .mast .mono{color:var(--dust);font-size:13px;text-transform:uppercase;letter-spacing:.14em}
+  /* hero */
+  .hero{padding:54px 0 8px}
+  .kicker{color:var(--dust);font-size:13px;text-transform:uppercase;letter-spacing:.18em;margin-bottom:14px}
+  h1{font-size:46px;line-height:1.08;font-weight:650;letter-spacing:-.015em;max-width:21ch}
+  h1 em{font-style:normal;color:var(--amber)}
+  .sub{color:var(--ink-soft);max-width:62ch;margin-top:16px;font-size:18px}
+  /* disclosure */
+  .disclose{margin:34px 0 0;background:var(--amber-soft);border:1px solid var(--amber);
+    border-left-width:6px;border-radius:10px;padding:16px 20px;font-size:15px}
+  .disclose strong{color:var(--amber)}
+  /* sections */
+  section{padding:46px 0 6px}
+  h2{font-size:15px;font-weight:650;color:var(--dust);text-transform:uppercase;
+    letter-spacing:.16em;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+  h2::after{content:"";flex:1;height:1px;background:var(--line)}
+  /* pipeline */
+  .pipe{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .pipe .step{background:var(--surface);border:1px solid var(--line);border-radius:999px;
+    padding:8px 16px;font-size:14px}
+  .pipe .arrow{color:var(--dust)}
+  .pipe .step b{color:var(--amber)}
+  /* verdict hero */
+  .verdict-grid{display:grid;grid-template-columns:340px 1fr;gap:26px}
+  @media(max-width:820px){.verdict-grid{grid-template-columns:1fr}}
+  .verdict-card{background:var(--ink);color:var(--cream);border-radius:16px;padding:30px 28px;
+    display:flex;flex-direction:column;justify-content:center}
+  .verdict-card .v{font-size:54px;font-weight:700;letter-spacing:-.01em;color:#F0B25C}
+  .verdict-card .score{font-size:20px;margin-top:4px;color:var(--cream)}
+  .verdict-card .note{margin-top:14px;font-size:14px;color:#CBBFA4}
+  .pillars{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px 28px}
+  .pillar{display:grid;grid-template-columns:110px 1fr 96px;align-items:center;gap:14px;padding:7px 0}
+  .pillar .name{font-size:15px;font-weight:600}
+  .bar{height:12px;background:var(--cream-deep);border-radius:999px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--amber);border-radius:999px}
+  .pillar .val{font-size:13px;color:var(--dust);text-align:right}
+  /* panel cards */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:980px){.cards{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:640px){.cards{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;
+    display:flex;flex-direction:column;gap:10px}
+  .card .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .card h3{font-size:18px;font-weight:650}
+  .chip{font-size:12px;font-weight:650;padding:4px 11px;border-radius:999px;white-space:nowrap;
+    background:var(--amber-soft);color:var(--amber);border:1px solid var(--amber)}
+  .card .lens{font-size:12.5px;color:var(--dust);text-transform:uppercase;letter-spacing:.08em}
+  .card .quote{font-size:14.5px;color:var(--ink-soft);border-left:3px solid var(--amber);
+    padding-left:12px}
+  .card .exp{font-size:13.5px;color:var(--ink-soft)}
+  .card .exp b{color:var(--ink)}
+  /* table */
+  table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);
+    border-radius:14px;overflow:hidden;font-size:14.5px}
+  th,td{padding:11px 14px;text-align:center;border-bottom:1px solid var(--line)}
+  th{background:var(--cream-deep);font-size:12.5px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--dust)}
+  td:first-child,th:first-child{text-align:left}
+  tr:last-child td{border-bottom:none}
+  td.low{color:var(--kill);font-weight:650}
+  td.hi{color:var(--go);font-weight:650}
+  td.total{font-weight:700}
+  /* findings */
+  .cols{display:grid;grid-template-columns:1.4fr 1fr;gap:26px}
+  @media(max-width:820px){.cols{grid-template-columns:1fr}}
+  .panelbox{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px}
+  .panelbox h3{font-size:16px;margin-bottom:12px;color:var(--ink)}
+  .panelbox ul{list-style:none}
+  .panelbox li{padding:8px 0 8px 26px;position:relative;font-size:15px;color:var(--ink-soft);
+    border-bottom:1px dashed var(--line)}
+  .panelbox li:last-child{border-bottom:none}
+  .panelbox li::before{content:"—";position:absolute;left:0;color:var(--amber);font-weight:700}
+  .panelbox li b{color:var(--ink)}
+  /* experiment steps */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:900px){.steps{grid-template-columns:1fr}}
+  .stepcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px}
+  .stepcard .n{font-size:13px;color:var(--amber);font-weight:700;letter-spacing:.1em}
+  .stepcard h3{font-size:17px;margin:6px 0 8px}
+  .stepcard p{font-size:14.5px;color:var(--ink-soft)}
+  .stepcard .pass{margin-top:12px;font-size:13px;padding:8px 12px;background:var(--cream-deep);
+    border-radius:8px}
+  .stepcard .pass b{color:var(--go)}
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+  @media(max-width:980px){.stats{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:18px 16px;text-align:center}
+  .stat .num{font-size:26px;font-weight:700;color:var(--amber);letter-spacing:-.01em}
+  .stat .lab{font-size:12.5px;color:var(--dust);margin-top:4px;line-height:1.35}
+  /* footer */
+  footer{margin-top:60px;border-top:1px solid var(--line);padding:30px 0 48px;
+    color:var(--dust);font-size:13.5px}
+  footer .tag{margin-top:10px;font-weight:650;color:var(--ink)}
+  footer .tag span{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap mast">
+    <div class="wordmark">Subploters<span>*</span></div>
+    <div class="mono">Persona Panel · Idea Evaluation · 2026-06-11</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="kicker mono">Idea under evaluation — kolo.events (Ivan + Marat)</div>
+    <h1>Kolo Events: six personas, one evidence base, <em>seven PIVOT verdicts</em>.</h1>
+    <p class="sub">A free events-and-clubs platform for Warsaw's RU/UA/EN communities, run through
+    Maksym's <span class="mono">validate-idea</span> methodology (45+ linked sources), then judged
+    blind by six community personas — each in their own voice, each with their own scorecard.</p>
+    <div class="disclose">
+      <strong>Label: AI simulation.</strong> All six evaluations are AI-ghostwritten drafts generated
+      from members' self-authored persona files. <strong>No member has reviewed or endorsed their
+      draft</strong> (<span class="mono">signed_by_member: false</span>). Verdicts were formed blind —
+      no draft saw the baseline verdict or the other drafts. Desk research only: evidence level 3 of 7.
+    </div>
+  </div>
+
+  <section>
+    <h2>Method</h2>
+    <div class="pipe">
+      <div class="step">Falsifiable brief + triage <b>8/15</b></div><div class="arrow">→</div>
+      <div class="step">9-dimension web research · <b>5 agents</b> · 45+ sources</div><div class="arrow">→</div>
+      <div class="step">Red-team ×5</div><div class="arrow">→</div>
+      <div class="step"><b class="mono">scorecard.py</b> baseline</div><div class="arrow">→</div>
+      <div class="step"><b>6 blind persona drafts</b> + per-persona scorecards</div><div class="arrow">→</div>
+      <div class="step">Synthesis</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Baseline verdict — deterministic gate</h2>
+    <div class="verdict-grid">
+      <div class="verdict-card">
+        <div class="v">PIVOT</div>
+        <div class="score">13 / 25 · red-team: pivot</div>
+        <div class="note">Change exactly one variable: <b>the price model</b> — flip
+        free-first-everything to a ticketing fee on paid events. Gates: GO ≥ 20 · PIVOT 15–19
+        (or red-team pivot) · KILL &lt; 15.</div>
+      </div>
+      <div class="pillars">
+        <div class="pillar"><div class="name">Problem</div><div class="bar"><i style="width:60%"></i></div><div class="val mono">3 / 5 · pain real, unquoted</div></div>
+        <div class="pillar"><div class="name">Market</div><div class="bar"><i style="width:40%"></i></div><div class="val mono">2 / 5 · SOM &lt; $50k</div></div>
+        <div class="pillar"><div class="name">Demand</div><div class="bar"><i style="width:60%"></i></div><div class="val mono">3 / 5 · proxy signals</div></div>
+        <div class="pillar"><div class="name">Solution</div><div class="bar"><i style="width:60%"></i></div><div class="val mono">3 / 5 · wedge unproven</div></div>
+        <div class="pillar"><div class="name">Viability</div><div class="bar"><i style="width:40%"></i></div><div class="val mono">2 / 5 · no invoice path</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The panel — six voices, formed blind</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="top"><h3>Anton Safronov</h3><span class="chip">PIVOT · 12/25</span></div>
+        <div class="lens">PM · community-platform founder · conflict disclosed</div>
+        <div class="quote">"That's a behavior-change sale, not a budget-line sale. The experiment is
+        not 'grow users' but 'will one organizer hand me a card.'"</div>
+        <div class="exp"><b>Experiment:</b> migrate 2 paid events onto Kolo + Stripe; pass = 2 commissions cleared in 30 days.</div>
+      </div>
+      <div class="card">
+        <div class="top"><h3>Дмитрий Блюс</h3><span class="chip">PIVOT · 13/25</span></div>
+        <div class="lens">Engineer · founder-CTO</div>
+        <div class="quote">"If the competitive table has unverified facts in it, what else is
+        assumption presented as evidence? Get the WTP number before building Stripe."</div>
+        <div class="exp"><b>Experiment:</b> 10–15 organizer interviews, no price anchoring; pass = 5/10 name €10+/mo unprompted.</div>
+      </div>
+      <div class="card">
+        <div class="top"><h3>Heorhii K.</h3><span class="chip">PIVOT · 13/25</span></div>
+        <div class="lens">Platform engineering</div>
+        <div class="quote">"'Free until we grow, then monetize later' is a Couchsurfing-shaped risk.
+        Charge five organizers €10/mo on day one — if zero pay, the pivot is free."</div>
+        <div class="exp"><b>Experiment:</b> invoice-today Creator Pro test; pass = 3/10 pay within 2 weeks.</div>
+      </div>
+      <div class="card">
+        <div class="top"><h3>Maksym Pavlenko</h3><span class="chip">PIVOT · 14/25</span></div>
+        <div class="lens">Payments · methodology author</div>
+        <div class="quote">"The product works technically; whether it works as a community is still
+        a model. Not a survey — a payment attempt."</div>
+        <div class="exp"><b>Experiment:</b> 3-organizer paid-ticket pilot on Stripe Connect, 30 days; pass = ≥3 transactions cleared.</div>
+      </div>
+      <div class="card">
+        <div class="top"><h3>Mark Spasonov</h3><span class="chip">PIVOT · 12/25</span></div>
+        <div class="lens">Quantitative commercial · RevOps</div>
+        <div class="quote">"'What's your definition of done in numbers?' — the concept has no answer.
+        ~50 organizers × €15/mo = €750 MRR ceiling. Not a business — an experiment."</div>
+        <div class="exp"><b>Experiment:</b> top-10 organizer cohort DM; pass = 4/10 calls, 2/10 paid in 14 days.</div>
+      </div>
+      <div class="card">
+        <div class="top"><h3>Nazar K.</h3><span class="chip">PIVOT · 12/25</span></div>
+        <div class="lens">User acquisition · funnel economics</div>
+        <div class="quote">"CPA for the first paying organizer is unquantifiable today — there is no
+        funnel to push live this week. That is the single biggest number missing."</div>
+        <div class="exp"><b>Experiment:</b> €0 cold-outreach WTP test, 7 days; pass = 3 cards on file at €15/mo.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Score matrix — judgment varies, facts don't</h2>
+    <table>
+      <tr><th>Evaluator</th><th>Problem</th><th>Market</th><th>Demand</th><th>Solution</th><th>Viability</th><th>Total</th><th>Verdict</th></tr>
+      <tr><td><span class="mono">scorecard.py</span> baseline</td><td>3</td><td>2</td><td>3</td><td>3</td><td>2</td><td class="total">13/25</td><td>PIVOT</td></tr>
+      <tr><td>Anton Safronov</td><td>3</td><td>2</td><td>3</td><td>3</td><td class="low">1</td><td class="total">12/25</td><td>PIVOT</td></tr>
+      <tr><td>Дмитрий Блюс</td><td>3</td><td>2</td><td>3</td><td>3</td><td>2</td><td class="total">13/25</td><td>PIVOT</td></tr>
+      <tr><td>Heorhii K.</td><td>3</td><td>2</td><td>3</td><td>3</td><td>2</td><td class="total">13/25</td><td>PIVOT</td></tr>
+      <tr><td>Maksym Pavlenko</td><td>3</td><td class="hi">3</td><td>3</td><td>3</td><td>2</td><td class="total">14/25</td><td>PIVOT</td></tr>
+      <tr><td>Mark Spasonov</td><td>3</td><td>2</td><td>3</td><td>3</td><td class="low">1</td><td class="total">12/25</td><td>PIVOT</td></tr>
+      <tr><td>Nazar K.</td><td>3</td><td>2</td><td>3</td><td>3</td><td class="low">1</td><td class="total">12/25</td><td>PIVOT</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Findings</h2>
+    <div class="cols">
+      <div class="panelbox">
+        <h3>Unanimous (6/6)</h3>
+        <ul>
+          <li><b>The real incumbent is free Telegram, not Meetup.</b> The wedge vs. paid tools is real; the wedge vs. a free habit is UX only.</li>
+          <li><b>Pain is documented, but never quoted.</b> 33 fragmented channels, 37k followers on a diaspora events feed — yet zero verbatim organizer-pain quotes survived honest search.</li>
+          <li><b>Free-first is the flaw — and it's fixable.</b> Every PIVOT lands on monetization timing / price model. Couchsurfing shows monetize-later is also trust-risky later.</li>
+          <li><b>Distribution is the strongest pillar.</b> First 100 users ≈ one cross-post; first 20 organizers ≈ a DM list.</li>
+          <li><b>Drop the Locals.md claim.</b> It failed verification (the platform appears alive) — flagged independently by three personas.</li>
+        </ul>
+      </div>
+      <div class="panelbox">
+        <h3>Where the panel splits</h3>
+        <ul>
+          <li><b>Viability 1 vs 2 — a clean lens split.</b> Commercial seats (Anton, Mark, Nazar) refuse to score above 1 without a single invoice; engineering seats (Dmitriy, Heorhii, Maksym) credit the comparables with a 2.</li>
+          <li><b>Market 2 vs 3.</b> Maksym credits comparable density; the rest hold at 2 on the bottom-up math.</li>
+        </ul>
+        <h3 style="margin-top:22px">Timing tailwinds</h3>
+        <ul>
+          <li>Meetup price shock (2024→) — a live migration list of angry organizers.</li>
+          <li>FB Community Chats killed Oct 2025; organic reach 1–2%.</li>
+          <li>IRL-social wave: Timeleft €18M ARR; Joiner €500k into Poland.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The experiment — the panel converged on one move: charge organizers now</h2>
+    <div class="steps">
+      <div class="stepcard">
+        <div class="n mono">STEP 1 · 7 DAYS · €0</div>
+        <h3>WTP DM test</h3>
+        <p>DM 10–20 named Warsaw organizers. One sentence: "Kolo replaces Telegram signup chaos —
+        €15/mo, cancel anytime." Invoice today, not a waitlist.</p>
+        <div class="pass mono"><b>PASS:</b> ≥3 paid commitments (card on file)</div>
+      </div>
+      <div class="stepcard">
+        <div class="n mono">STEP 2 · 30 DAYS</div>
+        <h3>Paid-ticket pilot</h3>
+        <p>2–3 organizers already selling tickets route one event each through Kolo on Stripe Connect
+        at 5–10% commission. Agent model — no PSD2 license needed; VAT on commission only.</p>
+        <div class="pass mono"><b>PASS:</b> ≥3 transactions cleared + organizer asks to repeat</div>
+      </div>
+      <div class="stepcard">
+        <div class="n mono">IN PARALLEL</div>
+        <h3>Mom-Test interviews</h3>
+        <p>10–15 organizer interviews to capture the missing verbatim pain. Past behavior and current
+        spend only — no "would you use it".</p>
+        <div class="pass mono"><b>PASS:</b> ≥7/10 name signup admin in top-3 pains unprompted</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Evidence highlights</h2>
+    <div class="stats">
+      <div class="stat"><div class="num">45+</div><div class="lab">linked sources, 9 dimensions</div></div>
+      <div class="stat"><div class="num">~160k</div><div class="lab">Ukrainians in Warsaw (city estimate)</div></div>
+      <div class="stat"><div class="num">37k</div><div class="lab">followers, RU-language Warsaw events IG</div></div>
+      <div class="stat"><div class="num">2×</div><div class="lab">Meetup organizer price hike since 2024</div></div>
+      <div class="stat"><div class="num">~50</div><div class="lab">inferred organizer accounts (paying side)</div></div>
+      <div class="stat"><div class="num">€750</div><div class="lab">MRR ceiling at 100% organizer conversion</div></div>
+    </div>
+  </section>
+
+  <footer>
+    <div>Evidence: Maksym Pavlenko's <span class="mono">validate-idea</span> methodology · verdicts computed by
+    <span class="mono">scripts/scorecard.py</span> (no evidence caps triggered) · personas: self-authored
+    interviews, schema 1.0 · drafts generated 2026-06-11 by claude-sonnet-4-6 / claude-fable-5 ·
+    one base model wrote all six drafts — tonal convergence caveat applies · this panel generates
+    hypotheses; only field work (interviews → invoices) validates.</div>
+    <div class="tag">Subploters<span>*</span> — Every venture is a subplot.</div>
+  </footer>
+
+</div>
+</body>
+</html>
