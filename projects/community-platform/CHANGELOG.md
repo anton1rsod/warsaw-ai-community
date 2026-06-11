@@ -16,6 +16,34 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.12.0] — 2026-06-11 (persona engagement + member-page redesign; spec §23, H151–H160)
+
+`/members/[slug]` rebuilt as the "typeset dossier" identity page (design D5–D9; approved mockup `community/brand/explorations/2026-06-10-member-page-typeset-dossier-mockup.html`) + the v0.12 persona interactions: overlap lens, ask-me-about, shareable OG member card, GitHub-link attach + re-sync. Zero new consent surface (ADR-0019 unchanged; persona file schema untouched). Spec §23 (D1–D9, R1–R6, H151–H160). Executed via `superpowers:subagent-driven-development` (one Sonnet implementer per phase across Phases 1–5; Phase 6 orchestrator-direct; full `tsc`+`lint`+`test` gate verified at every boundary). **1806 unit/integration tests** (baseline 1582 at v0.11.1; +224) + persona-attach E2E 4/4 (incl. a real-H151-guard lookalike-host negative). Coverage 89.77% lines (gate 80); `lib/persona-fetch.ts` 97.26%.
+
+### Added
+- **`lib/persona-sections.ts`** — heading-skeleton parser keyed to the REAL `.public.md` skeleton (typographic apostrophe + `Competitor / substitute contexts` literal); H148 never-throws posture preserved (unknown/missing sections fall back to `.prose-warm` markdown).
+- **`lib/persona-overlap.ts`** — `computeOverlap` + `overlapHasContent`: shared tags, complementary depths, 0–3 deterministic template conversation starters (O1, no LLM). Viewer-private (H160: per-request, never persisted/logged).
+- **Dossier components** — `MemberKicker` (kickers ARE the `<h2>`s, H157), `ExpertiseLedger` (definition-list rows replace chips, D7), `FirstQuestionQuote` (hanging amber `*` pull-quote), `PostureLedger` (bullish/skeptical rows), `StorySection` (JS-free gradient-fade + counted `<details>` rows, H158), `ActivityLine` (D9 mono stat footer), `OverlapLens` (surface-soft band), `CopyHandle` + `CardEmbedSnippet` (clipboard).
+- **Shareable OG member card** — `app/members/[slug]/opengraph-image.tsx` (`ImageResponse`, Node runtime, vendored static Geist/GeistMono TTFs from `geist@1.7.2` — satori cannot read woff2; `outputFileTracingIncludes` pins them into the function bundle). In-route H147 `persona_visible` + H146 erasure re-check with name-only fallback (H155). Cream identity zone (O3). Embed snippet on `/me/edit`.
+- **GitHub-link attach + re-sync** — `lib/persona-fetch.ts` (H151 WHATWG-parse URL guard: https-only, no userinfo/port, exact-`===` frozen-Set hostname allowlist, manual-redirect reject; H152 streamed 64KB byte cap, Content-Length advisory-only, AbortController timeout); `save-persona` `source_url` branch through the SAME validation pipeline as paste/upload (H154); `persona_source_url` stored in profile frontmatter (O4) as a second independent single-file bot commit (H149); `app/actions/resync-persona.ts` re-validates the stored URL on EVERY read (H153 TOCTOU). GDPR erasure clears `persona_source_url` (H146).
+- **Warm-ladder tokens** — `ink-body` / `ink-muted` / `hairline` / `hairline-strong` / `surface-soft` in globals + Tailwind; H156 pair-contrast regression test pins WCAG ratios per (fg × bg) PAIR incl. focus states.
+- **Roster columns surfaced** — `lib/roster.ts` now parses `telegram` / `link` / `focus` (TBD/empty ⇒ null); ask-about deep-links to `https://t.me/<handle>` else CopyHandle fallback (O2).
+
+### Changed
+- **Global `:focus-visible` ring** flipped accent-500 → accent-700 platform-wide (H156 — raw amber measures 2.0:1 on cream, fails SC 1.4.11 non-text 3:1).
+- **`proxy.ts`** — ONLY `^/members/[^/]+/opengraph-image$` is public (`OG_IMAGE_PATH`; scrapers/camo fetch the card sessionless; H155 re-applies consent in-route). `/members` + `/members/[slug]` stay auth-gated per the ADR-0012/0014 routing model (Anton-decided 2026-06-11; spec §23 "Routing posture" — design §3's "anon viewers" line describes render states only).
+- **PersonaEditor** — URL-attach field + Re-sync pill + ALL status strings i18n'd (closes the v0.11.2 carry-over); byte-accurate 64KB cap via `TextEncoder` in schema + client (H152 parity).
+- **`/me/edit`** wires `initialSourceUrl` from profile frontmatter + the card embed snippet.
+
+### Removed
+- **`PersonaPanel`** (+ its test suites) — superseded by the dossier composition.
+- **ContributionCard + KudosCount off the member page** — replaced by the single ActivityLine mono stat footer (D9). Components survive on other surfaces.
+- **Uppercase chip rows on the member page** (D7) — `Tag`/chip components stay elsewhere.
+
+### Notes
+- **E2E:** `members.spec.ts` dossier assertion updated (was pinned to the empty-state label). **Pre-existing failures NOT from v0.12** (baseline-verified on main): `status.spec.ts` + `v0-9-write-paths.spec.ts` 5.4b/5.4c all time out on `getByLabel(/what are you working on/i)` — stale since v0.10.0 made Quick/shipping-log the default editor mode (label changed). Separate E2E-hygiene fix recommended (same class as the chat-46 finding).
+- **Phase 4 orchestrator catch:** the implementer's first proxy fix exposed the whole `/members/` prefix citing a nonexistent "D12 amendment" — corrected to the narrow OG-route regex before merge; regression tests pin both directions (image public, page gated).
+
 ## [0.11.1] — 2026-06-10 (persona attach + rich card; PR #55 squash-merged at `616ba6f`, tag `community-platform-v0.11.1`; ADR-0019 Accepted)
 
 Members self-attach their persona (paste or `.md` upload) with explicit consent + a hide toggle; personas render as a rich card (controlled-vocab tag chips + the full peer-facing body). Spec §22 (R1–R9, H138–H150); ADR-0019 (Proposed → Accepted on merge). Executed via `superpowers:subagent-driven-development` (one Sonnet implementer per phase across 5 phases; full `tsc`+`lint`+`test` gate verified at every boundary). **1582 unit/integration tests** + a new `e2e/persona-attach.spec.ts` (attach→display, 2/2 green). Parallel **security-reviewer** (mandatory, H150) + typescript + code reviewers — **0 CRITICAL**; the HIGH/MEDIUM findings were batched into one fix commit.
