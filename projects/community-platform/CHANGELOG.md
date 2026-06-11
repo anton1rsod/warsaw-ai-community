@@ -16,6 +16,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 
 ---
 
+## [0.12.1] — 2026-06-11 (admin console + DX hygiene; spec §24, H161–H163)
+
+Admin front door + two DX hygiene fixes. Renamed from the handoff's "v0.11.2" (v0.12.0 already shipped → next patch). Built lightweight (short spec §24 + TDD; one fresh-context implementer subagent for the multi-file admin console; orchestrator verification + security review + ship). Folds in a 2026 admin-access standards audit (OWASP A01/A09:2025, ASVS 5.0, CVE-2025-29927; NN-g/Baymard) — see §24 for rejected (IP-allowlist) / deferred (step-up auth) items. **1838 unit/integration tests** (+26 vs 1812); `tsc` + `lint` clean; CI green (build/test 2m20s). PR #59 squash-merged at `5b327fc`. Orchestrator post-merge prod smoke green (anon /admin 307 + /home 200; signed-in admin console + 3 tool links + dropdown link).
+
+### Added
+- **`app/admin/page.tsx`** — "Admin console" index (R1): warm-styled (MonoLabel + h1 + Pills), gated, links Invite · New event · Health. Closes the orphaned-admin-routes gap (`/admin/invite` + `/admin/health` had no UI entry point).
+- **`lib/require-admin.ts`** — shared admin auth gate (H161 security boundary; OWASP A01:2025 / CVE-2025-29927). Returns the session on success, `/login` if no session, logs denied (H162) + `/home` for non-admins. All 4 admin pages use it.
+- **Account-dropdown "admin console" link** (R2, `Header.tsx`) — `isAdmin`-gated, computed server-side (never passed to Client Components), visually separated.
+- New `chrome.admin.*` + `chrome.header.dropdown.adminConsole` i18n keys (R4).
+
+### Changed
+- **`lib/content-snapshot.ts`** (H163) — `Array.isArray` fail-safe on `governance.admins`/`communityManagers` ⇒ empty/malformed governance denies all (never a truthy default).
+- **3 admin pages** (`/admin/invite`, `/admin/health`, `/admin/events/new`) refactored to call `requireAdmin()` — identical gate behavior, now centralized + audit-logged.
+- **`persona-builder/skills/persona-creation/SKILL.md`** (R5) — `persona_id` now derives from the full display-name slugify == the roster slug (was first-name+last-initial); the v0.11.1 `anton-s`/`anton-safronov` misalignment can't recur; existing H68 enforces it.
+- **`playwright.config.ts`** (R6) — `workers: 1` locally too (was `CI ? 1 : undefined`); the 7 globalThis mock stores can't race across parallel workers. Per-worker keying deferred to backlog.
+
 ## [0.12.0] — 2026-06-11 (persona engagement + member-page redesign; spec §23, H151–H160)
 
 `/members/[slug]` rebuilt as the "typeset dossier" identity page (design D5–D9; approved mockup `community/brand/explorations/2026-06-10-member-page-typeset-dossier-mockup.html`) + the v0.12 persona interactions: overlap lens, ask-me-about, shareable OG member card, GitHub-link attach + re-sync. Zero new consent surface (ADR-0019 unchanged; persona file schema untouched). Spec §23 (D1–D9, R1–R6, H151–H160). Executed via `superpowers:subagent-driven-development` (one Sonnet implementer per phase across Phases 1–5; Phase 6 orchestrator-direct; full `tsc`+`lint`+`test` gate verified at every boundary). **1806 unit/integration tests** (baseline 1582 at v0.11.1; +224) + persona-attach E2E 4/4 (incl. a real-H151-guard lookalike-host negative). Coverage 89.77% lines (gate 80); `lib/persona-fetch.ts` 97.26%.
