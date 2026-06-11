@@ -4,15 +4,18 @@ import { log } from "@/lib/log";
 describe("log", () => {
   let warnSpy: ReturnType<typeof vi.spyOn>;
   let errorSpy: ReturnType<typeof vi.spyOn>;
+  let infoSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    infoSpy = vi.spyOn(console, "info").mockImplementation(() => undefined);
   });
 
   afterEach(() => {
     warnSpy.mockRestore();
     errorSpy.mockRestore();
+    infoSpy.mockRestore();
   });
 
   describe("happy path — warn", () => {
@@ -42,12 +45,33 @@ describe("log", () => {
     });
   });
 
+  describe("happy path — info", () => {
+    it("emits `[tag] event` when no fields", () => {
+      log.info("create-event", "created");
+      expect(infoSpy).toHaveBeenCalledWith("[create-event] created");
+    });
+    it("emits `[tag] event {...fields}` with stringified fields", () => {
+      log.info("create-event", "created", { slug: "demo-2026" });
+      expect(infoSpy).toHaveBeenCalledWith(
+        '[create-event] created {"slug":"demo-2026"}',
+      );
+    });
+    it("routes to console.info, not warn or error", () => {
+      log.info("create-event", "created");
+      expect(warnSpy).not.toHaveBeenCalled();
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+  });
+
   describe("H85: empty tag rejected at runtime", () => {
     it("warn throws on empty tag", () => {
       expect(() => log.warn("", "event")).toThrow("log tag must be non-empty");
     });
     it("error throws on empty tag", () => {
       expect(() => log.error("", "event")).toThrow("log tag must be non-empty");
+    });
+    it("info throws on empty tag", () => {
+      expect(() => log.info("", "event")).toThrow("log tag must be non-empty");
     });
   });
 

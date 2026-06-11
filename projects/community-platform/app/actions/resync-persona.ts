@@ -113,7 +113,7 @@ export async function resyncPersona(): Promise<PersonaSaveResult> {
     return { ok: false, error: "write_failed" };
   }
 
-  log.warn("resync-persona", "saved", { slug, success: true });
+  log.info("resync-persona", "saved", { slug, success: true });
   revalidatePath(`/members/${slug}`);
   return { ok: true, savedAt: new Date().toISOString() };
 }

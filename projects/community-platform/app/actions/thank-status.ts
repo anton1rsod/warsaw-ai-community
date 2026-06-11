@@ -224,7 +224,7 @@ export async function thankStatus(input: ThankInput): Promise<ThankResult> {
   if (item_type === "meeting") revalidatePath(`/meetings/${item_id}`);
   // status / contribution revalidate handled at page-cache layer
 
-  log.warn("thank-status", "thanked", {
+  log.info("thank-status", "thanked", {
     slug: giver.slug,
     recipient,
     item_type,

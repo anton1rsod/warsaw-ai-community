@@ -157,7 +157,7 @@ export async function savePersona(formData: FormData): Promise<PersonaSaveResult
 
   if (isE2EMockActive()) {
     mockPersonaStore.write(slug, parsed.data.content);
-    log.warn("save-persona", "saved", { slug, success: true });
+    log.info("save-persona", "saved", { slug, success: true });
     revalidatePath(`/members/${slug}`);
     return { ok: true, savedAt: new Date().toISOString() };
   }
@@ -191,7 +191,7 @@ export async function savePersona(formData: FormData): Promise<PersonaSaveResult
     }
   }
 
-  log.warn("save-persona", "saved", { slug, success: true });
+  log.info("save-persona", "saved", { slug, success: true });
   // Unlike save-profile (which also revalidates /members), persona save only
   // revalidates the detail page — the /members list doesn't render persona data.
   revalidatePath(`/members/${slug}`);

@@ -204,7 +204,7 @@ export async function rsvpEvent(input: RsvpInput): Promise<RsvpResult> {
   revalidatePath(`/events/${parsed.data.eventSlug}`);
   revalidatePath(`/members/${member.slug}`);
 
-  log.warn("rsvp-event", "updated", {
+  log.info("rsvp-event", "updated", {
     slug: member.slug,
     from: recon.priorState,
     to: parsed.data.desiredState,

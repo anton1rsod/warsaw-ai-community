@@ -26,7 +26,9 @@ vi.mock("@/lib/env", () => ({
   },
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/lib/log", () => ({ log: { warn: vi.fn() } }));
+vi.mock("@/lib/log", () => ({
+  log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
 
 import { resyncPersona } from "@/app/actions/resync-persona";
 import { revalidatePath } from "next/cache";

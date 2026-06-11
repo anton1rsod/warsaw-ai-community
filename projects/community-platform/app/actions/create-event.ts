@@ -146,6 +146,6 @@ export async function createEvent(
   revalidatePath("/");
   revalidatePath("/api/calendar.ics");
 
-  log.warn("create-event", "created", { handle: safeHandle, slug });
+  log.info("create-event", "created", { handle: safeHandle, slug });
   return { ok: true, slug };
 }

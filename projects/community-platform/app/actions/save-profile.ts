@@ -196,7 +196,7 @@ export async function saveProfile(formData: FormData): Promise<SaveResult> {
 
   // H24: log only {slug, sha, success} — body is deliberately omitted.
   // H17: sha in the log provides an audit-trail link to the git commit.
-  log.warn("save-profile", "saved", {
+  log.info("save-profile", "saved", {
     slug,
     sha: attempt.sha,
     success: true,
