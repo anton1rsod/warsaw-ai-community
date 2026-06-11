@@ -21,6 +21,13 @@ const config: Config = {
         dust: "var(--color-dust)",
         paper: "var(--color-paper)",
         alert: "var(--color-alert)",
+        // v0.12 typeset-dossier warm ladder (spec §3; H156 pairs pinned in
+        // tests/unit/contrast-pairs.test.ts) — see app/globals.css for vars.
+        "ink-body": "var(--color-ink-body)",
+        "ink-muted": "var(--color-ink-muted)",
+        hairline: "var(--color-hairline)",
+        "hairline-strong": "var(--color-hairline-strong)",
+        "surface-soft": "var(--color-surface-soft)",
       },
       fontFamily: {
         // Loaded via next/font in app/layout.tsx; --font-* vars are exposed

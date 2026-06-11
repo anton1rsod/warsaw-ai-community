@@ -3,6 +3,9 @@ import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { PersonaEditor } from "@/app/components/PersonaEditor";
 
 vi.mock("@/app/actions/save-persona", () => ({ savePersona: vi.fn(async () => ({ ok: true, savedAt: "now" })) }));
+// v0.12: PersonaEditor also imports resyncPersona; without this mock the real
+// action module loads lib/auth → lib/env, which throws at collection time.
+vi.mock("@/app/actions/resync-persona", () => ({ resyncPersona: vi.fn(async () => ({ ok: true })) }));
 afterEach(cleanup);
 
 describe("PersonaEditor", () => {

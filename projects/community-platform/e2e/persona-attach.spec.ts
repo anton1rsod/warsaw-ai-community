@@ -65,6 +65,63 @@ async function seedProfileStore(page: Page): Promise<void> {
   expect(res.ok()).toBe(true);
 }
 
+const RAW_URL =
+  "https://raw.githubusercontent.com/anton1rsod/personas/main/persona-anton-safronov.public.md";
+
+/**
+ * v0.12 Phase 5.7 — URL-attach E2E.
+ *
+ * E2E mode notes:
+ *   • savePersona's source_url branch runs the REAL H151 URL guard, then forks
+ *     to a fixture string (e2eFixturePersona) instead of fetching — no network.
+ *   • The fixture carries `- e2e-url-attach — expert` under ### Industries and
+ *     persona_id templated from the session slug, so H142 passes for
+ *     anton-safronov and the member page renders the fixture tag.
+ */
+test.describe("5.7: Persona URL-attach (v0.12 H151/H154)", () => {
+  test.describe.configure({ mode: "serial" });
+
+  test.beforeEach(async ({ page }) => {
+    await resetPersonaStore(page);
+    await seedProfileStore(page);
+    await loginAs(page, MEMBER_HANDLE);
+  });
+
+  test("fetch & attach from a raw URL — fixture persona lands and renders", async ({ page }) => {
+    await page.goto("/me/edit", { waitUntil: "networkidle" });
+
+    const urlInput = page.getByLabel(/attach from a github raw/i);
+    await expect(urlInput).toBeVisible({ timeout: 8000 });
+    await urlInput.fill(RAW_URL);
+
+    const fetchBtn = page.getByRole("button", { name: /fetch & attach/i });
+    await expect(fetchBtn).toBeEnabled();
+    await fetchBtn.click();
+
+    await expect(
+      page.getByText("Attached — your card rebuilds in ~60-90s after the next deploy."),
+    ).toBeVisible({ timeout: 8000 });
+
+    // The fixture written by the E2E fork must render on the member page.
+    await page.goto(`/members/${MEMBER_SLUG}`, { waitUntil: "networkidle" });
+    await expect(page.getByText(/e2e-url-attach/i)).toBeVisible({ timeout: 8000 });
+  });
+
+  test("H151: non-allowlisted lookalike host is rejected by the REAL guard (no fixture write)", async ({
+    page,
+  }) => {
+    await page.goto("/me/edit", { waitUntil: "networkidle" });
+
+    const urlInput = page.getByLabel(/attach from a github raw/i);
+    await urlInput.fill("https://raw.githubusercontent.com.evil.com/x/persona.md");
+    await page.getByRole("button", { name: /fetch & attach/i }).click();
+
+    await expect(
+      page.getByText(/only raw\.githubusercontent\.com or gist\.githubusercontent\.com/i),
+    ).toBeVisible({ timeout: 8000 });
+  });
+});
+
 test.describe("5.1: Persona attach → display", () => {
   test.describe.configure({ mode: "serial" });
 
@@ -111,7 +168,8 @@ test.describe("5.1: Persona attach → display", () => {
     await expect(page.getByText(/b2b-saas/i)).toBeVisible({ timeout: 8000 });
     // Verify functional role chip visible
     await expect(page.getByText(/product-manager/i)).toBeVisible({ timeout: 8000 });
-    // Verify language line visible (rendered as "Languages: en" in the PersonaPanel)
-    await expect(page.getByText(/languages:\s*en/i)).toBeVisible({ timeout: 8000 });
+    // Verify the Languages ledger row (v0.12: dt "Languages" + dd "en" in the ExpertiseLedger)
+    await expect(page.getByText("Languages", { exact: true })).toBeVisible({ timeout: 8000 });
+    await expect(page.locator("dd").filter({ hasText: /^en$/ })).toBeVisible();
   });
 });

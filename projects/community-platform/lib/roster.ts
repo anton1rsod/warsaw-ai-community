@@ -7,6 +7,10 @@ export interface RosterMember {
   name: string;
   githubHandle: string;
   slug: string;
+  /** v0.12: optional roster columns (spec §4.3). null = absent column, empty cell, or TBD. */
+  telegram: string | null;
+  link: string | null;
+  focus: string | null;
 }
 
 /**
@@ -16,8 +20,40 @@ export interface RosterMember {
  */
 function normalizeHandle(raw: string): string {
   const trimmed = raw.trim().replace(/^@/, "").toLowerCase().trim();
-  if (trimmed === "" || trimmed === "tbd") return "";
+  if (trimmed === "" || trimmed === "tbd" || /^\*\(.*\)\*$/.test(trimmed)) return "";
   return trimmed;
+}
+
+/**
+ * v0.12: normalize an optional roster cell (Telegram / Link / Focus).
+ * Returns null when the cell is empty or contains "TBD" in any case —
+ * including annotated values like "@antonsafronov (TBD)", which are
+ * placeholders, not usable contact data.
+ */
+function normalizeOptionalCell(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (trimmed === "" || /tbd/i.test(trimmed)) return null;
+  return trimmed;
+}
+
+/**
+ * v0.12 reviewer triage: the Link cell renders as a raw `href` on the
+ * member page, and React does not strip `javascript:`/`data:` schemes
+ * from href. Roster edits bypass the onboarding RedeemFormSchema URL
+ * check, so the parse-time guard is the defense-in-depth: only http(s)
+ * URLs survive; anything else degrades to null (link simply not shown).
+ */
+function normalizeLinkCell(raw: string): string | null {
+  const value = normalizeOptionalCell(raw);
+  if (value === null) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:"
+      ? value
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -49,6 +85,9 @@ export function parseRosterContent(content: string): RosterMember[] {
 
   let pendingHeader: string[] | null = null;
   let githubColIndex = -1;
+  let telegramColIndex = -1;
+  let linkColIndex = -1;
+  let focusColIndex = -1;
   let inTableBody = false;
 
   for (const rawLine of lines) {
@@ -57,6 +96,9 @@ export function parseRosterContent(content: string): RosterMember[] {
     if (!line.startsWith("|")) {
       pendingHeader = null;
       githubColIndex = -1;
+      telegramColIndex = -1;
+      linkColIndex = -1;
+      focusColIndex = -1;
       inTableBody = false;
       continue;
     }
@@ -64,6 +106,11 @@ export function parseRosterContent(content: string): RosterMember[] {
     if (isSeparatorRow(line)) {
       if (pendingHeader !== null) {
         githubColIndex = pendingHeader.findIndex((h) => /^github$/i.test(h));
+        // v0.12: optional columns detected per table — a table may lack any
+        // of them (Core organizers has no Link column).
+        telegramColIndex = pendingHeader.findIndex((h) => /^telegram$/i.test(h));
+        linkColIndex = pendingHeader.findIndex((h) => /^link$/i.test(h));
+        focusColIndex = pendingHeader.findIndex((h) => /^focus$/i.test(h));
       }
       inTableBody = true;
       pendingHeader = null;
@@ -88,7 +135,23 @@ export function parseRosterContent(content: string): RosterMember[] {
     const handle = normalizeHandle(githubCell);
     if (handle === "") continue;
 
-    members.push({ name: nameCell, githubHandle: handle, slug: slugify(nameCell) });
+    const telegram =
+      telegramColIndex === -1
+        ? null
+        : normalizeOptionalCell(cells[telegramColIndex] ?? "");
+    const link =
+      linkColIndex === -1 ? null : normalizeLinkCell(cells[linkColIndex] ?? "");
+    const focus =
+      focusColIndex === -1 ? null : normalizeOptionalCell(cells[focusColIndex] ?? "");
+
+    members.push({
+      name: nameCell,
+      githubHandle: handle,
+      slug: slugify(nameCell),
+      telegram,
+      link,
+      focus,
+    });
   }
 
   return members;

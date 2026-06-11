@@ -161,6 +161,36 @@ describe("H146: POST /api/me/delete — persona file erasure", () => {
     expect(personaCalls).toHaveLength(0);
   });
 
+  it("O4/H146: a profile containing persona_source_url is deleted outright (stored re-sync URL erased with it) — never rewritten", async () => {
+    const profilePath = "community/members/anton-safronov.md";
+    mockClient.readFile.mockImplementation(async (path: string) => {
+      if (path === profilePath) {
+        return {
+          content:
+            "---\nname: Anton Safronov\ngithub_handle: anton1rsod\n" +
+            "consented_at: 2026-01-01T00:00:00.000Z\n" +
+            "persona_source_url: https://raw.githubusercontent.com/anton1rsod/p/main/p.public.md\n" +
+            "---\n\nBody.\n",
+          sha: "prof-sha",
+          path,
+        };
+      }
+      return null;
+    });
+    mockClient.deleteFile.mockResolvedValue(undefined);
+
+    const res = await POST(REQ);
+    expect(res.status).toBe(200);
+
+    // The whole profile file (frontmatter incl. persona_source_url) is deleted…
+    expect(mockClient.deleteFile).toHaveBeenCalledWith(
+      profilePath,
+      expect.objectContaining({ sha: "prof-sha" }),
+    );
+    // …and never partially rewritten (no strip-and-keep commit may replace this).
+    expect(mockClient.writeFile).not.toHaveBeenCalled();
+  });
+
   describe("E2E mock branch", () => {
     beforeEach(() => {
       vi.stubEnv("NEXT_PUBLIC_E2E_MODE", "1");

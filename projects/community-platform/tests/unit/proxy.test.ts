@@ -180,6 +180,40 @@ describe("proxy", () => {
     }
   });
 
+  describe("v0.12 OG member card route (H155) — image public, dossier gated", () => {
+    for (const path of [
+      "/members/anton-safronov/opengraph-image",
+      "/members/mark-spasonov/opengraph-image",
+    ]) {
+      it(`allows ${path} without auth (scrapers fetch it; consent re-applied in-route)`, async () => {
+        const { default: proxy } = await import("@/proxy");
+        const req = makeReq(path);
+        const res = await proxy(req as never);
+        expect(res.headers.get("location")).toBeNull();
+        expect(mocks.decodeFn).not.toHaveBeenCalled();
+      });
+    }
+
+    for (const path of [
+      "/members",
+      "/members/anton-safronov",
+      "/members/anton-safronov/opengraph-image/deeper",
+      "/members/opengraph-image",
+      // %-encoded slug segments stay gated: nextUrl.pathname preserves
+      // percent-encoding, so without the [^/%] exclusion this matched.
+      "/members/x%2Fopengraph-image/opengraph-image",
+    ]) {
+      it(`keeps ${path} auth-gated (ADR-0012/0014: /members is NOT a discovery surface)`, async () => {
+        const { default: proxy } = await import("@/proxy");
+        const req = makeReq(path);
+        const res = await proxy(req as never);
+        expect(res.status).toBeGreaterThanOrEqual(300);
+        expect(res.status).toBeLessThan(400);
+        expect(res.headers.get("location")).toMatch(/\/login$/);
+      });
+    }
+  });
+
   it("redirects to /login when no session cookie present", async () => {
     const { default: proxy } = await import("@/proxy");
     const req = makeReq("/this-week");

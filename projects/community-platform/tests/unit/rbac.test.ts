@@ -4,9 +4,9 @@ import type { GovernanceSnapshot } from "@/lib/governance";
 import { resolveRole, isPrivileged, type Role } from "@/lib/rbac";
 
 const roster: RosterMember[] = [
-  { name: "Anton Safronov", githubHandle: "anton1rsod", slug: "anton-safronov" },
-  { name: "Alice Example", githubHandle: "alice-ex", slug: "alice-example" },
-  { name: "Bob Sample", githubHandle: "bob-sample", slug: "bob-sample" },
+  { name: "Anton Safronov", githubHandle: "anton1rsod", slug: "anton-safronov", telegram: null, link: null, focus: null },
+  { name: "Alice Example", githubHandle: "alice-ex", slug: "alice-example", telegram: null, link: null, focus: null },
+  { name: "Bob Sample", githubHandle: "bob-sample", slug: "bob-sample", telegram: null, link: null, focus: null },
 ];
 
 function makeGov(opts: {

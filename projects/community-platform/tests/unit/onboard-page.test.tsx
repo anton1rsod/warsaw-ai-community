@@ -123,6 +123,9 @@ describe("H6: /onboard page — cookie + session branches", () => {
       name: "Anton",
       githubHandle: "anton1rsod",
       slug: "anton-safronov",
+      telegram: null,
+      link: null,
+      focus: null,
       profile: null,
       persona: null,
     });

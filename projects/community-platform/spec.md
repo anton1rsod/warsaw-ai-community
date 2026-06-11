@@ -3985,3 +3985,49 @@ D1–D9 in the design doc: scope (a)+(b); consent=attach+toggle; paste+upload; `
 ### Deferred to v0.11.2+
 
 (c) persona discovery/matchmaking (tag index + filter surface, reuses `lib/persona.ts`); one-line-bio headline + collapse/expand; a **separate ADR + history audit** for full-`.md`-with-private-notes in the public repo; **CSP** sanitization defense-in-depth (v0.5 backlog).
+
+## §23 — v0.12.0 Persona engagement + member-page redesign (2026-06-10)
+
+**Design record:** `docs/specs/2026-06-10-community-platform-persona-engagement-design.md` (Anton-approved + standards-verified 2026-06-10; approved mockup `community/brand/explorations/2026-06-10-member-page-typeset-dossier-mockup.html`). **Plan:** `v0.12.0-plan.md` (35 tasks / 6 phases; O1–O5 locked in the header). **Consent posture: NO change to ADR-0019** — everything renders/derives from already-public `.public.md` + profile data; link-attach is the same consent act through the same validation pipeline; the persona file schema was NOT touched (ADR-0019 §3: schema changes need their own ADR); H138–H150 invariants all hold.
+
+### Decisions (D1–D9, Anton-locked at brainstorm)
+
+- **D1** — Purpose frame: two-layer live+deep; the deep persona is THE member-profile centerpiece.
+- **D2** — Persona as the member's interface: diff it (overlap lens), query it (ask-me-about), route to it (v0.14), simulate it (v0.15), carry it (shareable card). Soft-social garnish (vouches/first-question wall/asks-offers) considered, not picked.
+- **D3** — Supply stays external: NO in-platform persona builder. New attach-by-GitHub-link + stored source URL enabling "re-sync from source" (the persona update path).
+- **D4** — Phasing: v0.12 = redesign + lens + ask-about + OG card + link attach/re-sync (zero new consent surface); v0.13 Q&A; v0.14 evaluator routing; v0.15 persona-as-lens AI (own ADR).
+- **D5** — Visual direction "typeset dossier": Read.cv skeleton, warm-editorial skin, mono `//` kickers, one expressive moment (first-question pull-quote with hanging amber asterisk).
+- **D6** — Volume calibration: v4 mockup approved (v2 skeleton + 38px name + 22px statement); dark band / asterisk separators / member numbers REJECTED.
+- **D7** — Chips are GONE on the member page; expertise renders as definition-list ledger rows (EXPERT / PRACTITIONER / NICHE / LANGUAGES) with depth-by-tone. Tag/chip components stay on other surfaces.
+- **D8** — Progressive disclosure: bio statement always visible; career arc gradient-fade + "continue reading" (same-DOM un-clip, expanded-on-JS-failure); hard-won/patterns/dispositions as counted `<details>` rows.
+- **D9** — Contributions demoted to a single mono stat footer line (ActivityLine); the 4-metric-tile ContributionCard leaves the page.
+
+### Requirements (distilled from design §4)
+
+- **R1** — Member-page recomposition per design §3: identity zone → statement (`one_line_bio`, O5: omit when null) → quiet action row → lens band → expertise ledger → first-question pull-quote → evaluation-posture ledger → story (`// story` = profile body + persona narrative w/ disclosure) → mono activity footer. Persona sections parsed from the REAL `.public.md` heading skeleton (`lib/persona-sections.ts`) with the H148 graceful-fallback posture preserved.
+- **R2** — Overlap lens: signed-in viewers with their own persona see shared tags, complementary depths, and 0–3 deterministic template conversation starters (O1; no LLM). Viewer-private (H160). Hidden for anon viewers and viewers without a persona.
+- **R3** — Ask-me-about: niche-tag chips read-only; `ask <name> about… →` deep-links to roster `telegram` (O2; column surfaced in `lib/roster.ts` together with Link/Focus) else CopyHandle clipboard fallback. No new write path.
+- **R4** — Shareable member card: `app/members/[slug]/opengraph-image.tsx` (metadata file convention; Node runtime; vendored static Geist TTFs from `geist` npm pkg — satori cannot read woff2; `outputFileTracingIncludes` pins assets into the function bundle). Renders name + statement + top expert tags + wordmark on cream (O3). Same URL is the embeddable card (CardEmbedSnippet on /me/edit).
+- **R5** — GitHub-link attach + re-sync: PersonaEditor URL field → server-side fetch through `lib/persona-fetch.ts` (H151/H152) → the SAME SavePersonaSchema/H142 pipeline as paste/upload (H154); `persona_source_url` stored in profile frontmatter (O4) as a second independent single-file bot commit (H149); `resyncPersona` action re-validates the stored URL on every read (H153). Erasure (H146) also clears `persona_source_url`.
+- **R6** — PersonaEditor status strings fully i18n'd (carried from the v0.11.2 candidate list) + all new v0.12 strings via `s("key")`.
+
+### Routing posture (reconciled at ship, Anton-decided 2026-06-11)
+
+Design §3's "anon viewers: same page minus lens" describes the page's render states; the **access posture stays members-only** — `/members` + `/members/[slug]` remain auth-gated per the ADR-0012/0014 routing model. ONLY `/members/[slug]/opengraph-image` is public (`OG_IMAGE_PATH` in `proxy.ts`; scrapers/camo fetch it sessionless; H155 re-applies consent in-route). The page renders anon-gracefully (lens + self-affordances hidden), so a future public-dossier decision is a 1-line proxy flip + its own ADR — queued for the 6/12 retro.
+
+### Hardenings (H151–H160, locked)
+
+- **H151** — URL guard on link-fetch: WHATWG parse · https-only · empty userinfo/port · exact-`===` frozen-Set hostname allowlist {`raw.githubusercontent.com`, `gist.githubusercontent.com`} · `redirect:"manual"` (any redirect rejects) · reject on parse error.
+- **H152** — Streamed byte cap: 65,536 ACTUAL received bytes (Content-Length advisory-only; early-reject oversized declarations, never trust them); AbortController wall-clock timeout; byte-accurate schema parity via `TextEncoder`.
+- **H153** — Re-sync TOCTOU: `persona_source_url` is untrusted on every read — full H151 guard re-run pre-fetch; session-derived slug; guard failure errors cleanly with NO fetch.
+- **H154** — Single validation pipeline: paste = upload = URL-attach = re-sync (one SavePersonaSchema/H142 path; no second path).
+- **H155** — OG route re-applies H147 `persona_visible` + H146 erasure in-route (public unauthenticated endpoint); hidden/absent ⇒ name-only fallback card; no `auth()`/`headers()`; renders `one_line_bio` + expert tags only, never persona body text.
+- **H156** — Pair-contrast regression: WCAG ratios pinned per (foreground × background) PAIR incl. hover/focus (dust AA on cream ONLY; tinted surfaces use ink-muted); global `:focus-visible` ring flipped accent-500 → accent-700 platform-wide (SC 1.4.11 non-text 3:1).
+- **H157** — Kickers ARE the headings: `<h2 class="kicker">` single-element semantics (never aria-hidden, no sr-only twin); `// ` prefix aria-hidden; heading-outline regression test (h1 → h2 per section).
+- **H158** — `<details>` constraints: no `display:contents`; no headings inside `<summary>`; aria-hidden carets/decorative counts; same-DOM gradient-fade un-clip.
+- **H159** — SC 2.5.8: ≥24px hit areas on standalone mono action links via padding-block, bounding-box regression test at 375 + 1280 viewports.
+- **H160** — Overlap lens is viewer-private: computed per-request, never persisted, never logged.
+
+### Tests
+
+1806 unit/integration at the Phase 5 gate (baseline 1582 at v0.11.1; +224) + persona-attach E2E 4/4 (URL-attach happy path + real-H151-guard lookalike-host negative). Coverage 89.77% lines overall (gate 80); `lib/persona-fetch.ts` 97.26%.

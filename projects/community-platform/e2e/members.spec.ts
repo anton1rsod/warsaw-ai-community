@@ -19,7 +19,7 @@ test.describe("members", () => {
     expect(await page.locator("li").count()).toBeGreaterThan(0);
   });
 
-  test("clicking a member opens profile with persona panel", async ({ page }) => {
+  test("clicking a member opens the typeset dossier page", async ({ page }) => {
     await page.goto("/members");
     // Scope to the members grid section to avoid matching nav <li> items.
     const membersSection = page.locator("section[aria-labelledby='members-heading']");
@@ -27,7 +27,9 @@ test.describe("members", () => {
     await firstLink.click();
     await expect(page).toHaveURL(/\/members\/[\w-]+$/);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    // PersonaPanel renders "Persona" as a MonoLabel (<p>), not an <h3>.
-    await expect(page.getByText("Persona", { exact: true })).toBeVisible();
+    // v0.12 dossier anchors that render for EVERY member, with or without an
+    // attached persona (the persona sections themselves vary by member).
+    await expect(page.getByRole("link", { name: "← Members" })).toBeVisible();
+    await expect(page.getByRole("link", { name: /view card/ })).toBeVisible();
   });
 });

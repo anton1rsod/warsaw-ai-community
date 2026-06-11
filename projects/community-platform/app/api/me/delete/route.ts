@@ -65,6 +65,12 @@ export async function POST(_req: Request): Promise<Response> {
   });
 
   // 1. Profile file (may not exist if member never wrote one).
+  //    O4/H146: persona_source_url lives in THIS file's frontmatter — deleting
+  //    the whole file erases the stored re-sync URL with it; no separate
+  //    frontmatter-strip commit is needed. Locked by
+  //    tests/integration/me-delete-persona.test.ts ("profile containing
+  //    persona_source_url…") — if this ever becomes a rewrite instead of a
+  //    delete, that test forces the strip to be added explicitly.
   const profilePath = `community/members/${slug}.md`;
   const profile = await client.readFile(profilePath);
   if (profile) {

@@ -18,7 +18,7 @@ describe("member detail page v0.9 — warm, no dark:/scaffolding (H99)", () => {
     expect(src).toMatch(/font-display/);
     expect(src).toMatch(/text-ink|text-dust/);
   });
-  it("prose-warm present (for bio)", () => { expect(src).toMatch(/prose-warm/); });
+  it("StorySection present (prose-warm delegate for bio, v0.12)", () => { expect(src).toMatch(/StorySection/); });
   it("prose-neutral absent", () => { expect(src).not.toMatch(/prose-neutral/); });
   it("dark:prose-invert absent", () => { expect(src).not.toMatch(/dark:prose-invert/); });
 });

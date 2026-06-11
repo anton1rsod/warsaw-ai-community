@@ -24,7 +24,7 @@ describe("build-contributions sibling JSON shape", () => {
       },
     ];
     const roster = [
-      { name: "Anton Safronov", githubHandle: "anton1rsod", slug: "anton-safronov" },
+      { name: "Anton Safronov", githubHandle: "anton1rsod", slug: "anton-safronov", telegram: null, link: null, focus: null },
     ];
 
     const perMember = computeContributions({ commits, meetings: [], roster });

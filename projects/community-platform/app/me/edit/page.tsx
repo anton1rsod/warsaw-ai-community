@@ -9,7 +9,9 @@ import {
 import { parseFrontmatter } from "@/lib/profile-editor";
 import { ProfileEditor } from "@/app/components/ProfileEditor";
 import { PersonaEditor } from "@/app/components/PersonaEditor";
+import { CardEmbedSnippet } from "@/app/components/CardEmbedSnippet";
 import { MonoLabel } from "@/app/components/MonoLabel";
+import { s } from "@/lib/i18n/strings";
 import { mockProfileStore } from "@/app/actions/_test-profile-store";
 
 export const dynamic = "force-dynamic";
@@ -75,6 +77,11 @@ export default async function MeEditPage(): Promise<React.JSX.Element> {
   // H147: absent / non-false ⇒ visible (default true).
   // Handle both native-boolean false and quoted-string "false" (YAML load variation).
   const initialPersonaVisible = data.persona_visible !== false && data.persona_visible !== "false";
+  // v0.12 O4: stored re-sync source; non-null enables the Re-sync pill.
+  // (E2E mode's synthetic frontmatter never carries it → pill hidden there.)
+  const rawSourceUrl = data.persona_source_url;
+  const initialSourceUrl =
+    typeof rawSourceUrl === "string" && rawSourceUrl.length > 0 ? rawSourceUrl : null;
 
   return (
     <main id="main" className="mx-auto max-w-3xl px-6 py-10">
@@ -96,7 +103,16 @@ export default async function MeEditPage(): Promise<React.JSX.Element> {
         initialTelegramEcho={initialTelegramEcho}
         initialPersonaVisible={initialPersonaVisible}
       />
-      <PersonaEditor initialContent={member.persona ?? ""} slug={member.slug} />
+      <PersonaEditor
+        initialContent={member.persona ?? ""}
+        slug={member.slug}
+        initialSourceUrl={initialSourceUrl}
+      />
+      {/* v0.12 Phase 4.3 — README embed snippet for the shareable OG card (spec §4.4). */}
+      <section className="mt-4">
+        <p className="font-voice text-[11px] text-dust">{s("persona.editor.embedHint")}</p>
+        <CardEmbedSnippet name={member.name} slug={member.slug} />
+      </section>
     </main>
   );
 }
