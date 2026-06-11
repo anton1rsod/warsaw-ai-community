@@ -12,10 +12,12 @@ export default [
     rules: {
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
       "@typescript-eslint/consistent-type-imports": "error",
-      // Production paths must not log to stdout (a leak surface). console.error
-      // / console.warn are allowed — used by proxy.ts for cookie/JWT-decode
-      // signals so on-call has something to grep.
-      "no-console": ["error", { allow: ["error", "warn"] }],
+      // Production paths must not log to stdout via stray console.log/debug
+      // (a leak surface). console.info / console.warn / console.error are
+      // allowed — the lib/log wrapper routes intentional, contract-bound
+      // signals through them (info = completed actions, warn = problems,
+      // error = failures); proxy.ts also uses warn/error for JWT-decode signals.
+      "no-console": ["error", { allow: ["error", "warn", "info"] }],
     },
   },
   {

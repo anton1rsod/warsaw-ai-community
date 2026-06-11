@@ -136,7 +136,7 @@ test.describe("5.4b: Thanks button — authenticated view", () => {
     // Log in as markspas, post a status, then switch to anton1rsod.
     await loginAs(page, "markspas");
     await page.goto("/this-week");
-    await page.getByLabel(/what are you working on/i).fill(
+    await page.getByLabel(/shipping log/i).fill(
       "Mark's status for Thanks E2E test.",
     );
     await page.getByRole("button", { name: /post/i }).click();
@@ -178,7 +178,7 @@ test.describe("5.4c: Status post — E2E mode in-memory mock", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
       /this week/i,
     );
-    await page.getByLabel(/what are you working on/i).fill(
+    await page.getByLabel(/shipping log/i).fill(
       "v0.9 Phase 5 E2E backfill.",
     );
     await page.getByRole("button", { name: /post/i }).click();

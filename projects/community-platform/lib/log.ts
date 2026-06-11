@@ -1,5 +1,9 @@
 /**
- * Thin structured-logger wrapper around `console.warn` / `console.error`.
+ * Thin structured-logger wrapper around `console.info` / `console.warn` /
+ * `console.error`.
+ *
+ * Level guidance: `info` for completed actions (saved / created / updated),
+ * `warn` for recoverable problems and conflicts, `error` for failures.
  *
  * Format: `[tag] event {...fields}` single-line, JSON-stringified fields.
  * Vercel logs auto-prepend timestamp + region; this layer is grep-friendly.
@@ -10,8 +14,8 @@
  *
  * H85: empty tag is rejected at runtime to prevent ambiguous log lines.
  *
- * Future pino swap: replace internals; preserve `log.warn` / `log.error`
- * signature so call-sites don't move.
+ * Future pino swap: replace internals; preserve the `log.info` / `log.warn`
+ * / `log.error` signature so call-sites don't move.
  */
 type LogFields = Readonly<Record<string, unknown>>;
 
@@ -28,6 +32,9 @@ function format(tag: string, event: string, fields?: LogFields): string {
 }
 
 export const log = {
+  info(tag: string, event: string, fields?: LogFields): void {
+    console.info(format(tag, event, fields));
+  },
   warn(tag: string, event: string, fields?: LogFields): void {
     console.warn(format(tag, event, fields));
   },

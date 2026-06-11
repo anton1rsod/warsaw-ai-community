@@ -26,7 +26,7 @@ test.describe("status flow", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
       /this week/i,
     );
-    await page.getByLabel(/what are you working on/i).fill(
+    await page.getByLabel(/shipping log/i).fill(
       "Building the platform.",
     );
     await page.getByRole("button", { name: /post/i }).click();
@@ -35,12 +35,15 @@ test.describe("status flow", () => {
 
   test("edit posted status", async ({ page }) => {
     await page.goto("/this-week");
-    await page.getByLabel(/what are you working on/i).fill("Initial draft.");
+    await page.getByLabel(/shipping log/i).fill("Initial draft.");
     await page.getByRole("button", { name: /post/i }).click();
     await expect(page.getByRole("status")).toContainText(/posted/i);
 
     // After post, reload so the page renders with current = posted content;
-    // the "Update" button replaces "Post".
+    // the "Update" button replaces "Post". On edit the StatusEditor defaults
+    // to Rich mode (current set → "What are you working on"); a NEW post
+    // defaults to Quick ("Shipping log") since v0.10 — hence the two
+    // different field labels in this test.
     await page.reload();
     await expect(page.getByRole("button", { name: /update/i })).toBeVisible();
     await page.getByLabel(/what are you working on/i).fill("Updated content.");
@@ -50,7 +53,7 @@ test.describe("status flow", () => {
 
   test("delete posted status", async ({ page }) => {
     await page.goto("/this-week");
-    await page.getByLabel(/what are you working on/i).fill("Will be deleted.");
+    await page.getByLabel(/shipping log/i).fill("Will be deleted.");
     await page.getByRole("button", { name: /post/i }).click();
     await expect(page.getByRole("status")).toContainText(/posted/i);
 
